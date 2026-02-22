@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { MoreHorizontal, PlusCircle } from "lucide-react";
+import { useCollection, useFirestore } from "@/firebase";
+import { addStudent, updateStudent, deleteStudent } from "@/lib/firebase-helpers";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -27,17 +29,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { StudentForm } from "./student-form";
 import type { Student } from "@/types";
-
-const mockStudents: Student[] = [
-  { id: '1001', name: 'Andi Pratama', class: '10A' },
-  { id: '1002', name: 'Bunga Citra', class: '10B' },
-  { id: '1003', name: 'Candra Wijaya', class: '11A' },
-];
+import { useToast } from "@/hooks/use-toast";
+import { Firestore } from "firebase/firestore";
 
 export function StudentManagement({ isActive }: { isActive: boolean }) {
-  const [students, setStudents] = useState(mockStudents);
+  const { data: students, loading } = useCollection<Student>("students");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const firestore = useFirestore() as Firestore;
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!isActive) {
@@ -55,15 +55,30 @@ export function StudentManagement({ isActive }: { isActive: boolean }) {
     setIsFormOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    setStudents(students.filter(s => s.id !== id));
+  const handleDelete = async (id: string) => {
+    if (!firestore) return;
+    try {
+        await deleteStudent(firestore, id);
+        toast({ title: "Siswa Dihapus", description: "Data siswa berhasil dihapus." });
+    } catch (error: any) {
+        toast({ variant: "destructive", title: "Gagal Menghapus", description: error.message });
+    }
   };
   
-  const handleSave = (student: Student) => {
-    if (selectedStudent) {
-      setStudents(students.map(s => s.id === student.id ? student : s));
-    } else {
-      setStudents([...students, student]);
+  const handleSave = async (student: Student & { password?: string}) => {
+    if (!firestore) return;
+    try {
+        if (selectedStudent) {
+            await updateStudent(firestore, student.id, student);
+            toast({ title: "Siswa Diperbarui", description: "Data siswa berhasil diperbarui." });
+        } else {
+            await addStudent(firestore, student);
+            toast({ title: "Siswa Ditambahkan", description: "Data siswa baru berhasil ditambahkan." });
+        }
+        setIsFormOpen(false);
+        setSelectedStudent(null);
+    } catch (error: any) {
+        toast({ variant: "destructive", title: "Gagal Menyimpan", description: error.message });
     }
   };
 
@@ -98,7 +113,9 @@ export function StudentManagement({ isActive }: { isActive: boolean }) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {students.map((student) => (
+              {loading ? (
+                <TableRow><TableCell colSpan={4}>Memuat data...</TableCell></TableRow>
+              ) : (students.map((student) => (
                 <TableRow key={student.id}>
                   <TableCell className="font-medium">{student.id}</TableCell>
                   <TableCell>{student.name}</TableCell>
@@ -119,7 +136,7 @@ export function StudentManagement({ isActive }: { isActive: boolean }) {
                     </DropdownMenu>
                   </TableCell>
                 </TableRow>
-              ))}
+              )))}
             </TableBody>
           </Table>
         </CardContent>

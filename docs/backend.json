@@ -1,0 +1,62 @@
+{
+    "entities": {
+        "teacher": {
+            "title": "Teacher",
+            "description": "Represents a teacher user.",
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "description": "The teacher's unique ID, same as Firebase Auth UID."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "The teacher's full name."
+                },
+                "email": {
+                    "type": "string",
+                    "format": "email",
+                    "description": "The teacher's email address."
+                }
+            },
+            "required": ["id", "name", "email"]
+        },
+        "student": {
+            "title": "Student",
+            "description": "Represents a student.",
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "description": "The student's unique ID (NIS)."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "The student's full name."
+                },
+                "class": {
+                    "type": "string",
+                    "description": "The student's class."
+                }
+            },
+            "required": ["id", "name", "class"]
+        }
+    },
+    "auth": {
+        "providers": ["email"]
+    },
+    "firestore": {
+        "/teachers/{teacherId}": {
+            "schema": {
+                "$ref": "#/entities/teacher"
+            },
+            "description": "Stores documents for each teacher."
+        },
+        "/students/{studentId}": {
+            "schema": {
+                "$ref": "#/entities/student"
+            },
+            "description": "Stores documents for each student."
+        }
+    }
+}

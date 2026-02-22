@@ -27,19 +27,25 @@ import type { Teacher } from "@/types";
 const formSchema = z.object({
   name: z.string().min(1, "Nama harus diisi"),
   email: z.string().email("Email tidak valid"),
-  password: z.string().min(6, "Password minimal 6 karakter"),
+  password: z.string().optional(),
 });
 
 type TeacherFormProps = {
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   teacher: Teacher | null;
-  onSave: (teacher: Teacher) => void;
+  onSave: (teacher: Omit<Teacher, 'id'> & { password?: string, id?: string }) => void;
 };
 
 export function TeacherForm({ isOpen, setIsOpen, teacher, onSave }: TeacherFormProps) {
   const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formSchema.refine(data => !!teacher || !!data.password, {
+        message: "Password minimal 6 karakter untuk guru baru",
+        path: ["password"],
+    }).refine(data => !data.password || data.password.length >= 6, {
+        message: "Password minimal 6 karakter",
+        path: ["password"],
+    })),
     defaultValues: { name: "", email: "", password: "" },
   });
   
@@ -48,7 +54,7 @@ export function TeacherForm({ isOpen, setIsOpen, teacher, onSave }: TeacherFormP
       form.reset({
         name: teacher.name,
         email: teacher.email,
-        password: "", // Reset password on edit for security
+        password: "",
       });
     } else {
       form.reset({ name: "", email: "", password: "" });
@@ -57,10 +63,9 @@ export function TeacherForm({ isOpen, setIsOpen, teacher, onSave }: TeacherFormP
   
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     onSave({
-      id: teacher?.id || '',
+      id: teacher?.id,
       ...values,
     });
-    setIsOpen(false);
   };
 
   return (
@@ -94,7 +99,7 @@ export function TeacherForm({ isOpen, setIsOpen, teacher, onSave }: TeacherFormP
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input type="email" {...field} />
+                    <Input type="email" {...field} disabled={!!teacher} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -107,7 +112,7 @@ export function TeacherForm({ isOpen, setIsOpen, teacher, onSave }: TeacherFormP
                 <FormItem>
                   <FormLabel>Password</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder={teacher ? 'Isi untuk mengubah' : ''} {...field} />
+                    <Input type="password" placeholder={teacher ? 'Isi untuk mengubah' : 'Wajib diisi'} {...field} />
                   </FormControl>
                    <FormMessage />
                 </FormItem>

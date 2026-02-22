@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { MoreHorizontal, PlusCircle } from "lucide-react";
+import { useCollection, useAuth, useFirestore } from "@/firebase";
+import { addTeacher, updateTeacher, deleteTeacher } from "@/lib/firebase-helpers";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -27,17 +29,17 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { TeacherForm } from "./teacher-form";
 import type { Teacher } from "@/types";
-
-const mockTeachers: Teacher[] = [
-  { id: '1', name: 'Budi Santoso', email: 'budi.s@sekolah.id' },
-  { id: '2', name: 'Citra Lestari', email: 'citra.l@sekolah.id' },
-  { id: '3', name: 'Dewi Anggraini', email: 'dewi.a@sekolah.id' },
-];
+import { useToast } from "@/hooks/use-toast";
+import { Auth } from "firebase/auth";
+import { Firestore } from "firebase/firestore";
 
 export function TeacherManagement({ isActive }: { isActive: boolean }) {
-  const [teachers, setTeachers] = useState(mockTeachers);
+  const { data: teachers, loading } = useCollection<Teacher>("teachers");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
+  const { toast } = useToast();
+  const auth = useAuth() as Auth;
+  const firestore = useFirestore() as Firestore;
 
   useEffect(() => {
     if (!isActive) {
@@ -55,15 +57,36 @@ export function TeacherManagement({ isActive }: { isActive: boolean }) {
     setIsFormOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    setTeachers(teachers.filter(t => t.id !== id));
+  const handleDelete = async (id: string) => {
+    if (!firestore) return;
+    try {
+      await deleteTeacher(firestore, id);
+      toast({ title: "Guru Dihapus", description: "Data guru berhasil dihapus." });
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Gagal Menghapus", description: error.message });
+    }
   };
   
-  const handleSave = (teacher: Teacher) => {
-    if (selectedTeacher) {
-      setTeachers(teachers.map(t => t.id === teacher.id ? teacher : t));
-    } else {
-      setTeachers([...teachers, { ...teacher, id: (teachers.length + 2).toString() }]);
+  const handleSave = async (teacherData: any) => {
+    if (!auth || !firestore) return;
+    try {
+      if (selectedTeacher) {
+        const { password, ...teacherToUpdate } = teacherData;
+        await updateTeacher(firestore, selectedTeacher.id, teacherToUpdate);
+        toast({ title: "Guru Diperbarui", description: "Data guru berhasil diperbarui." });
+        // NOTE: Password changes would be handled separately in a real app
+      } else {
+        if (!teacherData.password) {
+            toast({ variant: "destructive", title: "Gagal Menyimpan", description: "Password harus diisi untuk guru baru." });
+            return;
+        }
+        await addTeacher(auth, firestore, teacherData);
+        toast({ title: "Guru Ditambahkan", description: "Data guru baru berhasil ditambahkan." });
+      }
+      setIsFormOpen(false);
+      setSelectedTeacher(null);
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Gagal Menyimpan", description: error.message });
     }
   };
 
@@ -97,7 +120,9 @@ export function TeacherManagement({ isActive }: { isActive: boolean }) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {teachers.map((teacher) => (
+              {loading ? (
+                <TableRow><TableCell colSpan={3}>Memuat data...</TableCell></TableRow>
+              ) : (teachers.map((teacher) => (
                 <TableRow key={teacher.id}>
                   <TableCell className="font-medium">{teacher.name}</TableCell>
                   <TableCell>{teacher.email}</TableCell>
@@ -117,7 +142,7 @@ export function TeacherManagement({ isActive }: { isActive: boolean }) {
                     </DropdownMenu>
                   </TableCell>
                 </TableRow>
-              ))}
+              )))}
             </TableBody>
           </Table>
         </CardContent>

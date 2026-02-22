@@ -1,0 +1,32 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // For this prototype, we are keeping rules simple.
+    // In a production app, you would have more granular rules
+    // based on user roles (admin, teacher, parent).
+    
+    // Logged-in users can read all data.
+    // This is for teachers and parents to see relevant data.
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // A user is considered an admin if they are authenticated.
+    // This is a simplification for the prototype.
+    // In a real app, you'd check for a custom claim.
+    function isAdmin() {
+      return isAuthenticated();
+    }
+
+    match /teachers/{teacherId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /students/{studentId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+  }
+}

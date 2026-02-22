@@ -31,15 +31,17 @@ const formSchema = z.object({
   password: z.string().min(6, "Password minimal 6 karakter"),
 });
 
+type StudentFormData = z.infer<typeof formSchema>;
+
 type StudentFormProps = {
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   student: Student | null;
-  onSave: (student: Student) => void;
+  onSave: (student: StudentFormData) => void;
 };
 
 export function StudentForm({ isOpen, setIsOpen, student, onSave }: StudentFormProps) {
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<StudentFormData>({
     resolver: zodResolver(formSchema),
     defaultValues: { id: "", name: "", class: "", password: "" },
   });
@@ -57,7 +59,7 @@ export function StudentForm({ isOpen, setIsOpen, student, onSave }: StudentFormP
     }
   }, [student, form, isOpen]);
   
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
+  const onSubmit = (values: StudentFormData) => {
     onSave(values);
     setIsOpen(false);
   };
