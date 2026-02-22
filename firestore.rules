@@ -44,7 +44,9 @@ service cloud.firestore {
      * This is NOT secure for production.
      */
     function isAdmin() {
-      return request.auth != null && request.auth.token.firebase.sign_in_provider == 'anonymous';
+      // An admin is an authenticated user without an email.
+      // This works for anonymous users who are used for dev admin access.
+      return request.auth != null && request.auth.token.email == null;
     }
 
     /**
@@ -103,11 +105,9 @@ service cloud.firestore {
      * @path /teachers/{teacherId}
      */
     match /teachers/{teacherId} {
-      allow get: if isAdmin() || isOwner(teacherId);
-      allow list: if isAdmin();
-      allow create: if isAdmin();
-      allow update: if (isAdmin() || isOwner(teacherId)) && isExistingDoc();
-      allow delete: if isAdmin() && isExistingDoc();
+      allow read, write: if isAdmin();
+      allow get: if isOwner(teacherId);
+      allow update: if isOwner(teacherId) && isExistingDoc();
     }
 
     /**
@@ -115,11 +115,9 @@ service cloud.firestore {
      * @path /parents/{parentId}
      */
     match /parents/{parentId} {
-      allow get: if isAdmin() || isOwner(parentId);
-      allow list: if isAdmin();
-      allow create: if isAdmin();
-      allow update: if (isAdmin() || isOwner(parentId)) && isExistingDoc();
-      allow delete: if isAdmin() && isExistingDoc();
+      allow read, write: if isAdmin();
+      allow get: if isOwner(parentId);
+      allow update: if isOwner(parentId) && isExistingDoc();
     }
 
     /**
@@ -127,11 +125,9 @@ service cloud.firestore {
      * @path /students/{studentId}
      */
     match /students/{studentId} {
-      allow get: if isAdmin() || isParentOfStudent(resource) || isTeacherOfStudent(resource);
-      allow list: if isAdmin() || isTeacher() || isParent(); // Query security is enforced by `get` rule on each doc.
-      allow create: if isAdmin();
-      allow update: if isAdmin() && isExistingDoc();
-      allow delete: if isAdmin() && isExistingDoc();
+      allow read, write: if isAdmin();
+      allow get: if isParentOfStudent(resource) || isTeacherOfStudent(resource);
+      allow list: if isTeacher() || isParent(); // Query security is enforced by `get` rule on each doc.
     }
 
     /**
@@ -139,10 +135,9 @@ service cloud.firestore {
      * @path /classes/{classId}
      */
     match /classes/{classId} {
-      allow get, list: if isAdmin() || isSignedIn();
-      allow create: if isAdmin();
-      allow update: if (isAdmin() || isHomeroomTeacher(resource)) && isExistingDoc();
-      allow delete: if isAdmin() && isExistingDoc();
+      allow read, write: if isAdmin();
+      allow get, list: if isSignedIn();
+      allow update: if isHomeroomTeacher(resource) && isExistingDoc();
     }
 
     /**
@@ -150,10 +145,8 @@ service cloud.firestore {
      * @path /subjects/{subjectId}
      */
     match /subjects/{subjectId} {
-      allow get, list: if isAdmin() || isSignedIn();
-      allow create: if isAdmin();
-      allow update: if isAdmin() && isExistingDoc();
-      allow delete: if isAdmin() && isExistingDoc();
+      allow read, write: if isAdmin();
+      allow get, list: if isSignedIn();
     }
   }
 }
