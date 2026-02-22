@@ -1,11 +1,13 @@
 "use client";
 
 import { useCollection } from "@/firebase";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Users, User, ArrowRight } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Users, User } from "lucide-react";
 import type { Teacher, Student } from "@/types";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TeacherManagement } from "./components/teacher-management";
+import { StudentManagement } from "./components/student-management";
+
 
 export default function DashboardPage() {
   const { data: teachers, loading: loadingTeachers } = useCollection<Teacher>("teachers");
@@ -44,26 +46,18 @@ export default function DashboardPage() {
             </Card>
       </div>
       
-      <Card>
-          <CardHeader>
-              <CardTitle>Kelola Data</CardTitle>
-              <CardDescription>Navigasi ke halaman untuk mengelola data guru dan siswa.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-2">
-              <Link href="/admin/teachers" passHref>
-                  <Button variant="outline" size="sm" className="w-full justify-between">
-                      <span>Halaman Data Guru</span>
-                      <ArrowRight className="h-4 w-4" />
-                  </Button>
-              </Link>
-              <Link href="/admin/students" passHref>
-                  <Button variant="outline" size="sm" className="w-full justify-between">
-                      <span>Halaman Data Siswa</span>
-                      <ArrowRight className="h-4 w-4" />
-                  </Button>
-              </Link>
-          </CardContent>
-      </Card>
+      <Tabs defaultValue="teachers" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="teachers">Data Guru</TabsTrigger>
+          <TabsTrigger value="students">Data Siswa</TabsTrigger>
+        </TabsList>
+        <TabsContent value="teachers">
+          <TeacherManagement />
+        </TabsContent>
+        <TabsContent value="students">
+          <StudentManagement />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
