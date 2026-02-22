@@ -45,11 +45,11 @@ service cloud.firestore {
 
     /**
      * Checks if the requesting user has administrative privileges.
-     * DEV ONLY: Grants admin rights to any anonymously signed-in user.
-     * This is for development convenience and is NOT secure for production.
+     * DEV ONLY: Grants admin rights based on the sign-in provider.
+     * In this app's dev flow, the admin login is identified as the 'custom' provider.
      */
     function isAdmin() {
-      return request.auth != null && request.auth.token.firebase.sign_in_provider == 'anonymous';
+      return request.auth != null && request.auth.token.firebase.sign_in_provider == 'custom';
     }
 
     /**
