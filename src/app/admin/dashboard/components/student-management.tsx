@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -60,14 +61,14 @@ export function StudentManagement() {
     }
   };
   
-  const handleSave = async (student: Student & { password?: string}) => {
+  const handleSave = async (studentData: any) => {
     if (!firestore) return;
     try {
         if (selectedStudent) {
-            await updateStudent(firestore, student.id, student);
+            await updateStudent(firestore, selectedStudent.id, studentData);
             toast({ title: "Siswa Diperbarui", description: "Data siswa berhasil diperbarui." });
         } else {
-            await addStudent(firestore, student);
+            await addStudent(firestore, studentData);
             toast({ title: "Siswa Ditambahkan", description: "Data siswa baru berhasil ditambahkan." });
         }
         setIsFormOpen(false);
@@ -113,9 +114,9 @@ export function StudentManagement() {
               ) : students && students.length > 0 ? (
                 students.map((student) => (
                 <TableRow key={student.id}>
-                  <TableCell className="font-medium">{student.id}</TableCell>
-                  <TableCell>{student.name}</TableCell>
-                   <TableCell>{student.class}</TableCell>
+                  <TableCell className="font-medium">{student.nis}</TableCell>
+                  <TableCell>{`${student.firstName} ${student.lastName}`}</TableCell>
+                   <TableCell>{student.classId}</TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>

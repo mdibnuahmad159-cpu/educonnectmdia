@@ -1,11 +1,12 @@
+
 "use client";
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/firebase";
-import { signInAnonymously, signInWithEmailAndPassword } from "firebase/auth";
+import { useAuth, useUser } from "@/firebase";
+import { signInAnonymously, signInWithEmailAndPassword, User } from "firebase/auth";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -47,6 +48,7 @@ export function LoginForm() {
   const router = useRouter();
   const { toast } = useToast();
   const auth = useAuth();
+  const { user } = useUser();
 
   const adminForm = useForm<z.infer<typeof adminSchema>>({
     resolver: zodResolver(adminSchema),
@@ -63,15 +65,22 @@ export function LoginForm() {
     defaultValues: { nis: "", password: "" },
   });
 
+  const showAdminToast = (currentUser: User | null) => {
+    if (currentUser?.isAnonymous) {
+      toast({
+        title: "Login Admin Berhasil",
+        description: `Untuk hak akses penuh, tambahkan UID '${currentUser.uid}' ke koleksi 'roles_admin' di Firestore.`,
+        duration: 9000,
+      });
+    }
+  }
+
   const handleAdminSubmit = async (values: z.infer<typeof adminSchema>) => {
     if (!auth) return;
     if (values.password === "useAdmin") {
       try {
-        await signInAnonymously(auth);
-        toast({
-          title: "Login Berhasil",
-          description: "Selamat datang, Admin!",
-        });
+        const userCredential = await signInAnonymously(auth);
+        showAdminToast(userCredential.user);
         router.push("/admin/dashboard");
       } catch (error: any) {
          toast({
@@ -92,12 +101,15 @@ export function LoginForm() {
   const handleTeacherSubmit = async (values: z.infer<typeof teacherSchema>) => {
     if (!auth) return;
     try {
-      await signInWithEmailAndPassword(auth, values.email, values.password);
+      const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
       toast({
         title: "Login Berhasil",
         description: "Selamat datang!",
       });
-      router.push("/admin/dashboard"); // Redirect to a teacher-specific dashboard in the future
+      if (userCredential.user.isAnonymous) {
+        showAdminToast(userCredential.user);
+      }
+      router.push("/admin/dashboard"); 
     } catch (error: any) {
       toast({
         variant: "destructive",

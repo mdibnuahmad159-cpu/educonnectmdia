@@ -13,12 +13,13 @@ import {
 import type { Teacher, Student } from '@/types';
 
 
-// The password in the student form is for the parent. This is more complex and
-// for now we just store the student data. A real implementation would create a parent user.
-export async function addStudent(db: Firestore, student: Omit<Student, 'id'> & {id: string, password?: string}) {
+// This function creates a student document in Firestore.
+// The password field from the form is ignored here, as parent/guardian auth is a separate, more complex feature.
+export async function addStudent(db: Firestore, student: Omit<Student, 'id'> & { id: string; password?: string }) {
   const { password, ...studentData } = student;
-  const studentRef = doc(db, 'students', student.id);
-  await setDoc(studentRef, studentData);
+  // Use the student's NIS as the document ID for simplicity
+  const studentRef = doc(db, 'students', studentData.nis);
+  await setDoc(studentRef, { ...studentData, id: studentData.nis });
 }
 
 export async function updateStudent(db: Firestore, studentId: string, student: Partial<Student>) {
@@ -32,6 +33,8 @@ export async function deleteStudent(db: Firestore, studentId: string) {
 }
 
 // For teachers, we create an auth user and a firestore document.
+// This client-side flow logs the new teacher in and logs the admin out.
+// In a production app, creating users is typically a server-side (admin) operation.
 export async function addTeacher(auth: Auth, db: Firestore, teacher: Omit<Teacher, 'id'> & {password: string}) {
     const userCredential = await createUserWithEmailAndPassword(auth, teacher.email, teacher.password);
     const user = userCredential.user;
@@ -56,6 +59,6 @@ export async function updateTeacher(db: Firestore, teacherId: string, teacher: P
 export async function deleteTeacher(db: Firestore, teacherId: string) {
     const teacherRef = doc(db, 'teachers', teacherId);
     await deleteDoc(teacherRef);
-    // In a real app, you would also delete the Firebase Auth user.
-    // This requires admin privileges and is typically a server-side operation.
+    // IMPORTANT: This only deletes the Firestore document, not the Firebase Authentication user.
+    // Deleting auth users requires admin privileges and should be handled in a secure server environment (e.g., Firebase Functions).
 }
