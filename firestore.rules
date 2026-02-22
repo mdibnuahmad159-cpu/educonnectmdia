@@ -44,9 +44,9 @@ service cloud.firestore {
      * This is NOT secure for production.
      */
     function isAdmin() {
-      // An admin is an authenticated user without an email.
-      // This works for anonymous users who are used for dev admin access.
-      return request.auth != null && request.auth.token.email == null;
+      // An admin is a user who has signed in anonymously.
+      // This is a robust way to identify dev admins.
+      return isSignedIn() && request.auth.token.firebase.sign_in_provider == 'anonymous';
     }
 
     /**
@@ -108,6 +108,7 @@ service cloud.firestore {
       allow read, write: if isAdmin();
       allow get: if isOwner(teacherId);
       allow update: if isOwner(teacherId) && isExistingDoc();
+      allow create: if isTeacher();
     }
 
     /**
@@ -128,6 +129,7 @@ service cloud.firestore {
       allow read, write: if isAdmin();
       allow get: if isParentOfStudent(resource) || isTeacherOfStudent(resource);
       allow list: if isTeacher() || isParent(); // Query security is enforced by `get` rule on each doc.
+      allow create: if isAdmin();
     }
 
     /**
