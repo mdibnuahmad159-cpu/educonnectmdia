@@ -4,7 +4,16 @@ import Link from "next/link";
 import { useCollection } from "@/firebase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, User, ChevronRight } from "lucide-react";
+import { 
+  Users, 
+  User, 
+  ChevronRight,
+  BookCopy,
+  Calendar,
+  Mail,
+  ClipboardCheck,
+  FileText
+} from "lucide-react";
 import type { Teacher, Student } from "@/types";
 
 export default function DashboardPage() {
@@ -54,6 +63,51 @@ export default function DashboardPage() {
                       <span className="flex items-center gap-2">
                         <Users className="h-4 w-4" />
                         <span>Data Guru</span>
+                      </span>
+                      <ChevronRight className="h-4 w-4" />
+                  </Link>
+              </Button>
+              <Button asChild variant="outline" size="xs" className="justify-between">
+                  <Link href="/admin/curriculum">
+                      <span className="flex items-center gap-2">
+                        <BookCopy className="h-4 w-4" />
+                        <span>Kurikulum</span>
+                      </span>
+                      <ChevronRight className="h-4 w-4" />
+                  </Link>
+              </Button>
+              <Button asChild variant="outline" size="xs" className="justify-between">
+                  <Link href="/admin/schedule">
+                      <span className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        <span>Jadwal</span>
+                      </span>
+                      <ChevronRight className="h-4 w-4" />
+                  </Link>
+              </Button>
+              <Button asChild variant="outline" size="xs" className="justify-between">
+                  <Link href="/admin/letters">
+                      <span className="flex items-center gap-2">
+                        <Mail className="h-4 w-4" />
+                        <span>Surat</span>
+                      </span>
+                      <ChevronRight className="h-4 w-4" />
+                  </Link>
+              </Button>
+              <Button asChild variant="outline" size="xs" className="justify-between">
+                  <Link href="/admin/grades">
+                      <span className="flex items-center gap-2">
+                        <ClipboardCheck className="h-4 w-4" />
+                        <span>Nilai</span>
+                      </span>
+                      <ChevronRight className="h-4 w-4" />
+                  </Link>
+              </Button>
+              <Button asChild variant="outline" size="xs" className="justify-between">
+                  <Link href="/admin/reports">
+                      <span className="flex items-center gap-2">
+                        <FileText className="h-4 w-4" />
+                        <span>Rapor</span>
                       </span>
                       <ChevronRight className="h-4 w-4" />
                   </Link>
