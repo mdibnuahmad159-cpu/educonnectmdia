@@ -39,14 +39,13 @@ service cloud.firestore {
     }
 
     /**
-     * DEV ONLY: Grants admin rights to anonymous users for easier dev setup.
-     * The client-side "Admin Login" flow uses `signInAnonymously`.
+     * DEV ONLY: Grants admin rights for easier dev setup.
+     * The admin login flow uses a method that Firebase Auth identifies as the 'custom' provider.
+     * This is a reliable way to identify development admins based on the observed behavior.
      * This is NOT secure for production.
      */
     function isAdmin() {
-      // An admin is a user who has signed in anonymously.
-      // This is a robust way to identify dev admins.
-      return isSignedIn() && request.auth.token.firebase.sign_in_provider == 'anonymous';
+      return isSignedIn() && request.auth.token.firebase.sign_in_provider == 'custom';
     }
 
     /**
