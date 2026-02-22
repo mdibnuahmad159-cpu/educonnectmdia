@@ -3,11 +3,9 @@
 import Link from "next/link";
 import { useCollection } from "@/firebase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { 
   Users, 
   User, 
-  ChevronRight,
   BookCopy,
   Calendar,
   Mail,
@@ -20,6 +18,16 @@ import {
   History
 } from "lucide-react";
 import type { Teacher, Student } from "@/types";
+
+const NavLink = ({ href, icon: Icon, label }: { href: string; icon: React.ElementType; label: string }) => (
+    <Link 
+      href={href} 
+      className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors text-center"
+    >
+        <Icon className="h-5 w-5" />
+        <span className="text-xs font-medium">{label}</span>
+    </Link>
+);
 
 export default function DashboardPage() {
   const { data: teachers, loading: loadingTeachers } = useCollection<Teacher>("teachers");
@@ -62,61 +70,13 @@ export default function DashboardPage() {
           <CardHeader className="pb-2">
               <CardTitle className="text-sm">Akademik</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-2">
-                <Button asChild variant="outline" size="xs" className="justify-between">
-                  <Link href="/admin/teachers">
-                      <span className="flex items-center gap-2">
-                        <Users className="h-4 w-4" />
-                        <span>Data Guru</span>
-                      </span>
-                      <ChevronRight className="h-4 w-4" />
-                  </Link>
-              </Button>
-              <Button asChild variant="outline" size="xs" className="justify-between">
-                  <Link href="/admin/curriculum">
-                      <span className="flex items-center gap-2">
-                        <BookCopy className="h-4 w-4" />
-                        <span>Kurikulum</span>
-                      </span>
-                      <ChevronRight className="h-4 w-4" />
-                  </Link>
-              </Button>
-              <Button asChild variant="outline" size="xs" className="justify-between">
-                  <Link href="/admin/schedule">
-                      <span className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
-                        <span>Jadwal</span>
-                      </span>
-                      <ChevronRight className="h-4 w-4" />
-                  </Link>
-              </Button>
-              <Button asChild variant="outline" size="xs" className="justify-between">
-                  <Link href="/admin/letters">
-                      <span className="flex items-center gap-2">
-                        <Mail className="h-4 w-4" />
-                        <span>Surat</span>
-                      </span>
-                      <ChevronRight className="h-4 w-4" />
-                  </Link>
-              </Button>
-              <Button asChild variant="outline" size="xs" className="justify-between">
-                  <Link href="/admin/grades">
-                      <span className="flex items-center gap-2">
-                        <ClipboardCheck className="h-4 w-4" />
-                        <span>Nilai</span>
-                      </span>
-                      <ChevronRight className="h-4 w-4" />
-                  </Link>
-              </Button>
-              <Button asChild variant="outline" size="xs" className="justify-between">
-                  <Link href="/admin/reports">
-                      <span className="flex items-center gap-2">
-                        <FileText className="h-4 w-4" />
-                        <span>Rapor</span>
-                      </span>
-                      <ChevronRight className="h-4 w-4" />
-                  </Link>
-              </Button>
+          <CardContent className="grid grid-cols-3 gap-2">
+                <NavLink href="/admin/teachers" icon={Users} label="Data Guru" />
+                <NavLink href="/admin/curriculum" icon={BookCopy} label="Kurikulum" />
+                <NavLink href="/admin/schedule" icon={Calendar} label="Jadwal" />
+                <NavLink href="/admin/letters" icon={Mail} label="Surat" />
+                <NavLink href="/admin/grades" icon={ClipboardCheck} label="Nilai" />
+                <NavLink href="/admin/reports" icon={FileText} label="Rapor" />
           </CardContent>
       </Card>
       
@@ -124,34 +84,10 @@ export default function DashboardPage() {
           <CardHeader className="pb-2">
               <CardTitle className="text-sm">Siswa</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-2">
-              <Button asChild variant="outline" size="xs" className="justify-between">
-                  <Link href="/admin/students">
-                      <span className="flex items-center gap-2">
-                        <User className="h-4 w-4" />
-                        <span>Data Siswa</span>
-                      </span>
-                      <ChevronRight className="h-4 w-4" />
-                  </Link>
-              </Button>
-              <Button asChild variant="outline" size="xs" className="justify-between">
-                  <Link href="/admin/class-management">
-                      <span className="flex items-center gap-2">
-                        <School className="h-4 w-4" />
-                        <span>Manajemen Kelas</span>
-                      </span>
-                      <ChevronRight className="h-4 w-4" />
-                  </Link>
-              </Button>
-              <Button asChild variant="outline" size="xs" className="justify-between">
-                  <Link href="/admin/alumni">
-                      <span className="flex items-center gap-2">
-                        <GraduationCap className="h-4 w-4" />
-                        <span>Alumni</span>
-                      </span>
-                      <ChevronRight className="h-4 w-4" />
-                  </Link>
-              </Button>
+          <CardContent className="grid grid-cols-3 gap-2">
+              <NavLink href="/admin/students" icon={User} label="Data Siswa" />
+              <NavLink href="/admin/class-management" icon={School} label="Manajemen Kelas" />
+              <NavLink href="/admin/alumni" icon={GraduationCap} label="Alumni" />
           </CardContent>
       </Card>
       
@@ -159,34 +95,10 @@ export default function DashboardPage() {
           <CardHeader className="pb-2">
               <CardTitle className="text-sm">Keuangan</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-2">
-               <Button asChild variant="outline" size="xs" className="justify-between">
-                  <Link href="/admin/spp">
-                      <span className="flex items-center gap-2">
-                        <CreditCard className="h-4 w-4" />
-                        <span>SPP</span>
-                      </span>
-                      <ChevronRight className="h-4 w-4" />
-                  </Link>
-              </Button>
-              <Button asChild variant="outline" size="xs" className="justify-between">
-                  <Link href="/admin/tabungan">
-                      <span className="flex items-center gap-2">
-                        <PiggyBank className="h-4 w-4" />
-                        <span>Tabungan</span>
-                      </span>
-                      <ChevronRight className="h-4 w-4" />
-                  </Link>
-              </Button>
-              <Button asChild variant="outline" size="xs" className="justify-between">
-                  <Link href="/admin/riwayat-transaksi">
-                      <span className="flex items-center gap-2">
-                        <History className="h-4 w-4" />
-                        <span>Riwayat Transaksi</span>
-                      </span>
-                      <ChevronRight className="h-4 w-4" />
-                  </Link>
-              </Button>
+          <CardContent className="grid grid-cols-3 gap-2">
+               <NavLink href="/admin/spp" icon={CreditCard} label="SPP" />
+               <NavLink href="/admin/tabungan" icon={PiggyBank} label="Tabungan" />
+               <NavLink href="/admin/riwayat-transaksi" icon={History} label="Riwayat Transaksi" />
           </CardContent>
       </Card>
 
