@@ -1,11 +1,13 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, LogOut } from "lucide-react";
+import { LayoutDashboard, LogOut, User, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+  { href: "/admin/teachers", icon: Users, label: "Guru" },
+  { href: "/admin/students", icon: User, label: "Siswa" },
 ];
 
 export function BottomNav() {
@@ -18,7 +20,7 @@ export function BottomNav() {
 
   return (
     <footer className="fixed bottom-0 left-0 z-50 w-full h-16 bg-card border-t">
-      <div className="grid h-full grid-cols-2 max-w-lg mx-auto font-medium">
+      <div className="grid h-full grid-cols-4 max-w-lg mx-auto font-medium">
         {navItems.map((item) => (
           <Link
             key={item.href}

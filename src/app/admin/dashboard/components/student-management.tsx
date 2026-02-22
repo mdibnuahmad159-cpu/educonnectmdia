@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { MoreHorizontal, PlusCircle } from "lucide-react";
 import { useCollection, useFirestore } from "@/firebase";
 import { addStudent, updateStudent, deleteStudent } from "@/lib/firebase-helpers";
@@ -32,18 +32,12 @@ import type { Student } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { Firestore } from "firebase/firestore";
 
-export function StudentManagement({ isActive }: { isActive: boolean }) {
+export function StudentManagement() {
   const { data: students, loading } = useCollection<Student>("students");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const firestore = useFirestore() as Firestore;
   const { toast } = useToast();
-
-  useEffect(() => {
-    if (!isActive) {
-      setIsFormOpen(false);
-    }
-  }, [isActive]);
 
   const handleAdd = () => {
     setSelectedStudent(null);
