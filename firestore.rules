@@ -131,13 +131,13 @@ service cloud.firestore {
      * @description Teacher profiles. Only admins can create/delete. Teachers can read and update their own profile.
      * @path /teachers/{teacherId}
      * @allow (get, update) A teacher with auth.uid=`teacherId` accessing their own document.
-     * @deny (list) Any user trying to list all teachers.
+     * @allow (list) An admin listing all teachers for management purposes.
      * @deny (create) A teacher trying to create their own profile.
      * @principle Restricts access to a user's own data tree and enforces admin-only account creation.
      */
     match /teachers/{teacherId} {
       allow get: if isAdmin() || isOwner(teacherId);
-      allow list: if false; // Disallow listing all teachers for privacy
+      allow list: if isAdmin();
       allow create: if isOwner(teacherId);
       allow update: if (isAdmin() || isOwner(teacherId)) && isExistingDoc();
       allow delete: if isAdmin() && isExistingDoc();
