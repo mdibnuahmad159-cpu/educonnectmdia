@@ -1,20 +1,20 @@
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
-import { AdminSidebar } from "./components/admin-sidebar";
 import { ReactNode } from "react";
+import { BottomNav } from "./components/bottom-nav";
+import { BookOpenCheck } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
-    <SidebarProvider>
-      <AdminSidebar />
-      <SidebarInset>
-        <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
-          <SidebarTrigger className="md:hidden"/>
-          <h1 className="text-xl font-semibold font-headline">Admin Dashboard</h1>
-        </header>
-        <main className="p-4 sm:px-6 sm:py-0">
-            {children}
-        </main>
-      </SidebarInset>
-    </SidebarProvider>
+    <div className="flex flex-col min-h-screen bg-background">
+      <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background px-4 sm:px-6">
+        <div className="flex items-center gap-2 text-primary">
+            <BookOpenCheck className="h-6 w-6" />
+            <h1 className="text-lg font-semibold font-headline">EduConnect Admin</h1>
+        </div>
+      </header>
+      <main className="flex-1 p-4 pb-20 sm:px-6">
+          {children}
+      </main>
+      <BottomNav />
+    </div>
   );
 }
