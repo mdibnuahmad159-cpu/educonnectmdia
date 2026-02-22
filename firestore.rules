@@ -6,11 +6,6 @@
  * Administrative users, designated by a development-only mechanism, have global privileges.
  * Regular users (Teachers, Parents) have explicit, limited permissions based on their role and direct relationships to data.
  * The default security posture is 'deny all', with permissions being explicitly and granularly granted.
- *
- * ## Admin Access (DEVELOPMENT ONLY)
- * For development convenience, any user signed in via the 'anonymous' provider is granted admin rights.
- * This is NOT secure for production and must be replaced with a robust role-based system
- * (e.g., custom claims or a user roles collection) before deployment.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -44,12 +39,12 @@ service cloud.firestore {
     }
 
     /**
-     * Checks if the requesting user has administrative privileges.
-     * DEV ONLY: Grants admin rights based on the sign-in provider.
-     * In this app's dev flow, the admin login is identified as the 'custom' provider.
+     * DEV ONLY: Grants admin rights to anonymous users for easier dev setup.
+     * The client-side "Admin Login" flow uses `signInAnonymously`.
+     * This is NOT secure for production.
      */
     function isAdmin() {
-      return request.auth != null && request.auth.token.firebase.sign_in_provider == 'custom';
+      return request.auth != null && request.auth.token.firebase.sign_in_provider == 'anonymous';
     }
 
     /**
@@ -78,6 +73,7 @@ service cloud.firestore {
      * Verifies that the user's UID is in the denormalized parentUids array.
      */
     function isParentOfStudent(studentDoc) {
+      // This rule requires that the student document has a 'parentUids' array field.
       return request.auth.uid in studentDoc.data.parentUids;
     }
 
@@ -87,6 +83,7 @@ service cloud.firestore {
      * assigned class IDs and checks if the student's class ID is in that list.
      */
     function isTeacherOfStudent(studentDoc) {
+      // This rule requires the teacher's document to have 'classIds' array field.
       let teacherProfile = get(/databases/$(database)/documents/teachers/$(request.auth.uid));
       return teacherProfile != null && studentDoc.data.classId in teacherProfile.data.classIds;
     }
@@ -96,66 +93,64 @@ service cloud.firestore {
     // Collection Rules
     // =====================================================================
 
-    // This collection is not actively used in the development admin flow, but is kept for future, more secure implementations.
+    // This collection is not used in the dev flow, but is a placeholder for a more secure production setup.
     match /roles_admin/{adminUid} {
       allow read, write: if false;
     }
 
     /**
-     * @description Teacher profiles. Only admins can create/delete. Teachers can read and update their own profile.
+     * @description Teacher profiles. Admins have full CRUD. Teachers can read/update their own profile.
      * @path /teachers/{teacherId}
      */
     match /teachers/{teacherId} {
       allow get: if isAdmin() || isOwner(teacherId);
       allow list: if isAdmin();
-      allow create: if isAdmin() || isOwner(teacherId);
+      allow create: if isAdmin();
       allow update: if (isAdmin() || isOwner(teacherId)) && isExistingDoc();
       allow delete: if isAdmin() && isExistingDoc();
     }
 
     /**
-     * @description Parent profiles. Only admins can create/delete. Parents can read and update their own profile.
+     * @description Parent profiles. Admins have full CRUD. Parents can read/update their own profile.
      * @path /parents/{parentId}
      */
     match /parents/{parentId} {
       allow get: if isAdmin() || isOwner(parentId);
-      allow list: if false; // Disallow listing all parents for privacy
+      allow list: if isAdmin();
       allow create: if isAdmin();
       allow update: if (isAdmin() || isOwner(parentId)) && isExistingDoc();
       allow delete: if isAdmin() && isExistingDoc();
     }
 
     /**
-     * @description Student records. Admins have full access. Parents and teachers have read-only access based on their relationship.
+     * @description Student records. Admins have full CRUD. Parents and teachers have read access based on their relationship.
      * @path /students/{studentId}
      */
     match /students/{studentId} {
       allow get: if isAdmin() || isParentOfStudent(resource) || isTeacherOfStudent(resource);
-      allow list: if isAdmin() || isTeacher() || isParent(); // Allows queries, which are then secured by the 'get' rule.
+      allow list: if isAdmin() || isTeacher() || isParent(); // Query security is enforced by `get` rule on each doc.
       allow create: if isAdmin();
       allow update: if isAdmin() && isExistingDoc();
       allow delete: if isAdmin() && isExistingDoc();
     }
 
     /**
-     * @description Class details. Publicly readable by authenticated users. Writable only by admins or the assigned homeroom teacher.
+     * @description Class details. Admins have full CRUD. Read is public for signed-in users. Homeroom teachers can update.
      * @path /classes/{classId}
      */
     match /classes/{classId} {
-      allow get: if isSignedIn();
-      allow list: if isSignedIn();
+      allow get, list: if isAdmin() || isSignedIn();
       allow create: if isAdmin();
       allow update: if (isAdmin() || isHomeroomTeacher(resource)) && isExistingDoc();
       allow delete: if isAdmin() && isExistingDoc();
     }
 
     /**
-     * @description Academic subject details. Publicly readable reference data. Writable only by admins.
+     * @description Academic subject details. Admins have full CRUD. Read is public for signed-in users.
      * @path /subjects/{subjectId}
      */
     match /subjects/{subjectId} {
-      allow get: if isSignedIn();
-      allow list: if isSignedIn();
+      allow get, list: if isAdmin() || isSignedIn();
       allow create: if isAdmin();
       allow update: if isAdmin() && isExistingDoc();
       allow delete: if isAdmin() && isExistingDoc();
