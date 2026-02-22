@@ -26,6 +26,13 @@ import { Input } from "@/components/ui/input";
 import type { Teacher } from "@/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const formSchema = z.object({
   name: z.string().min(1, "Nama harus diisi"),
@@ -39,6 +46,17 @@ const formSchema = z.object({
   alamat: z.string().optional(),
   dokumenUrl: z.string().url("URL tidak valid").optional().or(z.literal('')),
 });
+
+const jabatanOptions = [
+  "Pengasuh",
+  "Pengawas",
+  "Kepala Madrasah",
+  "Wakil Kepala Madrasah",
+  "Sekretaris",
+  "Bendahara",
+  ...Array.from({ length: 7 }, (_, i) => `Wali Kelas ${i}`),
+  "Guru",
+];
 
 type TeacherFormProps = {
   isOpen: boolean;
@@ -130,7 +148,20 @@ export function TeacherForm({ isOpen, setIsOpen, teacher, onSave }: TeacherFormP
                 <FormField control={form.control} name="jabatan" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Jabatan</FormLabel>
-                    <FormControl><Input {...field} /></FormControl>
+                     <Select onValueChange={field.onChange} value={field.value || ''} defaultValue={field.value}>
+                        <FormControl>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Pilih jabatan" />
+                        </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                        {jabatanOptions.map((option) => (
+                            <SelectItem key={option} value={option}>
+                            {option}
+                            </SelectItem>
+                        ))}
+                        </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )} />

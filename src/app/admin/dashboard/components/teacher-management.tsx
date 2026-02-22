@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { PlusCircle } from "lucide-react";
 import { useCollection, useAuth, useFirestore } from "@/firebase";
 import { addTeacher, updateTeacher, deleteTeacher } from "@/lib/firebase-helpers";
@@ -36,6 +36,33 @@ export function TeacherManagement() {
   const { toast } = useToast();
   const auth = useAuth() as Auth;
   const firestore = useFirestore() as Firestore;
+
+  const jabatanOrder = useMemo(() => [
+    'Pengasuh',
+    'Pengawas',
+    'Kepala Madrasah',
+    'Wakil Kepala Madrasah',
+    'Sekretaris',
+    'Bendahara',
+    ...Array.from({ length: 7 }, (_, i) => `Wali Kelas ${6 - i}`), // Wali Kelas 6, 5, ... 0
+    'Guru',
+  ], []);
+
+  const sortedTeachers = useMemo(() => {
+    if (!teachers) return [];
+    return [...teachers].sort((a, b) => {
+      const indexA = jabatanOrder.indexOf(a.jabatan || '');
+      const indexB = jabatanOrder.indexOf(b.jabatan || '');
+      const finalIndexA = indexA === -1 ? Infinity : indexA;
+      const finalIndexB = indexB === -1 ? Infinity : indexB;
+      
+      if (finalIndexA === finalIndexB) {
+        return a.name.localeCompare(b.name);
+      }
+
+      return finalIndexA - finalIndexB;
+    });
+  }, [teachers, jabatanOrder]);
 
   const handleAdd = () => {
     setSelectedTeacher(null);
@@ -115,7 +142,7 @@ export function TeacherManagement() {
             <TableBody>
               {loading ? (
                 <TableRow><TableCell colSpan={5} className="text-center">Memuat data...</TableCell></TableRow>
-              ) : (teachers.map((teacher, index) => (
+              ) : (sortedTeachers.map((teacher, index) => (
                 <TableRow key={teacher.id}>
                   <TableCell>{index + 1}</TableCell>
                   <TableCell className="font-medium">{teacher.name}</TableCell>
