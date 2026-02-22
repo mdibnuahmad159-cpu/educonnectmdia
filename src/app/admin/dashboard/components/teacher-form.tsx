@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect } from "react";
@@ -23,11 +24,20 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import type { Teacher } from "@/types";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
 
 const formSchema = z.object({
   name: z.string().min(1, "Nama harus diisi"),
   email: z.string().email("Email tidak valid"),
   password: z.string().optional(),
+  jabatan: z.string().optional(),
+  noWa: z.string().optional(),
+  nik: z.string().optional(),
+  pendidikan: z.string().optional(),
+  ponpes: z.string().optional(),
+  alamat: z.string().optional(),
+  dokumenUrl: z.string().url("URL tidak valid").optional().or(z.literal('')),
 });
 
 type TeacherFormProps = {
@@ -46,18 +56,33 @@ export function TeacherForm({ isOpen, setIsOpen, teacher, onSave }: TeacherFormP
         message: "Password minimal 6 karakter",
         path: ["password"],
     })),
-    defaultValues: { name: "", email: "", password: "" },
+    defaultValues: {
+      name: "", email: "", password: "", jabatan: "", noWa: "", nik: "",
+      pendidikan: "", ponpes: "", alamat: "", dokumenUrl: "",
+    },
   });
   
   useEffect(() => {
-    if (teacher) {
-      form.reset({
-        name: teacher.name,
-        email: teacher.email,
-        password: "",
-      });
-    } else {
-      form.reset({ name: "", email: "", password: "" });
+    if (isOpen) {
+      if (teacher) {
+        form.reset({
+          name: teacher.name,
+          email: teacher.email,
+          password: "",
+          jabatan: teacher.jabatan || "",
+          noWa: teacher.noWa || "",
+          nik: teacher.nik || "",
+          pendidikan: teacher.pendidikan || "",
+          ponpes: teacher.ponpes || "",
+          alamat: teacher.alamat || "",
+          dokumenUrl: teacher.dokumenUrl || "",
+        });
+      } else {
+        form.reset({
+          name: "", email: "", password: "", jabatan: "", noWa: "", nik: "",
+          pendidikan: "", ponpes: "", alamat: "", dokumenUrl: "",
+        });
+      }
     }
   }, [teacher, form, isOpen]);
   
@@ -70,7 +95,7 @@ export function TeacherForm({ isOpen, setIsOpen, teacher, onSave }: TeacherFormP
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{teacher ? "Edit Guru" : "Tambah Guru"}</DialogTitle>
           <DialogDescription>
@@ -78,47 +103,82 @@ export function TeacherForm({ isOpen, setIsOpen, teacher, onSave }: TeacherFormP
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3 py-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nama Lengkap</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input type="email" {...field} disabled={!!teacher} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password</FormLabel>
-                  <FormControl>
-                    <Input type="password" placeholder={teacher ? 'Isi untuk mengubah' : 'Wajib diisi'} {...field} />
-                  </FormControl>
-                   <FormMessage />
-                </FormItem>
-              )}
-            />
-            <DialogFooter>
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <ScrollArea className="h-96 pr-6">
+              <div className="space-y-3 py-4">
+                <FormField control={form.control} name="name" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nama Lengkap</FormLabel>
+                    <FormControl><Input {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="email" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl><Input type="email" {...field} disabled={!!teacher} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="password" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl><Input type="password" placeholder={teacher ? 'Isi untuk mengubah' : 'Wajib diisi'} {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="jabatan" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Jabatan</FormLabel>
+                    <FormControl><Input {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="noWa" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>No. WA</FormLabel>
+                    <FormControl><Input type="tel" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="nik" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>NIK</FormLabel>
+                    <FormControl><Input {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="pendidikan" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Pendidikan</FormLabel>
+                    <FormControl><Input {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="ponpes" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Latar Belakang Ponpes</FormLabel>
+                    <FormControl><Input {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="alamat" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Alamat</FormLabel>
+                    <FormControl><Textarea className="h-24" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="dokumenUrl" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>URL Dokumen</FormLabel>
+                    <FormControl><Input placeholder="https://..." {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              </div>
+            </ScrollArea>
+            <DialogFooter className="pt-4">
               <Button type="submit" size="sm">Simpan</Button>
             </DialogFooter>
           </form>

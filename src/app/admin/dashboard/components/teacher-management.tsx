@@ -1,7 +1,8 @@
+
 "use client";
 
 import { useState } from "react";
-import { MoreHorizontal, PlusCircle } from "lucide-react";
+import { PlusCircle } from "lucide-react";
 import { useCollection, useAuth, useFirestore } from "@/firebase";
 import { addTeacher, updateTeacher, deleteTeacher } from "@/lib/firebase-helpers";
 import { Button } from "@/components/ui/button";
@@ -20,14 +21,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { TeacherForm } from "./teacher-form";
+import { TeacherDetail } from "./teacher-detail"; // New component
 import type { Teacher } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { Auth } from "firebase/auth";
@@ -36,6 +31,7 @@ import { Firestore } from "firebase/firestore";
 export function TeacherManagement() {
   const { data: teachers, loading } = useCollection<Teacher>("teachers");
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
   const { toast } = useToast();
   const auth = useAuth() as Auth;
@@ -49,6 +45,11 @@ export function TeacherManagement() {
   const handleEdit = (teacher: Teacher) => {
     setSelectedTeacher(teacher);
     setIsFormOpen(true);
+  };
+
+  const handleDetail = (teacher: Teacher) => {
+    setSelectedTeacher(teacher);
+    setIsDetailOpen(true);
   };
 
   const handleDelete = async (id: string) => {
@@ -65,10 +66,8 @@ export function TeacherManagement() {
     if (!auth || !firestore) return;
     try {
       if (selectedTeacher) {
-        const { password, ...teacherToUpdate } = teacherData;
-        await updateTeacher(firestore, selectedTeacher.id, teacherToUpdate);
+        await updateTeacher(firestore, selectedTeacher.id, teacherData);
         toast({ title: "Guru Diperbarui", description: "Data guru berhasil diperbarui." });
-        // NOTE: Password changes would be handled separately in a real app
       } else {
         if (!teacherData.password) {
             toast({ variant: "destructive", title: "Gagal Menyimpan", description: "Password harus diisi untuk guru baru." });
@@ -106,46 +105,50 @@ export function TeacherManagement() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-[40px]">No.</TableHead>
                 <TableHead>Nama</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>
-                  <span className="sr-only">Aksi</span>
-                </TableHead>
+                <TableHead>Jabatan</TableHead>
+                <TableHead>No. WA</TableHead>
+                <TableHead className="text-right">Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
-                <TableRow><TableCell colSpan={3}>Memuat data...</TableCell></TableRow>
-              ) : (teachers.map((teacher) => (
+                <TableRow><TableCell colSpan={5} className="text-center">Memuat data...</TableCell></TableRow>
+              ) : (teachers.map((teacher, index) => (
                 <TableRow key={teacher.id}>
+                  <TableCell>{index + 1}</TableCell>
                   <TableCell className="font-medium">{teacher.name}</TableCell>
-                  <TableCell>{teacher.email}</TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button aria-haspopup="true" size="icon" variant="ghost">
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Toggle menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Aksi</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => handleEdit(teacher)}>Edit</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDelete(teacher.id)}>Hapus</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                  <TableCell>{teacher.jabatan || '-'}</TableCell>
+                  <TableCell>{teacher.noWa || '-'}</TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="outline" size="xs" onClick={() => handleDetail(teacher)}>
+                        Detail
+                    </Button>
                   </TableCell>
                 </TableRow>
               )))}
+              {!loading && teachers.length === 0 && (
+                <TableRow><TableCell colSpan={5} className="text-center">Belum ada data guru.</TableCell></TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
+
       <TeacherForm 
         isOpen={isFormOpen} 
         setIsOpen={setIsFormOpen} 
         teacher={selectedTeacher}
         onSave={handleSave}
+      />
+      
+      <TeacherDetail
+        isOpen={isDetailOpen}
+        setIsOpen={setIsDetailOpen}
+        teacher={selectedTeacher}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
       />
     </>
   );

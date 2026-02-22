@@ -1,3 +1,4 @@
+
 import {
   Auth,
   createUserWithEmailAndPassword,
@@ -7,6 +8,7 @@ import {
   doc,
   setDoc,
   deleteDoc,
+  serverTimestamp
 } from 'firebase/firestore';
 import type { Teacher, Student } from '@/types';
 
@@ -33,18 +35,22 @@ export async function deleteStudent(db: Firestore, studentId: string) {
 export async function addTeacher(auth: Auth, db: Firestore, teacher: Omit<Teacher, 'id'> & {password: string}) {
     const userCredential = await createUserWithEmailAndPassword(auth, teacher.email, teacher.password);
     const user = userCredential.user;
+    
+    const { password, ...teacherData } = teacher;
+
     const teacherRef = doc(db, 'teachers', user.uid);
     await setDoc(teacherRef, {
+        ...teacherData,
         id: user.uid,
-        name: teacher.name,
-        email: teacher.email
+        createdAt: serverTimestamp()
     });
     return user.uid;
 }
 
 export async function updateTeacher(db: Firestore, teacherId: string, teacher: Partial<Omit<Teacher, 'id'>>) {
+    const { password, ...teacherData } = teacher as any;
     const teacherRef = doc(db, 'teachers', teacherId);
-    await setDoc(teacherRef, teacher, { merge: true });
+    await setDoc(teacherRef, { ...teacherData, updatedAt: serverTimestamp() }, { merge: true });
 }
 
 export async function deleteTeacher(db: Firestore, teacherId: string) {

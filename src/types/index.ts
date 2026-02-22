@@ -1,7 +1,15 @@
+
 export type Teacher = {
-  id: string;
+  id: string; // Firebase Auth UID
   name: string;
   email: string;
+  jabatan?: string;
+  noWa?: string;
+  nik?: string;
+  pendidikan?: string;
+  ponpes?: string;
+  alamat?: string;
+  dokumenUrl?: string;
 };
 
 export type Student = {
