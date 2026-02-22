@@ -65,7 +65,7 @@ service cloud.firestore {
      * Admin status is granted by the existence of a document for the user in the roles_admin collection.
      */
     function isAdmin() {
-      return request.auth.uid == 'kXgmDOROJiMpTRIrR5R1c5Ea0mF2' || exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+      return exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
     }
 
     /**
