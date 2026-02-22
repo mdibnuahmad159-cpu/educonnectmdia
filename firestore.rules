@@ -39,13 +39,15 @@ service cloud.firestore {
     }
 
     /**
-     * DEV ONLY: Grants admin rights for easier dev setup.
-     * The admin login flow uses a method that Firebase Auth identifies as the 'custom' provider.
-     * This is a reliable way to identify development admins based on the observed behavior.
-     * This is NOT secure for production.
+     * DEV-ONLY: Checks if the user is an admin.
+     * This method identifies an admin as any authenticated user who does NOT have an
+     * email address in their authentication token. This works reliably for the
+     * "Login as Admin" button, which uses anonymous sign-in.
+     * This is NOT secure for production. A production app should use custom claims
+     * or a database role check.
      */
     function isAdmin() {
-      return isSignedIn() && request.auth.token.firebase.sign_in_provider == 'custom';
+      return isSignedIn() && request.auth.token.email == null;
     }
 
     /**
@@ -127,7 +129,7 @@ service cloud.firestore {
     match /students/{studentId} {
       allow read, write: if isAdmin();
       allow get: if isParentOfStudent(resource) || isTeacherOfStudent(resource);
-      allow list: if isTeacher() || isParent(); // Query security is enforced by `get` rule on each doc.
+      allow list: if isTeacher() || isParent() || isAdmin();
       allow create: if isAdmin();
     }
 
