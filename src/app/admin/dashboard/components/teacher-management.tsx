@@ -2,8 +2,8 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { PlusCircle } from "lucide-react";
-import { useCollection, useAuth, useFirestore, useMemoFirebase } from "@/firebase";
+import { PlusCircle, AlertTriangle } from "lucide-react";
+import { useCollection, useAuth, useFirestore, useMemoFirebase, useUser } from "@/firebase";
 import { addTeacher, updateTeacher, deleteTeacher } from "@/lib/firebase-helpers";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,6 +12,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter
 } from "@/components/ui/card";
 import {
   Table,
@@ -31,7 +32,8 @@ import { collection, Firestore } from "firebase/firestore";
 export function TeacherManagement() {
   const firestore = useFirestore() as Firestore;
   const teachersCollection = useMemoFirebase(() => firestore ? collection(firestore, 'teachers') : null, [firestore]);
-  const { data: teachers, loading } = useCollection<Teacher>(teachersCollection);
+  const { data: teachers, loading, error } = useCollection<Teacher>(teachersCollection);
+  const { user } = useUser();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
@@ -113,6 +115,37 @@ export function TeacherManagement() {
     }
   };
 
+  if (error && error.message.includes("Missing or insufficient permissions")) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <AlertTriangle className="text-destructive" />
+            Akses Ditolak
+          </CardTitle>
+          <CardDescription>
+            Anda tidak memiliki izin untuk melihat data guru.
+          </CardDescription>
+        </CardHeader>
+        {user?.isAnonymous && (
+          <>
+            <CardContent>
+              <p className="text-sm">
+                Untuk mendapatkan akses admin penuh, Anda perlu menambahkan UID Anda ke koleksi `roles_admin` di database Firestore.
+              </p>
+            </CardContent>
+            <CardFooter className="flex-col items-start gap-2 rounded-md border bg-muted p-3 text-sm">
+                <p className="font-semibold">UID Admin Anda:</p>
+                <code className="rounded-sm bg-muted-foreground/20 px-2 py-1 text-xs">{user.uid}</code>
+                <p className="text-muted-foreground">
+                  Buat dokumen baru di koleksi `roles_admin` dengan ID dokumen sama dengan UID di atas. Isi dokumen bisa kosong.
+                </p>
+            </CardFooter>
+          </>
+        )}
+      </Card>
+    );
+  }
 
   return (
     <>

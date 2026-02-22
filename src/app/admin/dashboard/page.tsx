@@ -1,9 +1,10 @@
+
 "use client";
 
 import Link from "next/link";
-import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
+import { useCollection, useFirestore, useMemoFirebase, useUser } from "@/firebase";
 import { collection } from "firebase/firestore";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { 
   Tabs,
   TabsContent,
@@ -22,7 +23,8 @@ import {
   GraduationCap,
   CreditCard,
   PiggyBank,
-  History
+  History,
+  AlertTriangle
 } from "lucide-react";
 import type { Teacher, Student } from "@/types";
 
@@ -41,8 +43,39 @@ export default function DashboardPage() {
   const teachersCollection = useMemoFirebase(() => firestore ? collection(firestore, "teachers") : null, [firestore]);
   const studentsCollection = useMemoFirebase(() => firestore ? collection(firestore, "students") : null, [firestore]);
   
-  const { data: teachers, loading: loadingTeachers } = useCollection<Teacher>(teachersCollection);
-  const { data: students, loading: loadingStudents } = useCollection<Student>(studentsCollection);
+  const { data: teachers, loading: loadingTeachers, error: teachersError } = useCollection<Teacher>(teachersCollection);
+  const { data: students, loading: loadingStudents, error: studentsError } = useCollection<Student>(studentsCollection);
+  const { user } = useUser();
+
+  const hasPermissionError = teachersError || studentsError;
+
+  if (hasPermissionError && user?.isAnonymous) {
+      return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <AlertTriangle className="text-destructive" />
+                    Akses Admin Tertunda
+                </CardTitle>
+                <CardDescription>
+                    Anda berhasil login sebagai admin, namun perlu satu langkah lagi untuk mendapatkan hak akses penuh.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <p className="text-sm">
+                Untuk mengaktifkan semua fitur admin, Anda perlu menambahkan UID Anda ke dalam daftar admin di database.
+                </p>
+            </CardContent>
+            <CardFooter className="flex-col items-start gap-2 rounded-md border bg-muted p-3 text-sm">
+                <p className="font-semibold">UID Admin Anda:</p>
+                <code className="rounded-sm bg-muted-foreground/20 px-2 py-1 text-xs">{user.uid}</code>
+                <p className="text-muted-foreground">
+                    Salin UID di atas, lalu buat dokumen baru di koleksi `roles_admin` di Firestore dengan ID dokumen sama dengan UID tersebut. Anda bisa membiarkan isi dokumennya kosong.
+                </p>
+            </CardFooter>
+        </Card>
+      )
+  }
 
   return (
     <div className="grid gap-4">
