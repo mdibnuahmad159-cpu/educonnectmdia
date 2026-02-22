@@ -3,7 +3,7 @@
 
 import { useState, useMemo } from "react";
 import { PlusCircle } from "lucide-react";
-import { useCollection, useAuth, useFirestore } from "@/firebase";
+import { useCollection, useAuth, useFirestore, useMemoFirebase } from "@/firebase";
 import { addTeacher, updateTeacher, deleteTeacher } from "@/lib/firebase-helpers";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,16 +26,17 @@ import { TeacherDetail } from "./teacher-detail"; // New component
 import type { Teacher } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { Auth } from "firebase/auth";
-import { Firestore } from "firebase/firestore";
+import { collection, Firestore } from "firebase/firestore";
 
 export function TeacherManagement() {
-  const { data: teachers, loading } = useCollection<Teacher>("teachers");
+  const firestore = useFirestore() as Firestore;
+  const teachersCollection = useMemoFirebase(() => firestore ? collection(firestore, 'teachers') : null, [firestore]);
+  const { data: teachers, loading } = useCollection<Teacher>(teachersCollection);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
   const { toast } = useToast();
   const auth = useAuth() as Auth;
-  const firestore = useFirestore() as Firestore;
 
   const jabatanOrder = useMemo(() => [
     'Pengasuh',
@@ -144,7 +145,8 @@ export function TeacherManagement() {
             <TableBody>
               {loading ? (
                 <TableRow><TableCell colSpan={5} className="text-center">Memuat data...</TableCell></TableRow>
-              ) : (sortedTeachers.map((teacher, index) => (
+              ) : sortedTeachers.length > 0 ? (
+                sortedTeachers.map((teacher, index) => (
                 <TableRow key={teacher.id}>
                   <TableCell>{index + 1}</TableCell>
                   <TableCell className="font-medium">{teacher.name}</TableCell>
@@ -156,8 +158,7 @@ export function TeacherManagement() {
                     </Button>
                   </TableCell>
                 </TableRow>
-              )))}
-              {!loading && teachers.length === 0 && (
+              ))) : (
                 <TableRow><TableCell colSpan={5} className="text-center">Belum ada data guru.</TableCell></TableRow>
               )}
             </TableBody>

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { MoreHorizontal, PlusCircle } from "lucide-react";
-import { useCollection, useFirestore } from "@/firebase";
+import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { addStudent, updateStudent, deleteStudent } from "@/lib/firebase-helpers";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,13 +30,14 @@ import {
 import { StudentForm } from "./student-form";
 import type { Student } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { Firestore } from "firebase/firestore";
+import { collection, Firestore } from "firebase/firestore";
 
 export function StudentManagement() {
-  const { data: students, loading } = useCollection<Student>("students");
+  const firestore = useFirestore() as Firestore;
+  const studentsCollection = useMemoFirebase(() => firestore ? collection(firestore, "students") : null, [firestore]);
+  const { data: students, loading } = useCollection<Student>(studentsCollection);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
-  const firestore = useFirestore() as Firestore;
   const { toast } = useToast();
 
   const handleAdd = () => {
@@ -108,8 +109,9 @@ export function StudentManagement() {
             </TableHeader>
             <TableBody>
               {loading ? (
-                <TableRow><TableCell colSpan={4}>Memuat data...</TableCell></TableRow>
-              ) : (students.map((student) => (
+                <TableRow><TableCell colSpan={4} className="text-center">Memuat data...</TableCell></TableRow>
+              ) : students && students.length > 0 ? (
+                students.map((student) => (
                 <TableRow key={student.id}>
                   <TableCell className="font-medium">{student.id}</TableCell>
                   <TableCell>{student.name}</TableCell>
@@ -130,7 +132,13 @@ export function StudentManagement() {
                     </DropdownMenu>
                   </TableCell>
                 </TableRow>
-              )))}
+              ))) : (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center">
+                    Belum ada data siswa.
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>

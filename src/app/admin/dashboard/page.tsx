@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useCollection } from "@/firebase";
+import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
+import { collection } from "firebase/firestore";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   Tabs,
@@ -36,8 +37,12 @@ const NavLink = ({ href, icon: Icon, label }: { href: string; icon: React.Elemen
 );
 
 export default function DashboardPage() {
-  const { data: teachers, loading: loadingTeachers } = useCollection<Teacher>("teachers");
-  const { data: students, loading: loadingStudents } = useCollection<Student>("students");
+  const firestore = useFirestore();
+  const teachersCollection = useMemoFirebase(() => firestore ? collection(firestore, "teachers") : null, [firestore]);
+  const studentsCollection = useMemoFirebase(() => firestore ? collection(firestore, "students") : null, [firestore]);
+  
+  const { data: teachers, loading: loadingTeachers } = useCollection<Teacher>(teachersCollection);
+  const { data: students, loading: loadingStudents } = useCollection<Student>(studentsCollection);
 
   return (
     <div className="grid gap-4">
@@ -49,7 +54,7 @@ export default function DashboardPage() {
                 </CardHeader>
                 <CardContent>
                 <div className="text-xl font-bold">
-                    {loadingTeachers ? "..." : teachers.length}
+                    {loadingTeachers ? "..." : teachers?.length ?? 0}
                 </div>
                 <p className="text-xs text-muted-foreground">
                     Jumlah guru yang terdaftar
@@ -63,7 +68,7 @@ export default function DashboardPage() {
                 </CardHeader>
                 <CardContent>
                 <div className="text-xl font-bold">
-                    {loadingStudents ? "..." : students.length}
+                    {loadingStudents ? "..." : students?.length ?? 0}
                 </div>
                 <p className="text-xs text-muted-foreground">
                     Jumlah siswa yang terdaftar
