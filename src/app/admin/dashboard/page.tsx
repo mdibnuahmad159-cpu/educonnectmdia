@@ -51,13 +51,19 @@ export default function DashboardPage() {
           <CardContent className="grid gap-2">
                 <Button asChild variant="outline" size="xs" className="justify-between">
                   <Link href="/admin/teachers">
-                      <span>Data Guru</span>
+                      <span className="flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        <span>Data Guru</span>
+                      </span>
                       <ChevronRight className="h-4 w-4" />
                   </Link>
               </Button>
                 <Button asChild variant="outline" size="xs" className="justify-between">
                   <Link href="/admin/students">
-                      <span>Data Siswa</span>
+                      <span className="flex items-center gap-2">
+                        <User className="h-4 w-4" />
+                        <span>Data Siswa</span>
+                      </span>
                       <ChevronRight className="h-4 w-4" />
                   </Link>
               </Button>
