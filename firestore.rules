@@ -138,7 +138,7 @@ service cloud.firestore {
     match /teachers/{teacherId} {
       allow get: if isAdmin() || isOwner(teacherId);
       allow list: if false; // Disallow listing all teachers for privacy
-      allow create: if isAdmin();
+      allow create: if isSignedIn();
       allow update: if (isAdmin() || isOwner(teacherId)) && isExistingDoc();
       allow delete: if isAdmin() && isExistingDoc();
     }

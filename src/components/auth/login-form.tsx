@@ -4,6 +4,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/firebase";
+import { signInAnonymously, signInWithEmailAndPassword } from "firebase/auth";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -44,6 +46,7 @@ const parentSchema = z.object({
 export function LoginForm() {
   const router = useRouter();
   const { toast } = useToast();
+  const auth = useAuth();
 
   const adminForm = useForm<z.infer<typeof adminSchema>>({
     resolver: zodResolver(adminSchema),
@@ -60,14 +63,23 @@ export function LoginForm() {
     defaultValues: { nis: "", password: "" },
   });
 
-  const handleAdminSubmit = (values: z.infer<typeof adminSchema>) => {
-    // Mock authentication
+  const handleAdminSubmit = async (values: z.infer<typeof adminSchema>) => {
+    if (!auth) return;
     if (values.password === "useAdmin") {
-      toast({
-        title: "Login Berhasil",
-        description: "Selamat datang, Admin!",
-      });
-      router.push("/admin/dashboard");
+      try {
+        await signInAnonymously(auth);
+        toast({
+          title: "Login Berhasil",
+          description: "Selamat datang, Admin!",
+        });
+        router.push("/admin/dashboard");
+      } catch (error: any) {
+         toast({
+          variant: "destructive",
+          title: "Login Gagal",
+          description: `Gagal memulai sesi admin: ${error.message}`,
+        });
+      }
     } else {
       toast({
         variant: "destructive",
@@ -77,13 +89,22 @@ export function LoginForm() {
     }
   };
 
-  const handleTeacherSubmit = (values: z.infer<typeof teacherSchema>) => {
-    // Mock authentication
-    console.log("Teacher login attempt:", values);
-    toast({
-      title: "Fitur Dalam Pengembangan",
-      description: "Login guru akan segera tersedia.",
-    });
+  const handleTeacherSubmit = async (values: z.infer<typeof teacherSchema>) => {
+    if (!auth) return;
+    try {
+      await signInWithEmailAndPassword(auth, values.email, values.password);
+      toast({
+        title: "Login Berhasil",
+        description: "Selamat datang!",
+      });
+      router.push("/admin/dashboard"); // Redirect to a teacher-specific dashboard in the future
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Login Gagal",
+        description: "Email atau password salah.",
+      });
+    }
   };
 
   const handleParentSubmit = (values: z.infer<typeof parentSchema>) => {
