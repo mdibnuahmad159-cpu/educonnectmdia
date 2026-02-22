@@ -62,7 +62,7 @@ export function LoginForm() {
 
   const handleAdminSubmit = (values: z.infer<typeof adminSchema>) => {
     // Mock authentication
-    if (values.password === "admin") {
+    if (values.password === "useAdmin") {
       toast({
         title: "Login Berhasil",
         description: "Selamat datang, Admin!",
