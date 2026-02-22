@@ -93,14 +93,16 @@ export function TeacherManagement() {
     if (!auth || !firestore) return;
     try {
       if (selectedTeacher) {
-        await updateTeacher(firestore, selectedTeacher.id, teacherData);
+        const { id, ...dataToUpdate } = teacherData;
+        await updateTeacher(firestore, selectedTeacher.id, dataToUpdate);
         toast({ title: "Guru Diperbarui", description: "Data guru berhasil diperbarui." });
       } else {
         if (!teacherData.password) {
             toast({ variant: "destructive", title: "Gagal Menyimpan", description: "Password harus diisi untuk guru baru." });
             return;
         }
-        await addTeacher(auth, firestore, teacherData);
+        const { id, ...dataToAdd } = teacherData;
+        await addTeacher(auth, firestore, dataToAdd);
         toast({ title: "Guru Ditambahkan", description: "Data guru baru berhasil ditambahkan." });
       }
       setIsFormOpen(false);
