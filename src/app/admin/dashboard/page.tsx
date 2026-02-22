@@ -12,7 +12,9 @@ import {
   Calendar,
   Mail,
   ClipboardCheck,
-  FileText
+  FileText,
+  School,
+  GraduationCap
 } from "lucide-react";
 import type { Teacher, Student } from "@/types";
 
@@ -125,6 +127,24 @@ export default function DashboardPage() {
                       <span className="flex items-center gap-2">
                         <User className="h-4 w-4" />
                         <span>Data Siswa</span>
+                      </span>
+                      <ChevronRight className="h-4 w-4" />
+                  </Link>
+              </Button>
+              <Button asChild variant="outline" size="xs" className="justify-between">
+                  <Link href="/admin/class-management">
+                      <span className="flex items-center gap-2">
+                        <School className="h-4 w-4" />
+                        <span>Manajemen Kelas</span>
+                      </span>
+                      <ChevronRight className="h-4 w-4" />
+                  </Link>
+              </Button>
+              <Button asChild variant="outline" size="xs" className="justify-between">
+                  <Link href="/admin/alumni">
+                      <span className="flex items-center gap-2">
+                        <GraduationCap className="h-4 w-4" />
+                        <span>Alumni</span>
                       </span>
                       <ChevronRight className="h-4 w-4" />
                   </Link>
