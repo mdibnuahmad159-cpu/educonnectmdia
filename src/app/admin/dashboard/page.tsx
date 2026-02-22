@@ -4,6 +4,12 @@ import Link from "next/link";
 import { useCollection } from "@/firebase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import { 
   Users, 
   User, 
   BookCopy,
@@ -66,41 +72,43 @@ export default function DashboardPage() {
             </Card>
       </div>
       
-      <Card>
-          <CardHeader className="p-3 pb-2">
-              <CardTitle className="text-sm font-medium">Akademik</CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-3 gap-2 p-3 pt-0">
-                <NavLink href="/admin/teachers" icon={Users} label="Data Guru" />
-                <NavLink href="/admin/curriculum" icon={BookCopy} label="Kurikulum" />
-                <NavLink href="/admin/schedule" icon={Calendar} label="Jadwal" />
-                <NavLink href="/admin/letters" icon={Mail} label="Surat" />
-                <NavLink href="/admin/grades" icon={ClipboardCheck} label="Nilai" />
-                <NavLink href="/admin/reports" icon={FileText} label="Rapor" />
-          </CardContent>
-      </Card>
-      
-      <Card>
-          <CardHeader className="p-3 pb-2">
-              <CardTitle className="text-sm font-medium">Siswa</CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-3 gap-2 p-3 pt-0">
-              <NavLink href="/admin/students" icon={User} label="Data Siswa" />
-              <NavLink href="/admin/class-management" icon={School} label="Manajemen Kelas" />
-              <NavLink href="/admin/alumni" icon={GraduationCap} label="Alumni" />
-          </CardContent>
-      </Card>
-      
-      <Card>
-          <CardHeader className="p-3 pb-2">
-              <CardTitle className="text-sm font-medium">Keuangan</CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-3 gap-2 p-3 pt-0">
-               <NavLink href="/admin/spp" icon={CreditCard} label="SPP" />
-               <NavLink href="/admin/tabungan" icon={PiggyBank} label="Tabungan" />
-               <NavLink href="/admin/riwayat-transaksi" icon={History} label="Riwayat Transaksi" />
-          </CardContent>
-      </Card>
+      <Tabs defaultValue="akademik" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="akademik">Akademik</TabsTrigger>
+            <TabsTrigger value="siswa">Siswa</TabsTrigger>
+            <TabsTrigger value="keuangan">Keuangan</TabsTrigger>
+        </TabsList>
+        <TabsContent value="akademik">
+            <Card>
+                <CardContent className="grid grid-cols-3 gap-2 p-3">
+                    <NavLink href="/admin/teachers" icon={Users} label="Data Guru" />
+                    <NavLink href="/admin/curriculum" icon={BookCopy} label="Kurikulum" />
+                    <NavLink href="/admin/schedule" icon={Calendar} label="Jadwal" />
+                    <NavLink href="/admin/letters" icon={Mail} label="Surat" />
+                    <NavLink href="/admin/grades" icon={ClipboardCheck} label="Nilai" />
+                    <NavLink href="/admin/reports" icon={FileText} label="Rapor" />
+                </CardContent>
+            </Card>
+        </TabsContent>
+        <TabsContent value="siswa">
+            <Card>
+                <CardContent className="grid grid-cols-3 gap-2 p-3">
+                    <NavLink href="/admin/students" icon={User} label="Data Siswa" />
+                    <NavLink href="/admin/class-management" icon={School} label="Manajemen Kelas" />
+                    <NavLink href="/admin/alumni" icon={GraduationCap} label="Alumni" />
+                </CardContent>
+            </Card>
+        </TabsContent>
+        <TabsContent value="keuangan">
+            <Card>
+                <CardContent className="grid grid-cols-3 gap-2 p-3">
+                    <NavLink href="/admin/spp" icon={CreditCard} label="SPP" />
+                    <NavLink href="/admin/tabungan" icon={PiggyBank} label="Tabungan" />
+                    <NavLink href="/admin/riwayat-transaksi" icon={History} label="Riwayat Transaksi" />
+                </CardContent>
+            </Card>
+        </TabsContent>
+      </Tabs>
 
     </div>
   );
