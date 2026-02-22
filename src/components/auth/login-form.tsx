@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/firebase";
-import { signInAnonymously, signInWithEmailAndPassword, User } from "firebase/auth";
+import { signInAnonymously, signInWithEmailAndPassword } from "firebase/auth";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -30,6 +30,10 @@ import {
 } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 
+const adminSchema = z.object({
+  password: z.string().min(1, "Password wajib diisi"),
+});
+
 const teacherSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(1, "Password is required"),
@@ -45,6 +49,11 @@ export function LoginForm() {
   const { toast } = useToast();
   const auth = useAuth();
 
+  const adminForm = useForm<z.infer<typeof adminSchema>>({
+    resolver: zodResolver(adminSchema),
+    defaultValues: { password: "" },
+  });
+
   const teacherForm = useForm<z.infer<typeof teacherSchema>>({
     resolver: zodResolver(teacherSchema),
     defaultValues: { email: "", password: "" },
@@ -55,35 +64,38 @@ export function LoginForm() {
     defaultValues: { nis: "", password: "" },
   });
 
-  const showAdminToast = (currentUser: User | null) => {
-    if (currentUser?.isAnonymous) {
-      toast({
-        title: "Login Admin Berhasil",
-        description: `Akses admin sementara diberikan. Lanjutkan ke dasbor untuk instruksi selanjutnya.`,
-        duration: 9000,
-      });
-    }
-  }
-
-  const handleAdminLogin = async () => {
+  const handleAdminSubmit = async (values: z.infer<typeof adminSchema>) => {
     if (!auth) return;
-    try {
-      const userCredential = await signInAnonymously(auth);
-      showAdminToast(userCredential.user);
-      router.push("/admin/dashboard");
-    } catch (error: any) {
-       toast({
+    // This is a simplified, insecure login for development convenience.
+    if (values.password === "useAdmin") {
+      try {
+        await signInAnonymously(auth);
+        toast({
+          title: "Login Admin Berhasil",
+          description: "Anda sekarang memiliki akses admin untuk pengembangan.",
+        });
+        router.push("/admin/dashboard");
+      } catch (error: any) {
+        toast({
+          variant: "destructive",
+          title: "Login Gagal",
+          description: `Gagal memulai sesi admin: ${error.message}`,
+        });
+      }
+    } else {
+      toast({
         variant: "destructive",
         title: "Login Gagal",
-        description: `Gagal memulai sesi admin: ${error.message}`,
+        description: "Password admin salah.",
       });
+      adminForm.reset();
     }
   };
 
   const handleTeacherSubmit = async (values: z.infer<typeof teacherSchema>) => {
     if (!auth) return;
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
+      await signInWithEmailAndPassword(auth, values.email, values.password);
       toast({
         title: "Login Berhasil",
         description: "Selamat datang!",
@@ -119,14 +131,29 @@ export function LoginForm() {
           
           <div className="p-4">
             <TabsContent value="admin">
-              <div className="flex flex-col items-center space-y-4 text-center">
-                <p className="text-sm text-muted-foreground">
-                  Gunakan mode ini untuk mendapatkan akses admin sementara. Anda akan dipandu untuk menyelesaikan penyiapan di dasbor.
-                </p>
-                <Button onClick={handleAdminLogin} className="w-full" size="sm">
-                  Login sebagai Admin
-                </Button>
-              </div>
+                <Form {...adminForm}>
+                  <form onSubmit={adminForm.handleSubmit(handleAdminSubmit)} className="space-y-4">
+                    <p className="text-center text-sm text-muted-foreground">
+                      Gunakan password pengembangan untuk mendapatkan akses admin.
+                    </p>
+                    <FormField
+                      control={adminForm.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Password Admin</FormLabel>
+                          <FormControl>
+                            <Input type="password" placeholder="••••••••" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button type="submit" className="w-full" size="sm">
+                      Login sebagai Admin
+                    </Button>
+                  </form>
+                </Form>
             </TabsContent>
 
             <TabsContent value="teacher">

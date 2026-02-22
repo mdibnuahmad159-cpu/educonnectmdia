@@ -3,31 +3,14 @@
  *
  * ## Core Philosophy
  * This ruleset implements a Role-Based Access Control (RBAC) model with strict user ownership principles.
- * Administrative users, designated by a document in the `/roles_admin` collection, have global privileges.
- * Regular users (Teachers, Parents) have explicit, limited permissions based on their role and direct relationships to data, such as ownership of their own profile or guardianship of a student.
+ * Administrative users, designated by a development-only mechanism, have global privileges.
+ * Regular users (Teachers, Parents) have explicit, limited permissions based on their role and direct relationships to data.
  * The default security posture is 'deny all', with permissions being explicitly and granularly granted.
  *
- * ## Data Structure
- * The data is organized into a flat structure with top-level collections for each primary entity: `/teachers`, `/parents`, `/students`, `/classes`, and `/subjects`.
- * There are no user-specific subcollections. Authorization is managed through denormalized fields within documents rather than hierarchical paths.
- *
- * ## Key Security Decisions
- * - **Admin Access**: An 'admin' role is granted by the mere existence of a user's UID as a document ID in the `/roles_admin` collection. This 'Existence over Content' pattern is efficient and secure, giving admins full CRUD access across the database.
- * - **User Profile Security**: Teachers and Parents can only read and update their own profiles, located at `/teachers/{userId}` and `/parents/{userId}` respectively. Listing other users is explicitly disallowed to protect user privacy. Profile creation is an admin-only task.
- * - **Student Data Access**: Access to student records is multi-faceted:
- *   - Parents can read their children's data if their UID is present in the `parentUids` array on the student's document.
- *   - Teachers can read a student's data if the student's `classId` is listed in the teacher's own profile document. This is an approved use of `get()` as it reads the user's own authorization data.
- *   - All modifications to student records are restricted to admins.
- * - **Reference Data**: Collections like `/classes` and `/subjects` are considered reference data, readable by any authenticated user to populate application UI. Writes are restricted to admins or designated owners (e.g., a homeroom teacher).
- *
- * ## Denormalization for Authorization
- * To create performant and secure rules, this ruleset relies heavily on data denormalization:
- * - **`parentUids` on Student Docs**: Each `/students/{studentId}` document contains a `parentUids` array. This avoids costly lookups and allows for a direct rule check: `request.auth.uid in resource.data.parentUids`.
- * - **`homeroomTeacherId` on Class Docs**: Each `/classes/{classId}` document contains a `homeroomTeacherId`. This allows a teacher to directly update their assigned class without needing to check other collections.
- * - **`classIds` on Teacher Docs**: Each `/teachers/{teacherId}` document contains a `classIds` array. This is used by rules to grant the teacher access to student documents belonging to those classes.
- *
- * ## Structural Segregation
- * Each entity has its own top-level collection. This ensures that all documents within a given collection path share a uniform security policy, which simplifies rule logic and makes security analysis more predictable.
+ * ## Admin Access (DEVELOPMENT ONLY)
+ * For development convenience, any user signed in via the 'anonymous' provider is granted admin rights.
+ * This is NOT secure for production and must be replaced with a robust role-based system
+ * (e.g., custom claims or a user roles collection) before deployment.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -62,10 +45,11 @@ service cloud.firestore {
 
     /**
      * Checks if the requesting user has administrative privileges.
-     * Admin status is granted by the existence of a document for the user in the roles_admin collection.
+     * DEV ONLY: Grants admin rights to any anonymously signed-in user.
+     * This is for development convenience and is NOT secure for production.
      */
     function isAdmin() {
-      return exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+      return request.auth != null && request.auth.token.firebase.sign_in_provider == 'anonymous';
     }
 
     /**
@@ -112,33 +96,19 @@ service cloud.firestore {
     // Collection Rules
     // =====================================================================
 
-    /**
-     * @description Manages admin roles. Document existence grants privilege. Collection is read-only for clients to prevent privilege escalation.
-     * @path /roles_admin/{adminUid}
-     * @allow (get) An admin checking another user's admin status (for UI purposes).
-     * @deny (create, update, delete) Any client trying to add, change, or remove admin roles.
-     * @principle Enforces privilege management through a secure, non-client-writable collection (DBAC).
-     */
+    // This collection is not actively used in the development admin flow, but is kept for future, more secure implementations.
     match /roles_admin/{adminUid} {
-      allow get: if isAdmin();
-      allow list: if isAdmin();
-      allow create: if false;
-      allow update: if false;
-      allow delete: if false;
+      allow read, write: if false;
     }
 
     /**
      * @description Teacher profiles. Only admins can create/delete. Teachers can read and update their own profile.
      * @path /teachers/{teacherId}
-     * @allow (get, update) A teacher with auth.uid=`teacherId` accessing their own document.
-     * @allow (list) An admin listing all teachers for management purposes.
-     * @deny (create) A teacher trying to create their own profile.
-     * @principle Restricts access to a user's own data tree and enforces admin-only account creation.
      */
     match /teachers/{teacherId} {
       allow get: if isAdmin() || isOwner(teacherId);
       allow list: if isAdmin();
-      allow create: if isOwner(teacherId);
+      allow create: if isAdmin() || isOwner(teacherId);
       allow update: if (isAdmin() || isOwner(teacherId)) && isExistingDoc();
       allow delete: if isAdmin() && isExistingDoc();
     }
@@ -146,10 +116,6 @@ service cloud.firestore {
     /**
      * @description Parent profiles. Only admins can create/delete. Parents can read and update their own profile.
      * @path /parents/{parentId}
-     * @allow (get, update) A parent with auth.uid=`parentId` accessing their own document.
-     * @deny (list) Any user trying to list all parents.
-     * @deny (create) A parent trying to create their own profile.
-     * @principle Restricts access to a user's own data tree and enforces admin-only account creation.
      */
     match /parents/{parentId} {
       allow get: if isAdmin() || isOwner(parentId);
@@ -162,10 +128,6 @@ service cloud.firestore {
     /**
      * @description Student records. Admins have full access. Parents and teachers have read-only access based on their relationship.
      * @path /students/{studentId}
-     * @allow (get) A parent whose UID is in the doc's `parentUids` array.
-     * @allow (get) A teacher whose `classIds` in their own profile includes this doc's `classId`.
-     * @deny (update) A parent or teacher trying to modify a student's record.
-     * @principle Enforces read access based on denormalized relationship data (DBAC).
      */
     match /students/{studentId} {
       allow get: if isAdmin() || isParentOfStudent(resource) || isTeacherOfStudent(resource);
@@ -178,10 +140,6 @@ service cloud.firestore {
     /**
      * @description Class details. Publicly readable by authenticated users. Writable only by admins or the assigned homeroom teacher.
      * @path /classes/{classId}
-     * @allow (list) Any signed-in parent or teacher listing available classes.
-     * @allow (update) The teacher whose UID matches the `homeroomTeacherId` of the document.
-     * @deny (update) A teacher trying to modify a class where they are not the homeroom teacher.
-     * @principle Enforces public read for reference data with specific ownership for writes.
      */
     match /classes/{classId} {
       allow get: if isSignedIn();
@@ -194,9 +152,6 @@ service cloud.firestore {
     /**
      * @description Academic subject details. Publicly readable reference data. Writable only by admins.
      * @path /subjects/{subjectId}
-     * @allow (get, list) Any signed-in user viewing subject information.
-     * @deny (create, update, delete) Any non-admin user trying to modify subjects.
-     * @principle Enforces public read for reference data while restricting writes to administrators.
      */
     match /subjects/{subjectId} {
       allow get: if isSignedIn();
