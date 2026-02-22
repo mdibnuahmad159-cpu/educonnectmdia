@@ -44,7 +44,7 @@ const formSchema = z.object({
   pendidikan: z.string().optional(),
   ponpes: z.string().optional(),
   alamat: z.string().optional(),
-  dokumenUrl: z.string().url("URL tidak valid").optional().or(z.literal('')),
+  dokumen: z.any().optional(),
 });
 
 const jabatanOptions = [
@@ -76,7 +76,7 @@ export function TeacherForm({ isOpen, setIsOpen, teacher, onSave }: TeacherFormP
     })),
     defaultValues: {
       name: "", email: "", password: "", jabatan: "", noWa: "", nik: "",
-      pendidikan: "", ponpes: "", alamat: "", dokumenUrl: "",
+      pendidikan: "", ponpes: "", alamat: "",
     },
   });
   
@@ -93,21 +93,23 @@ export function TeacherForm({ isOpen, setIsOpen, teacher, onSave }: TeacherFormP
           pendidikan: teacher.pendidikan || "",
           ponpes: teacher.ponpes || "",
           alamat: teacher.alamat || "",
-          dokumenUrl: teacher.dokumenUrl || "",
         });
       } else {
         form.reset({
           name: "", email: "", password: "", jabatan: "", noWa: "", nik: "",
-          pendidikan: "", ponpes: "", alamat: "", dokumenUrl: "",
+          pendidikan: "", ponpes: "", alamat: "",
         });
       }
     }
   }, [teacher, form, isOpen]);
   
   const onSubmit = (values: z.infer<typeof formSchema>) => {
+    // NOTE: The 'dokumen' file object is not saved. 
+    // File upload requires Firebase Storage setup.
+    const { dokumen, ...teacherData } = values;
     onSave({
       id: teacher?.id,
-      ...values,
+      ...teacherData,
     });
   };
 
@@ -200,13 +202,22 @@ export function TeacherForm({ isOpen, setIsOpen, teacher, onSave }: TeacherFormP
                     <FormMessage />
                   </FormItem>
                 )} />
-                <FormField control={form.control} name="dokumenUrl" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>URL Dokumen</FormLabel>
-                    <FormControl><Input placeholder="https://..." {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
+                <FormField
+                  control={form.control}
+                  name="dokumen"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Dokumen</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="file" 
+                          onChange={(e) => field.onChange(e.target.files?.[0] ?? null)} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
             </ScrollArea>
             <DialogFooter className="pt-4">

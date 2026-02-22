@@ -9,7 +9,6 @@ export type Teacher = {
   pendidikan?: string;
   ponpes?: string;
   alamat?: string;
-  dokumenUrl?: string;
 };
 
 export type Student = {
@@ -25,4 +24,3 @@ export type Student = {
   // In a real app, you would have a parent/guardian relationship
   // parentIds?: string[];
 };
-
