@@ -74,7 +74,7 @@ export function StudentForm({ isOpen, setIsOpen, student, onSave }: StudentFormP
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3 py-4">
             <FormField
               control={form.control}
               name="id"
@@ -128,7 +128,7 @@ export function StudentForm({ isOpen, setIsOpen, student, onSave }: StudentFormP
               )}
             />
             <DialogFooter>
-              <Button type="submit">Simpan</Button>
+              <Button type="submit" size="sm">Simpan</Button>
             </DialogFooter>
           </form>
         </Form>

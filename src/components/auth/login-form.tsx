@@ -105,10 +105,10 @@ export function LoginForm() {
             <TabsTrigger value="parent">Wali Murid</TabsTrigger>
           </TabsList>
           
-          <div className="p-6">
+          <div className="p-4">
             <TabsContent value="admin">
               <Form {...adminForm}>
-                <form onSubmit={adminForm.handleSubmit(handleAdminSubmit)} className="space-y-6">
+                <form onSubmit={adminForm.handleSubmit(handleAdminSubmit)} className="space-y-4">
                   <FormField
                     control={adminForm.control}
                     name="password"
@@ -122,7 +122,7 @@ export function LoginForm() {
                       </FormItem>
                     )}
                   />
-                  <Button type="submit" className="w-full">
+                  <Button type="submit" className="w-full" size="sm">
                     Login sebagai Admin
                   </Button>
                 </form>
@@ -131,7 +131,7 @@ export function LoginForm() {
 
             <TabsContent value="teacher">
               <Form {...teacherForm}>
-                <form onSubmit={teacherForm.handleSubmit(handleTeacherSubmit)} className="space-y-6">
+                <form onSubmit={teacherForm.handleSubmit(handleTeacherSubmit)} className="space-y-4">
                   <FormField
                     control={teacherForm.control}
                     name="email"
@@ -158,7 +158,7 @@ export function LoginForm() {
                       </FormItem>
                     )}
                   />
-                  <Button type="submit" className="w-full">
+                  <Button type="submit" className="w-full" size="sm">
                     Login sebagai Guru
                   </Button>
                 </form>
@@ -167,7 +167,7 @@ export function LoginForm() {
 
             <TabsContent value="parent">
               <Form {...parentForm}>
-                <form onSubmit={parentForm.handleSubmit(handleParentSubmit)} className="space-y-6">
+                <form onSubmit={parentForm.handleSubmit(handleParentSubmit)} className="space-y-4">
                   <FormField
                     control={parentForm.control}
                     name="nis"
@@ -194,7 +194,7 @@ export function LoginForm() {
                       </FormItem>
                     )}
                   />
-                  <Button type="submit" className="w-full">
+                  <Button type="submit" className="w-full" size="sm">
                     Login sebagai Wali Murid
                   </Button>
                 </form>

@@ -19,7 +19,7 @@ export function BottomNav() {
   };
 
   return (
-    <footer className="fixed bottom-0 left-0 z-50 w-full h-16 bg-card border-t">
+    <footer className="fixed bottom-0 left-0 z-50 w-full h-14 bg-card border-t">
       <div className="grid h-full grid-cols-4 max-w-lg mx-auto font-medium">
         {navItems.map((item) => (
           <Link
@@ -30,7 +30,7 @@ export function BottomNav() {
               pathname.startsWith(item.href) ? "text-primary" : "text-muted-foreground"
             )}
           >
-            <item.icon className="w-5 h-5 mb-1" />
+            <item.icon className="w-4 h-4 mb-1" />
             <span className="text-xs">{item.label}</span>
           </Link>
         ))}
@@ -39,7 +39,7 @@ export function BottomNav() {
             onClick={handleLogout}
             className="inline-flex flex-col items-center justify-center px-5 text-muted-foreground hover:bg-muted group"
           >
-            <LogOut className="w-5 h-5 mb-1" />
+            <LogOut className="w-4 h-4 mb-1" />
             <span className="text-xs">Keluar</span>
           </button>
       </div>

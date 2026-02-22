@@ -88,7 +88,7 @@ export function StudentManagement() {
                 Kelola data siswa dan akun wali murid.
               </CardDescription>
             </div>
-            <Button size="sm" className="gap-1" onClick={handleAdd}>
+            <Button size="xs" className="gap-1" onClick={handleAdd}>
               <PlusCircle className="h-4 w-4" />
               Tambah Siswa
             </Button>

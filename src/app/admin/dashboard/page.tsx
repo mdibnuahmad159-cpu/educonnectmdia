@@ -12,15 +12,15 @@ export default function DashboardPage() {
   const { data: students, loading: loadingStudents } = useCollection<Student>("students");
 
   return (
-    <div className="grid gap-4">
-        <div className="grid gap-4 md:grid-cols-2">
+    <div className="grid gap-2">
+        <div className="grid gap-2 md:grid-cols-2">
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Guru</CardTitle>
+                <CardTitle className="text-xs font-medium">Total Guru</CardTitle>
                 <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                <div className="text-2xl font-bold">
+                <div className="text-xl font-bold">
                     {loadingTeachers ? "..." : teachers.length}
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -30,11 +30,11 @@ export default function DashboardPage() {
             </Card>
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Siswa</CardTitle>
+                <CardTitle className="text-xs font-medium">Total Siswa</CardTitle>
                 <User className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                <div className="text-2xl font-bold">
+                <div className="text-xl font-bold">
                     {loadingStudents ? "..." : students.length}
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -49,15 +49,15 @@ export default function DashboardPage() {
               <CardTitle>Kelola Data</CardTitle>
               <CardDescription>Navigasi ke halaman untuk mengelola data guru dan siswa.</CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-4">
+          <CardContent className="grid gap-2">
               <Link href="/admin/teachers" passHref>
-                  <Button variant="outline" className="w-full justify-between">
+                  <Button variant="outline" size="sm" className="w-full justify-between">
                       <span>Halaman Data Guru</span>
                       <ArrowRight className="h-4 w-4" />
                   </Button>
               </Link>
               <Link href="/admin/students" passHref>
-                  <Button variant="outline" className="w-full justify-between">
+                  <Button variant="outline" size="sm" className="w-full justify-between">
                       <span>Halaman Data Siswa</span>
                       <ArrowRight className="h-4 w-4" />
                   </Button>
