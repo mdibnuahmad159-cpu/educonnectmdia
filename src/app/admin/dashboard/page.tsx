@@ -67,10 +67,10 @@ export default function DashboardPage() {
       </div>
       
       <Card>
-          <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Akademik</CardTitle>
+          <CardHeader className="p-3 pb-2">
+              <CardTitle className="text-sm font-medium">Akademik</CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-3 gap-2">
+          <CardContent className="grid grid-cols-3 gap-2 p-3 pt-0">
                 <NavLink href="/admin/teachers" icon={Users} label="Data Guru" />
                 <NavLink href="/admin/curriculum" icon={BookCopy} label="Kurikulum" />
                 <NavLink href="/admin/schedule" icon={Calendar} label="Jadwal" />
@@ -81,10 +81,10 @@ export default function DashboardPage() {
       </Card>
       
       <Card>
-          <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Siswa</CardTitle>
+          <CardHeader className="p-3 pb-2">
+              <CardTitle className="text-sm font-medium">Siswa</CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-3 gap-2">
+          <CardContent className="grid grid-cols-3 gap-2 p-3 pt-0">
               <NavLink href="/admin/students" icon={User} label="Data Siswa" />
               <NavLink href="/admin/class-management" icon={School} label="Manajemen Kelas" />
               <NavLink href="/admin/alumni" icon={GraduationCap} label="Alumni" />
@@ -92,10 +92,10 @@ export default function DashboardPage() {
       </Card>
       
       <Card>
-          <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Keuangan</CardTitle>
+          <CardHeader className="p-3 pb-2">
+              <CardTitle className="text-sm font-medium">Keuangan</CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-3 gap-2">
+          <CardContent className="grid grid-cols-3 gap-2 p-3 pt-0">
                <NavLink href="/admin/spp" icon={CreditCard} label="SPP" />
                <NavLink href="/admin/tabungan" icon={PiggyBank} label="Tabungan" />
                <NavLink href="/admin/riwayat-transaksi" icon={History} label="Riwayat Transaksi" />
