@@ -12,7 +12,7 @@ export default function DashboardPage() {
   const { data: students, loading: loadingStudents } = useCollection<Student>("students");
 
   return (
-    <div className="grid gap-2">
+    <div className="grid gap-4">
         <div className="grid gap-2 md:grid-cols-2">
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -46,7 +46,7 @@ export default function DashboardPage() {
       
       <Card>
           <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Menu Navigasi</CardTitle>
+              <CardTitle className="text-sm">Akademik</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-2">
                 <Button asChild variant="outline" size="xs" className="justify-between">
@@ -58,7 +58,15 @@ export default function DashboardPage() {
                       <ChevronRight className="h-4 w-4" />
                   </Link>
               </Button>
-                <Button asChild variant="outline" size="xs" className="justify-between">
+          </CardContent>
+      </Card>
+      
+      <Card>
+          <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Siswa</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-2">
+              <Button asChild variant="outline" size="xs" className="justify-between">
                   <Link href="/admin/students">
                       <span className="flex items-center gap-2">
                         <User className="h-4 w-4" />
@@ -69,6 +77,16 @@ export default function DashboardPage() {
               </Button>
           </CardContent>
       </Card>
+      
+      <Card>
+          <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Keuangan</CardTitle>
+          </CardHeader>
+          <CardContent>
+               <p className="text-xs text-muted-foreground">Menu keuangan akan segera tersedia.</p>
+          </CardContent>
+      </Card>
+
     </div>
   );
 }
