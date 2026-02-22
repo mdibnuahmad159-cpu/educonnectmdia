@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MoreHorizontal, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,10 +34,16 @@ const mockTeachers: Teacher[] = [
   { id: '3', name: 'Dewi Anggraini', email: 'dewi.a@sekolah.id' },
 ];
 
-export function TeacherManagement() {
+export function TeacherManagement({ isActive }: { isActive: boolean }) {
   const [teachers, setTeachers] = useState(mockTeachers);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
+
+  useEffect(() => {
+    if (!isActive) {
+      setIsFormOpen(false);
+    }
+  }, [isActive]);
 
   const handleAdd = () => {
     setSelectedTeacher(null);
