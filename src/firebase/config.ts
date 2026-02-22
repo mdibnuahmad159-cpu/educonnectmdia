@@ -1,10 +1,8 @@
-// TODO: Replace with your Firebase project's configuration object
-// You can get this from the Firebase console.
 export const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  "projectId": "studio-1593896144-f2eb6",
+  "appId": "1:653081028962:web:6fdb3bbd8167b7a2bf243b",
+  "apiKey": "AIzaSyBurqqhIMubYHUZ5i2H232VDLgKR5pT898",
+  "authDomain": "studio-1593896144-f2eb6.firebaseapp.com",
+  "measurementId": "",
+  "messagingSenderId": "653081028962"
 };
