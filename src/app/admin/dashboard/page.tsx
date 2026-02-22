@@ -14,7 +14,10 @@ import {
   ClipboardCheck,
   FileText,
   School,
-  GraduationCap
+  GraduationCap,
+  CreditCard,
+  PiggyBank,
+  History
 } from "lucide-react";
 import type { Teacher, Student } from "@/types";
 
@@ -156,8 +159,34 @@ export default function DashboardPage() {
           <CardHeader className="pb-2">
               <CardTitle className="text-sm">Keuangan</CardTitle>
           </CardHeader>
-          <CardContent>
-               <p className="text-xs text-muted-foreground">Menu keuangan akan segera tersedia.</p>
+          <CardContent className="grid gap-2">
+               <Button asChild variant="outline" size="xs" className="justify-between">
+                  <Link href="/admin/spp">
+                      <span className="flex items-center gap-2">
+                        <CreditCard className="h-4 w-4" />
+                        <span>SPP</span>
+                      </span>
+                      <ChevronRight className="h-4 w-4" />
+                  </Link>
+              </Button>
+              <Button asChild variant="outline" size="xs" className="justify-between">
+                  <Link href="/admin/tabungan">
+                      <span className="flex items-center gap-2">
+                        <PiggyBank className="h-4 w-4" />
+                        <span>Tabungan</span>
+                      </span>
+                      <ChevronRight className="h-4 w-4" />
+                  </Link>
+              </Button>
+              <Button asChild variant="outline" size="xs" className="justify-between">
+                  <Link href="/admin/riwayat-transaksi">
+                      <span className="flex items-center gap-2">
+                        <History className="h-4 w-4" />
+                        <span>Riwayat Transaksi</span>
+                      </span>
+                      <ChevronRight className="h-4 w-4" />
+                  </Link>
+              </Button>
           </CardContent>
       </Card>
 
