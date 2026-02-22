@@ -1,13 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useCollection } from "@/firebase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Users, User, ChevronRight } from "lucide-react";
 import type { Teacher, Student } from "@/types";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TeacherManagement } from "./components/teacher-management";
-import { StudentManagement } from "./components/student-management";
-
 
 export default function DashboardPage() {
   const { data: teachers, loading: loadingTeachers } = useCollection<Teacher>("teachers");
@@ -46,18 +44,25 @@ export default function DashboardPage() {
             </Card>
       </div>
       
-      <Tabs defaultValue="teachers" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="teachers">Data Guru</TabsTrigger>
-          <TabsTrigger value="students">Data Siswa</TabsTrigger>
-        </TabsList>
-        <TabsContent value="teachers">
-          <TeacherManagement />
-        </TabsContent>
-        <TabsContent value="students">
-          <StudentManagement />
-        </TabsContent>
-      </Tabs>
+      <Card>
+          <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Menu Navigasi</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-2">
+                <Button asChild variant="outline" size="xs" className="justify-between">
+                  <Link href="/admin/teachers">
+                      <span>Data Guru</span>
+                      <ChevronRight className="h-4 w-4" />
+                  </Link>
+              </Button>
+                <Button asChild variant="outline" size="xs" className="justify-between">
+                  <Link href="/admin/students">
+                      <span>Data Siswa</span>
+                      <ChevronRight className="h-4 w-4" />
+                  </Link>
+              </Button>
+          </CardContent>
+      </Card>
     </div>
   );
 }
