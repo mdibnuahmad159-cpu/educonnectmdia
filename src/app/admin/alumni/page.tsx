@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection, Firestore } from "firebase/firestore";
 import type { Alumni } from "@/types";
@@ -45,7 +45,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, Loader2, FileDown, Printer, FileSpreadsheet, FileText, PlusCircle, Edit } from "lucide-react";
+import { Trash2, Loader2, FileDown, Printer, FileSpreadsheet, FileText, PlusCircle, Edit, FileUp, Upload, Download } from "lucide-react";
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -64,6 +64,7 @@ export default function AlumniPage() {
     const [alumnusToDelete, setAlumnusToDelete] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
     const [filterYear, setFilterYear] = useState<string>("semua");
+    const fileInputRef = useRef<HTMLInputElement>(null);
     
     const availableYears = useMemo(() => {
         if (!alumniData) return [];
@@ -130,6 +131,85 @@ export default function AlumniPage() {
         }
         setIsDeleteDialogOpen(false);
         setAlumnusToDelete(null);
+    };
+
+    const alumniColumns = {
+        nis: 'NIS',
+        name: 'Nama',
+        tahunLulus: 'Tahun Lulus',
+        address: 'Alamat',
+        noWa: 'No. WA (Opsional)',
+    };
+
+    const handleDownloadTemplate = () => {
+        const worksheet = XLSX.utils.json_to_sheet([{}], { header: Object.values(alumniColumns) });
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Template Alumni');
+        XLSX.writeFile(workbook, 'template_alumni.xlsx');
+    };
+
+    const handleImportAlumni = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file || !firestore) return;
+        
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+             try {
+                const data = new Uint8Array(e.target?.result as ArrayBuffer);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const json: any[] = XLSX.utils.sheet_to_json(worksheet);
+
+                if (json.length === 0) {
+                    toast({ variant: "destructive", title: "File Kosong", description: "File Excel yang Anda unggah tidak berisi data." });
+                    return;
+                }
+
+                toast({ title: "Mengimpor Data", description: `Mulai mengimpor ${json.length} data alumni...` });
+
+                let successCount = 0;
+                let errorCount = 0;
+
+                for (const item of json) {
+                    const alumniData: any = {};
+                    const columnKeys = Object.keys(alumniColumns);
+                    const columnValues = Object.values(alumniColumns);
+                     for(const key in item) {
+                        const columnIndex = columnValues.indexOf(key);
+                        if (columnIndex > -1) {
+                             const dataKey = columnKeys[columnIndex];
+                             alumniData[dataKey] = item[key];
+                        }
+                    }
+
+                    if (!alumniData.nis || !alumniData.name || !alumniData.tahunLulus) {
+                        errorCount++;
+                        console.error("Skipping alumni item due to missing required fields:", alumniData);
+                        continue;
+                    }
+
+                    try {
+                        await addAlumnus(firestore, alumniData as Omit<Alumni, 'id'>);
+                        successCount++;
+                    } catch (error) {
+                        errorCount++;
+                        console.error(`Gagal mengimpor alumni ${alumniData.nis}:`, error);
+                    }
+                }
+
+                 toast({ title: "Impor Selesai", description: `${successCount} item berhasil diimpor. ${errorCount} gagal.` });
+
+            } catch (error) {
+                toast({ variant: "destructive", title: "Gagal Membaca File", description: "Tidak dapat memproses file Excel." });
+                console.error(error);
+            } finally {
+                if (event.target) {
+                    event.target.value = '';
+                }
+            }
+        };
+        reader.readAsArrayBuffer(file);
     };
 
     const handleExportExcel = () => {
@@ -259,6 +339,31 @@ export default function AlumniPage() {
                             </Select>
                         </div>
                         <div className="flex items-center gap-2">
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button size="xs" variant="outline" className="gap-1">
+                                    <FileUp className="h-4 w-4" />
+                                    Impor
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={handleDownloadTemplate}>
+                                    <Download className="mr-2 h-4 w-4" />
+                                    Unduh Template
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
+                                    <Upload className="mr-2 h-4 w-4" />
+                                    Unggah Excel
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                className="hidden"
+                                accept=".xlsx, .xls"
+                                onChange={handleImportAlumni}
+                            />
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button size="xs" variant="outline" className="gap-1">
