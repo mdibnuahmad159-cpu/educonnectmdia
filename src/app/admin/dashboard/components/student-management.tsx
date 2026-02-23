@@ -51,7 +51,7 @@ export function StudentManagement() {
   
   const sortedStudents = useMemo(() => {
     if (!students) return [];
-    return [...students].sort((a, b) => a.name.localeCompare(b.name));
+    return [...students].sort((a, b) => a.nis.localeCompare(b.nis));
   }, [students]);
 
   const handleAdd = () => {
@@ -439,5 +439,7 @@ export function StudentManagement() {
     </>
   );
 }
+
+    
 
     
