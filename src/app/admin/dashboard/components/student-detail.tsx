@@ -46,14 +46,26 @@ export function StudentDetail({ isOpen, setIsOpen, student, onEdit, onDelete }: 
     doc.text(`Detail Siswa`, 14, 22);
     doc.setFontSize(11);
 
+    const getTableBody = () => [
+        ['Nama', student.name || "-"],
+        ['NIS', student.nis || "-"],
+        ['NIK', student.nik || "-"],
+        ['Jenis Kelamin', student.gender || "-"],
+        ['Tempat Lahir', student.tempatLahir || "-"],
+        ['Tanggal Lahir', student.dateOfBirth || "-"],
+        ['Nama Ayah', student.namaAyah || "-"],
+        ['Nama Ibu', student.namaIbu || "-"],
+        ['Alamat', student.address || "-"],
+        ['Dokumen', student.dokumenUrl ? 'Tersedia' : '-'],
+    ];
+
     let startY = 30;
 
     if (student.avatarUrl) {
       try {
         const img = new Image();
-        img.src = student.avatarUrl;
+        img.crossOrigin = 'Anonymous';
         img.onload = () => {
-            const canvas = document.createElement('canvas');
             const aspect = img.width / img.height;
             let width = 40;
             let height = 40;
@@ -62,12 +74,8 @@ export function StudentDetail({ isOpen, setIsOpen, student, onEdit, onDelete }: 
             } else {
                 width = height * aspect;
             }
-            canvas.width = img.width;
-            canvas.height = img.height;
-            const ctx = canvas.getContext('2d');
-            ctx?.drawImage(img, 0, 0);
-            const dataUrl = canvas.toDataURL('image/jpeg');
-            doc.addImage(dataUrl, 'JPEG', 15, startY, width, height);
+            
+            doc.addImage(img, 'JPEG', 15, startY, width, height);
             
             (doc as any).autoTable({
               startY: startY + height + 10,
@@ -85,6 +93,7 @@ export function StudentDetail({ isOpen, setIsOpen, student, onEdit, onDelete }: 
           });
           doc.save(`detail_siswa_${student.nis}.pdf`);
         }
+        img.src = student.avatarUrl;
       } catch (e) {
         console.error("Could not add image to PDF", e);
         (doc as any).autoTable({
@@ -102,19 +111,6 @@ export function StudentDetail({ isOpen, setIsOpen, student, onEdit, onDelete }: 
         });
         doc.save(`detail_siswa_${student.nis}.pdf`);
     }
-
-    const getTableBody = () => [
-        ['Nama', student.name || "-"],
-        ['NIS', student.nis || "-"],
-        ['NIK', student.nik || "-"],
-        ['Jenis Kelamin', student.gender || "-"],
-        ['Tempat Lahir', student.tempatLahir || "-"],
-        ['Tanggal Lahir', student.dateOfBirth || "-"],
-        ['Nama Ayah', student.namaAyah || "-"],
-        ['Nama Ibu', student.namaIbu || "-"],
-        ['Alamat', student.address || "-"],
-        ['Dokumen', student.dokumenUrl ? 'Tersedia' : '-'],
-    ];
   };
 
   const handlePrint = () => {

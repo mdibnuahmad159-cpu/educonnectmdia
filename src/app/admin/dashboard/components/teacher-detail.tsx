@@ -46,8 +46,6 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
     doc.text(`Detail Guru`, 14, 22);
     doc.setFontSize(11);
 
-    let startY = 30;
-
     const getTableBody = () => [
         ['Nama', teacher.name || "-"],
         ['Jabatan', teacher.jabatan || "-"],
@@ -60,12 +58,13 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
         ['Dokumen', teacher.dokumenUrl ? 'Tersedia' : '-'],
     ];
 
+    let startY = 30;
+
     if (teacher.avatarUrl) {
       try {
         const img = new Image();
-        img.src = teacher.avatarUrl;
+        img.crossOrigin = 'Anonymous';
         img.onload = () => {
-            const canvas = document.createElement('canvas');
             const aspect = img.width / img.height;
             let width = 40;
             let height = 40;
@@ -74,13 +73,8 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
             } else {
                 width = height * aspect;
             }
-            canvas.width = img.width;
-            canvas.height = img.height;
-            const ctx = canvas.getContext('2d');
-            ctx?.drawImage(img, 0, 0);
-            const dataUrl = canvas.toDataURL('image/jpeg');
-
-            doc.addImage(dataUrl, 'JPEG', 15, startY, width, height);
+            
+            doc.addImage(img, 'JPEG', 15, startY, width, height);
             
             (doc as any).autoTable({
               startY: startY + height + 10,
@@ -97,6 +91,7 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
             });
             doc.save(`detail_guru_${teacher.id}.pdf`);
         };
+        img.src = teacher.avatarUrl;
       } catch (e) {
         console.error("Could not add image to PDF", e);
         (doc as any).autoTable({
