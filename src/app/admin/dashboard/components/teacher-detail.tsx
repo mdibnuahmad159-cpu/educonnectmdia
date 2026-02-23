@@ -130,8 +130,8 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
     printWindow.document.close();
     
     printWindow.onload = function() {
+        printWindow.focus();
         printWindow.print();
-        printWindow.close();
     };
   };
 

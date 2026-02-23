@@ -128,11 +128,10 @@ export function StudentDetail({ isOpen, setIsOpen, student, onEdit, onDelete }: 
     
     printWindow.document.write(content);
     printWindow.document.close();
-    printWindow.focus();
     
     printWindow.onload = function() {
+        printWindow.focus();
         printWindow.print();
-        printWindow.close();
     };
   };
 
