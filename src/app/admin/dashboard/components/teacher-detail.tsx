@@ -75,6 +75,7 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
           columnStyles: { 0: { fontStyle: 'bold' } },
         });
 
+        doc.autoPrint();
         doc.output('dataurlnewwindow');
     }
 

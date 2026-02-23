@@ -75,6 +75,7 @@ export function StudentDetail({ isOpen, setIsOpen, student, onEdit, onDelete }: 
             columnStyles: { 0: { fontStyle: 'bold' } },
         });
 
+        doc.autoPrint();
         doc.output('dataurlnewwindow');
     }
 
