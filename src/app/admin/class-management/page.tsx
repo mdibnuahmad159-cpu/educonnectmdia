@@ -274,52 +274,58 @@ export default function ClassManagementPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-4">
-          <div className="flex items-center gap-2 mb-4">
-            <Button size="xs" variant="outline" onClick={handlePromote} disabled={selectedStudents.length === 0} className="gap-1">
-              <ChevronsUp /> Naik Kelas
-            </Button>
-            <Button size="xs" variant="outline" onClick={handleDemote} disabled={selectedStudents.length === 0} className="gap-1">
-              <ChevronsDown /> Turun Kelas
-            </Button>
-            <Button size="xs" variant="outline" onClick={() => setIsMoveDialogOpen(true)} disabled={selectedStudents.length === 0} className="gap-1">
-              <ArrowRightLeft /> Pindah Kelas
-            </Button>
-            <div className="ml-auto flex items-center gap-2">
-                <Select value={filterClass} onValueChange={setFilterClass}>
-                    <SelectTrigger className="w-[150px] h-8 text-xs">
-                        <SelectValue placeholder="Filter per kelas" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="semua">Semua Kelas</SelectItem>
-                        {[...Array(7).keys()].map(i => (
-                            <SelectItem key={i} value={String(i)}>Kelas {i}</SelectItem>
-                        ))}
-                        <SelectItem value="belum_diatur">Belum diatur</SelectItem>
-                    </SelectContent>
-                </Select>
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button size="xs" variant="outline" className="gap-1">
-                        <FileDown className="h-4 w-4" />
-                        Ekspor
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={handleExportExcel}>
-                        <FileSpreadsheet className="mr-2 h-4 w-4" />
-                        Ekspor ke Excel
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={handleExportPdf}>
-                        <FileText className="mr-2 h-4 w-4" />
-                        Ekspor ke PDF
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-                 <Button size="xs" variant="outline" className="gap-1" onClick={handlePrintTable}>
-                    <Printer className="h-4 w-4" />
-                    Cetak Data
-                </Button>
-            </div>
+          <div className="flex flex-col gap-2 mb-4">
+              <div className="flex">
+                  <Select value={filterClass} onValueChange={setFilterClass}>
+                      <SelectTrigger className="w-full sm:w-[180px] h-8 text-xs">
+                          <SelectValue placeholder="Filter per kelas" />
+                      </SelectTrigger>
+                      <SelectContent>
+                          <SelectItem value="semua">Semua Kelas</SelectItem>
+                          {[...Array(7).keys()].map(i => (
+                              <SelectItem key={i} value={String(i)}>Kelas {i}</SelectItem>
+                          ))}
+                          <SelectItem value="belum_diatur">Belum diatur</SelectItem>
+                      </SelectContent>
+                  </Select>
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                      <Button size="xs" variant="outline" onClick={handlePromote} disabled={selectedStudents.length === 0} className="gap-1">
+                      <ChevronsUp /> Naik Kelas
+                      </Button>
+                      <Button size="xs" variant="outline" onClick={handleDemote} disabled={selectedStudents.length === 0} className="gap-1">
+                      <ChevronsDown /> Turun Kelas
+                      </Button>
+                      <Button size="xs" variant="outline" onClick={() => setIsMoveDialogOpen(true)} disabled={selectedStudents.length === 0} className="gap-1">
+                      <ArrowRightLeft /> Pindah Kelas
+                      </Button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                      <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                              <Button size="xs" variant="outline" className="gap-1">
+                              <FileDown className="h-4 w-4" />
+                              Ekspor
+                              </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={handleExportExcel}>
+                              <FileSpreadsheet className="mr-2 h-4 w-4" />
+                              Ekspor ke Excel
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={handleExportPdf}>
+                              <FileText className="mr-2 h-4 w-4" />
+                              Ekspor ke PDF
+                              </DropdownMenuItem>
+                          </DropdownMenuContent>
+                      </DropdownMenu>
+                      <Button size="xs" variant="outline" className="gap-1" onClick={handlePrintTable}>
+                          <Printer className="h-4 w-4" />
+                          Cetak Data
+                      </Button>
+                  </div>
+              </div>
           </div>
           <Table>
             <TableHeader>
