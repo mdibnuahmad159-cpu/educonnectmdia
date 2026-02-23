@@ -15,7 +15,7 @@ export default function TeacherLayout({ children }: { children: ReactNode }) {
   
   useEffect(() => {
     if (profile?.namaMadrasah) {
-      document.title = `${profile.namaMadrasah} - Guru`;
+      document.title = profile.namaMadrasah;
     }
   }, [profile]);
 
@@ -47,7 +47,7 @@ export default function TeacherLayout({ children }: { children: ReactNode }) {
                 <BookOpenCheck className="h-5 w-5" />
             )}
             <h1 className="text-base font-semibold font-headline">
-                {profile?.namaMadrasah ? `${profile.namaMadrasah} Guru` : 'EduConnect Guru'}
+                {profile?.namaMadrasah || 'EduConnect'}
             </h1>
         </div>
       </header>

@@ -20,7 +20,7 @@ export default function ParentLayout({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (profile?.namaMadrasah) {
-      document.title = `${profile.namaMadrasah} - Wali Murid`;
+      document.title = profile.namaMadrasah;
     }
   }, [profile]);
 
@@ -67,7 +67,7 @@ export default function ParentLayout({ children }: { children: ReactNode }) {
                 <BookOpenCheck className="h-5 w-5" />
             )}
             <h1 className="text-base font-semibold font-headline">
-                {profile?.namaMadrasah ? `${profile.namaMadrasah} Wali Murid` : 'EduConnect Wali Murid'}
+                {profile?.namaMadrasah || 'EduConnect'}
             </h1>
         </div>
       </header>
