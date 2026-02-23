@@ -43,7 +43,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      <header className="sticky top-0 z-10 flex h-12 items-center justify-start gap-4 border-b bg-background px-3 sm:px-4">
+      <header className="sticky top-0 z-10 flex h-12 items-center justify-start gap-4 border-b bg-card px-3 sm:px-4">
         <div className="flex items-center gap-2 text-primary">
             {profile?.logoMadrasahUrl ? (
                 <Image src={profile.logoMadrasahUrl} alt="Logo" width={24} height={24} className="h-6 w-6 object-contain"/>
