@@ -8,7 +8,7 @@ import * as z from "zod";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
@@ -273,27 +273,46 @@ export function StudentForm({ isOpen, setIsOpen, student, onSave }: StudentFormP
                                 </Button>
                             </FormControl>
                             </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                                <div className="p-3 rounded-t-lg border-b bg-muted/50">
-                                    <div className="text-xs text-muted-foreground">{tempDob ? format(tempDob, "yyyy") : new Date().getFullYear()}</div>
-                                    <div className="text-xl font-bold">{tempDob ? format(tempDob, "E, MMM d") : "Pilih tanggal"}</div>
+                            <PopoverContent className="w-auto p-0 border-0" align="start">
+                                <div className="p-4 rounded-t-md bg-slate-800 text-white">
+                                    <div className="text-sm text-slate-400">{tempDob ? format(tempDob, "yyyy") : new Date().getFullYear()}</div>
+                                    <div className="text-3xl font-bold">{tempDob ? format(tempDob, "E, MMM d") : "Pilih tanggal"}</div>
                                 </div>
-                                <Calendar
-                                    mode="single"
-                                    selected={tempDob}
-                                    onSelect={setTempDob}
-                                    disabled={(date) =>
-                                    date > new Date() || date < new Date("1900-01-01")
-                                    }
-                                    initialFocus
-                                />
-                                <div className="flex justify-end gap-1 p-2 border-t">
-                                    <Button variant="ghost" size="sm" type="button" onClick={() => {
+                                <div className="p-2 bg-slate-900">
+                                    <Calendar
+                                        mode="single"
+                                        selected={tempDob}
+                                        onSelect={setTempDob}
+                                        disabled={(date) =>
+                                        date > new Date() || date < new Date("1900-01-01")
+                                        }
+                                        initialFocus
+                                        classNames={{
+                                            root: "text-white",
+                                            caption: "flex items-center justify-between",
+                                            nav: "flex items-center gap-1",
+                                            head_cell: "text-slate-400 w-8 font-normal text-sm",
+                                            cell: "h-8 w-8 text-center text-sm p-0 relative",
+                                            day: "h-8 w-8 p-0 font-normal rounded-full transition-colors hover:bg-slate-700",
+                                            day_selected: "bg-amber-600 text-white hover:bg-amber-700 focus:bg-amber-700",
+                                            day_today: "rounded-full bg-slate-700 text-white",
+                                            day_outside: "text-slate-500",
+                                            day_disabled: "text-slate-600",
+                                            nav_button: cn(
+                                                buttonVariants({ variant: "ghost" }),
+                                                "h-7 w-7 bg-transparent p-0 text-white opacity-80 hover:opacity-100 hover:bg-slate-700"
+                                            ),
+                                            caption_label: "text-sm font-medium text-white",
+                                        }}
+                                    />
+                                </div>
+                                <div className="flex justify-around items-center p-2 rounded-b-md bg-slate-800">
+                                    <Button variant="ghost" size="sm" type="button" className="text-amber-500 hover:text-amber-400 hover:bg-transparent" onClick={() => {
                                         form.setValue('dateOfBirth', '', { shouldValidate: true });
                                         setDobPopoverOpen(false);
                                     }}>Clear</Button>
-                                    <Button variant="ghost" size="sm" type="button" onClick={() => setDobPopoverOpen(false)}>Cancel</Button>
-                                    <Button size="sm" type="button" onClick={() => {
+                                    <Button variant="ghost" size="sm" type="button" className="text-amber-500 hover:text-amber-400 hover:bg-transparent" onClick={() => setDobPopoverOpen(false)}>Cancel</Button>
+                                    <Button variant="ghost" size="sm" type="button" className="text-amber-500 hover:text-amber-400 hover:bg-transparent font-bold" onClick={() => {
                                         form.setValue('dateOfBirth', tempDob?.toISOString() || '', { shouldValidate: true });
                                         setDobPopoverOpen(false);
                                     }}>Set</Button>
