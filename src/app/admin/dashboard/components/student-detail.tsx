@@ -75,23 +75,43 @@ export function StudentDetail({ isOpen, setIsOpen, student, onEdit, onDelete }: 
             columnStyles: { 0: { fontStyle: 'bold' } },
         });
 
-        doc.save(`detail_siswa_${student.nis}.pdf`);
+        doc.output('dataurlnewwindow');
     }
 
     if (student.avatarUrl) {
         const img = new Image();
+        if (!student.avatarUrl.startsWith('data:image')) {
+            img.crossOrigin = "Anonymous";
+        }
         img.src = student.avatarUrl;
         img.onload = () => {
-            const ratio = img.width / img.height;
-            let pdfImgWidth = 40;
-            let pdfImgHeight = 40;
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            if (ctx) {
+                ctx.drawImage(img, 0, 0);
+                const dataUrl = canvas.toDataURL('image/jpeg');
+                const finalImg = new Image();
+                finalImg.src = dataUrl;
+                finalImg.onload = () => {
+                    const ratio = finalImg.width / finalImg.height;
+                    let pdfImgWidth = 40;
+                    let pdfImgHeight = 40;
 
-            if (ratio > 1) { // landscape
-                pdfImgHeight = pdfImgWidth / ratio;
-            } else { // portrait or square
-                pdfImgWidth = pdfImgHeight * ratio;
+                    if (ratio > 1) { // landscape
+                        pdfImgHeight = pdfImgWidth / ratio;
+                    } else { // portrait or square
+                        pdfImgWidth = pdfImgHeight * ratio;
+                    }
+                    createPdf({img: finalImg, width: pdfImgWidth, height: pdfImgHeight});
+                }
+                finalImg.onerror = () => {
+                     createPdf(null);
+                }
+            } else {
+               createPdf(null);
             }
-            createPdf({img, width: pdfImgWidth, height: pdfImgHeight});
         };
         img.onerror = () => {
             createPdf(null);
@@ -110,7 +130,7 @@ export function StudentDetail({ isOpen, setIsOpen, student, onEdit, onDelete }: 
         </DialogHeader>
         <div className="flex justify-center pt-4">
           <Avatar className="h-24 w-24">
-            <AvatarImage src={student.avatarUrl} alt={student.name} />
+            <AvatarImage src={student.avatarUrl || undefined} alt={student.name} className="object-cover" />
             <AvatarFallback className="text-3xl">{student.name.charAt(0)}</AvatarFallback>
           </Avatar>
         </div>
