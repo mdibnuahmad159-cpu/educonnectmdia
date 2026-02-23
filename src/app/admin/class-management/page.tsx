@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
-import { collection, doc, writeBatch } from "firebase/firestore";
+import { collection, doc, writeBatch, Firestore } from "firebase/firestore";
 import type { Student } from "@/types";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,7 +39,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { ChevronsUp, ChevronsDown, ArrowRightLeft, Loader2, FileDown, Printer, FileSpreadsheet, FileText } from "lucide-react";
+import { ChevronsUp, ChevronsDown, ArrowRightLeft, Loader2, FileDown, Printer, FileSpreadsheet, FileText, GraduationCap } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,15 +49,19 @@ import {
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { useAcademicYear } from "@/context/academic-year-provider";
+import { graduateStudents } from "@/lib/firebase-helpers";
 
 export default function ClassManagementPage() {
-  const firestore = useFirestore();
+  const firestore = useFirestore() as Firestore;
   const studentsCollection = useMemoFirebase(() => firestore ? collection(firestore, "students") : null, [firestore]);
   const { data: students, loading } = useCollection<Student>(studentsCollection);
   const { toast } = useToast();
+  const { activeYear } = useAcademicYear();
 
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
+  const [isGraduateDialogOpen, setIsGraduateDialogOpen] = useState(false);
   const [targetClass, setTargetClass] = useState<number | null>(null);
   const [filterClass, setFilterClass] = useState<string>("semua");
 
@@ -155,6 +159,25 @@ export default function ClassManagementPage() {
     setTargetClass(null);
   };
   
+  const handleGraduate = () => {
+    if (!selectedStudents.length) return;
+    setIsGraduateDialogOpen(true);
+  };
+
+  const confirmGraduate = async () => {
+    if (!firestore || selectedStudents.length === 0) return;
+
+    try {
+        await graduateStudents(firestore, selectedStudents, activeYear);
+        toast({ title: "Proses Lulus Berhasil", description: `${selectedStudents.length} siswa telah diluluskan.` });
+    } catch (error: any) {
+        toast({ variant: "destructive", title: "Proses Lulus Gagal", description: error.message });
+    }
+
+    setSelectedStudents([]);
+    setIsGraduateDialogOpen(false);
+  };
+
   const handleExportExcel = () => {
       if (!filteredStudents) return;
       const dataToExport = filteredStudents.map((s, index) => ({
@@ -300,6 +323,9 @@ export default function ClassManagementPage() {
                       <Button size="xs" variant="outline" onClick={() => setIsMoveDialogOpen(true)} disabled={selectedStudents.length === 0} className="gap-1">
                       <ArrowRightLeft /> Pindah Kelas
                       </Button>
+                      <Button size="xs" variant="destructive" onClick={handleGraduate} disabled={selectedStudents.length === 0} className="gap-1">
+                        <GraduationCap /> Luluskan
+                      </Button>
                   </div>
                   <div className="flex items-center gap-2">
                       <DropdownMenu>
@@ -402,6 +428,21 @@ export default function ClassManagementPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Batal</AlertDialogCancel>
             <AlertDialogAction onClick={handleMove} disabled={targetClass === null}>Pindahkan</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={isGraduateDialogOpen} onOpenChange={setIsGraduateDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Anda Yakin?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tindakan ini akan memindahkan {selectedStudents.length} siswa terpilih ke daftar alumni untuk tahun ajaran {activeYear}. Siswa akan dihapus dari daftar siswa aktif.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmGraduate} className="bg-destructive hover:bg-destructive/90">Ya, Luluskan</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

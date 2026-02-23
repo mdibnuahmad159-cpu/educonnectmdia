@@ -9,9 +9,13 @@ import {
   setDoc,
   deleteDoc,
   serverTimestamp,
-  collection
+  collection,
+  writeBatch,
+  getDocs,
+  query,
+  where,
 } from 'firebase/firestore';
-import type { Teacher, Student, SchoolProfile, Curriculum } from '@/types';
+import type { Teacher, Student, SchoolProfile, Curriculum, Alumni } from '@/types';
 
 
 // This function creates a student document in Firestore.
@@ -81,4 +85,38 @@ export async function updateCurriculum(db: Firestore, curriculumId: string, curr
 export async function deleteCurriculum(db: Firestore, curriculumId: string) {
   const curriculumRef = doc(db, 'curriculum', curriculumId);
   await deleteDoc(curriculumRef);
+}
+
+// Alumni Helpers
+export async function graduateStudents(db: Firestore, studentIds: string[], graduationYear: string) {
+    if (studentIds.length === 0) return;
+
+    const batch = writeBatch(db);
+    const studentsRef = collection(db, 'students');
+    const q = query(studentsRef, where('id', 'in', studentIds));
+    
+    const studentSnapshots = await getDocs(q);
+
+    studentSnapshots.forEach(studentDoc => {
+        const studentData = studentDoc.data() as Student;
+
+        const alumniRef = doc(db, 'alumni', studentData.id);
+        const alumniData: Alumni = {
+            id: studentData.id,
+            nis: studentData.nis,
+            name: studentData.name,
+            tahunLulus: graduationYear,
+            address: studentData.address,
+            noWa: studentData.noWa,
+        };
+        batch.set(alumniRef, alumniData);
+        batch.delete(studentDoc.ref);
+    });
+
+    await batch.commit();
+}
+
+export async function deleteAlumnus(db: Firestore, alumnusId: string) {
+  const alumnusRef = doc(db, 'alumni', alumnusId);
+  await deleteDoc(alumnusRef);
 }

@@ -56,6 +56,7 @@ export function StudentDetail({ isOpen, setIsOpen, student, onEdit, onDelete }: 
         ['Nama Ayah', student.namaAyah || "-"],
         ['Nama Ibu', student.namaIbu || "-"],
         ['Alamat', student.address || "-"],
+        ['No. WA', student.noWa || "-"],
         ['Dokumen', student.dokumenUrl ? 'Tersedia' : '-'],
     ];
 
@@ -136,6 +137,7 @@ export function StudentDetail({ isOpen, setIsOpen, student, onEdit, onDelete }: 
       { label: 'Nama Ayah', value: student.namaAyah || "-" },
       { label: 'Nama Ibu', value: student.namaIbu || "-" },
       { label: 'Alamat', value: student.address || "-" },
+      { label: 'No. WA', value: student.noWa || "-" },
     ];
     if (student.dokumenUrl) {
         data.push({ label: 'Dokumen', value: `Tersedia (tidak ditampilkan)` });
@@ -273,6 +275,10 @@ export function StudentDetail({ isOpen, setIsOpen, student, onEdit, onDelete }: 
           <div className="grid grid-cols-3 items-center">
             <span className="text-muted-foreground">Alamat</span>
             <span className="col-span-2">{student.address || "-"}</span>
+          </div>
+          <div className="grid grid-cols-3 items-center">
+            <span className="text-muted-foreground">No. WA</span>
+            <span className="col-span-2">{student.noWa || "-"}</span>
           </div>
           {student.dokumenUrl && (
             <div className="grid grid-cols-3 items-center">

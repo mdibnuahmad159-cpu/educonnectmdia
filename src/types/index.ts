@@ -29,6 +29,16 @@ export type Student = {
   dokumenUrl?: string;
   password?: string;
   kelas?: number;
+  noWa?: string;
+};
+
+export type Alumni = {
+  id: string;
+  nis: string;
+  name: string;
+  tahunLulus: string;
+  address: string;
+  noWa?: string;
 };
 
 export type SchoolProfile = {

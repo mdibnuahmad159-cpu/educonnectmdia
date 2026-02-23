@@ -98,6 +98,10 @@
           "type": "string",
           "description": "The residential address of the student."
         },
+        "noWa": {
+          "type": "string",
+          "description": "The WhatsApp contact number of the student or their guardian."
+        },
         "enrollmentDate": {
           "type": "string",
           "description": "The date when the student was enrolled in the school.",
@@ -264,6 +268,44 @@
         "classLevel",
         "bookName"
       ]
+    },
+    "Alumni": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Alumni",
+      "type": "object",
+      "description": "Represents a former student who has graduated.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Alumni entity, same as original student ID."
+        },
+        "nis": {
+          "type": "string",
+          "description": "Nomor Induk Siswa (Student ID Number) of the alumni."
+        },
+        "name": {
+          "type": "string",
+          "description": "The full name of the alumni."
+        },
+        "tahunLulus": {
+          "type": "string",
+          "description": "The academic year the student graduated (e.g., '2023-2024')."
+        },
+        "address": {
+          "type": "string",
+          "description": "The last known residential address of the alumni."
+        },
+        "noWa": {
+          "type": "string",
+          "description": "The last known WhatsApp number of the alumni."
+        }
+      },
+      "required": [
+        "id",
+        "nis",
+        "name",
+        "tahunLulus"
+      ]
     }
   },
   "auth": {
@@ -382,6 +424,22 @@
             {
               "name": "curriculumId",
               "description": "The unique ID of the curriculum entry."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/alumni/{alumniId}",
+        "definition": {
+          "entityName": "Alumni",
+          "schema": {
+            "$ref": "#/backend/entities/Alumni"
+          },
+          "description": "Stores records of graduated students (alumni). Admin has full CRUD. Other authenticated users can read.",
+          "params": [
+            {
+              "name": "alumniId",
+              "description": "The unique ID of the alumni, which is the original student ID (NIS)."
             }
           ]
         }

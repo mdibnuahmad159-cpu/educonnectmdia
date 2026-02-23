@@ -1,7 +1,292 @@
+"use client";
+
+import { useState, useMemo } from "react";
+import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
+import { collection, Firestore } from "firebase/firestore";
+import type { Alumni } from "@/types";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
+import { Trash2, Loader2, FileDown, Printer, FileSpreadsheet, FileText } from "lucide-react";
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import { deleteAlumnus } from "@/lib/firebase-helpers";
+
 export default function AlumniPage() {
+    const firestore = useFirestore() as Firestore;
+    const alumniCollection = useMemoFirebase(() => firestore ? collection(firestore, "alumni") : null, [firestore]);
+    const { data: alumniData, loading } = useCollection<Alumni>(alumniCollection);
+    const { toast } = useToast();
+
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [alumnusToDelete, setAlumnusToDelete] = useState<string | null>(null);
+    const [searchTerm, setSearchTerm] = useState("");
+
+    const filteredData = useMemo(() => {
+        if (!alumniData) return [];
+        return alumniData.filter(alumnus =>
+            alumnus.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            alumnus.nis.includes(searchTerm) ||
+            alumnus.tahunLulus.includes(searchTerm)
+        ).sort((a, b) => {
+            if (a.tahunLulus !== b.tahunLulus) {
+                return b.tahunLulus.localeCompare(a.tahunLulus);
+            }
+            return a.name.localeCompare(b.name);
+        });
+    }, [alumniData, searchTerm]);
+
+    const handleDelete = (id: string) => {
+        setAlumnusToDelete(id);
+        setIsDeleteDialogOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!firestore || !alumnusToDelete) return;
+        try {
+            await deleteAlumnus(firestore, alumnusToDelete);
+            toast({ title: "Data Alumni Dihapus", description: "Data berhasil dihapus." });
+        } catch (error: any) {
+            toast({ variant: "destructive", title: "Gagal Menghapus", description: error.message });
+        }
+        setIsDeleteDialogOpen(false);
+        setAlumnusToDelete(null);
+    };
+
+    const handleExportExcel = () => {
+        if (!filteredData) return;
+        const dataToExport = filteredData.map((item, index) => ({
+            'No.': index + 1,
+            'Nama': item.name,
+            'NIS': item.nis,
+            'Tahun Lulus': item.tahunLulus,
+            'Alamat': item.address,
+            'No. WA': item.noWa || '-',
+        }));
+        const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Alumni');
+        XLSX.writeFile(workbook, 'data_alumni.xlsx');
+    };
+
+    const handleExportPdf = () => {
+        if (!filteredData) return;
+        const doc = new jsPDF();
+        doc.text('Data Alumni', 14, 16);
+        (doc as any).autoTable({
+            head: [['No', 'Nama', 'NIS', 'Tahun Lulus', 'Alamat', 'No. WA']],
+            body: filteredData.map((item, index) => [
+                index + 1,
+                item.name,
+                item.nis,
+                item.tahunLulus,
+                item.address,
+                item.noWa || '-',
+            ]),
+            startY: 20,
+        });
+        doc.save('data_alumni.pdf');
+    };
+
+    const handlePrintTable = () => {
+        if (!filteredData || filteredData.length === 0) {
+            toast({ variant: "destructive", title: "Tidak Ada Data", description: "Tidak ada data untuk dicetak." });
+            return;
+        }
+
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) {
+            toast({ variant: "destructive", title: "Gagal Membuka Jendela Cetak" });
+            return;
+        }
+        
+        const tableRows = filteredData.map((item, index) => `
+            <tr>
+                <td>${index + 1}</td>
+                <td>${item.name}</td>
+                <td>${item.nis}</td>
+                <td>${item.tahunLulus}</td>
+                <td>${item.address}</td>
+                <td>${item.noWa || '-'}</td>
+            </tr>
+        `).join('');
+
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Cetak Data Alumni</title>
+                    <style>
+                        body { font-family: sans-serif; }
+                        table { width: 100%; border-collapse: collapse; }
+                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        th { background-color: #f2f2f2; }
+                    </style>
+                </head>
+                <body>
+                    <h1>Data Alumni</h1>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>No.</th>
+                                <th>Nama</th>
+                                <th>NIS</th>
+                                <th>Tahun Lulus</th>
+                                <th>Alamat</th>
+                                <th>No. WA</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${tableRows}
+                        </tbody>
+                    </table>
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
+        printWindow.onload = () => {
+            printWindow.focus();
+            printWindow.print();
+        };
+    };
+
     return (
-        <div className="flex items-center justify-center h-full">
-            <p className="text-muted-foreground">Halaman Alumni akan segera tersedia.</p>
-        </div>
-    )
+        <>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Alumni</CardTitle>
+                    <CardDescription>
+                        Kelola dan lihat data siswa yang telah lulus.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex flex-col sm:flex-row justify-between items-center gap-2 mb-4">
+                        <Input
+                            placeholder="Cari berdasarkan nama, NIS, atau tahun..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full sm:max-w-xs h-8 text-xs"
+                        />
+                        <div className="flex items-center gap-2">
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button size="xs" variant="outline" className="gap-1">
+                                    <FileDown className="h-4 w-4" />
+                                    Ekspor
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={handleExportExcel}>
+                                    <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                    Ekspor ke Excel
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={handleExportPdf}>
+                                    <FileText className="mr-2 h-4 w-4" />
+                                    Ekspor ke PDF
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                            <Button size="xs" variant="outline" className="gap-1" onClick={handlePrintTable}>
+                                <Printer className="h-4 w-4" />
+                                Cetak Data
+                            </Button>
+                        </div>
+                    </div>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="w-[50px]">No.</TableHead>
+                                <TableHead>Nama</TableHead>
+                                <TableHead>NIS</TableHead>
+                                <TableHead>Tahun Lulus</TableHead>
+                                <TableHead>Alamat</TableHead>
+                                <TableHead>No. WA</TableHead>
+                                <TableHead className="text-right w-[100px]">Aksi</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {loading ? (
+                                <TableRow>
+                                    <TableCell colSpan={7} className="text-center h-24">
+                                        <div className="flex justify-center items-center gap-2 text-muted-foreground">
+                                            <Loader2 className="h-4 w-4 animate-spin"/>
+                                            <span>Memuat data...</span>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            ) : filteredData.length > 0 ? (
+                                filteredData.map((item, index) => (
+                                <TableRow key={item.id}>
+                                    <TableCell>{index + 1}</TableCell>
+                                    <TableCell className="font-medium">{item.name}</TableCell>
+                                    <TableCell>{item.nis}</TableCell>
+                                    <TableCell>{item.tahunLulus}</TableCell>
+                                    <TableCell>{item.address}</TableCell>
+                                    <TableCell>{item.noWa || '-'}</TableCell>
+                                    <TableCell className="text-right">
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(item.id)}>
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                                ))
+                            ) : (
+                                <TableRow>
+                                    <TableCell colSpan={7} className="h-24 text-center">
+                                        Belum ada data alumni.
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
+            
+            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Anda yakin?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Tindakan ini tidak dapat dibatalkan. Ini akan menghapus data alumni secara permanen.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Batal</AlertDialogCancel>
+                    <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">Hapus</AlertDialogAction>
+                </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </>
+    );
 }

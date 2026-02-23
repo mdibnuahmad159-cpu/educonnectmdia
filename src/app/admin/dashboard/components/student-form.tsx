@@ -48,6 +48,7 @@ const formSchema = z.object({
   namaAyah: z.string().optional(),
   namaIbu: z.string().optional(),
   address: z.string().min(1, "Alamat harus diisi"),
+  noWa: z.string().optional(),
   avatarUrl: z.string().optional().or(z.literal("")),
   avatar: z.any().optional(),
   dokumenUrl: z.string().optional().or(z.literal("")),
@@ -75,6 +76,7 @@ const defaultValues = {
     namaAyah: "",
     namaIbu: "",
     address: "",
+    noWa: "",
     avatarUrl: "",
     dokumenUrl: "",
     kelas: undefined,
@@ -96,6 +98,7 @@ export function StudentForm({ isOpen, setIsOpen, student, onSave }: StudentFormP
             tempatLahir: student.tempatLahir || "",
             namaAyah: student.namaAyah || "",
             namaIbu: student.namaIbu || "",
+            noWa: student.noWa || "",
             avatarUrl: student.avatarUrl || "",
             dokumenUrl: student.dokumenUrl || "",
             kelas: student.kelas,
@@ -360,6 +363,20 @@ export function StudentForm({ isOpen, setIsOpen, student, onSave }: StudentFormP
                       <FormControl>
                         <Textarea {...field} />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="noWa"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>No. WA</FormLabel>
+                      <FormControl>
+                        <Input type="tel" placeholder="Contoh: 08123456789" {...field} value={field.value ?? ""} />
+                      </FormControl>
+                      <FormDescription>Nomor WhatsApp siswa atau wali.</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

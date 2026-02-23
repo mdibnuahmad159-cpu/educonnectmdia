@@ -160,5 +160,23 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow write: if isAdmin();
     }
+
+    /**
+     * @description School Curriculum. Admin has full CRUD. Signed in users can read.
+     * @path /curriculum/{curriculumId}
+     */
+    match /curriculum/{curriculumId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    /**
+     * @description Alumni records. Admin has full CRUD. Other authenticated users can read.
+     * @path /alumni/{alumniId}
+     */
+    match /alumni/{alumniId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
   }
 }
