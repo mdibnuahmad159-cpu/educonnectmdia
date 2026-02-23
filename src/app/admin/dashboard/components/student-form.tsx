@@ -55,7 +55,7 @@ const formSchema = z.object({
   enrollmentDate: z.string().min(1, "Tanggal masuk harus diisi"),
   classId: z.string().min(1, "Kelas harus diisi"),
   password: z.string().min(6, "Password minimal 6 karakter").optional().or(z.literal('')),
-  avatarUrl: z.string().url({ message: "URL tidak valid" }).optional().or(z.literal("")),
+  avatarUrl: z.string().optional().or(z.literal("")),
   avatar: z.any().optional(),
 });
 
@@ -197,11 +197,21 @@ export function StudentForm({ isOpen, setIsOpen, student, onSave }: StudentFormP
                         <Input 
                           type="file" 
                           accept="image/*"
-                          onChange={(e) => field.onChange(e.target.files?.[0] ?? null)} 
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const reader = new FileReader();
+                              reader.onloadend = () => {
+                                form.setValue('avatarUrl', reader.result as string);
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                            field.onChange(file ?? null);
+                          }} 
                         />
                       </FormControl>
                       <FormDescription>
-                          Fitur upload belum berfungsi. Gunakan URL Avatar.
+                          Atau unggah gambar. File akan disimpan sebagai data URL.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>

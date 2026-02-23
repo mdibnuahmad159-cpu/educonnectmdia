@@ -40,7 +40,7 @@ const formSchema = z.object({
   name: z.string().min(1, "Nama harus diisi"),
   email: z.string().email("Email tidak valid"),
   password: z.string().optional(),
-  avatarUrl: z.string().url({ message: "URL tidak valid" }).optional().or(z.literal("")),
+  avatarUrl: z.string().optional().or(z.literal("")),
   avatar: z.any().optional(),
   jabatan: z.string().optional(),
   noWa: z.string().optional(),
@@ -169,11 +169,21 @@ export function TeacherForm({ isOpen, setIsOpen, teacher, onSave }: TeacherFormP
                         <Input 
                           type="file" 
                           accept="image/*"
-                          onChange={(e) => field.onChange(e.target.files?.[0] ?? null)} 
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const reader = new FileReader();
+                              reader.onloadend = () => {
+                                form.setValue('avatarUrl', reader.result as string);
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                            field.onChange(file ?? null);
+                          }}
                         />
                       </FormControl>
                        <FormDescription>
-                          Fitur upload belum berfungsi. Gunakan URL Avatar untuk sementara.
+                          Atau unggah gambar. File akan disimpan sebagai data URL.
                         </FormDescription>
                       <FormMessage />
                     </FormItem>
