@@ -33,11 +33,10 @@ service cloud.firestore {
 
     /**
      * Checks if the user is an admin.
-     * An admin is an authenticated user with no email address, which uniquely
-     * identifies the anonymous user from the "Login as Admin" flow.
+     * An admin is an authenticated user with the specific admin email address.
      */
     function isAdmin() {
-      return isSignedIn() && request.auth.token.email == null;
+      return isSignedIn() && request.auth.token.email == 'mdibnuahmad159@gmail.com';
     }
     
     /**

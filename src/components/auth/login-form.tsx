@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/firebase";
-import { signInAnonymously, signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword } from "firebase/auth";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -31,6 +31,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 
 const adminSchema = z.object({
+  email: z.string().email("Email tidak valid"),
   password: z.string().min(1, "Password wajib diisi"),
 });
 
@@ -51,7 +52,7 @@ export function LoginForm() {
 
   const adminForm = useForm<z.infer<typeof adminSchema>>({
     resolver: zodResolver(adminSchema),
-    defaultValues: { password: "" },
+    defaultValues: { email: "mdibnuahmad159@gmail.com", password: "" },
   });
 
   const teacherForm = useForm<z.infer<typeof teacherSchema>>({
@@ -66,28 +67,19 @@ export function LoginForm() {
 
   const handleAdminSubmit = async (values: z.infer<typeof adminSchema>) => {
     if (!auth) return;
-    if (values.password === "useAdmin") {
-      try {
-        await signInAnonymously(auth);
-        toast({
-          title: "Login Admin Berhasil",
-          description: "Anda sekarang memiliki akses admin.",
-        });
-        router.push("/admin/dashboard");
-      } catch (error: any) {
-        toast({
-          variant: "destructive",
-          title: "Gagal Memulai Sesi Admin",
-          description: `Gagal memulai sesi admin: ${error.message}`,
-        });
-      }
-    } else {
+    try {
+      await signInWithEmailAndPassword(auth, values.email, values.password);
+      toast({
+        title: "Login Admin Berhasil",
+        description: "Anda akan diarahkan ke dasbor.",
+      });
+      router.push("/admin/dashboard");
+    } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Login Gagal",
-        description: "Password admin salah.",
+        description: "Email atau password salah.",
       });
-      adminForm.reset();
     }
   };
 
@@ -132,15 +124,25 @@ export function LoginForm() {
             <TabsContent value="admin">
                 <Form {...adminForm}>
                   <form onSubmit={adminForm.handleSubmit(handleAdminSubmit)} className="space-y-4">
-                    <p className="text-center text-sm text-muted-foreground">
-                      Gunakan password pengembangan untuk mendapatkan akses admin.
-                    </p>
+                    <FormField
+                      control={adminForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email Admin</FormLabel>
+                          <FormControl>
+                            <Input type="email" placeholder="email@contoh.com" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                     <FormField
                       control={adminForm.control}
                       name="password"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Password Admin</FormLabel>
+                          <FormLabel>Password</FormLabel>
                           <FormControl>
                             <Input type="password" placeholder="••••••••" {...field} />
                           </FormControl>
