@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import {
   DropdownMenu,
@@ -8,10 +8,30 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useAcademicYear } from "@/context/academic-year-provider";
-import { ChevronDown, Circle } from "lucide-react";
+import { useUser } from "@/firebase";
+import { ChevronDown, Circle, Calendar } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function AcademicYearSelector() {
-  const { activeYear, setActiveYear, availableYears } = useAcademicYear();
+  const { activeYear, setActiveYear, availableYears, loading } = useAcademicYear();
+  const { user, isUserLoading } = useUser();
+
+  const isAdmin = user?.email === 'mdibnuahmad159@gmail.com';
+
+  if (loading || isUserLoading) {
+      return <Skeleton className="h-8 w-28" />;
+  }
+  
+  if (!activeYear) return null;
+
+  if (!isAdmin) {
+      return (
+          <div className="flex items-center gap-1.5 text-sm font-semibold px-2">
+              <Calendar className="h-4 w-4 opacity-70" />
+              <span>{activeYear}</span>
+          </div>
+      )
+  }
 
   return (
     <DropdownMenu>

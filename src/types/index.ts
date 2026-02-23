@@ -43,4 +43,5 @@ export type SchoolProfile = {
   logoYayasanUrl?: string;
   logoMadrasahUrl?: string;
   kopSuratUrl?: string;
+  activeAcademicYear?: string;
 };

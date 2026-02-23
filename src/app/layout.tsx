@@ -24,11 +24,11 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <FirebaseClientProvider>
-          <AcademicYearProvider>
-            <SchoolProfileProvider>
+          <SchoolProfileProvider>
+            <AcademicYearProvider>
               {children}
-            </SchoolProfileProvider>
-          </AcademicYearProvider>
+            </AcademicYearProvider>
+          </SchoolProfileProvider>
         </FirebaseClientProvider>
         <Toaster />
       </body>
