@@ -57,6 +57,15 @@ const defaultValues = {
   kopSuratUrl: "",
 };
 
+const handleFileRead = (file: File, callback: (result: string) => void) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+        callback(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+};
+
+
 export function ProfileForm({ profile, onSave }: ProfileFormProps) {
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(formSchema),
@@ -77,7 +86,7 @@ export function ProfileForm({ profile, onSave }: ProfileFormProps) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        <ScrollArea className="h-[60vh] pr-4">
+        <ScrollArea className="h-[calc(100vh-25rem)] pr-4">
             <div className="space-y-6">
                 <FormField control={form.control} name="namaYayasan" render={({ field }) => ( <FormItem> <FormLabel>Nama Yayasan</FormLabel> <FormControl><Input {...field} value={field.value ?? ""} /></FormControl> <FormMessage /> </FormItem> )}/>
                 <FormField control={form.control} name="namaMadrasah" render={({ field }) => ( <FormItem> <FormLabel>Nama Madrasah</FormLabel> <FormControl><Input {...field} value={field.value ?? ""} /></FormControl> <FormMessage /> </FormItem> )}/>
@@ -106,17 +115,13 @@ export function ProfileForm({ profile, onSave }: ProfileFormProps) {
                               onChange={(e) => {
                                 const file = e.target.files?.[0];
                                 if (file) {
-                                  const reader = new FileReader();
-                                  reader.onloadend = () => {
-                                    form.setValue('logoYayasanUrl', reader.result as string);
-                                  };
-                                  reader.readAsDataURL(file);
+                                  handleFileRead(file, (result) => form.setValue('logoYayasanUrl', result));
                                 }
                                 field.onChange(file ?? null);
                               }}
                             />
                           </FormControl>
-                          <FormDescription>Unggah logo yayasan. Sebaiknya gunakan gambar yang sudah dioptimalkan.</FormDescription>
+                          <FormDescription>Unggah logo yayasan.</FormDescription>
                           <FormMessage />
                         </div>
                       </div>
@@ -143,17 +148,13 @@ export function ProfileForm({ profile, onSave }: ProfileFormProps) {
                               onChange={(e) => {
                                 const file = e.target.files?.[0];
                                 if (file) {
-                                  const reader = new FileReader();
-                                  reader.onloadend = () => {
-                                    form.setValue('logoMadrasahUrl', reader.result as string);
-                                  };
-                                  reader.readAsDataURL(file);
+                                   handleFileRead(file, (result) => form.setValue('logoMadrasahUrl', result));
                                 }
                                 field.onChange(file ?? null);
                               }}
                             />
                           </FormControl>
-                          <FormDescription>Unggah logo madrasah. Sebaiknya gunakan gambar yang sudah dioptimalkan.</FormDescription>
+                          <FormDescription>Unggah logo madrasah.</FormDescription>
                           <FormMessage />
                         </div>
                       </div>
@@ -168,7 +169,7 @@ export function ProfileForm({ profile, onSave }: ProfileFormProps) {
                     <FormItem>
                       <FormLabel>Gambar Kop Surat</FormLabel>
                       <div className="flex items-start gap-4">
-                        <Avatar className="h-20 w-auto rounded-md border aspect-video">
+                        <Avatar className="h-20 w-auto rounded-md border aspect-[2/1]">
                           <AvatarImage src={form.watch('kopSuratUrl') || undefined} className="object-contain" />
                           <AvatarFallback className="rounded-md bg-muted"><ImageIcon className="h-8 w-8 text-muted-foreground" /></AvatarFallback>
                         </Avatar>
@@ -180,17 +181,13 @@ export function ProfileForm({ profile, onSave }: ProfileFormProps) {
                               onChange={(e) => {
                                 const file = e.target.files?.[0];
                                 if (file) {
-                                  const reader = new FileReader();
-                                  reader.onloadend = () => {
-                                    form.setValue('kopSuratUrl', reader.result as string);
-                                  };
-                                  reader.readAsDataURL(file);
+                                  handleFileRead(file, (result) => form.setValue('kopSuratUrl', result));
                                 }
                                 field.onChange(file ?? null);
                               }}
                             />
                           </FormControl>
-                          <FormDescription>Unggah gambar untuk kop surat. Sebaiknya gunakan gambar yang sudah dioptimalkan.</FormDescription>
+                          <FormDescription>Unggah gambar untuk kop surat.</FormDescription>
                           <FormMessage />
                         </div>
                       </div>
