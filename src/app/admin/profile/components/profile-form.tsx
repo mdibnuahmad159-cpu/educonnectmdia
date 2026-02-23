@@ -50,7 +50,7 @@ const defaultValues = {
   nsdt: "",
   alamat: "",
   visi: "",
-misi: "",
+  misi: "",
   sejarahSingkat: "",
   logoYayasanUrl: "",
   logoMadrasahUrl: "",
