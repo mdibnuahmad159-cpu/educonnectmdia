@@ -11,8 +11,11 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import type { Student } from "@/types";
-import { Trash2, Edit, Printer } from "lucide-react";
+import { Trash2, Edit, Printer, FileDown } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+
 
 type StudentDetailProps = {
   isOpen: boolean;
@@ -32,6 +35,46 @@ export function StudentDetail({ isOpen, setIsOpen, student, onEdit, onDelete }: 
   const handleDelete = () => {
     onDelete(student.id);
     setIsOpen(false);
+  };
+  
+  const handleExportPdf = () => {
+    if (!student) return;
+    const doc = new jsPDF();
+    
+    doc.setFontSize(16);
+    doc.text(`Detail Siswa`, 14, 22);
+    doc.setFontSize(11);
+
+    let startY = 30;
+
+    if (student.avatarUrl) {
+      try {
+        const imgData = student.avatarUrl;
+        doc.addImage(imgData, 'JPEG', 15, startY, 40, 40);
+        startY += 50; 
+      } catch (e) {
+        console.error("Could not add image to PDF", e);
+      }
+    }
+
+    (doc as any).autoTable({
+      startY: startY,
+      body: [
+        ['Nama', student.name || "-"],
+        ['NIS', student.nis || "-"],
+        ['NIK', student.nik || "-"],
+        ['Jenis Kelamin', student.gender || "-"],
+        ['Tempat Lahir', student.tempatLahir || "-"],
+        ['Tanggal Lahir', student.dateOfBirth || "-"],
+        ['Nama Ayah', student.namaAyah || "-"],
+        ['Nama Ibu', student.namaIbu || "-"],
+        ['Alamat', student.address || "-"],
+        ['Dokumen', student.dokumenUrl ? 'Tersedia' : '-'],
+      ],
+      theme: 'grid',
+    });
+    
+    doc.output('dataurlnewwindow');
   };
 
   const handlePrint = () => {
@@ -197,6 +240,9 @@ export function StudentDetail({ isOpen, setIsOpen, student, onEdit, onDelete }: 
            )}
         </div>
         <DialogFooter>
+           <Button variant="outline" size="xs" onClick={handleExportPdf} className="gap-1">
+            <FileDown /> Ekspor PDF
+          </Button>
           <Button variant="outline" size="xs" onClick={handlePrint} className="gap-1">
             <Printer /> Cetak Detail
           </Button>

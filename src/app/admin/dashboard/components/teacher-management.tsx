@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useMemo, useRef } from "react";
-import { PlusCircle, AlertTriangle, Download, Upload, FileDown, FileUp, FileSpreadsheet, FileText } from "lucide-react";
+import { PlusCircle, AlertTriangle, Download, Upload, FileDown, FileUp, FileSpreadsheet, FileText, Printer } from "lucide-react";
 import { useCollection, useAuth, useFirestore, useMemoFirebase, useUser } from "@/firebase";
 import { addTeacher, updateTeacher, deleteTeacher } from "@/lib/firebase-helpers";
 import { Button } from "@/components/ui/button";
@@ -256,6 +256,71 @@ export function TeacherManagement() {
         doc.save('data_guru.pdf');
     };
 
+  const handlePrintTable = () => {
+    if (!sortedTeachers || sortedTeachers.length === 0) {
+      toast({ variant: "destructive", title: "Tidak Ada Data", description: "Tidak ada data guru untuk dicetak." });
+      return;
+    }
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast({ variant: "destructive", title: "Gagal Membuka Jendela Cetak", description: "Mohon izinkan pop-up untuk situs ini." });
+      return;
+    }
+
+    const tableRows = sortedTeachers.map((teacher, index) => `
+      <tr style="border-bottom: 1px solid #ddd;">
+        <td style="padding: 8px; text-align: center;">${index + 1}</td>
+        <td style="padding: 8px;">${teacher.name}</td>
+        <td style="padding: 8px;">${teacher.jabatan || '-'}</td>
+        <td style="padding: 8px;">${teacher.noWa || '-'}</td>
+        <td style="padding: 8px;">${teacher.email}</td>
+      </tr>
+    `).join('');
+
+    const content = `
+      <html>
+        <head>
+          <title>Cetak Data Guru</title>
+          <style>
+            body { font-family: sans-serif; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #ccc; text-align: left; }
+            th { background-color: #f2f2f2; padding: 8px; }
+            h1 { font-size: 18px; }
+            @media print {
+              @page { size: A4 landscape; margin: 20mm; }
+              body { margin: 0; }
+            }
+          </style>
+        </head>
+        <body>
+          <h1>Data Seluruh Guru</h1>
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 5%; text-align: center;">No.</th>
+                <th>Nama</th>
+                <th>Jabatan</th>
+                <th>No. WA</th>
+                <th>Email</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${tableRows}
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(content);
+    printWindow.document.close();
+    printWindow.onload = () => {
+      printWindow.focus();
+      printWindow.print();
+    };
+  };
 
   if (error && error.message.includes("Missing or insufficient permissions")) {
     return (
@@ -329,6 +394,10 @@ export function TeacherManagement() {
                     </DropdownMenuItem>
                 </DropdownMenuContent>
                 </DropdownMenu>
+                <Button size="xs" variant="outline" className="gap-1" onClick={handlePrintTable}>
+                    <Printer className="h-4 w-4" />
+                    Cetak Data
+                </Button>
               <Button size="xs" className="gap-1" onClick={handleAdd}>
                 <PlusCircle className="h-4 w-4" />
                 Tambah Guru
@@ -357,7 +426,7 @@ export function TeacherManagement() {
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8">
-                          <AvatarImage src={teacher.avatarUrl} alt={teacher.name} />
+                          <AvatarImage src={teacher.avatarUrl || undefined} alt={teacher.name} />
                           <AvatarFallback>{teacher.name.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <span>{teacher.name}</span>

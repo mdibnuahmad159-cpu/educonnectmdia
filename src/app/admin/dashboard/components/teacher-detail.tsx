@@ -11,8 +11,10 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import type { Teacher } from "@/types";
-import { Trash2, Edit, Printer } from "lucide-react";
+import { Trash2, Edit, Printer, FileDown } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 type TeacherDetailProps = {
   isOpen: boolean;
@@ -33,6 +35,45 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
   const handleDelete = () => {
     onDelete(teacher.id);
     setIsOpen(false);
+  };
+  
+  const handleExportPdf = () => {
+    if (!teacher) return;
+    const doc = new jsPDF();
+    
+    doc.setFontSize(16);
+    doc.text(`Detail Guru`, 14, 22);
+    doc.setFontSize(11);
+
+    let startY = 30;
+
+    if (teacher.avatarUrl) {
+      try {
+        const imgData = teacher.avatarUrl;
+        doc.addImage(imgData, 'JPEG', 15, startY, 40, 40);
+        startY += 50;
+      } catch (e) {
+        console.error("Could not add image to PDF", e);
+      }
+    }
+    
+    (doc as any).autoTable({
+      startY: startY,
+      body: [
+        ['Nama', teacher.name || "-"],
+        ['Jabatan', teacher.jabatan || "-"],
+        ['No. WA', teacher.noWa || "-"],
+        ['NIK', teacher.nik || "-"],
+        ['Email', teacher.email || "-"],
+        ['Pendidikan', teacher.pendidikan || "-"],
+        ['Ponpes', teacher.ponpes || "-"],
+        ['Alamat', teacher.alamat || "-"],
+        ['Dokumen', teacher.dokumenUrl ? 'Tersedia' : '-'],
+      ],
+      theme: 'grid',
+    });
+    
+    doc.output('dataurlnewwindow');
   };
 
  const handlePrint = () => {
@@ -193,6 +234,9 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
            )}
         </div>
         <DialogFooter>
+           <Button variant="outline" size="xs" onClick={handleExportPdf} className="gap-1">
+            <FileDown /> Ekspor PDF
+          </Button>
            <Button variant="outline" size="xs" onClick={handlePrint} className="gap-1">
             <Printer /> Cetak Detail
           </Button>
