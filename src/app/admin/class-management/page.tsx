@@ -254,24 +254,24 @@ export default function ClassManagementPage() {
     <>
       <Card>
         <CardHeader>
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle>Manajemen Kelas</CardTitle>
-              <CardDescription>
-                Kelola kenaikan, penurunan, dan perpindahan kelas siswa.
-              </CardDescription>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button size="xs" variant="outline" onClick={handlePromote} disabled={selectedStudents.length === 0} className="gap-1">
-                <ChevronsUp /> Naik Kelas
-              </Button>
-              <Button size="xs" variant="outline" onClick={handleDemote} disabled={selectedStudents.length === 0} className="gap-1">
-                <ChevronsDown /> Turun Kelas
-              </Button>
-              <Button size="xs" variant="outline" onClick={() => setIsMoveDialogOpen(true)} disabled={selectedStudents.length === 0} className="gap-1">
-                <ArrowRightLeft /> Pindah Kelas
-              </Button>
-              <DropdownMenu>
+          <CardTitle>Manajemen Kelas</CardTitle>
+          <CardDescription>
+            Kelola kenaikan, penurunan, dan perpindahan kelas siswa.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="pt-4">
+          <div className="flex items-center gap-2 mb-4">
+            <Button size="xs" variant="outline" onClick={handlePromote} disabled={selectedStudents.length === 0} className="gap-1">
+              <ChevronsUp /> Naik Kelas
+            </Button>
+            <Button size="xs" variant="outline" onClick={handleDemote} disabled={selectedStudents.length === 0} className="gap-1">
+              <ChevronsDown /> Turun Kelas
+            </Button>
+            <Button size="xs" variant="outline" onClick={() => setIsMoveDialogOpen(true)} disabled={selectedStudents.length === 0} className="gap-1">
+              <ArrowRightLeft /> Pindah Kelas
+            </Button>
+            <div className="ml-auto flex items-center gap-2">
+                <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button size="xs" variant="outline" className="gap-1">
                         <FileDown className="h-4 w-4" />
@@ -295,8 +295,6 @@ export default function ClassManagementPage() {
                 </Button>
             </div>
           </div>
-        </CardHeader>
-        <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
