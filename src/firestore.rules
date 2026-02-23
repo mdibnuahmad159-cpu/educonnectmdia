@@ -32,6 +32,15 @@ service cloud.firestore {
     }
 
     /**
+     * Checks if the user is an admin.
+     * An admin is an authenticated user with no email address, which uniquely
+     * identifies the anonymous user from the "Login as Admin" flow.
+     */
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.email == null;
+    }
+    
+    /**
      * Checks if the requesting user is a registered Teacher.
      */
     function isTeacher() {
@@ -43,15 +52,6 @@ service cloud.firestore {
      */
     function isParent() {
       return exists(/databases/$(database)/documents/parents/$(request.auth.uid));
-    }
-
-    /**
-     * Checks if the user is an admin.
-     * An admin is defined as an authenticated user who is NOT a registered teacher or parent.
-     * This reliably identifies the anonymous user from the "Login as Admin" flow.
-     */
-    function isAdmin() {
-      return isSignedIn() && !isTeacher() && !isParent();
     }
     
     /**
