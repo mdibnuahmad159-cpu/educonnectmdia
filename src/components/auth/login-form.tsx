@@ -5,8 +5,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/firebase";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { useAuth, useFirestore } from "@/firebase";
+import { signInWithEmailAndPassword, signInAnonymously } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -49,6 +50,7 @@ export function LoginForm() {
   const router = useRouter();
   const { toast } = useToast();
   const auth = useAuth();
+  const firestore = useFirestore();
 
   const adminForm = useForm<z.infer<typeof adminSchema>>({
     resolver: zodResolver(adminSchema),
@@ -101,13 +103,31 @@ export function LoginForm() {
     }
   };
 
-  const handleParentSubmit = (values: z.infer<typeof parentSchema>) => {
-    // Mock authentication
-    console.log("Parent login attempt:", values);
-    toast({
-      title: "Fitur Dalam Pengembangan",
-      description: "Login wali murid akan segera tersedia.",
-    });
+  const handleParentSubmit = async (values: z.infer<typeof parentSchema>) => {
+    if (!auth || !firestore) return;
+    try {
+      const studentRef = doc(firestore, "students", values.nis);
+      const studentSnap = await getDoc(studentRef);
+
+      if (studentSnap.exists() && studentSnap.data().password === values.password) {
+        await signInAnonymously(auth);
+        sessionStorage.setItem('studentNis', values.nis);
+        
+        toast({
+          title: "Login Wali Murid Berhasil",
+          description: "Anda akan diarahkan ke dasbor.",
+        });
+        router.push("/parent/dashboard");
+      } else {
+        throw new Error("NIS atau password salah.");
+      }
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Login Gagal",
+        description: error.message || "NIS atau password salah.",
+      });
+    }
   };
 
   return (
