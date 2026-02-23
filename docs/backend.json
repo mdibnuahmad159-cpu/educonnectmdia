@@ -229,6 +229,41 @@
         "id",
         "name"
       ]
+    },
+    "Curriculum": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Curriculum",
+      "type": "object",
+      "description": "Represents a single curriculum entry, associating a subject with a class level and a specific book.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the curriculum entry."
+        },
+        "subjectCode": {
+          "type": "string",
+          "description": "The unique code for the subject."
+        },
+        "subjectName": {
+          "type": "string",
+          "description": "The name of the subject (Mata Pelajaran)."
+        },
+        "classLevel": {
+          "type": "number",
+          "description": "The class level this curriculum applies to (e.g., 0, 1, 2, ... 6)."
+        },
+        "bookName": {
+          "type": "string",
+          "description": "The name of the textbook or 'Kitab' used for this subject at this class level."
+        }
+      },
+      "required": [
+        "id",
+        "subjectCode",
+        "subjectName",
+        "classLevel",
+        "bookName"
+      ]
     }
   },
   "auth": {
@@ -331,6 +366,22 @@
             {
               "name": "subjectId",
               "description": "The unique ID of the subject."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/curriculum/{curriculumId}",
+        "definition": {
+          "entityName": "Curriculum",
+          "schema": {
+            "$ref": "#/backend/entities/Curriculum"
+          },
+          "description": "Stores the school's curriculum. Admin has full CRUD. Teachers and parents can read.",
+          "params": [
+            {
+              "name": "curriculumId",
+              "description": "The unique ID of the curriculum entry."
             }
           ]
         }

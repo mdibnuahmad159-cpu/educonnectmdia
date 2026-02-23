@@ -8,9 +8,10 @@ import {
   doc,
   setDoc,
   deleteDoc,
-  serverTimestamp
+  serverTimestamp,
+  collection
 } from 'firebase/firestore';
-import type { Teacher, Student, SchoolProfile } from '@/types';
+import type { Teacher, Student, SchoolProfile, Curriculum } from '@/types';
 
 
 // This function creates a student document in Firestore.
@@ -64,4 +65,20 @@ export async function deleteTeacher(db: Firestore, teacherId: string) {
 export async function updateSchoolProfile(db: Firestore, profileData: Partial<Omit<SchoolProfile, 'id'>>) {
   const profileRef = doc(db, 'schoolProfile', 'main');
   await setDoc(profileRef, { ...profileData, updatedAt: serverTimestamp() }, { merge: true });
+}
+
+// Curriculum Helpers
+export async function addCurriculum(db: Firestore, curriculum: Omit<Curriculum, 'id'>) {
+  const newCurriculumRef = doc(collection(db, 'curriculum'));
+  await setDoc(newCurriculumRef, { ...curriculum, id: newCurriculumRef.id });
+}
+
+export async function updateCurriculum(db: Firestore, curriculumId: string, curriculum: Partial<Omit<Curriculum, 'id'>>) {
+  const curriculumRef = doc(db, 'curriculum', curriculumId);
+  await setDoc(curriculumRef, curriculum, { merge: true });
+}
+
+export async function deleteCurriculum(db: Firestore, curriculumId: string) {
+  const curriculumRef = doc(db, 'curriculum', curriculumId);
+  await deleteDoc(curriculumRef);
 }

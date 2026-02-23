@@ -45,3 +45,11 @@ export type SchoolProfile = {
   kopSuratUrl?: string;
   activeAcademicYear?: string;
 };
+
+export type Curriculum = {
+  id: string;
+  subjectCode: string;
+  subjectName: string;
+  classLevel: number;
+  bookName: string;
+};
