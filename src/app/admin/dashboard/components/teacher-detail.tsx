@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -47,19 +48,7 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
 
     let startY = 30;
 
-    if (teacher.avatarUrl) {
-      try {
-        const imgData = teacher.avatarUrl;
-        doc.addImage(imgData, 'JPEG', 15, startY, 40, 40);
-        startY += 50;
-      } catch (e) {
-        console.error("Could not add image to PDF", e);
-      }
-    }
-    
-    (doc as any).autoTable({
-      startY: startY,
-      body: [
+    const getTableBody = () => [
         ['Nama', teacher.name || "-"],
         ['Jabatan', teacher.jabatan || "-"],
         ['No. WA', teacher.noWa || "-"],
@@ -69,11 +58,62 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
         ['Ponpes', teacher.ponpes || "-"],
         ['Alamat', teacher.alamat || "-"],
         ['Dokumen', teacher.dokumenUrl ? 'Tersedia' : '-'],
-      ],
-      theme: 'grid',
-    });
-    
-    doc.output('dataurlnewwindow');
+    ];
+
+    if (teacher.avatarUrl) {
+      try {
+        const img = new Image();
+        img.src = teacher.avatarUrl;
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const aspect = img.width / img.height;
+            let width = 40;
+            let height = 40;
+            if(aspect > 1) {
+                height = width / aspect;
+            } else {
+                width = height * aspect;
+            }
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            ctx?.drawImage(img, 0, 0);
+            const dataUrl = canvas.toDataURL('image/jpeg');
+
+            doc.addImage(dataUrl, 'JPEG', 15, startY, width, height);
+            
+            (doc as any).autoTable({
+              startY: startY + height + 10,
+              body: getTableBody(),
+              theme: 'grid',
+            });
+            doc.save(`detail_guru_${teacher.id}.pdf`);
+        };
+        img.onerror = () => {
+            (doc as any).autoTable({
+                startY: startY,
+                body: getTableBody(),
+                theme: 'grid',
+            });
+            doc.save(`detail_guru_${teacher.id}.pdf`);
+        };
+      } catch (e) {
+        console.error("Could not add image to PDF", e);
+        (doc as any).autoTable({
+            startY: startY,
+            body: getTableBody(),
+            theme: 'grid',
+        });
+        doc.save(`detail_guru_${teacher.id}.pdf`);
+      }
+    } else {
+        (doc as any).autoTable({
+            startY: startY,
+            body: getTableBody(),
+            theme: 'grid',
+        });
+        doc.save(`detail_guru_${teacher.id}.pdf`);
+    }
   };
 
  const handlePrint = () => {
@@ -254,3 +294,5 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
     </Dialog>
   );
 }
+
+    
