@@ -42,6 +42,7 @@ const formSchema = z.object({
   password: z.string().optional(),
   avatarUrl: z.string().optional().or(z.literal("")),
   avatar: z.any().optional(),
+  dokumenUrl: z.string().optional().or(z.literal("")),
   jabatan: z.string().optional(),
   noWa: z.string().optional(),
   nik: z.string().optional(),
@@ -80,7 +81,7 @@ export function TeacherForm({ isOpen, setIsOpen, teacher, onSave }: TeacherFormP
     })),
     defaultValues: {
       name: "", email: "", password: "", avatarUrl: "", jabatan: "", noWa: "", nik: "",
-      pendidikan: "", ponpes: "", alamat: "",
+      pendidikan: "", ponpes: "", alamat: "", dokumenUrl: "",
     },
   });
   
@@ -98,19 +99,18 @@ export function TeacherForm({ isOpen, setIsOpen, teacher, onSave }: TeacherFormP
           pendidikan: teacher.pendidikan || "",
           ponpes: teacher.ponpes || "",
           alamat: teacher.alamat || "",
+          dokumenUrl: teacher.dokumenUrl || "",
         });
       } else {
         form.reset({
           name: "", email: "", password: "", avatarUrl: "", jabatan: "", noWa: "", nik: "",
-          pendidikan: "", ponpes: "", alamat: "",
+          pendidikan: "", ponpes: "", alamat: "", dokumenUrl: "",
         });
       }
     }
   }, [teacher, form, isOpen]);
   
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    // NOTE: The 'dokumen' and 'avatar' file objects are not saved. 
-    // File upload requires Firebase Storage setup.
     const { dokumen, avatar, ...teacherData } = values;
     onSave({
       id: teacher?.id,
@@ -260,16 +260,42 @@ export function TeacherForm({ isOpen, setIsOpen, teacher, onSave }: TeacherFormP
                 )} />
                 <FormField
                   control={form.control}
+                  name="dokumenUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>URL Dokumen</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Akan terisi otomatis saat unggah" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
                   name="dokumen"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Dokumen</FormLabel>
+                      <FormLabel>Upload Dokumen</FormLabel>
                       <FormControl>
                         <Input 
                           type="file" 
-                          onChange={(e) => field.onChange(e.target.files?.[0] ?? null)} 
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const reader = new FileReader();
+                              reader.onloadend = () => {
+                                form.setValue('dokumenUrl', reader.result as string);
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                            field.onChange(file ?? null)
+                          }} 
                         />
                       </FormControl>
+                      <FormDescription>
+                          Unggah file seperti PDF, DOCX, atau gambar.
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

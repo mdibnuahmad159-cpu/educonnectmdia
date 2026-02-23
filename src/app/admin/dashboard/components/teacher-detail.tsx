@@ -82,6 +82,16 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
             <span className="text-muted-foreground">Alamat</span>
             <span className="col-span-2">{teacher.alamat || "-"}</span>
           </div>
+          {teacher.dokumenUrl && (
+            <div className="grid grid-cols-3 items-center">
+                <span className="text-muted-foreground">Dokumen</span>
+                <span className="col-span-2">
+                    <a href={teacher.dokumenUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80">
+                        Lihat Dokumen
+                    </a>
+                </span>
+            </div>
+           )}
         </div>
         <DialogFooter>
           <DialogClose asChild>

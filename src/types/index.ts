@@ -4,6 +4,7 @@ export type Teacher = {
   name: string;
   email: string;
   avatarUrl?: string;
+  dokumenUrl?: string;
   jabatan?: string;
   noWa?: string;
   nik?: string;
