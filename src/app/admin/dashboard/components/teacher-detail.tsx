@@ -13,8 +13,6 @@ import {
 import type { Teacher } from "@/types";
 import { Trash2, Edit, Printer } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
 
 type TeacherDetailProps = {
   isOpen: boolean;
@@ -37,89 +35,104 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
     setIsOpen(false);
   };
 
-  const handlePrint = () => {
+ const handlePrint = () => {
     if (!teacher) return;
-    const doc = new jsPDF();
-    doc.setFontSize(18);
-    doc.text(`Detail Guru: ${teacher.name}`, 14, 22);
 
-    const createPdf = (avatarData: {img: HTMLImageElement, width: number, height: number} | null) => {
-        let startY = 30;
-        if (avatarData) {
-            try {
-                doc.addImage(avatarData.img, 'JPEG', 14, 30, avatarData.width, avatarData.height);
-                startY = 30 + avatarData.height + 10;
-            } catch (e) {
-                console.error("Error adding image to PDF:", e);
-            }
-        }
-        
-        const tableData = [
-          ['Nama', teacher.name || "-"],
-          ['Jabatan', teacher.jabatan || "-"],
-          ['No. WA', teacher.noWa || "-"],
-          ['NIK', teacher.nik || "-"],
-          ['Email', teacher.email || "-"],
-          ['Pendidikan', teacher.pendidikan || "-"],
-          ['Ponpes', teacher.ponpes || "-"],
-          ['Alamat', teacher.alamat || "-"],
-        ];
-
-        (doc as any).autoTable({
-          startY: startY,
-          head: [['Keterangan', 'Data']],
-          body: tableData,
-          theme: 'grid',
-          styles: { cellPadding: 2, fontSize: 10 },
-          headStyles: { fillColor: [34, 119, 74], textColor: 255, fontStyle: 'bold' },
-          columnStyles: { 0: { fontStyle: 'bold' } },
-        });
-
-        doc.autoPrint();
-        doc.output('dataurlnewwindow');
+    const printWindow = window.open('', '_blank', 'height=800,width=600');
+    if (!printWindow) {
+        alert('Tidak dapat membuka jendela cetak. Mohon izinkan pop-up untuk situs ini.');
+        return;
     }
 
-    if (teacher.avatarUrl) {
-        const img = new Image();
-        if (!teacher.avatarUrl.startsWith('data:image')) {
-            img.crossOrigin = "Anonymous";
-        }
-        img.src = teacher.avatarUrl || '';
-        img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            canvas.width = img.width;
-            canvas.height = img.height;
-            if (ctx) {
-                ctx.drawImage(img, 0, 0);
-                const dataUrl = canvas.toDataURL('image/jpeg');
-                const finalImg = new Image();
-                finalImg.src = dataUrl;
-                finalImg.onload = () => {
-                    const ratio = finalImg.width / finalImg.height;
-                    let pdfImgWidth = 40;
-                    let pdfImgHeight = 40;
-
-                    if (ratio > 1) { // landscape
-                        pdfImgHeight = pdfImgWidth / ratio;
-                    } else { // portrait or square
-                        pdfImgWidth = pdfImgHeight * ratio;
-                    }
-                    createPdf({img: finalImg, width: pdfImgWidth, height: pdfImgHeight});
-                }
-                finalImg.onerror = () => {
-                    createPdf(null);
-                }
-            } else {
-               createPdf(null);
-            }
-        };
-        img.onerror = () => {
-            createPdf(null);
-        };
-    } else {
-        createPdf(null);
+    const avatarSrc = teacher.avatarUrl || '';
+    const name = teacher.name || "-";
+    const data = [
+      { label: 'Nama', value: teacher.name || "-" },
+      { label: 'Jabatan', value: teacher.jabatan || "-" },
+      { label: 'No. WA', value: teacher.noWa || "-" },
+      { label: 'NIK', value: teacher.nik || "-" },
+      { label: 'Email', value: teacher.email || "-" },
+      { label: 'Pendidikan', value: teacher.pendidikan || "-" },
+      { label: 'Ponpes', value: teacher.ponpes || "-" },
+      { label: 'Alamat', value: teacher.alamat || "-" },
+    ];
+     if (teacher.dokumenUrl) {
+        data.push({ label: 'Dokumen', value: `Tersedia (tidak ditampilkan)` });
     }
+
+    const tableRows = data.map(item => `
+        <tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 10px; font-weight: 600; width: 150px; vertical-align: top;">${item.label}</td>
+            <td style="padding: 10px; vertical-align: top;">${item.value}</td>
+        </tr>
+    `).join('');
+
+    const content = `
+      <html>
+        <head>
+          <title>Cetak Detail Guru - ${name}</title>
+          <style>
+            body { 
+                font-family: "PT Sans", sans-serif; 
+                margin: 0;
+                color: #333;
+            }
+            .container {
+                padding: 30px;
+            }
+            h1 { 
+                font-size: 22px; 
+                margin-bottom: 20px; 
+                font-weight: 700;
+                color: #111;
+            }
+            img.avatar { 
+                width: 120px; 
+                height: 120px;
+                border-radius: 50%;
+                object-fit: cover;
+                margin-bottom: 20px; 
+                border: 2px solid #eee;
+            }
+            table { 
+                width: 100%; 
+                border-collapse: collapse; 
+                font-size: 14px;
+            }
+            @media print {
+              @page {
+                  size: A4;
+                  margin: 25mm;
+              }
+              body {
+                  -webkit-print-color-adjust: exact;
+                  print-color-adjust: exact;
+                  margin: 0;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1>Detail Guru</h1>
+            ${avatarSrc ? `<img class="avatar" src="${avatarSrc}" alt="${name}" />` : ''}
+            <table>
+              <tbody>
+                ${tableRows}
+              </tbody>
+            </table>
+          </div>
+        </body>
+      </html>
+    `;
+    
+    printWindow.document.write(content);
+    printWindow.document.close();
+    
+    printWindow.onload = function() {
+        printWindow.print();
+        printWindow.close();
+    };
   };
 
   return (
