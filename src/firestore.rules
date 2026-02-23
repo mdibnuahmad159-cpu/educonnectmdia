@@ -153,13 +153,11 @@ service cloud.firestore {
     }
     
     /**
-     * @description School Profile. Admin can write, anyone signed-in can read.
+     * @description School Profile. Only Admin can read and write.
      * @path /schoolProfile/{profileId}
      */
     match /schoolProfile/{profileId} {
-      allow get: if isSignedIn();
-      allow list: if isSignedIn();
-      allow create, update, delete: if isAdmin();
+      allow read, write: if isAdmin();
     }
   }
 }
