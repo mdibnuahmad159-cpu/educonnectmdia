@@ -136,7 +136,7 @@ export function StudentForm({ isOpen, setIsOpen, student, onSave }: StudentFormP
         {student && (
           <div className="flex justify-center pt-2">
             <Avatar className="h-20 w-20">
-              <AvatarImage src={form.watch('avatarUrl') || student.avatarUrl} alt={student.name} />
+              <AvatarImage src={form.watch('avatarUrl') || student.avatarUrl} alt={student.name} className="object-cover" />
               <AvatarFallback className="text-2xl">{student.name.charAt(0)}</AvatarFallback>
             </Avatar>
           </div>
@@ -383,3 +383,5 @@ export function StudentForm({ isOpen, setIsOpen, student, onSave }: StudentFormP
     </Dialog>
   );
 }
+
+    
