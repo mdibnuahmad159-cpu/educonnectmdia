@@ -287,6 +287,9 @@ export function StudentForm({ isOpen, setIsOpen, student, onSave }: StudentFormP
                                         date > new Date() || date < new Date("1900-01-01")
                                         }
                                         initialFocus
+                                        captionLayout="dropdown-buttons"
+                                        fromYear={1950}
+                                        toYear={new Date().getFullYear()}
                                         classNames={{
                                             root: "text-white",
                                             caption: "flex items-center justify-between",
@@ -302,7 +305,11 @@ export function StudentForm({ isOpen, setIsOpen, student, onSave }: StudentFormP
                                                 buttonVariants({ variant: "ghost" }),
                                                 "h-7 w-7 bg-transparent p-0 text-white opacity-80 hover:opacity-100 hover:bg-slate-700"
                                             ),
-                                            caption_label: "text-sm font-medium text-white",
+                                            caption_label: "hidden",
+                                            caption_dropdowns: "flex gap-2 [&>div]:w-full",
+                                            dropdown: "text-sm p-1 w-full rounded-md bg-slate-700 border-slate-600 text-white focus:ring-1 focus:ring-amber-500",
+                                            dropdown_month: "w-full",
+                                            dropdown_year: "w-full",
                                         }}
                                     />
                                 </div>
@@ -402,5 +409,7 @@ export function StudentForm({ isOpen, setIsOpen, student, onSave }: StudentFormP
     </Dialog>
   );
 }
+
+    
 
     
