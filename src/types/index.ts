@@ -40,6 +40,7 @@ export type Alumni = {
   tahunLulus: string;
   address: string;
   noWa?: string;
+  reportUrl?: string;
 };
 
 export type SchoolProfile = {

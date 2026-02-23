@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Teacher": {
@@ -298,6 +299,11 @@
         "noWa": {
           "type": "string",
           "description": "The last known WhatsApp number of the alumni."
+        },
+        "reportUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL to the student's final digital report card."
         }
       },
       "required": [

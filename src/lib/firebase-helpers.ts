@@ -108,6 +108,7 @@ export async function graduateStudents(db: Firestore, studentIds: string[], grad
             tahunLulus: graduationYear,
             address: studentData.address,
             noWa: studentData.noWa,
+            reportUrl: studentData.reportUrl,
         };
         batch.set(alumniRef, alumniData);
         batch.delete(studentDoc.ref);
