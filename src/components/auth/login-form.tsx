@@ -5,9 +5,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
-import { useAuth, useFirestore } from "@/firebase";
+import { useAuth } from "@/firebase";
 import { signInAnonymously, signInWithEmailAndPassword } from "firebase/auth";
-import { doc, setDoc, serverTimestamp, Firestore } from 'firebase/firestore';
 
 import { Button } from "@/components/ui/button";
 import {
@@ -49,7 +48,6 @@ export function LoginForm() {
   const router = useRouter();
   const { toast } = useToast();
   const auth = useAuth();
-  const firestore = useFirestore() as Firestore;
 
   const adminForm = useForm<z.infer<typeof adminSchema>>({
     resolver: zodResolver(adminSchema),
@@ -67,25 +65,19 @@ export function LoginForm() {
   });
 
   const handleAdminSubmit = async (values: z.infer<typeof adminSchema>) => {
-    if (!auth || !firestore) return;
+    if (!auth) return;
     if (values.password === "useAdmin") {
       try {
-        const userCredential = await signInAnonymously(auth);
-        const user = userCredential.user;
-
-        // Automatically create the admin role document
-        const adminRoleRef = doc(firestore, 'roles_admin', user.uid);
-        await setDoc(adminRoleRef, { createdAt: serverTimestamp() });
-        
+        await signInAnonymously(auth);
         toast({
           title: "Login Admin Berhasil",
-          description: "Peran admin telah diberikan secara otomatis untuk sesi ini.",
+          description: "Anda sekarang memiliki akses admin.",
         });
         router.push("/admin/dashboard");
       } catch (error: any) {
         toast({
           variant: "destructive",
-          title: "Login Gagal",
+          title: "Gagal Memulai Sesi Admin",
           description: `Gagal memulai sesi admin: ${error.message}`,
         });
       }

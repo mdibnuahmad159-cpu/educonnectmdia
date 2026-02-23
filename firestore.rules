@@ -32,12 +32,12 @@ service cloud.firestore {
     }
 
     /**
-     * Checks if the user is an admin by verifying the existence of a role document.
-     * This is the primary method for granting admin privileges. The role document
-     * is created automatically upon admin login.
+     * Checks if the user is an admin.
+     * For development, an admin is identified as a user who logged in via the
+     * custom anonymous flow, which is marked with the 'custom' sign-in provider.
      */
     function isAdmin() {
-      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+      return isSignedIn() && request.auth.token.sign_in_provider == 'custom';
     }
     
     /**
@@ -87,16 +87,11 @@ service cloud.firestore {
     // =====================================================================
 
     /**
-     * @description Admin roles collection. Document existence grants admin rights.
+     * @description Admin roles collection. This collection is no longer used for authorization.
      * @path /roles_admin/{adminUid}
      */
     match /roles_admin/{adminUid} {
-      // A user can create their own admin role document upon logging in.
-      allow create: if isOwner(adminUid);
-      // Only admins can read or delete role documents.
-      allow read, delete: if isAdmin();
-      // Updates are not expected.
-      allow update: if false;
+      allow read, write: if false;
     }
 
     /**
