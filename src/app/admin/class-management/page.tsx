@@ -59,10 +59,23 @@ export default function ClassManagementPage() {
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
   const [targetClass, setTargetClass] = useState<number | null>(null);
+  const [filterClass, setFilterClass] = useState<string>("semua");
 
-  const sortedStudents = useMemo(() => {
+  const filteredStudents = useMemo(() => {
     if (!students) return [];
-    return [...students].sort((a, b) => {
+    
+    let studentsToDisplay = [...students];
+
+    if (filterClass !== "semua") {
+      studentsToDisplay = studentsToDisplay.filter(student => {
+        if (filterClass === "belum_diatur") {
+          return student.kelas === undefined;
+        }
+        return student.kelas === Number(filterClass);
+      });
+    }
+
+    return studentsToDisplay.sort((a, b) => {
       const classA = a.kelas ?? -1;
       const classB = b.kelas ?? -1;
       if (classA !== classB) {
@@ -70,11 +83,11 @@ export default function ClassManagementPage() {
       }
       return a.name.localeCompare(b.name);
     });
-  }, [students]);
+  }, [students, filterClass]);
 
   const handleSelectAll = (checked: boolean | "indeterminate") => {
     if (checked === true) {
-      setSelectedStudents(sortedStudents.map((s) => s.id));
+      setSelectedStudents(filteredStudents.map((s) => s.id));
     } else {
       setSelectedStudents([]);
     }
@@ -93,9 +106,10 @@ export default function ClassManagementPage() {
 
     const batch = writeBatch(firestore);
     let updatedCount = 0;
+    const allStudents = students || [];
 
     selectedStudents.forEach((studentId) => {
-      const student = sortedStudents.find((s) => s.id === studentId);
+      const student = allStudents.find((s) => s.id === studentId);
       if (student) {
         const update = updateLogic(student);
         if (update) {
@@ -142,8 +156,8 @@ export default function ClassManagementPage() {
   };
   
   const handleExportExcel = () => {
-      if (!sortedStudents) return;
-      const dataToExport = sortedStudents.map((s, index) => ({
+      if (!filteredStudents) return;
+      const dataToExport = filteredStudents.map((s, index) => ({
           'No.': index + 1,
           'Nama': s.name,
           'NIS': s.nis,
@@ -156,7 +170,7 @@ export default function ClassManagementPage() {
   };
 
   const handleExportPdf = () => {
-      if (!sortedStudents) return;
+      if (!filteredStudents) return;
       const doc = new jsPDF();
       
       doc.text('Data Manajemen Kelas', 14, 16);
@@ -164,7 +178,7 @@ export default function ClassManagementPage() {
       const tableColumn = ['No', 'Nama', 'NIS', 'Kelas'];
       const tableRows: (string | number)[][] = [];
 
-      sortedStudents.forEach((student, index) => {
+      filteredStudents.forEach((student, index) => {
           const studentData = [
               index + 1,
               student.name,
@@ -184,7 +198,7 @@ export default function ClassManagementPage() {
   };
 
   const handlePrintTable = () => {
-    if (!sortedStudents || sortedStudents.length === 0) {
+    if (!filteredStudents || filteredStudents.length === 0) {
       toast({ variant: "destructive", title: "Tidak Ada Data", description: "Tidak ada data untuk dicetak." });
       return;
     }
@@ -195,7 +209,7 @@ export default function ClassManagementPage() {
       return;
     }
 
-    const tableRows = sortedStudents.map((student, index) => `
+    const tableRows = filteredStudents.map((student, index) => `
       <tr style="border-bottom: 1px solid #ddd;">
         <td style="padding: 8px; text-align: center;">${index + 1}</td>
         <td style="padding: 8px;">${student.name}</td>
@@ -247,8 +261,8 @@ export default function ClassManagementPage() {
     };
   };
 
-  const isAllSelected = selectedStudents.length > 0 && selectedStudents.length === sortedStudents.length;
-  const isIndeterminate = selectedStudents.length > 0 && selectedStudents.length < sortedStudents.length;
+  const isAllSelected = filteredStudents.length > 0 && selectedStudents.length === filteredStudents.length;
+  const isIndeterminate = selectedStudents.length > 0 && selectedStudents.length < filteredStudents.length;
 
   return (
     <>
@@ -271,6 +285,18 @@ export default function ClassManagementPage() {
               <ArrowRightLeft /> Pindah Kelas
             </Button>
             <div className="ml-auto flex items-center gap-2">
+                <Select value={filterClass} onValueChange={setFilterClass}>
+                    <SelectTrigger className="w-[150px] h-8 text-xs">
+                        <SelectValue placeholder="Filter per kelas" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="semua">Semua Kelas</SelectItem>
+                        {[...Array(7).keys()].map(i => (
+                            <SelectItem key={i} value={String(i)}>Kelas {i}</SelectItem>
+                        ))}
+                        <SelectItem value="belum_diatur">Belum diatur</SelectItem>
+                    </SelectContent>
+                </Select>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button size="xs" variant="outline" className="gap-1">
@@ -320,8 +346,8 @@ export default function ClassManagementPage() {
                      </div>
                   </TableCell>
                 </TableRow>
-              ) : sortedStudents.length > 0 ? (
-                sortedStudents.map((student, index) => (
+              ) : filteredStudents.length > 0 ? (
+                filteredStudents.map((student, index) => (
                   <TableRow key={student.id} data-state={selectedStudents.includes(student.id) && "selected"}>
                     <TableCell>
                       <Checkbox
@@ -338,7 +364,7 @@ export default function ClassManagementPage() {
               ) : (
                 <TableRow>
                   <TableCell colSpan={5} className="h-24 text-center">
-                    Belum ada data siswa.
+                    Belum ada data siswa untuk filter ini.
                   </TableCell>
                 </TableRow>
               )}
