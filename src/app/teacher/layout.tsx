@@ -3,28 +3,24 @@
 import { ReactNode, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/firebase";
-import { BottomNav } from "./components/bottom-nav";
+import { TeacherBottomNav } from "./components/teacher-bottom-nav";
 import { BookOpenCheck, Loader2 } from "lucide-react";
 
-export default function AdminLayout({ children }: { children: ReactNode }) {
+export default function TeacherLayout({ children }: { children: ReactNode }) {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isUserLoading) {
-      // If not loading and no user, redirect to login
-      if (!user) {
-        router.push('/');
-      } 
-      // If user exists but is not the admin, redirect away
-      else if (user.email !== 'mdibnuahmad159@gmail.com') {
-        router.push('/teacher/dashboard');
-      }
+    if (!isUserLoading && !user) {
+      router.push('/');
+    }
+    // Also check if the user is an admin, if so, redirect to admin dashboard
+    if (!isUserLoading && user && user.email === 'mdibnuahmad159@gmail.com') {
+      router.push('/admin/dashboard');
     }
   }, [user, isUserLoading, router]);
 
-  // Show loader while checking user auth, or if the user is not the admin
-  if (isUserLoading || !user || user.email !== 'mdibnuahmad159@gmail.com') {
+  if (isUserLoading || !user) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -37,13 +33,13 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-10 flex h-12 items-center gap-4 border-b bg-background px-3 sm:px-4">
         <div className="flex items-center gap-2 text-primary">
             <BookOpenCheck className="h-5 w-5" />
-            <h1 className="text-base font-semibold font-headline">EduConnect Admin</h1>
+            <h1 className="text-base font-semibold font-headline">EduConnect Guru</h1>
         </div>
       </header>
       <main className="flex-1 p-2 pb-16 sm:px-4">
           {children}
       </main>
-      <BottomNav />
+      <TeacherBottomNav />
     </div>
   );
 }

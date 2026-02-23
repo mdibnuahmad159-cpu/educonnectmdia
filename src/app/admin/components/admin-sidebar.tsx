@@ -13,14 +13,25 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/firebase";
+import { signOut } from "firebase/auth";
+import { useToast } from "@/hooks/use-toast";
 
 export function AdminSidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const auth = useAuth();
+  const { toast } = useToast();
 
-  const handleLogout = () => {
-    // In a real app, clear session here
-    router.push('/');
+  const handleLogout = async () => {
+    if (!auth) return;
+    try {
+      await signOut(auth);
+      toast({ title: "Logout Berhasil" });
+      router.push('/');
+    } catch (error) {
+      toast({ variant: "destructive", title: "Logout Gagal" });
+    }
   };
 
   return (

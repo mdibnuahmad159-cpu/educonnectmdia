@@ -91,7 +91,7 @@ export function LoginForm() {
         title: "Login Berhasil",
         description: "Selamat datang!",
       });
-      router.push("/admin/dashboard"); 
+      router.push("/teacher/dashboard"); 
     } catch (error: any) {
       toast({
         variant: "destructive",

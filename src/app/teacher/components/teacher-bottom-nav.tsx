@@ -8,10 +8,10 @@ import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 
 const navItems = [
-  { href: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+  { href: "/teacher/dashboard", icon: LayoutDashboard, label: "Dashboard" },
 ];
 
-export function BottomNav() {
+export function TeacherBottomNav() {
   const pathname = usePathname();
   const router = useRouter();
   const auth = useAuth();
