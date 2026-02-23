@@ -52,6 +52,7 @@ const formSchema = z.object({
   avatar: z.any().optional(),
   dokumenUrl: z.string().optional().or(z.literal("")),
   dokumen: z.any().optional(),
+  kelas: z.coerce.number().min(0).max(6).optional(),
 });
 
 type StudentFormData = z.infer<typeof formSchema>;
@@ -76,6 +77,7 @@ const defaultValues = {
     address: "",
     avatarUrl: "",
     dokumenUrl: "",
+    kelas: undefined,
 }
 
 export function StudentForm({ isOpen, setIsOpen, student, onSave }: StudentFormProps) {
@@ -96,6 +98,7 @@ export function StudentForm({ isOpen, setIsOpen, student, onSave }: StudentFormP
             namaIbu: student.namaIbu || "",
             avatarUrl: student.avatarUrl || "",
             dokumenUrl: student.dokumenUrl || "",
+            kelas: student.kelas,
           });
         } else {
           form.reset(defaultValues);
@@ -264,6 +267,31 @@ export function StudentForm({ isOpen, setIsOpen, student, onSave }: StudentFormP
                           <SelectItem value="Perempuan">Perempuan</SelectItem>
                         </SelectContent>
                       </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="kelas"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Kelas</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value !== undefined ? String(field.value) : undefined}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Pilih kelas" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            {[...Array(7).keys()].map(i => (
+                                <SelectItem key={i} value={String(i)}>Kelas {i}</SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        Atur kelas siswa saat ini.
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

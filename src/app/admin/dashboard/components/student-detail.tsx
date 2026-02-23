@@ -48,6 +48,7 @@ export function StudentDetail({ isOpen, setIsOpen, student, onEdit, onDelete }: 
     const getTableBody = () => [
         ['Nama', student.name || "-"],
         ['NIS', student.nis || "-"],
+        ['Kelas', student.kelas !== undefined ? `Kelas ${student.kelas}` : "Belum diatur"],
         ['NIK', student.nik || "-"],
         ['Jenis Kelamin', student.gender || "-"],
         ['Tempat Lahir', student.tempatLahir || "-"],
@@ -127,6 +128,7 @@ export function StudentDetail({ isOpen, setIsOpen, student, onEdit, onDelete }: 
       { label: 'Nama', value: student.name || "-" },
       { label: 'NIS', value: student.nis || "-" },
       { label: 'Password Wali', value: student.password || "Belum diatur" },
+      { label: 'Kelas', value: student.kelas !== undefined ? `Kelas ${student.kelas}` : "Belum diatur"},
       { label: 'NIK', value: student.nik || "-" },
       { label: 'Jenis Kelamin', value: student.gender || "-" },
       { label: 'Tempat Lahir', value: student.tempatLahir || "-" },
@@ -239,6 +241,10 @@ export function StudentDetail({ isOpen, setIsOpen, student, onEdit, onDelete }: 
           <div className="grid grid-cols-3 items-center">
             <span className="text-muted-foreground">Password Wali</span>
             <span className="col-span-2">{student.password || "Belum diatur"}</span>
+          </div>
+          <div className="grid grid-cols-3 items-center">
+            <span className="text-muted-foreground">Kelas</span>
+            <span className="col-span-2 font-medium">{student.kelas !== undefined ? `Kelas ${student.kelas}` : 'Belum diatur'}</span>
           </div>
            <div className="grid grid-cols-3 items-center">
             <span className="text-muted-foreground">NIK</span>

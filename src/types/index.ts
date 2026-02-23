@@ -28,6 +28,7 @@ export type Student = {
   avatarUrl?: string;
   dokumenUrl?: string;
   password?: string;
+  kelas?: number;
 };
 
 export type SchoolProfile = {
