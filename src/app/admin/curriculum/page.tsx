@@ -70,7 +70,7 @@ export default function CurriculumPage() {
             if (a.classLevel !== b.classLevel) {
                 return a.classLevel - b.classLevel;
             }
-            return a.subjectName.localeCompare(b.subjectName);
+            return a.subjectCode.localeCompare(b.subjectCode);
         });
     }, [curriculumData, filterClass]);
 
