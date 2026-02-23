@@ -159,18 +159,44 @@ export function TeacherForm({ isOpen, setIsOpen, teacher, onSave }: TeacherFormP
                           onChange={(e) => {
                             const file = e.target.files?.[0];
                             if (file) {
-                              const reader = new FileReader();
-                              reader.onloadend = () => {
-                                form.setValue('avatarUrl', reader.result as string);
-                              };
-                              reader.readAsDataURL(file);
+                                const reader = new FileReader();
+                                reader.onload = (event) => {
+                                    const img = new Image();
+                                    const imageUrl = event.target?.result as string;
+                                    img.src = imageUrl;
+                                    img.onload = () => {
+                                        const canvas = document.createElement('canvas');
+                                        const MAX_WIDTH = 512;
+                                        
+                                        if (img.width <= MAX_WIDTH) {
+                                            form.setValue('avatarUrl', imageUrl);
+                                            return;
+                                        }
+
+                                        const scale = MAX_WIDTH / img.width;
+                                        canvas.width = MAX_WIDTH;
+                                        canvas.height = img.height * scale;
+                                        const ctx = canvas.getContext('2d');
+                                        if (ctx) {
+                                            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                                            const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                                            form.setValue('avatarUrl', dataUrl);
+                                        } else {
+                                            form.setValue('avatarUrl', imageUrl);
+                                        }
+                                    };
+                                    img.onerror = () => {
+                                        form.setValue('avatarUrl', imageUrl);
+                                    };
+                                };
+                                reader.readAsDataURL(file);
                             }
                             field.onChange(file ?? null);
                           }}
                         />
                       </FormControl>
                        <FormDescription>
-                          Unggah gambar. File akan disimpan sebagai data URL.
+                          Unggah gambar. Ukuran akan dioptimalkan.
                         </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -245,19 +271,6 @@ export function TeacherForm({ isOpen, setIsOpen, teacher, onSave }: TeacherFormP
                     <FormMessage />
                   </FormItem>
                 )} />
-                <FormField
-                  control={form.control}
-                  name="dokumenUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>URL Dokumen</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Akan terisi otomatis saat unggah" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
                 <FormField
                   control={form.control}
                   name="dokumen"

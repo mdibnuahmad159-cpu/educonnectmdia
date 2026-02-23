@@ -39,51 +39,66 @@ export function StudentDetail({ isOpen, setIsOpen, student, onEdit, onDelete }: 
   const handleExportPdf = () => {
     if (!student) return;
     const doc = new jsPDF();
-
     doc.setFontSize(18);
     doc.text(`Detail Siswa: ${student.name}`, 14, 22);
 
-    if (student.avatarUrl) {
-      try {
-        // We assume avatarUrl is a data URL that jsPDF can handle
-        doc.addImage(student.avatarUrl, 'JPEG', 14, 30, 40, 40);
-      } catch (e) {
-        console.error("Error adding image to PDF:", e);
-      }
+    const createPdf = (avatarData: {img: HTMLImageElement, width: number, height: number} | null) => {
+        let startY = 30;
+        if (avatarData) {
+            try {
+                doc.addImage(avatarData.img, 'JPEG', 14, 30, avatarData.width, avatarData.height);
+                startY = 30 + avatarData.height + 10;
+            } catch (e) {
+                console.error("Error adding image to PDF:", e);
+            }
+        }
+
+        const tableData = [
+          ['Nama', student.name || "-"],
+          ['NIS', student.nis || "-"],
+          ['NIK', student.nik || "-"],
+          ['Jenis Kelamin', student.gender || "-"],
+          ['Tempat Lahir', student.tempatLahir || "-"],
+          ['Tanggal Lahir', student.dateOfBirth || "-"],
+          ['Nama Ayah', student.namaAyah || "-"],
+          ['Nama Ibu', student.namaIbu || "-"],
+          ['Alamat', student.address || "-"],
+        ];
+
+        (doc as any).autoTable({
+            startY: startY,
+            head: [['Keterangan', 'Data']],
+            body: tableData,
+            theme: 'grid',
+            styles: { cellPadding: 2, fontSize: 10 },
+            headStyles: { fillColor: [34, 119, 74], textColor: 255, fontStyle: 'bold' },
+            columnStyles: { 0: { fontStyle: 'bold' } },
+        });
+
+        doc.save(`detail_siswa_${student.nis}.pdf`);
     }
 
-    const tableData = [
-      ['Nama', student.name || "-"],
-      ['NIS', student.nis || "-"],
-      ['NIK', student.nik || "-"],
-      ['Jenis Kelamin', student.gender || "-"],
-      ['Tempat Lahir', student.tempatLahir || "-"],
-      ['Tanggal Lahir', student.dateOfBirth || "-"],
-      ['Nama Ayah', student.namaAyah || "-"],
-      ['Nama Ibu', student.namaIbu || "-"],
-      ['Alamat', student.address || "-"],
-    ];
+    if (student.avatarUrl) {
+        const img = new Image();
+        img.src = student.avatarUrl;
+        img.onload = () => {
+            const ratio = img.width / img.height;
+            let pdfImgWidth = 40;
+            let pdfImgHeight = 40;
 
-    (doc as any).autoTable({
-      startY: student.avatarUrl ? 80 : 30,
-      head: [['Keterangan', 'Data']],
-      body: tableData,
-      theme: 'grid',
-      styles: {
-        cellPadding: 2,
-        fontSize: 10,
-      },
-      headStyles: {
-        fillColor: [34, 119, 74], // A dark green similar to the theme
-        textColor: 255,
-        fontStyle: 'bold',
-      },
-      columnStyles: {
-        0: { fontStyle: 'bold' },
-      },
-    });
-
-    doc.save(`detail_siswa_${student.nis}.pdf`);
+            if (ratio > 1) { // landscape
+                pdfImgHeight = pdfImgWidth / ratio;
+            } else { // portrait or square
+                pdfImgWidth = pdfImgHeight * ratio;
+            }
+            createPdf({img, width: pdfImgWidth, height: pdfImgHeight});
+        };
+        img.onerror = () => {
+            createPdf(null);
+        };
+    } else {
+        createPdf(null);
+    }
   };
 
   return (

@@ -40,49 +40,65 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
   const handleExportPdf = () => {
     if (!teacher) return;
     const doc = new jsPDF();
-
     doc.setFontSize(18);
     doc.text(`Detail Guru: ${teacher.name}`, 14, 22);
 
-    if (teacher.avatarUrl) {
-      try {
-        doc.addImage(teacher.avatarUrl, 'JPEG', 14, 30, 40, 40);
-      } catch (e) {
-        console.error("Error adding image to PDF:", e);
-      }
+    const createPdf = (avatarData: {img: HTMLImageElement, width: number, height: number} | null) => {
+        let startY = 30;
+        if (avatarData) {
+            try {
+                doc.addImage(avatarData.img, 'JPEG', 14, 30, avatarData.width, avatarData.height);
+                startY = 30 + avatarData.height + 10;
+            } catch (e) {
+                console.error("Error adding image to PDF:", e);
+            }
+        }
+        
+        const tableData = [
+          ['Nama', teacher.name || "-"],
+          ['Jabatan', teacher.jabatan || "-"],
+          ['No. WA', teacher.noWa || "-"],
+          ['NIK', teacher.nik || "-"],
+          ['Email', teacher.email || "-"],
+          ['Pendidikan', teacher.pendidikan || "-"],
+          ['Ponpes', teacher.ponpes || "-"],
+          ['Alamat', teacher.alamat || "-"],
+        ];
+
+        (doc as any).autoTable({
+          startY: startY,
+          head: [['Keterangan', 'Data']],
+          body: tableData,
+          theme: 'grid',
+          styles: { cellPadding: 2, fontSize: 10 },
+          headStyles: { fillColor: [34, 119, 74], textColor: 255, fontStyle: 'bold' },
+          columnStyles: { 0: { fontStyle: 'bold' } },
+        });
+
+        doc.save(`detail_guru_${teacher.name.replace(/\s/g, '_')}.pdf`);
     }
-    
-    const tableData = [
-      ['Nama', teacher.name || "-"],
-      ['Jabatan', teacher.jabatan || "-"],
-      ['No. WA', teacher.noWa || "-"],
-      ['NIK', teacher.nik || "-"],
-      ['Email', teacher.email || "-"],
-      ['Pendidikan', teacher.pendidikan || "-"],
-      ['Ponpes', teacher.ponpes || "-"],
-      ['Alamat', teacher.alamat || "-"],
-    ];
 
-    (doc as any).autoTable({
-      startY: teacher.avatarUrl ? 80 : 30,
-      head: [['Keterangan', 'Data']],
-      body: tableData,
-      theme: 'grid',
-      styles: {
-        cellPadding: 2,
-        fontSize: 10,
-      },
-      headStyles: {
-        fillColor: [34, 119, 74], // A dark green similar to the theme
-        textColor: 255,
-        fontStyle: 'bold',
-      },
-      columnStyles: {
-        0: { fontStyle: 'bold' },
-      },
-    });
+    if (teacher.avatarUrl) {
+        const img = new Image();
+        img.src = teacher.avatarUrl;
+        img.onload = () => {
+            const ratio = img.width / img.height;
+            let pdfImgWidth = 40;
+            let pdfImgHeight = 40;
 
-    doc.save(`detail_guru_${teacher.name.replace(/\s/g, '_')}.pdf`);
+            if (ratio > 1) { // landscape
+                pdfImgHeight = pdfImgWidth / ratio;
+            } else { // portrait or square
+                pdfImgWidth = pdfImgHeight * ratio;
+            }
+            createPdf({img, width: pdfImgWidth, height: pdfImgHeight});
+        };
+        img.onerror = () => {
+            createPdf(null);
+        };
+    } else {
+        createPdf(null);
+    }
   };
 
   return (
