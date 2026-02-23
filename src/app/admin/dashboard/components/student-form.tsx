@@ -47,16 +47,18 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const formSchema = z.object({
   nis: z.string().min(1, "NIS harus diisi"),
-  firstName: z.string().min(1, "Nama depan harus diisi"),
-  lastName: z.string().min(1, "Nama belakang harus diisi"),
-  dateOfBirth: z.string().min(1, "Tanggal lahir harus diisi"),
+  name: z.string().min(1, "Nama harus diisi"),
+  nik: z.string().optional(),
   gender: z.enum(["Laki-laki", "Perempuan"], { required_error: "Jenis kelamin harus dipilih" }),
+  tempatLahir: z.string().optional(),
+  dateOfBirth: z.string().min(1, "Tanggal lahir harus diisi"),
+  namaAyah: z.string().optional(),
+  namaIbu: z.string().optional(),
   address: z.string().min(1, "Alamat harus diisi"),
-  enrollmentDate: z.string().min(1, "Tanggal masuk harus diisi"),
-  classId: z.string().min(1, "Kelas harus diisi"),
-  password: z.string().min(6, "Password minimal 6 karakter").optional().or(z.literal('')),
   avatarUrl: z.string().optional().or(z.literal("")),
   avatar: z.any().optional(),
+  dokumenUrl: z.string().optional().or(z.literal("")),
+  dokumen: z.any().optional(),
 });
 
 type StudentFormData = z.infer<typeof formSchema>;
@@ -70,15 +72,16 @@ type StudentFormProps = {
 
 const defaultValues = {
     nis: "",
-    firstName: "",
-    lastName: "",
-    dateOfBirth: "",
+    name: "",
+    nik: "",
     gender: "Laki-laki" as "Laki-laki" | "Perempuan",
+    tempatLahir: "",
+    dateOfBirth: "",
+    namaAyah: "",
+    namaIbu: "",
     address: "",
-    enrollmentDate: "",
-    classId: "",
-    password: "",
     avatarUrl: "",
+    dokumenUrl: "",
 }
 
 export function StudentForm({ isOpen, setIsOpen, student, onSave }: StudentFormProps) {
@@ -91,16 +94,13 @@ export function StudentForm({ isOpen, setIsOpen, student, onSave }: StudentFormP
     if (isOpen) {
         if (student) {
           form.reset({
-            nis: student.nis,
-            firstName: student.firstName,
-            lastName: student.lastName,
-            dateOfBirth: student.dateOfBirth,
-            gender: student.gender,
-            address: student.address,
-            enrollmentDate: student.enrollmentDate,
-            classId: student.classId,
-            password: "", // Always clear password on open
+            ...student,
+            nik: student.nik || "",
+            tempatLahir: student.tempatLahir || "",
+            namaAyah: student.namaAyah || "",
+            namaIbu: student.namaIbu || "",
             avatarUrl: student.avatarUrl || "",
+            dokumenUrl: student.dokumenUrl || "",
           });
         } else {
           form.reset(defaultValues);
@@ -109,7 +109,7 @@ export function StudentForm({ isOpen, setIsOpen, student, onSave }: StudentFormP
   }, [student, form, isOpen]);
   
   const onSubmit = (values: StudentFormData) => {
-    const { avatar, ...studentData } = values;
+    const { avatar, dokumen, ...studentData } = values;
     onSave(studentData);
     setIsOpen(false);
   };
@@ -126,14 +126,14 @@ export function StudentForm({ isOpen, setIsOpen, student, onSave }: StudentFormP
         {student && (
           <div className="flex justify-center pt-2">
             <Avatar className="h-20 w-20">
-              <AvatarImage src={form.watch('avatarUrl') || student.avatarUrl} alt={`${student.firstName} ${student.lastName}`} />
-              <AvatarFallback className="text-2xl">{student.firstName.charAt(0)}</AvatarFallback>
+              <AvatarImage src={form.watch('avatarUrl') || student.avatarUrl} alt={student.name} />
+              <AvatarFallback className="text-2xl">{student.name.charAt(0)}</AvatarFallback>
             </Avatar>
           </div>
         )}
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
-            <ScrollArea className="h-80 pr-6">
+            <ScrollArea className="h-[65vh] pr-6">
               <div className="space-y-3 py-4">
                 <FormField
                   control={form.control}
@@ -150,23 +150,10 @@ export function StudentForm({ isOpen, setIsOpen, student, onSave }: StudentFormP
                 />
                  <FormField
                   control={form.control}
-                  name="firstName"
+                  name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Nama Depan</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                 <FormField
-                  control={form.control}
-                  name="lastName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nama Belakang</FormLabel>
+                      <FormLabel>Nama Lengkap</FormLabel>
                       <FormControl>
                         <Input {...field} />
                       </FormControl>
@@ -198,8 +185,55 @@ export function StudentForm({ isOpen, setIsOpen, student, onSave }: StudentFormP
                         />
                       </FormControl>
                       <FormDescription>
-                          Unggah gambar. File akan disimpan sebagai data URL.
+                          Unggah foto siswa.
                       </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={form.control}
+                  name="nik"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>NIK</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={form.control}
+                  name="gender"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Jenis Kelamin</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Pilih jenis kelamin" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Laki-laki">Laki-laki</SelectItem>
+                          <SelectItem value="Perempuan">Perempuan</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="tempatLahir"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tempat Lahir</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -247,21 +281,26 @@ export function StudentForm({ isOpen, setIsOpen, student, onSave }: StudentFormP
                  />
                 <FormField
                   control={form.control}
-                  name="gender"
+                  name="namaAyah"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Jenis Kelamin</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Pilih jenis kelamin" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Laki-laki">Laki-laki</SelectItem>
-                          <SelectItem value="Perempuan">Perempuan</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <FormLabel>Nama Ayah</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={form.control}
+                  name="namaIbu"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nama Ibu</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -279,70 +318,32 @@ export function StudentForm({ isOpen, setIsOpen, student, onSave }: StudentFormP
                     </FormItem>
                   )}
                 />
-                <FormField
-                    control={form.control}
-                    name="enrollmentDate"
-                    render={({ field }) => (
-                        <FormItem className="flex flex-col">
-                        <FormLabel>Tanggal Masuk</FormLabel>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                            <FormControl>
-                                <Button
-                                variant={"outline"}
-                                className={cn(
-                                    "pl-3 text-left font-normal",
-                                    !field.value && "text-muted-foreground"
-                                )}
-                                >
-                                {field.value ? (
-                                    format(new Date(field.value), "PPP")
-                                ) : (
-                                    <span>Pilih tanggal</span>
-                                )}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                </Button>
-                            </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                                mode="single"
-                                selected={field.value ? new Date(field.value) : undefined}
-                                onSelect={(date) => field.onChange(date?.toISOString())}
-                                disabled={(date) =>
-                                date > new Date() || date < new Date("1900-01-01")
-                                }
-                                initialFocus
-                            />
-                            </PopoverContent>
-                        </Popover>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                 />
-                <FormField
+                 <FormField
                   control={form.control}
-                  name="classId"
+                  name="dokumen"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Kelas</FormLabel>
+                      <FormLabel>Upload File</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Contoh: 1-A"/>
+                        <Input 
+                          type="file" 
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const reader = new FileReader();
+                              reader.onloadend = () => {
+                                form.setValue('dokumenUrl', reader.result as string);
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                            field.onChange(file ?? null)
+                          }} 
+                        />
                       </FormControl>
+                      <FormDescription>
+                          Unggah berkas seperti Akta, KK, dll.
+                      </FormDescription>
                       <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Password (untuk Wali Murid)</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder={student ? 'Isi untuk mengubah' : ''} {...field} />
-                      </FormControl>
-                       <FormMessage />
                     </FormItem>
                   )}
                 />

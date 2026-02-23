@@ -15,15 +15,15 @@ export type Teacher = {
 
 export type Student = {
   id: string; // Document ID, can be same as NIS
+  name: string;
   nis: string;
-  firstName: string;
-  lastName: string;
-  avatarUrl?: string;
-  dateOfBirth: string;
+  nik?: string;
   gender: "Laki-laki" | "Perempuan";
+  tempatLahir?: string;
+  dateOfBirth: string;
+  namaAyah?: string;
+  namaIbu?: string;
   address: string;
-  enrollmentDate: string;
-  classId: string;
-  // In a real app, you would have a parent/guardian relationship
-  // parentIds?: string[];
+  avatarUrl?: string;
+  dokumenUrl?: string;
 };

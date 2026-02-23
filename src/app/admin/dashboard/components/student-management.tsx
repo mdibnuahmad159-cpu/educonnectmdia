@@ -1,8 +1,8 @@
 
 "use client";
 
-import { useState, useRef } from "react";
-import { MoreHorizontal, PlusCircle, AlertTriangle, Download, Upload, FileDown, FileUp, FileSpreadsheet, FileText } from "lucide-react";
+import { useState, useRef, useMemo } from "react";
+import { PlusCircle, AlertTriangle, Download, Upload, FileDown, FileUp, FileSpreadsheet, FileText } from "lucide-react";
 import { useCollection, useFirestore, useMemoFirebase, useUser } from "@/firebase";
 import { addStudent, updateStudent, deleteStudent } from "@/lib/firebase-helpers";
 import { Button } from "@/components/ui/button";
@@ -25,10 +25,10 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { StudentForm } from "./student-form";
+import { StudentDetail } from "./student-detail";
 import type { Student } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { collection, Firestore } from "firebase/firestore";
@@ -45,17 +45,29 @@ export function StudentManagement() {
   const { data: students, loading, error } = useCollection<Student>(studentsCollection);
   const { user } = useUser();
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const sortedStudents = useMemo(() => {
+    if (!students) return [];
+    return [...students].sort((a, b) => a.name.localeCompare(b.name));
+  }, [students]);
 
   const handleAdd = () => {
     setSelectedStudent(null);
     setIsFormOpen(true);
   };
 
+  const handleDetail = (student: Student) => {
+    setSelectedStudent(student);
+    setIsDetailOpen(true);
+  };
+
   const handleEdit = (student: Student) => {
     setSelectedStudent(student);
+    setIsDetailOpen(false);
     setIsFormOpen(true);
   };
 
@@ -87,15 +99,15 @@ export function StudentManagement() {
   };
 
   const studentColumns = {
-      nis: 'NIS (wajib untuk impor)',
-      firstName: 'Nama Depan',
-      lastName: 'Nama Belakang',
-      dateOfBirth: 'Tanggal Lahir (YYYY-MM-DD)',
+      nis: 'NIS (wajib)',
+      name: 'Nama Lengkap',
+      nik: 'NIK',
       gender: 'Jenis Kelamin (Laki-laki/Perempuan)',
+      tempatLahir: 'Tempat Lahir',
+      dateOfBirth: 'Tanggal Lahir (YYYY-MM-DD)',
+      namaAyah: 'Nama Ayah',
+      namaIbu: 'Nama Ibu',
       address: 'Alamat',
-      enrollmentDate: 'Tanggal Masuk (YYYY-MM-DD)',
-      classId: 'ID Kelas',
-      password: 'Password (untuk Wali Murid)',
   };
 
   const handleDownloadStudentTemplate = () => {
@@ -136,7 +148,7 @@ export function StudentManagement() {
                       const columnIndex = columnValues.indexOf(key);
                       if (columnIndex > -1) {
                            const dataKey = columnKeys[columnIndex];
-                           if ((dataKey === 'dateOfBirth' || dataKey === 'enrollmentDate') && typeof item[key] === 'number') {
+                           if (dataKey === 'dateOfBirth' && typeof item[key] === 'number') {
                                studentData[dataKey] = new Date(Math.round((item[key] - 25569) * 86400 * 1000)).toISOString();
                            } else {
                                studentData[dataKey] = item[key];
@@ -144,14 +156,14 @@ export function StudentManagement() {
                       }
                   }
 
-                  if (!studentData.nis || !studentData.firstName || !studentData.lastName) {
+                  if (!studentData.nis || !studentData.name) {
                       errorCount++;
                       console.error("Skipping student due to missing required fields:", studentData);
                       continue;
                   }
 
                   try {
-                      await addStudent(firestore, studentData as Omit<Student, 'id'> & { id: string; password?: string });
+                      await addStudent(firestore, studentData as Omit<Student, 'id'>);
                       successCount++;
                   } catch (error) {
                       errorCount++;
@@ -174,15 +186,17 @@ export function StudentManagement() {
   };
 
   const handleExportStudentsExcel = () => {
-      if (!students) return;
-      const dataToExport = students.map(s => ({
+      if (!sortedStudents) return;
+      const dataToExport = sortedStudents.map(s => ({
           'NIS': s.nis,
-          'Nama Lengkap': `${s.firstName} ${s.lastName}`,
-          'Kelas': s.classId,
-          'Tanggal Lahir': s.dateOfBirth ? format(new Date(s.dateOfBirth), 'yyyy-MM-dd') : '-',
+          'Nama Lengkap': s.name,
+          'NIK': s.nik || '-',
           'Jenis Kelamin': s.gender,
+          'Tempat Lahir': s.tempatLahir || '-',
+          'Tanggal Lahir': s.dateOfBirth ? format(new Date(s.dateOfBirth), 'yyyy-MM-dd') : '-',
+          'Nama Ayah': s.namaAyah || '-',
+          'Nama Ibu': s.namaIbu || '-',
           'Alamat': s.address,
-          'Tanggal Masuk': s.enrollmentDate ? format(new Date(s.enrollmentDate), 'yyyy-MM-dd') : '-',
       }));
       const worksheet = XLSX.utils.json_to_sheet(dataToExport);
       const workbook = XLSX.utils.book_new();
@@ -191,20 +205,20 @@ export function StudentManagement() {
   };
 
   const handleExportStudentsPdf = () => {
-      if (!students) return;
+      if (!sortedStudents) return;
       const doc = new jsPDF();
       
       doc.text('Data Siswa', 14, 16);
 
-      const tableColumn = ['No', 'NIS', 'Nama Lengkap', 'Kelas'];
+      const tableColumn = ['No', 'NIS', 'Nama Lengkap', 'Jenis Kelamin'];
       const tableRows: (string | number)[][] = [];
 
-      students.forEach((student, index) => {
+      sortedStudents.forEach((student, index) => {
           const studentData = [
               index + 1,
               student.nis,
-              `${student.firstName} ${student.lastName}`,
-              student.classId,
+              student.name,
+              student.gender,
           ];
           tableRows.push(studentData);
       });
@@ -242,7 +256,7 @@ export function StudentManagement() {
             <div>
               <CardTitle>Data Siswa</CardTitle>
               <CardDescription>
-                Kelola data siswa dan akun wali murid.
+                Kelola data siswa.
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
@@ -300,45 +314,33 @@ export function StudentManagement() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>NIS</TableHead>
+                <TableHead className="w-[40px]">No.</TableHead>
                 <TableHead>Nama</TableHead>
-                <TableHead>Kelas</TableHead>
-                <TableHead>
-                  <span className="sr-only">Aksi</span>
-                </TableHead>
+                <TableHead>NIS</TableHead>
+                <TableHead className="text-right">Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow><TableCell colSpan={4} className="text-center">Memuat data...</TableCell></TableRow>
-              ) : students && students.length > 0 ? (
-                students.map((student) => (
+              ) : sortedStudents && sortedStudents.length > 0 ? (
+                sortedStudents.map((student, index) => (
                 <TableRow key={student.id}>
-                  <TableCell className="font-medium">{student.nis}</TableCell>
+                  <TableCell>{index + 1}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={student.avatarUrl} alt={`${student.firstName} ${student.lastName}`} />
-                        <AvatarFallback>{student.firstName.charAt(0)}</AvatarFallback>
+                        <AvatarImage src={student.avatarUrl} alt={student.name} />
+                        <AvatarFallback>{student.name.charAt(0)}</AvatarFallback>
                       </Avatar>
-                      <span>{`${student.firstName} ${student.lastName}`}</span>
+                      <span className="font-medium">{student.name}</span>
                     </div>
                   </TableCell>
-                   <TableCell>{student.classId}</TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button aria-haspopup="true" size="icon" variant="ghost">
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Toggle menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Aksi</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => handleEdit(student)}>Edit</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDelete(student.id)}>Hapus</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                   <TableCell>{student.nis}</TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="outline" size="xs" onClick={() => handleDetail(student)}>
+                      Detail
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))) : (
@@ -357,6 +359,13 @@ export function StudentManagement() {
         setIsOpen={setIsFormOpen} 
         student={selectedStudent}
         onSave={handleSave}
+      />
+      <StudentDetail
+        isOpen={isDetailOpen}
+        setIsOpen={setIsDetailOpen}
+        student={selectedStudent}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
       />
     </>
   );

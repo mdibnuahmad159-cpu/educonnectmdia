@@ -14,12 +14,10 @@ import type { Teacher, Student } from '@/types';
 
 
 // This function creates a student document in Firestore.
-// The password field from the form is ignored here, as parent/guardian auth is a separate, more complex feature.
-export async function addStudent(db: Firestore, student: Omit<Student, 'id'> & { id: string; password?: string }) {
-  const { password, ...studentData } = student;
-  // Use the student's NIS as the document ID for simplicity
-  const studentRef = doc(db, 'students', studentData.nis);
-  await setDoc(studentRef, { ...studentData, id: studentData.nis });
+export async function addStudent(db: Firestore, student: Omit<Student, 'id'>) {
+  // Use the student's NIS as the document ID for simplicity, and also as the 'id' field.
+  const studentRef = doc(db, 'students', student.nis);
+  await setDoc(studentRef, { ...student, id: student.nis });
 }
 
 export async function updateStudent(db: Firestore, studentId: string, student: Partial<Student>) {
