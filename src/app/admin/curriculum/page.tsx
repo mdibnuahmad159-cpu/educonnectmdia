@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection, Firestore } from "firebase/firestore";
 import type { Curriculum } from "@/types";
@@ -30,8 +31,15 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { PlusCircle, Edit, Trash2, Loader2, FileDown, Printer, FileSpreadsheet, FileText } from "lucide-react";
+import { PlusCircle, Edit, Trash2, Loader2, FileDown, Printer, FileSpreadsheet, FileText, FileUp, Download, Upload } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
@@ -49,16 +57,22 @@ export default function CurriculumPage() {
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [selectedCurriculum, setSelectedCurriculum] = useState<Curriculum | null>(null);
     const [curriculumToDelete, setCurriculumToDelete] = useState<string | null>(null);
+    const [filterClass, setFilterClass] = useState<string>("semua");
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const sortedData = useMemo(() => {
+    const filteredData = useMemo(() => {
         if (!curriculumData) return [];
-        return [...curriculumData].sort((a, b) => {
+        let data = [...curriculumData];
+        if (filterClass !== "semua") {
+            data = data.filter(item => item.classLevel === Number(filterClass));
+        }
+        return data.sort((a, b) => {
             if (a.classLevel !== b.classLevel) {
                 return a.classLevel - b.classLevel;
             }
             return a.subjectName.localeCompare(b.subjectName);
         });
-    }, [curriculumData]);
+    }, [curriculumData, filterClass]);
 
     const handleAdd = () => {
         setSelectedCurriculum(null);
@@ -103,10 +117,89 @@ export default function CurriculumPage() {
             toast({ variant: "destructive", title: "Gagal Menyimpan", description: error.message });
         }
     };
+    
+    const curriculumColumns = {
+        subjectCode: 'Kode Mapel',
+        subjectName: 'Nama Mapel',
+        classLevel: 'Kelas (0-6)',
+        bookName: 'Nama Kitab',
+    };
+
+    const handleDownloadCurriculumTemplate = () => {
+        const worksheet = XLSX.utils.json_to_sheet([{}], { header: Object.values(curriculumColumns) });
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Template Kurikulum');
+        XLSX.writeFile(workbook, 'template_kurikulum.xlsx');
+    };
+
+    const handleImportCurriculum = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file || !firestore) return;
+        
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+             try {
+                const data = new Uint8Array(e.target?.result as ArrayBuffer);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const json: any[] = XLSX.utils.sheet_to_json(worksheet);
+
+                if (json.length === 0) {
+                    toast({ variant: "destructive", title: "File Kosong", description: "File Excel yang Anda unggah tidak berisi data." });
+                    return;
+                }
+
+                toast({ title: "Mengimpor Data", description: `Mulai mengimpor ${json.length} data kurikulum...` });
+
+                let successCount = 0;
+                let errorCount = 0;
+
+                for (const item of json) {
+                    const curriculumData: any = {};
+                    const columnKeys = Object.keys(curriculumColumns);
+                    const columnValues = Object.values(curriculumColumns);
+                     for(const key in item) {
+                        const columnIndex = columnValues.indexOf(key);
+                        if (columnIndex > -1) {
+                             const dataKey = columnKeys[columnIndex];
+                             curriculumData[dataKey] = item[key];
+                        }
+                    }
+
+                    if (!curriculumData.subjectCode || !curriculumData.subjectName || curriculumData.classLevel === undefined || !curriculumData.bookName) {
+                        errorCount++;
+                        console.error("Skipping curriculum item due to missing required fields:", curriculumData);
+                        continue;
+                    }
+
+                    try {
+                        curriculumData.classLevel = Number(curriculumData.classLevel);
+                        await addCurriculum(firestore, curriculumData as Omit<Curriculum, 'id'>);
+                        successCount++;
+                    } catch (error) {
+                        errorCount++;
+                        console.error(`Gagal mengimpor kurikulum ${curriculumData.subjectCode}:`, error);
+                    }
+                }
+
+                 toast({ title: "Impor Selesai", description: `${successCount} item berhasil diimpor. ${errorCount} gagal.` });
+
+            } catch (error) {
+                toast({ variant: "destructive", title: "Gagal Membaca File", description: "Tidak dapat memproses file Excel." });
+                console.error(error);
+            } finally {
+                if (event.target) {
+                    event.target.value = '';
+                }
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    };
 
     const handleExportExcel = () => {
-      if (!sortedData) return;
-      const dataToExport = sortedData.map((item, index) => ({
+      if (!filteredData) return;
+      const dataToExport = filteredData.map((item, index) => ({
           'No.': index + 1,
           'Kode Mapel': item.subjectCode,
           'Mapel': item.subjectName,
@@ -120,12 +213,12 @@ export default function CurriculumPage() {
     };
 
     const handleExportPdf = () => {
-        if (!sortedData) return;
+        if (!filteredData) return;
         const doc = new jsPDF();
         doc.text('Data Kurikulum', 14, 16);
         (doc as any).autoTable({
             head: [['No', 'Kode Mapel', 'Mapel', 'Kelas', 'Kitab']],
-            body: sortedData.map((item, index) => [
+            body: filteredData.map((item, index) => [
                 index + 1,
                 item.subjectCode,
                 item.subjectName,
@@ -138,7 +231,7 @@ export default function CurriculumPage() {
     };
 
     const handlePrintTable = () => {
-        if (!sortedData || sortedData.length === 0) {
+        if (!filteredData || filteredData.length === 0) {
             toast({ variant: "destructive", title: "Tidak Ada Data", description: "Tidak ada data untuk dicetak." });
             return;
         }
@@ -149,7 +242,7 @@ export default function CurriculumPage() {
             return;
         }
         
-        const tableRows = sortedData.map((item, index) => `
+        const tableRows = filteredData.map((item, index) => `
             <tr>
                 <td>${index + 1}</td>
                 <td>${item.subjectCode}</td>
@@ -206,33 +299,73 @@ export default function CurriculumPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div className="flex justify-end items-center gap-2 mb-4">
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button size="xs" variant="outline" className="gap-1">
-                                <FileDown className="h-4 w-4" />
-                                Ekspor
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={handleExportExcel}>
-                                <FileSpreadsheet className="mr-2 h-4 w-4" />
-                                Ekspor ke Excel
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={handleExportPdf}>
-                                <FileText className="mr-2 h-4 w-4" />
-                                Ekspor ke PDF
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                        <Button size="xs" variant="outline" className="gap-1" onClick={handlePrintTable}>
-                            <Printer className="h-4 w-4" />
-                            Cetak Data
-                        </Button>
-                        <Button size="xs" className="gap-1" onClick={handleAdd}>
-                            <PlusCircle className="h-4 w-4" />
-                            Tambah Data
-                        </Button>
+                    <div className="flex flex-col gap-2 mb-4">
+                        <div className="flex">
+                            <Select value={filterClass} onValueChange={setFilterClass}>
+                                <SelectTrigger className="w-full sm:w-[180px] h-8 text-xs">
+                                    <SelectValue placeholder="Filter per kelas" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="semua">Semua Kelas</SelectItem>
+                                    {[...Array(7).keys()].map(i => (
+                                        <SelectItem key={i} value={String(i)}>Kelas {i}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="flex justify-end items-center gap-2">
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button size="xs" variant="outline" className="gap-1">
+                                    <FileUp className="h-4 w-4" />
+                                    Impor
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={handleDownloadCurriculumTemplate}>
+                                    <Download className="mr-2 h-4 w-4" />
+                                    Unduh Template
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
+                                    <Upload className="mr-2 h-4 w-4" />
+                                    Unggah Excel
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                className="hidden"
+                                accept=".xlsx, .xls"
+                                onChange={handleImportCurriculum}
+                            />
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button size="xs" variant="outline" className="gap-1">
+                                    <FileDown className="h-4 w-4" />
+                                    Ekspor
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={handleExportExcel}>
+                                    <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                    Ekspor ke Excel
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={handleExportPdf}>
+                                    <FileText className="mr-2 h-4 w-4" />
+                                    Ekspor ke PDF
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                            <Button size="xs" variant="outline" className="gap-1" onClick={handlePrintTable}>
+                                <Printer className="h-4 w-4" />
+                                Cetak Data
+                            </Button>
+                            <Button size="xs" className="gap-1" onClick={handleAdd}>
+                                <PlusCircle className="h-4 w-4" />
+                                Tambah Data
+                            </Button>
+                        </div>
                     </div>
                     <Table>
                         <TableHeader>
@@ -255,8 +388,8 @@ export default function CurriculumPage() {
                                         </div>
                                     </TableCell>
                                 </TableRow>
-                            ) : sortedData.length > 0 ? (
-                                sortedData.map((item, index) => (
+                            ) : filteredData.length > 0 ? (
+                                filteredData.map((item, index) => (
                                 <TableRow key={item.id}>
                                     <TableCell>{index + 1}</TableCell>
                                     <TableCell>{item.subjectCode}</TableCell>
@@ -276,7 +409,7 @@ export default function CurriculumPage() {
                             ) : (
                                 <TableRow>
                                     <TableCell colSpan={6} className="h-24 text-center">
-                                        Belum ada data kurikulum.
+                                        Belum ada data kurikulum untuk filter ini.
                                     </TableCell>
                                 </TableRow>
                             )}
@@ -309,3 +442,5 @@ export default function CurriculumPage() {
         </>
     );
 }
+
+    
