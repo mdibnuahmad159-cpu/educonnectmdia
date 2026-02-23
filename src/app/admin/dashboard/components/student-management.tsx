@@ -12,7 +12,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from "@/components/ui/card";
 import {
   Table,
@@ -92,22 +91,6 @@ export function StudentManagement() {
             Anda tidak memiliki izin untuk melihat data siswa.
           </CardDescription>
         </CardHeader>
-        {user?.isAnonymous && (
-          <>
-            <CardContent>
-              <p className="text-sm">
-                Untuk mendapatkan akses admin penuh, Anda perlu menambahkan UID Anda ke koleksi `roles_admin` di database Firestore.
-              </p>
-            </CardContent>
-            <CardFooter className="flex-col items-start gap-2 rounded-md border bg-muted p-3 text-sm">
-                <p className="font-semibold">UID Admin Anda:</p>
-                <code className="rounded-sm bg-muted-foreground/20 px-2 py-1 text-xs">{user.uid}</code>
-                <p className="text-muted-foreground">
-                  Buat dokumen baru di koleksi `roles_admin` dengan ID dokumen sama dengan UID di atas. Isi dokumen bisa kosong.
-                </p>
-            </CardFooter>
-          </>
-        )}
       </Card>
     );
   }
