@@ -9,6 +9,7 @@ import { BottomNav } from "./components/bottom-nav";
 import { BookOpenCheck, Loader2, School } from "lucide-react";
 import { useSchoolProfile } from "@/context/school-profile-provider";
 import { Button } from "@/components/ui/button";
+import { AcademicYearSelector } from "@/components/shared/academic-year-selector";
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const { user, isUserLoading } = useUser();
@@ -56,12 +57,15 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                 {profile?.namaMadrasah || 'EduConnect'}
             </h1>
         </div>
-        <Link href="/admin/profile">
-          <Button variant="ghost" size="icon">
-            <School className="h-5 w-5" />
-            <span className="sr-only">Profil Sekolah</span>
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <AcademicYearSelector />
+          <Link href="/admin/profile">
+            <Button variant="ghost" size="icon">
+              <School className="h-5 w-5" />
+              <span className="sr-only">Profil Sekolah</span>
+            </Button>
+          </Link>
+        </div>
       </header>
       <main className="flex-1 p-2 pb-16 sm:px-4">
           {children}

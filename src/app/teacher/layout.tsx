@@ -7,6 +7,7 @@ import { useUser } from "@/firebase";
 import { TeacherBottomNav } from "./components/teacher-bottom-nav";
 import { BookOpenCheck, Loader2 } from "lucide-react";
 import { useSchoolProfile } from "@/context/school-profile-provider";
+import { AcademicYearSelector } from "@/components/shared/academic-year-selector";
 
 export default function TeacherLayout({ children }: { children: ReactNode }) {
   const { user, isUserLoading } = useUser();
@@ -39,7 +40,7 @@ export default function TeacherLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      <header className="sticky top-0 z-10 flex h-12 items-center gap-4 border-b bg-card px-3 sm:px-4">
+      <header className="sticky top-0 z-10 flex h-12 items-center justify-between gap-4 border-b bg-card px-3 sm:px-4">
         <div className="flex items-center gap-2 text-primary">
             {profile?.logoMadrasahUrl ? (
                 <Image src={profile.logoMadrasahUrl} alt="Logo" width={24} height={24} className="h-6 w-6 object-contain"/>
@@ -49,6 +50,9 @@ export default function TeacherLayout({ children }: { children: ReactNode }) {
             <h1 className="text-base font-semibold font-headline">
                 {profile?.namaMadrasah || 'EduConnect'}
             </h1>
+        </div>
+        <div className="flex items-center gap-2">
+          <AcademicYearSelector />
         </div>
       </header>
       <main className="flex-1 p-2 pb-16 sm:px-4">
