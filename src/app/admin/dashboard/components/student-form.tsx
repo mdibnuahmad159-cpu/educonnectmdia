@@ -38,6 +38,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 const formSchema = z.object({
   nis: z.string().min(1, "NIS harus diisi"),
   name: z.string().min(1, "Nama harus diisi"),
+  password: z.string().optional().refine(val => !val || val.length >= 6, {
+    message: "Password minimal 6 karakter jika diisi.",
+  }),
   nik: z.string().optional(),
   gender: z.enum(["Laki-laki", "Perempuan"], { required_error: "Jenis kelamin harus dipilih" }),
   tempatLahir: z.string().optional(),
@@ -63,6 +66,7 @@ type StudentFormProps = {
 const defaultValues = {
     nis: "",
     name: "",
+    password: "",
     nik: "",
     gender: "Laki-laki" as "Laki-laki" | "Perempuan",
     tempatLahir: "",
@@ -85,6 +89,7 @@ export function StudentForm({ isOpen, setIsOpen, student, onSave }: StudentFormP
         if (student) {
           form.reset({
             ...student,
+            password: "", // Do not pre-fill existing password
             nik: student.nik || "",
             tempatLahir: student.tempatLahir || "",
             namaAyah: student.namaAyah || "",
@@ -100,6 +105,12 @@ export function StudentForm({ isOpen, setIsOpen, student, onSave }: StudentFormP
   
   const onSubmit = (values: StudentFormData) => {
     const { avatar, dokumen, ...studentData } = values;
+    
+    // Only include password if it's not an empty string
+    if (!studentData.password) {
+        delete (studentData as Partial<typeof studentData>).password;
+    }
+    
     onSave(studentData);
     setIsOpen(false);
   };
@@ -116,7 +127,7 @@ export function StudentForm({ isOpen, setIsOpen, student, onSave }: StudentFormP
         {student && (
           <div className="flex justify-center pt-2">
             <Avatar className="h-20 w-20">
-              <AvatarImage src={form.watch('avatarUrl') || student.avatarUrl} alt={student.name} className="object-cover" />
+              <AvatarImage src={form.watch('avatarUrl') || student.avatarUrl || undefined} alt={student.name} className="object-cover" />
               <AvatarFallback className="text-2xl">{student.name.charAt(0)}</AvatarFallback>
             </Avatar>
           </div>
@@ -147,6 +158,22 @@ export function StudentForm({ isOpen, setIsOpen, student, onSave }: StudentFormP
                       <FormControl>
                         <Input {...field} />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password Wali Murid</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="Isi untuk membuat/mengubah" {...field} value={field.value ?? ""} />
+                      </FormControl>
+                       <FormDescription>
+                          Password ini digunakan wali murid untuk login dengan NIS.
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -214,7 +241,7 @@ export function StudentForm({ isOpen, setIsOpen, student, onSave }: StudentFormP
                     <FormItem>
                       <FormLabel>NIK</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input {...field} value={field.value ?? ""} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -248,7 +275,7 @@ export function StudentForm({ isOpen, setIsOpen, student, onSave }: StudentFormP
                     <FormItem>
                       <FormLabel>Tempat Lahir</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input {...field} value={field.value ?? ""} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -277,7 +304,7 @@ export function StudentForm({ isOpen, setIsOpen, student, onSave }: StudentFormP
                     <FormItem>
                       <FormLabel>Nama Ayah</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input {...field} value={field.value ?? ""} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -290,7 +317,7 @@ export function StudentForm({ isOpen, setIsOpen, student, onSave }: StudentFormP
                     <FormItem>
                       <FormLabel>Nama Ibu</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input {...field} value={field.value ?? ""} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

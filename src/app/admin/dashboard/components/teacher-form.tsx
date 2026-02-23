@@ -72,12 +72,24 @@ type TeacherFormProps = {
 
 export function TeacherForm({ isOpen, setIsOpen, teacher, onSave }: TeacherFormProps) {
   const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema.refine(data => !!teacher || !!data.password, {
-        message: "Password minimal 6 karakter untuk guru baru",
-        path: ["password"],
-    }).refine(data => !data.password || data.password.length >= 6, {
-        message: "Password minimal 6 karakter",
-        path: ["password"],
+    resolver: zodResolver(formSchema.superRefine((data, ctx) => {
+        if (!teacher) { // New teacher
+            if (!data.password || data.password.length < 6) {
+                ctx.addIssue({
+                    code: 'custom',
+                    path: ['password'],
+                    message: 'Password minimal 6 karakter untuk guru baru.',
+                });
+            }
+        } else { // Existing teacher
+            if (data.password && data.password.length > 0 && data.password.length < 6) {
+                ctx.addIssue({
+                    code: 'custom',
+                    path: ['password'],
+                    message: 'Password minimal 6 karakter jika diisi.',
+                });
+            }
+        }
     })),
     defaultValues: {
       name: "", email: "", password: "", avatarUrl: "", jabatan: "", noWa: "", nik: "",
@@ -112,6 +124,12 @@ export function TeacherForm({ isOpen, setIsOpen, teacher, onSave }: TeacherFormP
   
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     const { dokumen, avatar, ...teacherData } = values;
+
+    // Only include password if it's not an empty string
+    if (!teacherData.password) {
+        delete (teacherData as Partial<typeof teacherData>).password;
+    }
+
     onSave({
       id: teacher?.id,
       ...teacherData,
@@ -130,7 +148,7 @@ export function TeacherForm({ isOpen, setIsOpen, teacher, onSave }: TeacherFormP
         {teacher && (
           <div className="flex justify-center pt-2">
             <Avatar className="h-20 w-20">
-              <AvatarImage src={form.watch('avatarUrl') || teacher.avatarUrl} alt={teacher.name} />
+              <AvatarImage src={form.watch('avatarUrl') || teacher.avatarUrl || undefined} alt={teacher.name} />
               <AvatarFallback className="text-2xl">{teacher.name.charAt(0)}</AvatarFallback>
             </Avatar>
           </div>
@@ -212,7 +230,7 @@ export function TeacherForm({ isOpen, setIsOpen, teacher, onSave }: TeacherFormP
                 <FormField control={form.control} name="password" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Password</FormLabel>
-                    <FormControl><Input type="password" placeholder={teacher ? 'Isi untuk mengubah' : 'Wajib diisi'} {...field} /></FormControl>
+                    <FormControl><Input type="password" placeholder={teacher ? 'Isi untuk mengubah' : 'Wajib diisi'} {...field} value={field.value ?? ""} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
@@ -239,35 +257,35 @@ export function TeacherForm({ isOpen, setIsOpen, teacher, onSave }: TeacherFormP
                 <FormField control={form.control} name="noWa" render={({ field }) => (
                   <FormItem>
                     <FormLabel>No. WA</FormLabel>
-                    <FormControl><Input type="tel" {...field} /></FormControl>
+                    <FormControl><Input type="tel" {...field} value={field.value ?? ""} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="nik" render={({ field }) => (
                   <FormItem>
                     <FormLabel>NIK</FormLabel>
-                    <FormControl><Input {...field} /></FormControl>
+                    <FormControl><Input {...field} value={field.value ?? ""} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="pendidikan" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Pendidikan</FormLabel>
-                    <FormControl><Input {...field} /></FormControl>
+                    <FormControl><Input {...field} value={field.value ?? ""} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="ponpes" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Latar Belakang Ponpes</FormLabel>
-                    <FormControl><Input {...field} /></FormControl>
+                    <FormControl><Input {...field} value={field.value ?? ""} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="alamat" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Alamat</FormLabel>
-                    <FormControl><Textarea className="h-24" {...field} /></FormControl>
+                    <FormControl><Textarea className="h-24" {...field} value={field.value ?? ""} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />

@@ -26,4 +26,5 @@ export type Student = {
   address: string;
   avatarUrl?: string;
   dokumenUrl?: string;
+  password?: string;
 };
