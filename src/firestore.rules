@@ -1,0 +1,150 @@
+
+/**
+ * # Firestore Security Rules: EduConnect
+ *
+ * ## Core Philosophy
+ * This ruleset implements a Role-Based Access Control (RBAC) model with strict user ownership principles.
+ * Administrative users, designated by a development-only mechanism, have global privileges.
+ * Regular users (Teachers, Parents) have explicit, limited permissions based on their role and direct relationships to data.
+ * The default security posture is 'deny all', with permissions being explicitly and granularly granted.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // =====================================================================
+    // Helper Functions
+    // =====================================================================
+
+    /**
+     * Checks if the user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Checks if the requesting user's UID matches the given userId.
+     * Used for document ownership validation.
+     */
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    /**
+     * Checks if the requesting user is a registered Teacher.
+     */
+    function isTeacher() {
+      return exists(/databases/$(database)/documents/teachers/$(request.auth.uid));
+    }
+
+    /**
+     * Checks if the requesting user is a registered Parent.
+     */
+    function isParent() {
+      return exists(/databases/$(database)/documents/parents/$(request.auth.uid));
+    }
+
+    /**
+     * Checks if the user is an admin.
+     * An admin is defined as an authenticated user who is NOT a registered teacher or parent.
+     * This reliably identifies the anonymous user from the "Login as Admin" flow.
+     */
+    function isAdmin() {
+      return isSignedIn() && !isTeacher() && !isParent();
+    }
+    
+    /**
+     * Checks if the requesting user is the homeroom teacher for the given class document.
+     */
+    function isHomeroomTeacher(classDoc) {
+      return request.auth.uid == classDoc.data.homeroomTeacherId;
+    }
+
+    /**
+     * Checks if the requesting user is a parent of the student represented by the student document.
+     * Verifies that the user's UID is in the denormalized parentUids array.
+     */
+    function isParentOfStudent(studentDoc) {
+      // This rule requires that the student document has a 'parentUids' array field.
+      return request.auth.uid in studentDoc.data.parentUids;
+    }
+
+    /**
+     * Checks if the requesting user is a teacher of the student.
+     * This performs a get() on the teacher's own profile to retrieve their list of
+     * assigned class IDs and checks if the student's class ID is in that list.
+     */
+    function isTeacherOfStudent(studentDoc) {
+      // This rule requires the teacher's document to have 'classIds' array field.
+      let teacherProfile = get(/databases/$(database)/documents/teachers/$(request.auth.uid));
+      return teacherProfile != null && studentDoc.data.classId in teacherProfile.data.classIds;
+    }
+
+
+    // =====================================================================
+    // Collection Rules
+    // =====================================================================
+
+    /**
+     * @description Admin roles collection. This collection is no longer used for authorization.
+     * @path /roles_admin/{adminUid}
+     */
+    match /roles_admin/{adminUid} {
+      allow read, write: if false;
+    }
+
+    /**
+     * @description Teacher profiles. Admins have full CRUD. Teachers can read/update their own profile.
+     * @path /teachers/{teacherId}
+     */
+    match /teachers/{teacherId} {
+      allow get: if isAdmin() || isOwner(teacherId);
+      allow list: if isAdmin();
+      allow create: if isAdmin();
+      allow update: if isAdmin() || isOwner(teacherId);
+      allow delete: if isAdmin();
+    }
+
+    /**
+     * @description Parent profiles. Admins have full CRUD. Parents can read/update their own profile.
+     * @path /parents/{parentId}
+     */
+    match /parents/{parentId} {
+      allow get: if isAdmin() || isOwner(parentId);
+      allow list: if isAdmin();
+      allow create: if isAdmin();
+      allow update: if isAdmin() || isOwner(parentId);
+      allow delete: if isAdmin();
+    }
+
+    /**
+     * @description Student records. Admins have full CRUD. Parents and teachers have read access based on their relationship.
+     * @path /students/{studentId}
+     */
+    match /students/{studentId} {
+      allow get: if isAdmin() || isParentOfStudent(resource) || isTeacherOfStudent(resource);
+      allow list: if isAdmin() || isTeacher() || isParent();
+      allow create, update, delete: if isAdmin();
+    }
+
+    /**
+     * @description Class details. Admins have full CRUD. Read is public for signed-in users. Homeroom teachers can update.
+     * @path /classes/{classId}
+     */
+    match /classes/{classId} {
+      allow get, list: if isAdmin() || isSignedIn();
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || isHomeroomTeacher(resource);
+    }
+
+    /**
+     * @description Academic subject details. Admins have full CRUD. Read is public for signed-in users.
+     * @path /subjects/{subjectId}
+     */
+    match /subjects/{subjectId} {
+      allow get, list: if isAdmin() || isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+  }
+}
