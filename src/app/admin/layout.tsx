@@ -3,10 +3,12 @@
 import { ReactNode, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 import { useUser } from "@/firebase";
 import { BottomNav } from "./components/bottom-nav";
-import { BookOpenCheck, Loader2 } from "lucide-react";
+import { BookOpenCheck, Loader2, School } from "lucide-react";
 import { useSchoolProfile } from "@/context/school-profile-provider";
+import { Button } from "@/components/ui/button";
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const { user, isUserLoading } = useUser();
@@ -43,7 +45,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      <header className="sticky top-0 z-10 flex h-12 items-center justify-start gap-4 border-b bg-card px-3 sm:px-4">
+      <header className="sticky top-0 z-10 flex h-12 items-center justify-between gap-4 border-b bg-card px-3 sm:px-4">
         <div className="flex items-center gap-2 text-primary">
             {profile?.logoMadrasahUrl ? (
                 <Image src={profile.logoMadrasahUrl} alt="Logo" width={24} height={24} className="h-6 w-6 object-contain"/>
@@ -54,6 +56,12 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                 {profile?.namaMadrasah || 'EduConnect'}
             </h1>
         </div>
+        <Link href="/admin/profile">
+          <Button variant="ghost" size="icon">
+            <School className="h-5 w-5" />
+            <span className="sr-only">Profil Sekolah</span>
+          </Button>
+        </Link>
       </header>
       <main className="flex-1 p-2 pb-16 sm:px-4">
           {children}
