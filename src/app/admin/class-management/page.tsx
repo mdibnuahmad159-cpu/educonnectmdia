@@ -39,7 +39,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { ChevronsUp, ChevronsDown, ArrowRightLeft, Loader2 } from "lucide-react";
+import { ChevronsUp, ChevronsDown, ArrowRightLeft, Loader2, FileDown, Printer, FileSpreadsheet, FileText } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 export default function ClassManagementPage() {
   const firestore = useFirestore();
@@ -131,6 +140,112 @@ export default function ClassManagementPage() {
     setIsMoveDialogOpen(false);
     setTargetClass(null);
   };
+  
+  const handleExportExcel = () => {
+      if (!sortedStudents) return;
+      const dataToExport = sortedStudents.map((s, index) => ({
+          'No.': index + 1,
+          'Nama': s.name,
+          'NIS': s.nis,
+          'Kelas': s.kelas !== undefined ? `Kelas ${s.kelas}` : "Belum diatur",
+      }));
+      const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Manajemen Kelas');
+      XLSX.writeFile(workbook, 'data_manajemen_kelas.xlsx');
+  };
+
+  const handleExportPdf = () => {
+      if (!sortedStudents) return;
+      const doc = new jsPDF();
+      
+      doc.text('Data Manajemen Kelas', 14, 16);
+
+      const tableColumn = ['No', 'Nama', 'NIS', 'Kelas'];
+      const tableRows: (string | number)[][] = [];
+
+      sortedStudents.forEach((student, index) => {
+          const studentData = [
+              index + 1,
+              student.name,
+              student.nis,
+              student.kelas !== undefined ? `Kelas ${student.kelas}` : "Belum diatur",
+          ];
+          tableRows.push(studentData);
+      });
+
+      (doc as any).autoTable({
+          head: [tableColumn],
+          body: tableRows,
+          startY: 20,
+      });
+
+      doc.save('data_manajemen_kelas.pdf');
+  };
+
+  const handlePrintTable = () => {
+    if (!sortedStudents || sortedStudents.length === 0) {
+      toast({ variant: "destructive", title: "Tidak Ada Data", description: "Tidak ada data untuk dicetak." });
+      return;
+    }
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast({ variant: "destructive", title: "Gagal Membuka Jendela Cetak", description: "Mohon izinkan pop-up untuk situs ini." });
+      return;
+    }
+
+    const tableRows = sortedStudents.map((student, index) => `
+      <tr style="border-bottom: 1px solid #ddd;">
+        <td style="padding: 8px; text-align: center;">${index + 1}</td>
+        <td style="padding: 8px;">${student.name}</td>
+        <td style="padding: 8px;">${student.nis}</td>
+        <td style="padding: 8px;">${student.kelas !== undefined ? `Kelas ${student.kelas}` : 'Belum diatur'}</td>
+      </tr>
+    `).join('');
+
+    const content = `
+      <html>
+        <head>
+          <title>Cetak Data Manajemen Kelas</title>
+          <style>
+            body { font-family: sans-serif; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #ccc; text-align: left; padding: 8px; }
+            th { background-color: #f2f2f2; }
+            h1 { font-size: 18px; }
+            @media print {
+              @page { size: A4; margin: 20mm; }
+              body { margin: 0; }
+            }
+          </style>
+        </head>
+        <body>
+          <h1>Data Manajemen Kelas</h1>
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 5%; text-align: center;">No.</th>
+                <th>Nama</th>
+                <th>NIS</th>
+                <th>Kelas</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${tableRows}
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(content);
+    printWindow.document.close();
+    printWindow.onload = () => {
+      printWindow.focus();
+      printWindow.print();
+    };
+  };
 
   const isAllSelected = selectedStudents.length > 0 && selectedStudents.length === sortedStudents.length;
   const isIndeterminate = selectedStudents.length > 0 && selectedStudents.length < sortedStudents.length;
@@ -156,6 +271,28 @@ export default function ClassManagementPage() {
               <Button size="xs" variant="outline" onClick={() => setIsMoveDialogOpen(true)} disabled={selectedStudents.length === 0} className="gap-1">
                 <ArrowRightLeft /> Pindah Kelas
               </Button>
+              <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button size="xs" variant="outline" className="gap-1">
+                        <FileDown className="h-4 w-4" />
+                        Ekspor
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={handleExportExcel}>
+                        <FileSpreadsheet className="mr-2 h-4 w-4" />
+                        Ekspor ke Excel
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleExportPdf}>
+                        <FileText className="mr-2 h-4 w-4" />
+                        Ekspor ke PDF
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+                 <Button size="xs" variant="outline" className="gap-1" onClick={handlePrintTable}>
+                    <Printer className="h-4 w-4" />
+                    Cetak Data
+                </Button>
             </div>
           </div>
         </CardHeader>
