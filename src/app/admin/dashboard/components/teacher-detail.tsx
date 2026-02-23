@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -128,6 +127,7 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
       { label: 'No. WA', value: teacher.noWa || "-" },
       { label: 'NIK', value: teacher.nik || "-" },
       { label: 'Email', value: teacher.email || "-" },
+      { label: 'Password', value: "Dikelola oleh sistem" },
       { label: 'Pendidikan', value: teacher.pendidikan || "-" },
       { label: 'Ponpes', value: teacher.ponpes || "-" },
       { label: 'Alamat', value: teacher.alamat || "-" },
@@ -245,6 +245,10 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
             <span className="text-muted-foreground">Email</span>
             <span className="col-span-2">{teacher.email || "-"}</span>
           </div>
+           <div className="grid grid-cols-3 items-center">
+            <span className="text-muted-foreground">Password</span>
+            <span className="col-span-2 text-muted-foreground">Dikelola oleh sistem</span>
+          </div>
           <div className="grid grid-cols-3 items-center">
             <span className="text-muted-foreground">Pendidikan</span>
             <span className="col-span-2">{teacher.pendidikan || "-"}</span>
@@ -289,5 +293,3 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
     </Dialog>
   );
 }
-
-    

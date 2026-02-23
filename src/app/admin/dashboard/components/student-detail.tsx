@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -127,6 +126,7 @@ export function StudentDetail({ isOpen, setIsOpen, student, onEdit, onDelete }: 
     const data = [
       { label: 'Nama', value: student.name || "-" },
       { label: 'NIS', value: student.nis || "-" },
+      { label: 'Password Wali', value: student.password || "Belum diatur" },
       { label: 'NIK', value: student.nik || "-" },
       { label: 'Jenis Kelamin', value: student.gender || "-" },
       { label: 'Tempat Lahir', value: student.tempatLahir || "-" },
@@ -236,6 +236,10 @@ export function StudentDetail({ isOpen, setIsOpen, student, onEdit, onDelete }: 
             <span className="text-muted-foreground">NIS</span>
             <span className="col-span-2">{student.nis || "-"}</span>
           </div>
+          <div className="grid grid-cols-3 items-center">
+            <span className="text-muted-foreground">Password Wali</span>
+            <span className="col-span-2">{student.password || "Belum diatur"}</span>
+          </div>
            <div className="grid grid-cols-3 items-center">
             <span className="text-muted-foreground">NIK</span>
             <span className="col-span-2">{student.nik || "-"}</span>
@@ -296,5 +300,3 @@ export function StudentDetail({ isOpen, setIsOpen, student, onEdit, onDelete }: 
     </Dialog>
   );
 }
-
-    
