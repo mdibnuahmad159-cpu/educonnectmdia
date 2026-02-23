@@ -36,7 +36,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { format } from "date-fns";
 
 
 export function StudentManagement() {
@@ -104,7 +103,7 @@ export function StudentManagement() {
       nik: 'NIK',
       gender: 'Jenis Kelamin (Laki-laki/Perempuan)',
       tempatLahir: 'Tempat Lahir',
-      dateOfBirth: 'Tanggal Lahir (YYYY-MM-DD)',
+      dateOfBirth: 'Tanggal Lahir (DD-MM-YYYY)',
       namaAyah: 'Nama Ayah',
       namaIbu: 'Nama Ibu',
       address: 'Alamat',
@@ -149,7 +148,11 @@ export function StudentManagement() {
                       if (columnIndex > -1) {
                            const dataKey = columnKeys[columnIndex];
                            if (dataKey === 'dateOfBirth' && typeof item[key] === 'number') {
-                               studentData[dataKey] = new Date(Math.round((item[key] - 25569) * 86400 * 1000)).toISOString();
+                               const date = new Date(Math.round((item[key] - 25569) * 86400 * 1000));
+                               const day = String(date.getDate()).padStart(2, '0');
+                               const month = String(date.getMonth() + 1).padStart(2, '0');
+                               const year = date.getFullYear();
+                               studentData[dataKey] = `${day}-${month}-${year}`;
                            } else {
                                studentData[dataKey] = item[key];
                            }
@@ -193,7 +196,7 @@ export function StudentManagement() {
           'NIK': s.nik || '-',
           'Jenis Kelamin': s.gender,
           'Tempat Lahir': s.tempatLahir || '-',
-          'Tanggal Lahir': s.dateOfBirth ? format(new Date(s.dateOfBirth), 'yyyy-MM-dd') : '-',
+          'Tanggal Lahir': s.dateOfBirth || '-',
           'Nama Ayah': s.namaAyah || '-',
           'Nama Ibu': s.namaIbu || '-',
           'Alamat': s.address,

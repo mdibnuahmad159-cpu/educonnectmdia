@@ -14,7 +14,6 @@ import {
 import type { Student } from "@/types";
 import { Trash2, Edit } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { format } from "date-fns";
 
 type StudentDetailProps = {
   isOpen: boolean;
@@ -72,7 +71,7 @@ export function StudentDetail({ isOpen, setIsOpen, student, onEdit, onDelete }: 
           </div>
            <div className="grid grid-cols-3 items-center">
             <span className="text-muted-foreground">Tanggal Lahir</span>
-            <span className="col-span-2">{student.dateOfBirth ? format(new Date(student.dateOfBirth), "d MMMM yyyy") : "-"}</span>
+            <span className="col-span-2">{student.dateOfBirth || "-"}</span>
           </div>
           <div className="grid grid-cols-3 items-center">
             <span className="text-muted-foreground">Nama Ayah</span>
