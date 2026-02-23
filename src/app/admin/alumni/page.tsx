@@ -36,13 +36,21 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, Loader2, FileDown, Printer, FileSpreadsheet, FileText } from "lucide-react";
+import { Trash2, Loader2, FileDown, Printer, FileSpreadsheet, FileText, PlusCircle, Edit } from "lucide-react";
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { deleteAlumnus } from "@/lib/firebase-helpers";
+import { addAlumnus, updateAlumnus, deleteAlumnus } from "@/lib/firebase-helpers";
+import { AlumniForm } from "./components/alumni-form";
 
 export default function AlumniPage() {
     const firestore = useFirestore() as Firestore;
@@ -50,27 +58,66 @@ export default function AlumniPage() {
     const { data: alumniData, loading } = useCollection<Alumni>(alumniCollection);
     const { toast } = useToast();
 
+    const [isFormOpen, setIsFormOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [selectedAlumnus, setSelectedAlumnus] = useState<Alumni | null>(null);
     const [alumnusToDelete, setAlumnusToDelete] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
+    const [filterYear, setFilterYear] = useState<string>("semua");
+    
+    const availableYears = useMemo(() => {
+        if (!alumniData) return [];
+        const years = new Set(alumniData.map(a => a.tahunLulus));
+        return Array.from(years).sort((a, b) => b.localeCompare(a));
+    }, [alumniData]);
 
     const filteredData = useMemo(() => {
         if (!alumniData) return [];
-        return alumniData.filter(alumnus =>
-            alumnus.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            alumnus.nis.includes(searchTerm) ||
-            alumnus.tahunLulus.includes(searchTerm)
-        ).sort((a, b) => {
+        return alumniData.filter(alumnus => {
+            const matchesSearch = alumnus.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                alumnus.nis.includes(searchTerm);
+            
+            const matchesYear = filterYear === 'semua' || alumnus.tahunLulus === filterYear;
+
+            return matchesSearch && matchesYear;
+        }).sort((a, b) => {
             if (a.tahunLulus !== b.tahunLulus) {
                 return b.tahunLulus.localeCompare(a.tahunLulus);
             }
             return a.name.localeCompare(b.name);
         });
-    }, [alumniData, searchTerm]);
+    }, [alumniData, searchTerm, filterYear]);
+
+    const handleAdd = () => {
+        setSelectedAlumnus(null);
+        setIsFormOpen(true);
+    };
+
+    const handleEdit = (alumnus: Alumni) => {
+        setSelectedAlumnus(alumnus);
+        setIsFormOpen(true);
+    };
 
     const handleDelete = (id: string) => {
         setAlumnusToDelete(id);
         setIsDeleteDialogOpen(true);
+    };
+    
+    const handleSave = async (data: Omit<Alumni, 'id'>) => {
+        if (!firestore) return;
+        try {
+            if (selectedAlumnus) {
+                await updateAlumnus(firestore, selectedAlumnus.id, data);
+                toast({ title: "Data Alumni Diperbarui", description: "Data alumni berhasil diperbarui." });
+            } else {
+                await addAlumnus(firestore, data);
+                toast({ title: "Alumni Ditambahkan", description: "Data alumni baru berhasil ditambahkan." });
+            }
+            setIsFormOpen(false);
+            setSelectedAlumnus(null);
+        } catch (error: any) {
+            toast({ variant: "destructive", title: "Gagal Menyimpan", description: error.message });
+        }
     };
 
     const confirmDelete = async () => {
@@ -192,12 +239,25 @@ export default function AlumniPage() {
                 </CardHeader>
                 <CardContent>
                     <div className="flex flex-col sm:flex-row justify-between items-center gap-2 mb-4">
-                        <Input
-                            placeholder="Cari berdasarkan nama, NIS, atau tahun..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full sm:max-w-xs h-8 text-xs"
-                        />
+                        <div className="flex flex-col sm:flex-row gap-2 w-full">
+                            <Input
+                                placeholder="Cari berdasarkan nama atau NIS..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full sm:max-w-xs h-8 text-xs"
+                            />
+                            <Select value={filterYear} onValueChange={setFilterYear}>
+                                <SelectTrigger className="w-full sm:w-[180px] h-8 text-xs">
+                                    <SelectValue placeholder="Filter per tahun" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="semua">Semua Tahun</SelectItem>
+                                    {availableYears.map(year => (
+                                        <SelectItem key={year} value={year}>{year}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
                         <div className="flex items-center gap-2">
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -220,6 +280,10 @@ export default function AlumniPage() {
                             <Button size="xs" variant="outline" className="gap-1" onClick={handlePrintTable}>
                                 <Printer className="h-4 w-4" />
                                 Cetak Data
+                            </Button>
+                             <Button size="xs" className="gap-1" onClick={handleAdd}>
+                                <PlusCircle className="h-4 w-4" />
+                                Tambah Data
                             </Button>
                         </div>
                     </div>
@@ -255,6 +319,9 @@ export default function AlumniPage() {
                                     <TableCell>{item.address}</TableCell>
                                     <TableCell>{item.noWa || '-'}</TableCell>
                                     <TableCell className="text-right">
+                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(item)}>
+                                            <Edit className="h-4 w-4" />
+                                        </Button>
                                         <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(item.id)}>
                                             <Trash2 className="h-4 w-4" />
                                         </Button>
@@ -264,7 +331,7 @@ export default function AlumniPage() {
                             ) : (
                                 <TableRow>
                                     <TableCell colSpan={7} className="h-24 text-center">
-                                        Belum ada data alumni.
+                                        Belum ada data alumni untuk filter ini.
                                     </TableCell>
                                 </TableRow>
                             )}
@@ -272,6 +339,13 @@ export default function AlumniPage() {
                     </Table>
                 </CardContent>
             </Card>
+
+            <AlumniForm 
+                isOpen={isFormOpen}
+                setIsOpen={setIsFormOpen}
+                alumnus={selectedAlumnus}
+                onSave={handleSave}
+            />
             
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
                 <AlertDialogContent>

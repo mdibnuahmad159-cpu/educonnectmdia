@@ -116,6 +116,18 @@ export async function graduateStudents(db: Firestore, studentIds: string[], grad
     await batch.commit();
 }
 
+export async function addAlumnus(db: Firestore, alumnusData: Omit<Alumni, 'id'>) {
+  // Use NIS as the document ID for simplicity
+  const alumnusRef = doc(db, 'alumni', alumnusData.nis);
+  await setDoc(alumnusRef, { ...alumnusData, id: alumnusData.nis });
+}
+
+export async function updateAlumnus(db: Firestore, alumnusId: string, alumnusData: Partial<Omit<Alumni, 'id'>>) {
+  const alumnusRef = doc(db, 'alumni', alumnusId);
+  await setDoc(alumnusRef, alumnusData, { merge: true });
+}
+
+
 export async function deleteAlumnus(db: Firestore, alumnusId: string) {
   const alumnusRef = doc(db, 'alumni', alumnusId);
   await deleteDoc(alumnusRef);
