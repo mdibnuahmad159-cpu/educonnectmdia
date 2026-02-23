@@ -1,8 +1,8 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
-import { PlusCircle, AlertTriangle } from "lucide-react";
+import { useState, useMemo, useRef } from "react";
+import { PlusCircle, AlertTriangle, Download, Upload, FileDown, FileUp, FileSpreadsheet, FileText } from "lucide-react";
 import { useCollection, useAuth, useFirestore, useMemoFirebase, useUser } from "@/firebase";
 import { addTeacher, updateTeacher, deleteTeacher } from "@/lib/firebase-helpers";
 import { Button } from "@/components/ui/button";
@@ -21,13 +21,23 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { TeacherForm } from "./teacher-form";
-import { TeacherDetail } from "./teacher-detail"; // New component
+import { TeacherDetail } from "./teacher-detail"; 
 import type { Teacher } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { Auth } from "firebase/auth";
 import { collection, Firestore } from "firebase/firestore";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+
 
 export function TeacherManagement() {
   const firestore = useFirestore() as Firestore;
@@ -39,6 +49,7 @@ export function TeacherManagement() {
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
   const { toast } = useToast();
   const auth = useAuth() as Auth;
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const jabatanOrder = useMemo(() => [
     'Pengasuh',
@@ -115,6 +126,137 @@ export function TeacherManagement() {
     }
   };
 
+    const teacherColumns = {
+        name: 'Nama Lengkap',
+        email: 'Email',
+        password: 'Password (wajib untuk impor)',
+        jabatan: 'Jabatan',
+        noWa: 'No. WA',
+        nik: 'NIK',
+        pendidikan: 'Pendidikan',
+        ponpes: 'Latar Belakang Ponpes',
+        alamat: 'Alamat',
+    };
+
+    const handleDownloadTeacherTemplate = () => {
+        const worksheet = XLSX.utils.json_to_sheet([{}], { header: Object.values(teacherColumns) });
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Template Guru');
+        XLSX.writeFile(workbook, 'template_guru.xlsx');
+    };
+
+    const handleImportTeachers = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file || !auth || !firestore) return;
+
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const data = new Uint8Array(e.target?.result as ArrayBuffer);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const json: any[] = XLSX.utils.sheet_to_json(worksheet);
+
+                if (json.length === 0) {
+                    toast({ variant: "destructive", title: "File Kosong", description: "File Excel yang Anda unggah tidak berisi data." });
+                    return;
+                }
+
+                toast({ title: "Mengimpor Data", description: `Mulai mengimpor ${json.length} data guru...` });
+
+                let successCount = 0;
+                let errorCount = 0;
+
+                for (const item of json) {
+                    const teacherData: any = {};
+                    const columnKeys = Object.keys(teacherColumns);
+                    const columnValues = Object.values(teacherColumns);
+                    for(const key in item) {
+                        const columnIndex = columnValues.indexOf(key);
+                        if (columnIndex > -1) {
+                            teacherData[columnKeys[columnIndex]] = item[key];
+                        }
+                    }
+
+                    if (!teacherData.email || !teacherData.password || !teacherData.name) {
+                        errorCount++;
+                        console.error("Skipping teacher due to missing required fields:", teacherData);
+                        continue;
+                    }
+
+                    try {
+                        await addTeacher(auth, firestore, teacherData as Omit<Teacher, 'id'> & {password: string});
+                        successCount++;
+                    } catch (error) {
+                        errorCount++;
+                        console.error(`Gagal mengimpor guru ${teacherData.email}:`, error);
+                    }
+                }
+
+                toast({ title: "Impor Selesai", description: `${successCount} guru berhasil diimpor. ${errorCount} gagal.` });
+
+            } catch (error) {
+                toast({ variant: "destructive", title: "Gagal Membaca File", description: "Tidak dapat memproses file Excel." });
+                console.error(error);
+            } finally {
+                if (event.target) {
+                    event.target.value = '';
+                }
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    };
+
+
+    const handleExportTeachersExcel = () => {
+        if (!sortedTeachers) return;
+        const dataToExport = sortedTeachers.map(t => ({
+            'Nama Lengkap': t.name,
+            'Jabatan': t.jabatan || '-',
+            'Email': t.email,
+            'No. WA': t.noWa || '-',
+            'NIK': t.nik || '-',
+            'Pendidikan': t.pendidikan || '-',
+            'Latar Belakang Ponpes': t.ponpes || '-',
+            'Alamat': t.alamat || '-',
+        }));
+        const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Data Guru');
+        XLSX.writeFile(workbook, 'data_guru.xlsx');
+    };
+
+    const handleExportTeachersPdf = () => {
+        if (!sortedTeachers) return;
+        const doc = new jsPDF();
+        
+        doc.text('Data Guru', 14, 16);
+
+        const tableColumn = ['No', 'Nama Lengkap', 'Jabatan', 'Email', 'No. WA'];
+        const tableRows: (string | number)[][] = [];
+
+        sortedTeachers.forEach((teacher, index) => {
+            const teacherData = [
+                index + 1,
+                teacher.name,
+                teacher.jabatan || '-',
+                teacher.email,
+                teacher.noWa || '-',
+            ];
+            tableRows.push(teacherData);
+        });
+
+        (doc as any).autoTable({
+            head: [tableColumn],
+            body: tableRows,
+            startY: 20,
+        });
+
+        doc.save('data_guru.pdf');
+    };
+
+
   if (error && error.message.includes("Missing or insufficient permissions")) {
     return (
       <Card>
@@ -142,10 +284,56 @@ export function TeacherManagement() {
                 Kelola data guru dan akun mereka.
               </CardDescription>
             </div>
-            <Button size="xs" className="gap-1" onClick={handleAdd}>
-              <PlusCircle className="h-4 w-4" />
-              Tambah Guru
-            </Button>
+            <div className="flex gap-2">
+               <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button size="xs" variant="outline" className="gap-1">
+                    <FileUp className="h-4 w-4" />
+                    Impor
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={handleDownloadTeacherTemplate}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Unduh Template
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Unggah Excel
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+                </DropdownMenu>
+                <input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    accept=".xlsx, .xls"
+                    onChange={handleImportTeachers}
+                />
+
+                <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button size="xs" variant="outline" className="gap-1">
+                    <FileDown className="h-4 w-4" />
+                    Ekspor
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={handleExportTeachersExcel}>
+                    <FileSpreadsheet className="mr-2 h-4 w-4" />
+                    Ekspor ke Excel
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleExportTeachersPdf}>
+                    <FileText className="mr-2 h-4 w-4" />
+                    Ekspor ke PDF
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+                </DropdownMenu>
+              <Button size="xs" className="gap-1" onClick={handleAdd}>
+                <PlusCircle className="h-4 w-4" />
+                Tambah Guru
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
