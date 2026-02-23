@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -12,8 +11,10 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import type { Teacher } from "@/types";
-import { Trash2, Edit } from "lucide-react";
+import { Trash2, Edit, FileDown } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 type TeacherDetailProps = {
   isOpen: boolean;
@@ -34,6 +35,54 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
   const handleDelete = () => {
     onDelete(teacher.id);
     setIsOpen(false);
+  };
+
+  const handleExportPdf = () => {
+    if (!teacher) return;
+    const doc = new jsPDF();
+
+    doc.setFontSize(18);
+    doc.text(`Detail Guru: ${teacher.name}`, 14, 22);
+
+    if (teacher.avatarUrl) {
+      try {
+        doc.addImage(teacher.avatarUrl, 'JPEG', 14, 30, 40, 40);
+      } catch (e) {
+        console.error("Error adding image to PDF:", e);
+      }
+    }
+    
+    const tableData = [
+      ['Nama', teacher.name || "-"],
+      ['Jabatan', teacher.jabatan || "-"],
+      ['No. WA', teacher.noWa || "-"],
+      ['NIK', teacher.nik || "-"],
+      ['Email', teacher.email || "-"],
+      ['Pendidikan', teacher.pendidikan || "-"],
+      ['Ponpes', teacher.ponpes || "-"],
+      ['Alamat', teacher.alamat || "-"],
+    ];
+
+    (doc as any).autoTable({
+      startY: teacher.avatarUrl ? 80 : 30,
+      head: [['Keterangan', 'Data']],
+      body: tableData,
+      theme: 'grid',
+      styles: {
+        cellPadding: 2,
+        fontSize: 10,
+      },
+      headStyles: {
+        fillColor: [34, 119, 74], // A dark green similar to the theme
+        textColor: 255,
+        fontStyle: 'bold',
+      },
+      columnStyles: {
+        0: { fontStyle: 'bold' },
+      },
+    });
+
+    doc.save(`detail_guru_${teacher.name.replace(/\s/g, '_')}.pdf`);
   };
 
   return (
@@ -94,6 +143,9 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
            )}
         </div>
         <DialogFooter>
+           <Button variant="outline" size="xs" onClick={handleExportPdf} className="gap-1">
+            <FileDown /> Ekspor PDF
+          </Button>
           <DialogClose asChild>
             <Button variant="outline" size="xs">Tutup</Button>
           </DialogClose>

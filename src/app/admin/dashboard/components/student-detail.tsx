@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -12,8 +11,10 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import type { Student } from "@/types";
-import { Trash2, Edit } from "lucide-react";
+import { Trash2, Edit, FileDown } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 type StudentDetailProps = {
   isOpen: boolean;
@@ -33,6 +34,56 @@ export function StudentDetail({ isOpen, setIsOpen, student, onEdit, onDelete }: 
   const handleDelete = () => {
     onDelete(student.id);
     setIsOpen(false);
+  };
+
+  const handleExportPdf = () => {
+    if (!student) return;
+    const doc = new jsPDF();
+
+    doc.setFontSize(18);
+    doc.text(`Detail Siswa: ${student.name}`, 14, 22);
+
+    if (student.avatarUrl) {
+      try {
+        // We assume avatarUrl is a data URL that jsPDF can handle
+        doc.addImage(student.avatarUrl, 'JPEG', 14, 30, 40, 40);
+      } catch (e) {
+        console.error("Error adding image to PDF:", e);
+      }
+    }
+
+    const tableData = [
+      ['Nama', student.name || "-"],
+      ['NIS', student.nis || "-"],
+      ['NIK', student.nik || "-"],
+      ['Jenis Kelamin', student.gender || "-"],
+      ['Tempat Lahir', student.tempatLahir || "-"],
+      ['Tanggal Lahir', student.dateOfBirth || "-"],
+      ['Nama Ayah', student.namaAyah || "-"],
+      ['Nama Ibu', student.namaIbu || "-"],
+      ['Alamat', student.address || "-"],
+    ];
+
+    (doc as any).autoTable({
+      startY: student.avatarUrl ? 80 : 30,
+      head: [['Keterangan', 'Data']],
+      body: tableData,
+      theme: 'grid',
+      styles: {
+        cellPadding: 2,
+        fontSize: 10,
+      },
+      headStyles: {
+        fillColor: [34, 119, 74], // A dark green similar to the theme
+        textColor: 255,
+        fontStyle: 'bold',
+      },
+      columnStyles: {
+        0: { fontStyle: 'bold' },
+      },
+    });
+
+    doc.save(`detail_siswa_${student.nis}.pdf`);
   };
 
   return (
@@ -97,6 +148,9 @@ export function StudentDetail({ isOpen, setIsOpen, student, onEdit, onDelete }: 
            )}
         </div>
         <DialogFooter>
+          <Button variant="outline" size="xs" onClick={handleExportPdf} className="gap-1">
+            <FileDown /> Ekspor PDF
+          </Button>
           <DialogClose asChild>
             <Button variant="outline" size="xs">Tutup</Button>
           </DialogClose>
