@@ -30,6 +30,7 @@ export type Student = {
   password?: string;
   kelas?: number;
   noWa?: string;
+  reportUrl?: string;
 };
 
 export type Alumni = {
