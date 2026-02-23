@@ -151,7 +151,7 @@ service cloud.firestore {
       allow get, list: if isAdmin() || isSignedIn();
       allow create, update, delete: if isAdmin();
     }
-
+    
     /**
      * @description School Profile. Admin can write, anyone signed-in can read.
      * @path /schoolProfile/{profileId}
