@@ -11,6 +11,7 @@ export type Teacher = {
   pendidikan?: string;
   ponpes?: string;
   alamat?: string;
+  password?: string;
 };
 
 export type Student = {
@@ -27,4 +28,18 @@ export type Student = {
   avatarUrl?: string;
   dokumenUrl?: string;
   password?: string;
+};
+
+export type SchoolProfile = {
+  id: 'main';
+  namaYayasan?: string;
+  namaMadrasah?: string;
+  nsdt?: string;
+  alamat?: string;
+  visi?: string;
+  misi?: string;
+  sejarahSingkat?: string;
+  logoYayasanUrl?: string;
+  logoMadrasahUrl?: string;
+  kopSuratUrl?: string;
 };

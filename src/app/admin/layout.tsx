@@ -4,7 +4,9 @@ import { ReactNode, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/firebase";
 import { BottomNav } from "./components/bottom-nav";
-import { BookOpenCheck, Loader2 } from "lucide-react";
+import { BookOpenCheck, Loader2, User } from "lucide-react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const { user, isUserLoading } = useUser();
@@ -34,10 +36,18 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      <header className="sticky top-0 z-10 flex h-12 items-center gap-4 border-b bg-background px-3 sm:px-4">
+      <header className="sticky top-0 z-10 flex h-12 items-center justify-between gap-4 border-b bg-background px-3 sm:px-4">
         <div className="flex items-center gap-2 text-primary">
             <BookOpenCheck className="h-5 w-5" />
             <h1 className="text-base font-semibold font-headline">EduConnect Admin</h1>
+        </div>
+        <div>
+          <Button asChild variant="ghost" size="icon">
+            <Link href="/admin/profile">
+              <User className="h-5 w-5" />
+              <span className="sr-only">Profil</span>
+            </Link>
+          </Button>
         </div>
       </header>
       <main className="flex-1 p-2 pb-16 sm:px-4">

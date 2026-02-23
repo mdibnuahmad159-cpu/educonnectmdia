@@ -10,7 +10,7 @@ import {
   deleteDoc,
   serverTimestamp
 } from 'firebase/firestore';
-import type { Teacher, Student } from '@/types';
+import type { Teacher, Student, SchoolProfile } from '@/types';
 
 
 // This function creates a student document in Firestore.
@@ -59,4 +59,9 @@ export async function deleteTeacher(db: Firestore, teacherId: string) {
     await deleteDoc(teacherRef);
     // IMPORTANT: This only deletes the Firestore document, not the Firebase Authentication user.
     // Deleting auth users requires admin privileges and should be handled in a secure server environment (e.g., Firebase Functions).
+}
+
+export async function updateSchoolProfile(db: Firestore, profileData: Partial<Omit<SchoolProfile, 'id'>>) {
+  const profileRef = doc(db, 'schoolProfile', 'main');
+  await setDoc(profileRef, { ...profileData, updatedAt: serverTimestamp() }, { merge: true });
 }
