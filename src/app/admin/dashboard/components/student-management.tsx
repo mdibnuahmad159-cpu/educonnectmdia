@@ -321,69 +321,65 @@ export function StudentManagement() {
     <>
       <Card>
         <CardHeader>
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle>Data Siswa</CardTitle>
-              <CardDescription>
-                Kelola data siswa.
-              </CardDescription>
-            </div>
-            <div className="flex items-center gap-2">
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button size="xs" variant="outline" className="gap-1">
-                        <FileUp className="h-4 w-4" />
-                        Impor
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={handleDownloadStudentTemplate}>
-                        <Download className="mr-2 h-4 w-4" />
-                        Unduh Template
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
-                        <Upload className="mr-2 h-4 w-4" />
-                        Unggah Excel
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-                 <input
-                    type="file"
-                    ref={fileInputRef}
-                    className="hidden"
-                    accept=".xlsx, .xls"
-                    onChange={handleImportStudents}
-                />
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button size="xs" variant="outline" className="gap-1">
-                        <FileDown className="h-4 w-4" />
-                        Ekspor
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={handleExportStudentsExcel}>
-                        <FileSpreadsheet className="mr-2 h-4 w-4" />
-                        Ekspor ke Excel
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={handleExportStudentsPdf}>
-                        <FileText className="mr-2 h-4 w-4" />
-                        Ekspor ke PDF
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-                 <Button size="xs" variant="outline" className="gap-1" onClick={handlePrintTable}>
-                    <Printer className="h-4 w-4" />
-                    Cetak Data
-                </Button>
-                <Button size="xs" className="gap-1" onClick={handleAdd}>
-                <PlusCircle className="h-4 w-4" />
-                Tambah Siswa
-                </Button>
-            </div>
-          </div>
+          <CardTitle>Data Siswa</CardTitle>
+          <CardDescription>
+            Kelola data siswa.
+          </CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="flex justify-end items-center gap-2 mb-4">
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button size="xs" variant="outline" className="gap-1">
+                    <FileUp className="h-4 w-4" />
+                    Impor
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={handleDownloadStudentTemplate}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Unduh Template
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Unggah Excel
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+              <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                accept=".xlsx, .xls"
+                onChange={handleImportStudents}
+            />
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button size="xs" variant="outline" className="gap-1">
+                    <FileDown className="h-4 w-4" />
+                    Ekspor
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={handleExportStudentsExcel}>
+                    <FileSpreadsheet className="mr-2 h-4 w-4" />
+                    Ekspor ke Excel
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleExportStudentsPdf}>
+                    <FileText className="mr-2 h-4 w-4" />
+                    Ekspor ke PDF
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+              <Button size="xs" variant="outline" className="gap-1" onClick={handlePrintTable}>
+                <Printer className="h-4 w-4" />
+                Cetak Data
+            </Button>
+            <Button size="xs" className="gap-1" onClick={handleAdd}>
+            <PlusCircle className="h-4 w-4" />
+            Tambah Siswa
+            </Button>
+          </div>
           <Table>
             <TableHeader>
               <TableRow>
@@ -443,3 +439,5 @@ export function StudentManagement() {
     </>
   );
 }
+
+    
