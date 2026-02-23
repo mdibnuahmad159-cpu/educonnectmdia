@@ -11,7 +11,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import type { Teacher } from "@/types";
-import { Trash2, Edit, FileDown } from "lucide-react";
+import { Trash2, Edit, Printer } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -37,7 +37,7 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
     setIsOpen(false);
   };
 
-  const handleExportPdf = () => {
+  const handlePrint = () => {
     if (!teacher) return;
     const doc = new jsPDF();
     doc.setFontSize(18);
@@ -84,7 +84,7 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
         if (!teacher.avatarUrl.startsWith('data:image')) {
             img.crossOrigin = "Anonymous";
         }
-        img.src = teacher.avatarUrl;
+        img.src = teacher.avatarUrl || '';
         img.onload = () => {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
@@ -180,8 +180,8 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
            )}
         </div>
         <DialogFooter>
-           <Button variant="outline" size="xs" onClick={handleExportPdf} className="gap-1">
-            <FileDown /> Ekspor PDF
+           <Button variant="outline" size="xs" onClick={handlePrint} className="gap-1">
+            <Printer /> Cetak Detail
           </Button>
           <DialogClose asChild>
             <Button variant="outline" size="xs">Tutup</Button>
