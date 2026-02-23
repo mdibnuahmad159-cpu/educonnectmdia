@@ -1,3 +1,4 @@
+
 /**
  * # Firestore Security Rules: EduConnect
  *
@@ -31,17 +32,14 @@ service cloud.firestore {
     }
 
     /**
-     * DEV-ONLY: Checks if the user is an admin.
-     * This method identifies an admin as any authenticated user who does NOT have an
-     * email address in their authentication token. This works reliably for the
-     * "Login as Admin" button, which uses anonymous sign-in.
-     * This is NOT secure for production. A production app should use custom claims
-     * or a database role check.
+     * Checks if the user is an admin by verifying the existence of a role document.
+     * This is the primary method for granting admin privileges. The role document
+     * is created automatically upon admin login.
      */
     function isAdmin() {
-      return isSignedIn() && request.auth.token.email == null;
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
     }
-
+    
     /**
      * Checks if the requesting user is a registered Teacher.
      */
@@ -88,9 +86,17 @@ service cloud.firestore {
     // Collection Rules
     // =====================================================================
 
-    // This collection is not used in the dev flow, but is a placeholder for a more secure production setup.
+    /**
+     * @description Admin roles collection. Document existence grants admin rights.
+     * @path /roles_admin/{adminUid}
+     */
     match /roles_admin/{adminUid} {
-      allow read, write: if false;
+      // A user can create their own admin role document upon logging in.
+      allow create: if isOwner(adminUid);
+      // Only admins can read or delete role documents.
+      allow read, delete: if isAdmin();
+      // Updates are not expected.
+      allow update: if false;
     }
 
     /**
@@ -100,7 +106,7 @@ service cloud.firestore {
     match /teachers/{teacherId} {
       allow get: if isAdmin() || isOwner(teacherId);
       allow list: if isAdmin();
-      allow create: if isAdmin() || isOwner(teacherId);
+      allow create: if isAdmin();
       allow update: if isAdmin() || isOwner(teacherId);
       allow delete: if isAdmin();
     }

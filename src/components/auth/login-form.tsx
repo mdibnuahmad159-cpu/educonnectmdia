@@ -5,8 +5,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/firebase";
+import { useAuth, useFirestore } from "@/firebase";
 import { signInAnonymously, signInWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc, serverTimestamp, Firestore } from 'firebase/firestore';
 
 import { Button } from "@/components/ui/button";
 import {
@@ -48,6 +49,7 @@ export function LoginForm() {
   const router = useRouter();
   const { toast } = useToast();
   const auth = useAuth();
+  const firestore = useFirestore() as Firestore;
 
   const adminForm = useForm<z.infer<typeof adminSchema>>({
     resolver: zodResolver(adminSchema),
@@ -65,14 +67,19 @@ export function LoginForm() {
   });
 
   const handleAdminSubmit = async (values: z.infer<typeof adminSchema>) => {
-    if (!auth) return;
-    // This is a simplified, insecure login for development convenience.
+    if (!auth || !firestore) return;
     if (values.password === "useAdmin") {
       try {
-        await signInAnonymously(auth);
+        const userCredential = await signInAnonymously(auth);
+        const user = userCredential.user;
+
+        // Automatically create the admin role document
+        const adminRoleRef = doc(firestore, 'roles_admin', user.uid);
+        await setDoc(adminRoleRef, { createdAt: serverTimestamp() });
+        
         toast({
           title: "Login Admin Berhasil",
-          description: "Anda sekarang memiliki akses admin untuk pengembangan.",
+          description: "Peran admin telah diberikan secara otomatis untuk sesi ini.",
         });
         router.push("/admin/dashboard");
       } catch (error: any) {
