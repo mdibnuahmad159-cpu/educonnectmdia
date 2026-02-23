@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -89,6 +89,9 @@ export function StudentForm({ isOpen, setIsOpen, student, onSave }: StudentFormP
     resolver: zodResolver(formSchema),
     defaultValues: defaultValues,
   });
+
+  const [isDobPopoverOpen, setDobPopoverOpen] = useState(false);
+  const [tempDob, setTempDob] = useState<Date | undefined>();
   
   useEffect(() => {
     if (isOpen) {
@@ -107,6 +110,13 @@ export function StudentForm({ isOpen, setIsOpen, student, onSave }: StudentFormP
         }
     }
   }, [student, form, isOpen]);
+
+  useEffect(() => {
+    if (isDobPopoverOpen) {
+      const formValue = form.getValues('dateOfBirth');
+      setTempDob(formValue ? new Date(formValue) : undefined);
+    }
+  }, [isDobPopoverOpen, form]);
   
   const onSubmit = (values: StudentFormData) => {
     const { avatar, dokumen, ...studentData } = values;
@@ -244,7 +254,7 @@ export function StudentForm({ isOpen, setIsOpen, student, onSave }: StudentFormP
                     render={({ field }) => (
                         <FormItem className="flex flex-col">
                         <FormLabel>Tanggal Lahir</FormLabel>
-                        <Popover>
+                        <Popover open={isDobPopoverOpen} onOpenChange={setDobPopoverOpen}>
                             <PopoverTrigger asChild>
                             <FormControl>
                                 <Button
@@ -255,7 +265,7 @@ export function StudentForm({ isOpen, setIsOpen, student, onSave }: StudentFormP
                                 )}
                                 >
                                 {field.value ? (
-                                    format(new Date(field.value), "PPP")
+                                    format(new Date(field.value), "d MMMM yyyy")
                                 ) : (
                                     <span>Pilih tanggal</span>
                                 )}
@@ -264,15 +274,30 @@ export function StudentForm({ isOpen, setIsOpen, student, onSave }: StudentFormP
                             </FormControl>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                                mode="single"
-                                selected={field.value ? new Date(field.value) : undefined}
-                                onSelect={(date) => field.onChange(date?.toISOString())}
-                                disabled={(date) =>
-                                date > new Date() || date < new Date("1900-01-01")
-                                }
-                                initialFocus
-                            />
+                                <div className="p-3 rounded-t-lg border-b bg-muted/50">
+                                    <div className="text-xs text-muted-foreground">{tempDob ? format(tempDob, "yyyy") : new Date().getFullYear()}</div>
+                                    <div className="text-xl font-bold">{tempDob ? format(tempDob, "E, MMM d") : "Pilih tanggal"}</div>
+                                </div>
+                                <Calendar
+                                    mode="single"
+                                    selected={tempDob}
+                                    onSelect={setTempDob}
+                                    disabled={(date) =>
+                                    date > new Date() || date < new Date("1900-01-01")
+                                    }
+                                    initialFocus
+                                />
+                                <div className="flex justify-end gap-1 p-2 border-t">
+                                    <Button variant="ghost" size="sm" type="button" onClick={() => {
+                                        form.setValue('dateOfBirth', '', { shouldValidate: true });
+                                        setDobPopoverOpen(false);
+                                    }}>Clear</Button>
+                                    <Button variant="ghost" size="sm" type="button" onClick={() => setDobPopoverOpen(false)}>Cancel</Button>
+                                    <Button size="sm" type="button" onClick={() => {
+                                        form.setValue('dateOfBirth', tempDob?.toISOString() || '', { shouldValidate: true });
+                                        setDobPopoverOpen(false);
+                                    }}>Set</Button>
+                                </div>
                             </PopoverContent>
                         </Popover>
                         <FormMessage />
