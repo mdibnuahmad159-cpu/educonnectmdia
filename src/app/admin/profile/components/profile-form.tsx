@@ -30,15 +30,18 @@ const formSchema = z.object({
   misi: z.string().optional(),
   sejarahSingkat: z.string().optional(),
   logoYayasanUrl: z.string().optional().or(z.literal("")),
+  logoYayasanFile: z.any().optional(),
   logoMadrasahUrl: z.string().optional().or(z.literal("")),
+  logoMadrasahFile: z.any().optional(),
   kopSuratUrl: z.string().optional().or(z.literal("")),
+  kopSuratFile: z.any().optional(),
 });
 
 type ProfileFormData = z.infer<typeof formSchema>;
 
 type ProfileFormProps = {
   profile: SchoolProfile | null;
-  onSave: (data: ProfileFormData) => void;
+  onSave: (data: Partial<Omit<SchoolProfile, 'id'>>) => void;
 };
 
 const defaultValues = {
@@ -47,7 +50,7 @@ const defaultValues = {
   nsdt: "",
   alamat: "",
   visi: "",
-  misi: "",
+misi: "",
   sejarahSingkat: "",
   logoYayasanUrl: "",
   logoMadrasahUrl: "",
@@ -67,20 +70,10 @@ export function ProfileForm({ profile, onSave }: ProfileFormProps) {
   }, [profile, form]);
 
   const onSubmit = (values: ProfileFormData) => {
-    onSave(values);
+    const { logoYayasanFile, logoMadrasahFile, kopSuratFile, ...dataToSave } = values;
+    onSave(dataToSave);
   };
   
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, fieldName: "logoYayasanUrl" | "logoMadrasahUrl" | "kopSuratUrl") => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        form.setValue(fieldName, reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  }
-
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -94,51 +87,116 @@ export function ProfileForm({ profile, onSave }: ProfileFormProps) {
                 <FormField control={form.control} name="misi" render={({ field }) => ( <FormItem> <FormLabel>Misi</FormLabel> <FormControl><Textarea className="h-32" {...field} value={field.value ?? ""} /></FormControl> <FormMessage /> </FormItem> )}/>
                 <FormField control={form.control} name="sejarahSingkat" render={({ field }) => ( <FormItem> <FormLabel>Sejarah Singkat</FormLabel> <FormControl><Textarea className="h-40" {...field} value={field.value ?? ""} /></FormControl> <FormMessage /> </FormItem> )}/>
                 
-                <FormItem>
-                    <FormLabel>Logo Yayasan</FormLabel>
-                    <div className="flex items-start gap-4">
+                <FormField
+                  control={form.control}
+                  name="logoYayasanFile"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Logo Yayasan</FormLabel>
+                      <div className="flex items-start gap-4">
                         <Avatar className="h-20 w-20 rounded-md border">
-                            <AvatarImage src={form.watch('logoYayasanUrl') || undefined} className="object-contain" />
-                            <AvatarFallback className="rounded-md bg-muted"><ImageIcon className="h-8 w-8 text-muted-foreground" /></AvatarFallback>
+                          <AvatarImage src={form.watch('logoYayasanUrl') || undefined} className="object-contain" />
+                          <AvatarFallback className="rounded-md bg-muted"><ImageIcon className="h-8 w-8 text-muted-foreground" /></AvatarFallback>
                         </Avatar>
                         <div className="flex-1">
-                            <FormControl><Input type="file" accept="image/*" onChange={(e) => handleFileChange(e, 'logoYayasanUrl')} /></FormControl>
-                            <FormDescription>Unggah logo yayasan. Sebaiknya gunakan gambar yang sudah dioptimalkan.</FormDescription>
+                          <FormControl>
+                            <Input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  const reader = new FileReader();
+                                  reader.onloadend = () => {
+                                    form.setValue('logoYayasanUrl', reader.result as string);
+                                  };
+                                  reader.readAsDataURL(file);
+                                }
+                                field.onChange(file ?? null);
+                              }}
+                            />
+                          </FormControl>
+                          <FormDescription>Unggah logo yayasan. Sebaiknya gunakan gambar yang sudah dioptimalkan.</FormDescription>
+                          <FormMessage />
                         </div>
-                    </div>
-                    <FormMessage />
-                </FormItem>
+                      </div>
+                    </FormItem>
+                  )}
+                />
 
-                <FormItem>
-                    <FormLabel>Logo Madrasah</FormLabel>
-                    <div className="flex items-start gap-4">
+                <FormField
+                  control={form.control}
+                  name="logoMadrasahFile"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Logo Madrasah</FormLabel>
+                      <div className="flex items-start gap-4">
                         <Avatar className="h-20 w-20 rounded-md border">
-                            <AvatarImage src={form.watch('logoMadrasahUrl') || undefined} className="object-contain" />
-                            <AvatarFallback className="rounded-md bg-muted"><ImageIcon className="h-8 w-8 text-muted-foreground" /></AvatarFallback>
+                          <AvatarImage src={form.watch('logoMadrasahUrl') || undefined} className="object-contain" />
+                          <AvatarFallback className="rounded-md bg-muted"><ImageIcon className="h-8 w-8 text-muted-foreground" /></AvatarFallback>
                         </Avatar>
                         <div className="flex-1">
-                            <FormControl><Input type="file" accept="image/*" onChange={(e) => handleFileChange(e, 'logoMadrasahUrl')} /></FormControl>
-                            <FormDescription>Unggah logo madrasah. Sebaiknya gunakan gambar yang sudah dioptimalkan.</FormDescription>
+                          <FormControl>
+                            <Input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  const reader = new FileReader();
+                                  reader.onloadend = () => {
+                                    form.setValue('logoMadrasahUrl', reader.result as string);
+                                  };
+                                  reader.readAsDataURL(file);
+                                }
+                                field.onChange(file ?? null);
+                              }}
+                            />
+                          </FormControl>
+                          <FormDescription>Unggah logo madrasah. Sebaiknya gunakan gambar yang sudah dioptimalkan.</FormDescription>
+                          <FormMessage />
                         </div>
-                    </div>
-                    <FormMessage />
-                </FormItem>
+                      </div>
+                    </FormItem>
+                  )}
+                />
 
-                <FormItem>
-                    <FormLabel>Gambar Kop Surat</FormLabel>
-                    <div className="flex items-start gap-4">
-                         <Avatar className="h-20 w-auto rounded-md border aspect-video">
-                            <AvatarImage src={form.watch('kopSuratUrl') || undefined} className="object-contain" />
-                            <AvatarFallback className="rounded-md bg-muted"><ImageIcon className="h-8 w-8 text-muted-foreground" /></AvatarFallback>
+                <FormField
+                  control={form.control}
+                  name="kopSuratFile"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Gambar Kop Surat</FormLabel>
+                      <div className="flex items-start gap-4">
+                        <Avatar className="h-20 w-auto rounded-md border aspect-video">
+                          <AvatarImage src={form.watch('kopSuratUrl') || undefined} className="object-contain" />
+                          <AvatarFallback className="rounded-md bg-muted"><ImageIcon className="h-8 w-8 text-muted-foreground" /></AvatarFallback>
                         </Avatar>
                         <div className="flex-1">
-                            <FormControl><Input type="file" accept="image/*" onChange={(e) => handleFileChange(e, 'kopSuratUrl')} /></FormControl>
-                            <FormDescription>Unggah gambar untuk kop surat. Sebaiknya gunakan gambar yang sudah dioptimalkan.</FormDescription>
+                          <FormControl>
+                            <Input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  const reader = new FileReader();
+                                  reader.onloadend = () => {
+                                    form.setValue('kopSuratUrl', reader.result as string);
+                                  };
+                                  reader.readAsDataURL(file);
+                                }
+                                field.onChange(file ?? null);
+                              }}
+                            />
+                          </FormControl>
+                          <FormDescription>Unggah gambar untuk kop surat. Sebaiknya gunakan gambar yang sudah dioptimalkan.</FormDescription>
+                          <FormMessage />
                         </div>
-                    </div>
-                     <FormMessage />
-                </FormItem>
-
+                      </div>
+                    </FormItem>
+                  )}
+                />
             </div>
         </ScrollArea>
 
