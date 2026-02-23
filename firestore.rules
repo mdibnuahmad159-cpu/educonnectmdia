@@ -34,7 +34,7 @@ service cloud.firestore {
     /**
      * Checks if the user is an admin.
      * For development, an admin is identified as a user who logged in via the
-     * custom anonymous flow, which is marked with the 'custom' sign-in provider.
+     * anonymous/custom flow, which is marked with the 'custom' sign-in provider.
      */
     function isAdmin() {
       return isSignedIn() && request.auth.token.sign_in_provider == 'custom';
