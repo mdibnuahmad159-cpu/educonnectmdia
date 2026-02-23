@@ -148,19 +148,6 @@ export function TeacherForm({ isOpen, setIsOpen, teacher, onSave }: TeacherFormP
                 )} />
                 <FormField
                   control={form.control}
-                  name="avatarUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>URL Avatar</FormLabel>
-                      <FormControl>
-                        <Input placeholder="https://example.com/avatar.png" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
                   name="avatar"
                   render={({ field }) => (
                     <FormItem>
@@ -183,7 +170,7 @@ export function TeacherForm({ isOpen, setIsOpen, teacher, onSave }: TeacherFormP
                         />
                       </FormControl>
                        <FormDescription>
-                          Atau unggah gambar. File akan disimpan sebagai data URL.
+                          Unggah gambar. File akan disimpan sebagai data URL.
                         </FormDescription>
                       <FormMessage />
                     </FormItem>
