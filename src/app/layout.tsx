@@ -2,6 +2,7 @@ import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 import { FirebaseClientProvider } from '@/firebase/client-provider';
+import { SchoolProfileProvider } from '@/context/school-profile-provider';
 
 export const metadata: Metadata = {
   title: 'EduConnect',
@@ -22,7 +23,9 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <FirebaseClientProvider>
-          {children}
+          <SchoolProfileProvider>
+            {children}
+          </SchoolProfileProvider>
         </FirebaseClientProvider>
         <Toaster />
       </body>
