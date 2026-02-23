@@ -26,6 +26,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -42,6 +43,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Student } from "@/types";
 import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const formSchema = z.object({
   nis: z.string().min(1, "NIS harus diisi"),
@@ -53,6 +55,8 @@ const formSchema = z.object({
   enrollmentDate: z.string().min(1, "Tanggal masuk harus diisi"),
   classId: z.string().min(1, "Kelas harus diisi"),
   password: z.string().min(6, "Password minimal 6 karakter").optional().or(z.literal('')),
+  avatarUrl: z.string().url({ message: "URL tidak valid" }).optional().or(z.literal("")),
+  avatar: z.any().optional(),
 });
 
 type StudentFormData = z.infer<typeof formSchema>;
@@ -74,6 +78,7 @@ const defaultValues = {
     enrollmentDate: "",
     classId: "",
     password: "",
+    avatarUrl: "",
 }
 
 export function StudentForm({ isOpen, setIsOpen, student, onSave }: StudentFormProps) {
@@ -95,6 +100,7 @@ export function StudentForm({ isOpen, setIsOpen, student, onSave }: StudentFormP
             enrollmentDate: student.enrollmentDate,
             classId: student.classId,
             password: "", // Always clear password on open
+            avatarUrl: student.avatarUrl || "",
           });
         } else {
           form.reset(defaultValues);
@@ -103,7 +109,8 @@ export function StudentForm({ isOpen, setIsOpen, student, onSave }: StudentFormP
   }, [student, form, isOpen]);
   
   const onSubmit = (values: StudentFormData) => {
-    onSave(values);
+    const { avatar, ...studentData } = values;
+    onSave(studentData);
     setIsOpen(false);
   };
 
@@ -116,9 +123,17 @@ export function StudentForm({ isOpen, setIsOpen, student, onSave }: StudentFormP
             {student ? "Ubah detail siswa di bawah ini." : "Isi detail siswa baru di bawah ini."}
           </DialogDescription>
         </DialogHeader>
+        {student && (
+          <div className="flex justify-center pt-2">
+            <Avatar className="h-20 w-20">
+              <AvatarImage src={form.watch('avatarUrl') || student.avatarUrl} alt={`${student.firstName} ${student.lastName}`} />
+              <AvatarFallback className="text-2xl">{student.firstName.charAt(0)}</AvatarFallback>
+            </Avatar>
+          </div>
+        )}
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
-            <ScrollArea className="h-96 pr-6">
+            <ScrollArea className="h-80 pr-6">
               <div className="space-y-3 py-4">
                 <FormField
                   control={form.control}
@@ -155,6 +170,39 @@ export function StudentForm({ isOpen, setIsOpen, student, onSave }: StudentFormP
                       <FormControl>
                         <Input {...field} />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="avatarUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>URL Avatar</FormLabel>
+                      <FormControl>
+                        <Input placeholder="https://example.com/avatar.png" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="avatar"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Upload Avatar</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="file" 
+                          accept="image/*"
+                          onChange={(e) => field.onChange(e.target.files?.[0] ?? null)} 
+                        />
+                      </FormControl>
+                      <FormDescription>
+                          Fitur upload belum berfungsi. Gunakan URL Avatar.
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

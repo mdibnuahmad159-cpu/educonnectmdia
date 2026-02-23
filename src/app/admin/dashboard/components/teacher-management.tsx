@@ -27,6 +27,7 @@ import type { Teacher } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { Auth } from "firebase/auth";
 import { collection, Firestore } from "firebase/firestore";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export function TeacherManagement() {
   const firestore = useFirestore() as Firestore;
@@ -165,7 +166,15 @@ export function TeacherManagement() {
                 sortedTeachers.map((teacher, index) => (
                 <TableRow key={teacher.id}>
                   <TableCell>{index + 1}</TableCell>
-                  <TableCell className="font-medium">{teacher.name}</TableCell>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-8 w-8">
+                          <AvatarImage src={teacher.avatarUrl} alt={teacher.name} />
+                          <AvatarFallback>{teacher.name.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <span>{teacher.name}</span>
+                    </div>
+                  </TableCell>
                   <TableCell>{teacher.jabatan || '-'}</TableCell>
                   <TableCell>{teacher.noWa || '-'}</TableCell>
                   <TableCell className="text-right">

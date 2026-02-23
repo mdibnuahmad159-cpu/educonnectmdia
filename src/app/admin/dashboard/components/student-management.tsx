@@ -32,6 +32,7 @@ import { StudentForm } from "./student-form";
 import type { Student } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { collection, Firestore } from "firebase/firestore";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export function StudentManagement() {
   const firestore = useFirestore() as Firestore;
@@ -131,7 +132,15 @@ export function StudentManagement() {
                 students.map((student) => (
                 <TableRow key={student.id}>
                   <TableCell className="font-medium">{student.nis}</TableCell>
-                  <TableCell>{`${student.firstName} ${student.lastName}`}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={student.avatarUrl} alt={`${student.firstName} ${student.lastName}`} />
+                        <AvatarFallback>{student.firstName.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <span>{`${student.firstName} ${student.lastName}`}</span>
+                    </div>
+                  </TableCell>
                    <TableCell>{student.classId}</TableCell>
                   <TableCell>
                     <DropdownMenu>

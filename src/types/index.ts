@@ -3,6 +3,7 @@ export type Teacher = {
   id: string; // Firebase Auth UID
   name: string;
   email: string;
+  avatarUrl?: string;
   jabatan?: string;
   noWa?: string;
   nik?: string;
@@ -16,6 +17,7 @@ export type Student = {
   nis: string;
   firstName: string;
   lastName: string;
+  avatarUrl?: string;
   dateOfBirth: string;
   gender: "Laki-laki" | "Perempuan";
   address: string;

@@ -17,6 +17,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -33,11 +34,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const formSchema = z.object({
   name: z.string().min(1, "Nama harus diisi"),
   email: z.string().email("Email tidak valid"),
   password: z.string().optional(),
+  avatarUrl: z.string().url({ message: "URL tidak valid" }).optional().or(z.literal("")),
+  avatar: z.any().optional(),
   jabatan: z.string().optional(),
   noWa: z.string().optional(),
   nik: z.string().optional(),
@@ -75,7 +79,7 @@ export function TeacherForm({ isOpen, setIsOpen, teacher, onSave }: TeacherFormP
         path: ["password"],
     })),
     defaultValues: {
-      name: "", email: "", password: "", jabatan: "", noWa: "", nik: "",
+      name: "", email: "", password: "", avatarUrl: "", jabatan: "", noWa: "", nik: "",
       pendidikan: "", ponpes: "", alamat: "",
     },
   });
@@ -87,6 +91,7 @@ export function TeacherForm({ isOpen, setIsOpen, teacher, onSave }: TeacherFormP
           name: teacher.name,
           email: teacher.email,
           password: "",
+          avatarUrl: teacher.avatarUrl || "",
           jabatan: teacher.jabatan || "",
           noWa: teacher.noWa || "",
           nik: teacher.nik || "",
@@ -96,7 +101,7 @@ export function TeacherForm({ isOpen, setIsOpen, teacher, onSave }: TeacherFormP
         });
       } else {
         form.reset({
-          name: "", email: "", password: "", jabatan: "", noWa: "", nik: "",
+          name: "", email: "", password: "", avatarUrl: "", jabatan: "", noWa: "", nik: "",
           pendidikan: "", ponpes: "", alamat: "",
         });
       }
@@ -104,9 +109,9 @@ export function TeacherForm({ isOpen, setIsOpen, teacher, onSave }: TeacherFormP
   }, [teacher, form, isOpen]);
   
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    // NOTE: The 'dokumen' file object is not saved. 
+    // NOTE: The 'dokumen' and 'avatar' file objects are not saved. 
     // File upload requires Firebase Storage setup.
-    const { dokumen, ...teacherData } = values;
+    const { dokumen, avatar, ...teacherData } = values;
     onSave({
       id: teacher?.id,
       ...teacherData,
@@ -122,9 +127,17 @@ export function TeacherForm({ isOpen, setIsOpen, teacher, onSave }: TeacherFormP
             {teacher ? "Ubah detail guru di bawah ini." : "Isi detail guru baru di bawah ini."}
           </DialogDescription>
         </DialogHeader>
+        {teacher && (
+          <div className="flex justify-center pt-2">
+            <Avatar className="h-20 w-20">
+              <AvatarImage src={form.watch('avatarUrl') || teacher.avatarUrl} alt={teacher.name} />
+              <AvatarFallback className="text-2xl">{teacher.name.charAt(0)}</AvatarFallback>
+            </Avatar>
+          </div>
+        )}
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
-            <ScrollArea className="h-96 pr-6">
+            <ScrollArea className="h-80 pr-6">
               <div className="space-y-3 py-4">
                 <FormField control={form.control} name="name" render={({ field }) => (
                   <FormItem>
@@ -133,6 +146,39 @@ export function TeacherForm({ isOpen, setIsOpen, teacher, onSave }: TeacherFormP
                     <FormMessage />
                   </FormItem>
                 )} />
+                <FormField
+                  control={form.control}
+                  name="avatarUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>URL Avatar</FormLabel>
+                      <FormControl>
+                        <Input placeholder="https://example.com/avatar.png" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="avatar"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Upload Avatar</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="file" 
+                          accept="image/*"
+                          onChange={(e) => field.onChange(e.target.files?.[0] ?? null)} 
+                        />
+                      </FormControl>
+                       <FormDescription>
+                          Fitur upload belum berfungsi. Gunakan URL Avatar untuk sementara.
+                        </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <FormField control={form.control} name="email" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Email</FormLabel>

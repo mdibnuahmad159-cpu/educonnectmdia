@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import type { Teacher } from "@/types";
 import { Trash2, Edit } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 type TeacherDetailProps = {
   isOpen: boolean;
@@ -42,6 +43,12 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
           <DialogTitle>Detail Guru</DialogTitle>
           <DialogDescription>Informasi lengkap data guru.</DialogDescription>
         </DialogHeader>
+        <div className="flex justify-center pt-4">
+          <Avatar className="h-24 w-24">
+            <AvatarImage src={teacher.avatarUrl} alt={teacher.name} />
+            <AvatarFallback className="text-3xl">{teacher.name.charAt(0)}</AvatarFallback>
+          </Avatar>
+        </div>
         <div className="py-4 space-y-2 text-sm">
           <div className="grid grid-cols-3 items-center">
             <span className="text-muted-foreground">Nama</span>
