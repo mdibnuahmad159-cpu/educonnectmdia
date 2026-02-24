@@ -128,6 +128,34 @@ export default function AttendancePage() {
 
     const isLoading = loadingTeachers || loadingAttendance || loadingSchedules;
 
+    const attendanceSummary = useMemo(() => {
+        if (!sortedTeachers || !daysInRange.length || !attendanceMap) return [];
+
+        return sortedTeachers.map(teacher => {
+            const summary: { [key in TeacherAttendance['status']]: number } = {
+                Hadir: 0,
+                Sakit: 0,
+                Izin: 0,
+                Alpa: 0,
+            };
+
+            daysInRange.forEach(day => {
+                const dateStr = format(day, 'yyyy-MM-dd');
+                const status = attendanceMap.get(`${teacher.id}-${dateStr}`);
+                
+                if (status && summary[status] !== undefined) {
+                    summary[status]++;
+                }
+            });
+
+            return {
+                teacherId: teacher.id,
+                teacherName: teacher.name,
+                summary,
+            };
+        });
+    }, [sortedTeachers, daysInRange, attendanceMap]);
+
     const handleExport = (formatType: 'excel' | 'pdf') => {
       if (!sortedTeachers || !date?.from || !date?.to) {
           toast({ title: 'Tidak ada data untuk diekspor', variant: 'destructive' });
@@ -248,129 +276,181 @@ export default function AttendancePage() {
     };
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Rekap Absensi Guru</CardTitle>
-                <CardDescription>Lihat rekapitulasi absensi guru per rentang tanggal.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="flex flex-col sm:flex-row justify-between items-center gap-2 mb-4">
-                     <Popover>
-                        <PopoverTrigger asChild>
-                        <Button
-                            id="date"
-                            variant={"outline"}
-                            className={cn(
-                            "w-full sm:w-[300px] justify-start text-left font-normal",
-                            !date && "text-muted-foreground"
-                            )}
-                        >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {date?.from ? (
-                            date.to ? (
-                                <>
-                                {format(date.from, "d LLL, y")} -{" "}
-                                {format(date.to, "d LLL, y")}
-                                </>
-                            ) : (
-                                format(date.from, "d LLL, y")
-                            )
-                            ) : (
-                            <span>Pilih tanggal</span>
-                            )}
-                        </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                            initialFocus
-                            mode="range"
-                            defaultMonth={date?.from}
-                            selected={date}
-                            onSelect={setDate}
-                            numberOfMonths={2}
-                        />
-                        </PopoverContent>
-                    </Popover>
-                     <div className="flex items-center gap-2">
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button size="xs" variant="outline" className="gap-1">
-                                <FileDown className="h-3 w-3" />
-                                Ekspor
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => handleExport('excel')}>
-                                <FileSpreadsheet className="mr-2 h-3 w-3" />
-                                Excel
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleExport('pdf')}>
-                                <FileText className="mr-2 h-3 w-3" />
-                                PDF
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                        <Button size="xs" variant="outline" className="gap-1" onClick={handlePrint}>
-                            <Printer className="h-3 w-3" />
-                            Cetak
-                        </Button>
-                    </div>
-                </div>
-
-                {isLoading ? (
-                    <div className="flex justify-center items-center h-64">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    </div>
-                ) : (
-                    <div className="overflow-x-auto">
-                        <Table className="min-w-full border-collapse">
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="sticky left-0 z-10 bg-card min-w-[200px] border">Nama Guru</TableHead>
-                                    {daysInRange.map(day => (
-                                        <TableHead key={day.toISOString()} className="text-center border min-w-[40px]">{format(day, 'd')}</TableHead>
-                                    ))}
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {sortedTeachers && sortedTeachers.length > 0 ? sortedTeachers.map(teacher => (
-                                    <TableRow key={teacher.id}>
-                                        <TableCell className="sticky left-0 z-10 bg-card font-medium border">{teacher.name}</TableCell>
-                                        {daysInRange.map(day => {
-                                            const dateStr = format(day, 'yyyy-MM-dd');
-                                            const status = attendanceMap.get(`${teacher.id}-${dateStr}`);
-                                            const dayKey = dayMapping[day.getDay()];
-                                            const isScheduled = dayKey ? scheduledTeachersByDay.get(dayKey)?.has(teacher.id) : false;
-
-                                            return (
-                                                <TableCell 
-                                                    key={dateStr} 
-                                                    className={cn(
-                                                        "text-center text-xs p-1 border",
-                                                        status 
-                                                            ? getStatusColor(status)
-                                                            : !isScheduled && dayKey 
-                                                                ? 'bg-red-100/70 dark:bg-red-900/30' 
-                                                                : 'bg-muted/30'
-                                                    )}
-                                                >
-                                                    {status ? status.charAt(0) : (isScheduled || !dayKey) ? '-' : ''}
-                                                </TableCell>
-                                            );
-                                        })}
-                                    </TableRow>
-                                )) : (
-                                    <TableRow>
-                                        <TableCell colSpan={daysInRange.length + 1} className="text-center h-24">
-                                            Belum ada data guru.
-                                        </TableCell>
-                                    </TableRow>
+        <>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Rekap Absensi Guru</CardTitle>
+                    <CardDescription>Lihat rekapitulasi absensi guru per rentang tanggal.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex flex-col sm:flex-row justify-between items-center gap-2 mb-4">
+                        <Popover>
+                            <PopoverTrigger asChild>
+                            <Button
+                                id="date"
+                                variant={"outline"}
+                                className={cn(
+                                "w-full sm:w-[300px] justify-start text-left font-normal",
+                                !date && "text-muted-foreground"
                                 )}
-                            </TableBody>
-                        </Table>
+                            >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {date?.from ? (
+                                date.to ? (
+                                    <>
+                                    {format(date.from, "d LLL, y")} -{" "}
+                                    {format(date.to, "d LLL, y")}
+                                    </>
+                                ) : (
+                                    format(date.from, "d LLL, y")
+                                )
+                                ) : (
+                                <span>Pilih tanggal</span>
+                                )}
+                            </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                                initialFocus
+                                mode="range"
+                                defaultMonth={date?.from}
+                                selected={date}
+                                onSelect={setDate}
+                                numberOfMonths={2}
+                            />
+                            </PopoverContent>
+                        </Popover>
+                        <div className="flex items-center gap-2">
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button size="xs" variant="outline" className="gap-1">
+                                    <FileDown className="h-3 w-3" />
+                                    Ekspor
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => handleExport('excel')}>
+                                    <FileSpreadsheet className="mr-2 h-3 w-3" />
+                                    Excel
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleExport('pdf')}>
+                                    <FileText className="mr-2 h-3 w-3" />
+                                    PDF
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                            <Button size="xs" variant="outline" className="gap-1" onClick={handlePrint}>
+                                <Printer className="h-3 w-3" />
+                                Cetak
+                            </Button>
+                        </div>
                     </div>
-                )}
-            </CardContent>
-        </Card>
+
+                    {isLoading ? (
+                        <div className="flex justify-center items-center h-64">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        </div>
+                    ) : (
+                        <div className="overflow-x-auto">
+                            <Table className="min-w-full border-collapse">
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead className="sticky left-0 z-10 bg-card min-w-[200px] border">Nama Guru</TableHead>
+                                        {daysInRange.map(day => (
+                                            <TableHead key={day.toISOString()} className="text-center border min-w-[40px]">{format(day, 'd')}</TableHead>
+                                        ))}
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {sortedTeachers && sortedTeachers.length > 0 ? sortedTeachers.map(teacher => (
+                                        <TableRow key={teacher.id}>
+                                            <TableCell className="sticky left-0 z-10 bg-card font-medium border">{teacher.name}</TableCell>
+                                            {daysInRange.map(day => {
+                                                const dateStr = format(day, 'yyyy-MM-dd');
+                                                const status = attendanceMap.get(`${teacher.id}-${dateStr}`);
+                                                const dayKey = dayMapping[day.getDay()];
+                                                const isScheduled = dayKey ? scheduledTeachersByDay.get(dayKey)?.has(teacher.id) : false;
+
+                                                return (
+                                                    <TableCell 
+                                                        key={dateStr} 
+                                                        className={cn(
+                                                            "text-center text-xs p-1 border",
+                                                            status 
+                                                                ? getStatusColor(status)
+                                                                : !isScheduled && dayKey 
+                                                                    ? 'bg-red-100/70 dark:bg-red-900/30' 
+                                                                    : 'bg-muted/30'
+                                                        )}
+                                                    >
+                                                        {status ? status.charAt(0) : (isScheduled || !dayKey) ? '-' : ''}
+                                                    </TableCell>
+                                                );
+                                            })}
+                                        </TableRow>
+                                    )) : (
+                                        <TableRow>
+                                            <TableCell colSpan={daysInRange.length + 1} className="text-center h-24">
+                                                Belum ada data guru.
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
+            <Card className="mt-4">
+                <CardHeader>
+                    <CardTitle>Ringkasan Absensi</CardTitle>
+                    <CardDescription>
+                        Total kehadiran guru untuk rentang tanggal yang dipilih.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Nama Guru</TableHead>
+                                <TableHead className="text-center">Hadir</TableHead>
+                                <TableHead className="text-center">Sakit</TableHead>
+                                <TableHead className="text-center">Izin</TableHead>
+                                <TableHead className="text-center">Alpa</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {isLoading ? (
+                                <TableRow>
+                                    <TableCell colSpan={5} className="text-center h-24">
+                                        <div className="flex justify-center items-center gap-2 text-muted-foreground">
+                                            <Loader2 className="h-4 w-4 animate-spin"/>
+                                            <span>Memuat ringkasan...</span>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            ) : attendanceSummary.length > 0 ? (
+                                attendanceSummary.map(item => (
+                                    <TableRow key={item.teacherId}>
+                                        <TableCell className="font-medium">{item.teacherName}</TableCell>
+                                        <TableCell className="text-center">{item.summary.Hadir}</TableCell>
+                                        <TableCell className="text-center">{item.summary.Sakit}</TableCell>
+                                        <TableCell className="text-center">{item.summary.Izin}</TableCell>
+                                        <TableCell className="text-center">{item.summary.Alpa}</TableCell>
+                                    </TableRow>
+                                ))
+                            ) : (
+                                <TableRow>
+                                    <TableCell colSpan={5} className="text-center h-24">
+                                        Tidak ada data ringkasan untuk ditampilkan.
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
+        </>
     );
 }
