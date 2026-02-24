@@ -16,7 +16,7 @@ import {
   query,
   where,
 } from 'firebase/firestore';
-import type { Teacher, Student, SchoolProfile, Curriculum, Alumni } from '@/types';
+import type { Teacher, Student, SchoolProfile, Curriculum, Alumni, Schedule } from '@/types';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { firebaseConfig } from '@/firebase/config';
@@ -24,8 +24,10 @@ import { firebaseConfig } from '@/firebase/config';
 
 // This function creates a student document in Firestore.
 export function addStudent(db: Firestore, student: Omit<Student, 'id'>) {
-  const studentRef = doc(db, 'students', student.nis);
-  const data = { ...student, id: student.nis };
+  const nisString = String(student.nis);
+  const prefixedNis = nisString.startsWith('MDIA') ? nisString : `MDIA${nisString}`;
+  const studentRef = doc(db, 'students', prefixedNis);
+  const data = { ...student, nis: prefixedNis, id: prefixedNis };
   setDoc(studentRef, data).catch(error => {
     errorEmitter.emit('permission-error', new FirestorePermissionError({
       path: studentRef.path,
@@ -215,9 +217,10 @@ export async function graduateStudents(db: Firestore, studentIds: string[], grad
 }
 
 export function addAlumnus(db: Firestore, alumnusData: Omit<Alumni, 'id'>) {
-  // Use NIS as the document ID for simplicity
-  const alumnusRef = doc(db, 'alumni', alumnusData.nis);
-  const data = { ...alumnusData, id: alumnusData.nis };
+  const nisString = String(alumnusData.nis);
+  const prefixedNis = nisString.startsWith('MDIA') ? nisString : `MDIA${nisString}`;
+  const alumnusRef = doc(db, 'alumni', prefixedNis);
+  const data = { ...alumnusData, nis: prefixedNis, id: prefixedNis };
   setDoc(alumnusRef, data).catch(error => {
     errorEmitter.emit('permission-error', new FirestorePermissionError({
       path: alumnusRef.path,
@@ -247,4 +250,15 @@ export function deleteAlumnus(db: Firestore, alumnusId: string) {
       operation: 'delete',
     }));
   });
+}
+
+export function upsertSchedule(db: Firestore, schedule: Schedule) {
+    const scheduleRef = doc(db, 'schedules', schedule.id);
+    setDoc(scheduleRef, schedule, { merge: true }).catch(error => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: scheduleRef.path,
+            operation: 'write',
+            requestResourceData: schedule
+        }));
+    });
 }

@@ -106,12 +106,14 @@ export function LoginForm() {
   const handleParentSubmit = async (values: z.infer<typeof parentSchema>) => {
     if (!auth || !firestore) return;
     try {
-      const studentRef = doc(firestore, "students", values.nis);
+      const nisString = String(values.nis);
+      const prefixedNis = nisString.startsWith('MDIA') ? nisString : `MDIA${nisString}`;
+      const studentRef = doc(firestore, "students", prefixedNis);
       const studentSnap = await getDoc(studentRef);
 
       if (studentSnap.exists() && studentSnap.data().password === values.password) {
         await signInAnonymously(auth);
-        sessionStorage.setItem('studentNis', values.nis);
+        sessionStorage.setItem('studentNis', prefixedNis);
         
         toast({
           title: "Login Wali Murid Berhasil",

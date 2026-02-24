@@ -66,3 +66,23 @@ export type Curriculum = {
   bookName?: string;
 };
 
+export type ScheduleEntry = {
+  type: 'subject' | 'break';
+  startTime: string;
+  endTime: string;
+  subjectId?: string;
+  teacherId?: string;
+};
+
+export type Schedule = {
+  id: string; // e.g. {classLevel}_{academicYear}_{scheduleType}
+  classLevel: number;
+  academicYear: string;
+  type: 'pelajaran' | 'ujian';
+  saturday: ScheduleEntry[];
+  sunday: ScheduleEntry[];
+  monday: ScheduleEntry[];
+  tuesday: ScheduleEntry[];
+  wednesday: ScheduleEntry[];
+  thursday: ScheduleEntry[];
+};

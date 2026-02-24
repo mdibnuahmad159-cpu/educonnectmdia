@@ -311,6 +311,106 @@
         "name",
         "tahunLulus"
       ]
+    },
+    "ScheduleEntry": {
+      "title": "Schedule Entry",
+      "type": "object",
+      "description": "A single entry in a schedule, like a subject or a break.",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "subject",
+            "break"
+          ]
+        },
+        "startTime": {
+          "type": "string",
+          "description": "e.g., '07:00'"
+        },
+        "endTime": {
+          "type": "string",
+          "description": "e.g., '08:30'"
+        },
+        "subjectId": {
+          "type": "string",
+          "description": "Reference to Subject, if type is 'subject'"
+        },
+        "teacherId": {
+          "type": "string",
+          "description": "Reference to Teacher, if type is 'subject'"
+        }
+      },
+      "required": [
+        "type",
+        "startTime",
+        "endTime"
+      ]
+    },
+    "Schedule": {
+      "title": "Schedule",
+      "type": "object",
+      "description": "Represents the weekly schedule for a specific class, type (class/exam), and academic year.",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "classLevel": {
+          "type": "number"
+        },
+        "academicYear": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "pelajaran",
+            "ujian"
+          ]
+        },
+        "saturday": {
+          "type": "array",
+          "items": {
+            "$ref": "#/backend/entities/ScheduleEntry"
+          }
+        },
+        "sunday": {
+          "type": "array",
+          "items": {
+            "$ref": "#/backend/entities/ScheduleEntry"
+          }
+        },
+        "monday": {
+          "type": "array",
+          "items": {
+            "$ref": "#/backend/entities/ScheduleEntry"
+          }
+        },
+        "tuesday": {
+          "type": "array",
+          "items": {
+            "$ref": "#/backend/entities/ScheduleEntry"
+          }
+        },
+        "wednesday": {
+          "type": "array",
+          "items": {
+            "$ref": "#/backend/entities/ScheduleEntry"
+          }
+        },
+        "thursday": {
+          "type": "array",
+          "items": {
+            "$ref": "#/backend/entities/ScheduleEntry"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "classLevel",
+        "academicYear",
+        "type"
+      ]
     }
   },
   "auth": {
@@ -445,6 +545,22 @@
             {
               "name": "alumniId",
               "description": "The unique ID of the alumni, which is the original student ID (NIS)."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/schedules/{scheduleId}",
+        "definition": {
+          "entityName": "Schedule",
+          "schema": {
+            "$ref": "#/backend/entities/Schedule"
+          },
+          "description": "Stores weekly schedules for classes and exams. Admin has full CRUD. Teachers and Parents can read.",
+          "params": [
+            {
+              "name": "scheduleId",
+              "description": "The unique ID of the schedule, usually a composite of class, year, and type."
             }
           ]
         }
