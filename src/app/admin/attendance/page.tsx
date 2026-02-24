@@ -7,12 +7,11 @@ import { collection, query, where } from 'firebase/firestore';
 import type { Teacher, TeacherAttendance } from '@/types';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { getDaysInMonth, getYear, getMonth, format, startOfMonth, endOfMonth } from 'date-fns';
 import { id as dfnsId } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { Loader2, Printer, FileSpreadsheet, FileText, FileDown } from 'lucide-react';
+import { Loader2, Printer, FileSpreadsheet, FileText, FileDown, CalendarIcon } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -23,9 +22,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-const years = [getYear(new Date()) - 1, getYear(new Date()), getYear(new Date()) + 1];
-const months = Array.from({ length: 12 }, (_, i) => i);
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 
 const getStatusColor = (status: TeacherAttendance['status']) => {
     switch (status) {
@@ -43,6 +41,7 @@ export default function AttendancePage() {
 
     const [selectedYear, setSelectedYear] = useState(getYear(new Date()));
     const [selectedMonth, setSelectedMonth] = useState(getMonth(new Date()));
+    const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
     
     const selectedDate = useMemo(() => new Date(selectedYear, selectedMonth), [selectedYear, selectedMonth]);
     const daysInMonth = useMemo(() => getDaysInMonth(selectedDate), [selectedDate]);
@@ -184,28 +183,34 @@ export default function AttendancePage() {
             </CardHeader>
             <CardContent>
                 <div className="flex flex-col sm:flex-row justify-between items-center gap-2 mb-4">
-                    <div className="flex gap-2">
-                        <Select value={String(selectedMonth)} onValueChange={(v) => setSelectedMonth(Number(v))}>
-                            <SelectTrigger className="w-full sm:w-[180px]">
-                                <SelectValue placeholder="Pilih Bulan" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {months.map(m => (
-                                    <SelectItem key={m} value={String(m)}>
-                                        {format(new Date(0, m), 'MMMM', { locale: dfnsId })}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        <Select value={String(selectedYear)} onValueChange={(v) => setSelectedYear(Number(v))}>
-                             <SelectTrigger className="w-full sm:w-[120px]">
-                                <SelectValue placeholder="Pilih Tahun" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {years.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
-                    </div>
+                    <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant={"outline"}
+                                className={cn(
+                                    "w-full sm:w-[240px] justify-start text-left font-normal",
+                                    !selectedDate && "text-muted-foreground"
+                                )}
+                            >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {format(selectedDate, 'MMMM yyyy', { locale: dfnsId })}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                                mode="single"
+                                selected={selectedDate}
+                                onSelect={(date) => {
+                                    if (date) {
+                                        setSelectedMonth(getMonth(date));
+                                        setSelectedYear(getYear(date));
+                                        setIsDatePickerOpen(false);
+                                    }
+                                }}
+                                initialFocus
+                            />
+                        </PopoverContent>
+                    </Popover>
                      <div className="flex items-center gap-2">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
