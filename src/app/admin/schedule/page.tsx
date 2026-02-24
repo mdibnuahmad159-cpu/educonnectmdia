@@ -239,14 +239,12 @@ export default function SchedulePage() {
                                             onChange={(e) => handlePeriodTimeChange(index, 'startTime', e.target.value)} 
                                             className="w-full"
                                             placeholder="Mulai"
-                                            disabled={period.type === 'break'}
                                         />
                                         <Input 
                                             value={period.endTime} 
                                             onChange={(e) => handlePeriodTimeChange(index, 'endTime', e.target.value)} 
                                             className="w-full"
                                             placeholder="Selesai"
-                                            disabled={period.type === 'break'}
                                         />
                                     </div>
                                 </div>
