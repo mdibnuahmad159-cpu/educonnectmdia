@@ -101,8 +101,6 @@ export default function DashboardPage() {
             </Card>
       </div>
 
-      <TeacherAttendanceCard />
-      
       <Tabs defaultValue="akademik" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="akademik">Akademik</TabsTrigger>
@@ -142,6 +140,8 @@ export default function DashboardPage() {
             </Card>
         </TabsContent>
       </Tabs>
+      
+      <TeacherAttendanceCard />
 
     </div>
   );
