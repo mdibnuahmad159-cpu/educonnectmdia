@@ -103,13 +103,16 @@ export function TeacherManagement() {
     if (!auth || !firestore) return;
 
     if (selectedTeacher) {
-      const { id, ...dataToUpdate } = teacherData;
-      updateTeacher(firestore, selectedTeacher.id, dataToUpdate);
-      toast({ title: "Guru Diperbarui", description: "Data guru berhasil diperbarui." });
-      setIsFormOpen(false);
-      setSelectedTeacher(null);
+      try {
+        const { id, ...dataToUpdate } = teacherData;
+        await updateTeacher(firestore, selectedTeacher.id, dataToUpdate);
+        toast({ title: "Guru Diperbarui", description: "Data guru berhasil diperbarui." });
+        setIsFormOpen(false);
+        setSelectedTeacher(null);
+      } catch (error: any) {
+        toast({ variant: "destructive", title: "Gagal Memperbarui", description: error.message });
+      }
     } else {
-      // Adding a new teacher is a complex operation involving auth, so it remains async
       try {
         if (!teacherData.password) {
             toast({ variant: "destructive", title: "Gagal Menyimpan", description: "Password harus diisi untuk guru baru." });
@@ -465,5 +468,3 @@ export function TeacherManagement() {
     </>
   );
 }
-
-    

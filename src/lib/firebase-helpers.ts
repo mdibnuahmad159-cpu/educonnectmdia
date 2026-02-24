@@ -85,17 +85,20 @@ export async function addTeacher(auth: Auth, db: Firestore, teacher: Omit<Teache
     return user.uid;
 }
 
-export function updateTeacher(db: Firestore, teacherId: string, teacher: Partial<Omit<Teacher, 'id'>>) {
+export async function updateTeacher(db: Firestore, teacherId: string, teacher: Partial<Omit<Teacher, 'id'>>) {
     const { password, ...teacherData } = teacher as any;
     const teacherRef = doc(db, 'teachers', teacherId);
     const data = { ...teacherData, updatedAt: serverTimestamp() };
-    setDoc(teacherRef, data, { merge: true }).catch(error => {
+    try {
+        await setDoc(teacherRef, data, { merge: true });
+    } catch (error) {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
-          path: teacherRef.path,
-          operation: 'update',
-          requestResourceData: data
+            path: teacherRef.path,
+            operation: 'update',
+            requestResourceData: data,
         }));
-    });
+        throw error; // Re-throw to be caught by the UI
+    }
 }
 
 export function deleteTeacher(db: Firestore, teacherId: string) {
