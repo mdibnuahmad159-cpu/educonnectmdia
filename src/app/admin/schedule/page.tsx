@@ -58,7 +58,7 @@ export type EditContext = {
 const createEmptySchedule = (classLevel: number, academicYear: string, type: 'pelajaran' | 'ujian', periods: {startTime: string, endTime: string}[]): Schedule => {
     const emptyDay = periods.map(p => ({ type: 'subject' as const, startTime: p.startTime, endTime: p.endTime, subjectId: '', teacherId: '' }));
     return {
-        id: `${classLevel}_${academicYear.replace('/', '-')}_${type}`,
+        id: `${classLevel}_${academicYear.replace(/\//g, '-')}_${type}`,
         classLevel,
         academicYear,
         type,
@@ -106,10 +106,7 @@ export default function SchedulePage() {
     const periods = useMemo(() => {
         if (!allSchedulesData || allSchedulesData.length === 0) {
             // Default periods if no schedule exists yet for the current year/type
-            return [
-                { startTime: '07:00', endTime: '08:30' },
-                { startTime: '09:00', endTime: '10:30' },
-            ];
+            return [];
         }
 
         const firstScheduleWithEntries = allSchedulesData.find(s => s.saturday && s.saturday.length > 0);
@@ -119,10 +116,7 @@ export default function SchedulePage() {
             return scheduleEntries.map(p => ({ startTime: p.startTime, endTime: p.endTime })).sort((a,b) => a.startTime.localeCompare(b.startTime));
         }
 
-        return [
-            { startTime: '07:00', endTime: '08:30' },
-            { startTime: '09:00', endTime: '10:30' },
-        ];
+        return [];
     }, [allSchedulesData]);
 
     const isLoading = loadingCurriculum || loadingTeachers || loadingAllSchedules;
@@ -152,10 +146,12 @@ export default function SchedulePage() {
 
         const { classLevel, dayKey, periodIndex } = editContext;
         
-        const existingSchedule = schedulesMap.get(classLevel);
-        const scheduleToUpdate = existingSchedule
-            ? JSON.parse(JSON.stringify(existingSchedule)) // Deep copy
-            : createEmptySchedule(classLevel, activeYear, scheduleType, periods);
+        let scheduleToUpdate = schedulesMap.get(classLevel);
+        if (!scheduleToUpdate) {
+            scheduleToUpdate = createEmptySchedule(classLevel, activeYear, scheduleType, periods);
+        } else {
+            scheduleToUpdate = JSON.parse(JSON.stringify(scheduleToUpdate)); // Deep copy
+        }
 
         if (!scheduleToUpdate[dayKey] || scheduleToUpdate[dayKey].length === 0) {
             scheduleToUpdate[dayKey] = periods.map(p => ({type: 'subject', startTime: p.startTime, endTime: p.endTime, subjectId: '', teacherId: ''}));
@@ -173,16 +169,20 @@ export default function SchedulePage() {
         if (originalIndex !== -1) {
             const currentEntry = scheduleToUpdate[dayKey][originalIndex];
             
-            const updatedEntry = {
-                ...currentEntry,
-                subjectId: data.subjectId,
-                teacherId: data.teacherId,
-            };
+            const updatedEntry = { ...currentEntry };
+            
+            if (data.subjectId) {
+                updatedEntry.subjectId = data.subjectId;
+            } else {
+                delete (updatedEntry as Partial<typeof updatedEntry>).subjectId;
+            }
 
-            // Remove properties if they are empty strings to avoid storing them
-            if (!updatedEntry.subjectId) delete (updatedEntry as Partial<typeof updatedEntry>).subjectId;
-            if (!updatedEntry.teacherId) delete (updatedEntry as Partial<typeof updatedEntry>).teacherId;
-
+            if (data.teacherId) {
+                updatedEntry.teacherId = data.teacherId;
+            } else {
+                 delete (updatedEntry as Partial<typeof updatedEntry>).teacherId;
+            }
+            
             scheduleToUpdate[dayKey][originalIndex] = updatedEntry;
         }
 
@@ -293,7 +293,7 @@ export default function SchedulePage() {
                 styles: { fontSize: 7, cellPadding: 1, overflow: 'linebreak' },
                 headStyles: { fillColor: [230, 230, 230], textColor: 20, fontSize: 8, fontStyle: 'bold' },
                  didParseCell: function (data: any) {
-                    if (data.row.index > 0 && data.col.index === 0 && data.cell.raw !== '') {
+                    if (data.row.index > 0 && data.column.index === 0 && data.cell.raw !== '') {
                         data.cell.styles.valign = 'middle';
                         data.cell.styles.halign = 'center';
                     }
@@ -483,7 +483,7 @@ export default function SchedulePage() {
                     isOpen={isEntryFormOpen}
                     setIsOpen={setIsEntryFormOpen}
                     context={editContext}
-                    initialData={initialEntryData}
+                    initialData={initialEntryData as { subjectId?: string; teacherId?: string }}
                     curriculumData={curriculumData || []}
                     teachers={teachers || []}
                     onSave={handleSaveEntry}
