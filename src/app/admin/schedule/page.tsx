@@ -1,10 +1,10 @@
 
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
-import { collection, doc, Firestore, query, where, writeBatch, getDocs } from "firebase/firestore";
-import type { Schedule, ScheduleEntry, Curriculum, Teacher } from "@/types";
+import { collection, Firestore, query, where } from "firebase/firestore";
+import type { Schedule, Curriculum, Teacher } from "@/types";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -34,7 +34,7 @@ import {
     TabsTrigger,
 } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Clock, FileDown, Printer, FileSpreadsheet, FileText, Upload, Download, FileUp } from "lucide-react";
+import { Loader2, FileDown, Printer, FileSpreadsheet, FileText } from "lucide-react";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -45,8 +45,6 @@ import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useAcademicYear } from "@/context/academic-year-provider";
-import { upsertSchedule } from "@/lib/firebase-helpers";
-import { ScheduleEntryForm, TimeSettingsForm, type EditingSlot, type Period } from "./components/schedule-entry-form";
 
 const days = [
     { key: 'saturday', name: 'Sabtu' },
@@ -57,20 +55,16 @@ const days = [
     { key: 'thursday', name: 'Kamis' },
 ] as const;
 
-const initialPeriods: Period[] = [
-    { name: 'Jam ke-1', startTime: '07:00', endTime: '08:30', type: 'subject', isEditable: true },
-    { name: 'Jam ke-2', startTime: '09:00', endTime: '10:30', type: 'subject', isEditable: true },
-];
-
-const initialScheduleData: Omit<Schedule, 'id' | 'classLevel' | 'academicYear' | 'type'> = {
-    saturday: initialPeriods.map(p => ({ type: p.type, startTime: p.startTime, endTime: p.endTime })),
-    sunday: initialPeriods.map(p => ({ type: p.type, startTime: p.startTime, endTime: p.endTime })),
-    monday: initialPeriods.map(p => ({ type: p.type, startTime: p.startTime, endTime: p.endTime })),
-    tuesday: initialPeriods.map(p => ({ type: p.type, startTime: p.startTime, endTime: p.endTime })),
-    wednesday: initialPeriods.map(p => ({ type: p.type, startTime: p.startTime, endTime: p.endTime })),
-    thursday: initialPeriods.map(p => ({ type: p.type, startTime: p.startTime, endTime: p.endTime })),
+type Period = {
+    name: string;
+    startTime: string;
+    endTime: string;
 };
 
+const initialPeriods: Period[] = [
+    { name: 'Jam ke-1', startTime: '07:00', endTime: '08:30' },
+    { name: 'Jam ke-2', startTime: '09:00', endTime: '10:30' },
+];
 
 export default function SchedulePage() {
     const firestore = useFirestore() as Firestore;
@@ -80,12 +74,6 @@ export default function SchedulePage() {
     const [scheduleType, setScheduleType] = useState<'pelajaran' | 'ujian'>('pelajaran');
     const [selectedClass, setSelectedClass] = useState<string>('semua');
     
-    const [isEntryFormOpen, setIsEntryFormOpen] = useState(false);
-    const [isTimeFormOpen, setIsTimeFormOpen] = useState(false);
-    const [editingSlot, setEditingSlot] = useState<EditingSlot | null>(null);
-    const [periods, setPeriods] = useState(initialPeriods);
-    const fileInputRef = useRef<HTMLInputElement>(null);
-
     const curriculumCollection = useMemoFirebase(() => firestore ? collection(firestore, "curriculum") : null, [firestore]);
     const { data: curriculumData, loading: loadingCurriculum } = useCollection<Curriculum>(curriculumCollection);
 
@@ -108,243 +96,23 @@ export default function SchedulePage() {
         return map;
     }, [allSchedulesData]);
 
-    useEffect(() => {
-        const firstScheduleWithData = allSchedulesData?.find(s => s.saturday && s.saturday.length > 0);
-        if (firstScheduleWithData?.saturday) {
-             const subjectPeriods = firstScheduleWithData.saturday.filter(e => e.type === 'subject');
+    const periods = useMemo(() => {
+        const scheduleForClass = selectedClass !== 'semua' ? schedulesMap.get(parseInt(selectedClass)) : allSchedulesData?.[0];
+        const firstDaySchedule = scheduleForClass?.saturday;
+        
+        if (firstDaySchedule && firstDaySchedule.length > 0) {
+             const subjectPeriods = firstDaySchedule.filter(e => e.type === 'subject');
              const newPeriods = subjectPeriods.map((entry, index) => ({
                 name: `Jam ke-${index + 1}`,
                 startTime: entry.startTime,
                 endTime: entry.endTime,
-                type: 'subject',
-                isEditable: true
             }));
-            if (newPeriods.length > 0) {
-                 setPeriods(newPeriods);
-            }
-        } else {
-            setPeriods(initialPeriods);
+            if (newPeriods.length > 0) return newPeriods;
         }
-    }, [allSchedulesData]);
-
-    const handleEdit = (classLevel: number, dayKey: typeof days[number]['key'], periodIndex: number) => {
-        const scheduleForEdit = schedulesMap.get(classLevel);
-        const currentEntry = scheduleForEdit?.[dayKey]?.[periodIndex] || initialScheduleData[dayKey][periodIndex];
-        setEditingSlot({ classLevel, day: dayKey, periodIndex, entry: currentEntry });
-        setIsEntryFormOpen(true);
-    };
-    
-    const handleSaveEntry = (slot: EditingSlot, updatedData: { subjectId?: string, teacherId?: string }) => {
-        if (!firestore || !activeYear) return;
-    
-        const scheduleIdToUpdate = `${slot.classLevel}_${activeYear.replace('/', '-')}_${scheduleType}`;
-        const currentSchedule = schedulesMap.get(slot.classLevel);
-    
-        const newSchedule: Schedule = currentSchedule ?? {
-            id: scheduleIdToUpdate,
-            classLevel: slot.classLevel,
-            academicYear: activeYear,
-            type: scheduleType,
-            ...JSON.parse(JSON.stringify(initialScheduleData))
-        };
-        
-        days.forEach(day => {
-            if (!newSchedule[day.key] || newSchedule[day.key].length !== periods.length) {
-                newSchedule[day.key] = periods.map(p => ({
-                    type: p.type,
-                    startTime: p.startTime,
-                    endTime: p.endTime,
-                }));
-            }
-        });
-    
-        const updatedDaySchedule = [...(newSchedule[slot.day])];
-        const updatedEntry: ScheduleEntry = { ...updatedDaySchedule[slot.periodIndex] };
-
-        if (updatedData.subjectId) {
-            updatedEntry.subjectId = updatedData.subjectId;
-        } else {
-            delete updatedEntry.subjectId;
-        }
-    
-        if (updatedData.teacherId) {
-            updatedEntry.teacherId = updatedData.teacherId;
-        } else {
-            delete updatedEntry.teacherId;
-        }
-    
-        updatedDaySchedule[slot.periodIndex] = updatedEntry;
-    
-        const finalSchedule = { ...newSchedule, [slot.day]: updatedDaySchedule };
-    
-        upsertSchedule(firestore, finalSchedule);
-        toast({ title: "Jadwal Diperbarui", description: "Perubahan jadwal telah disimpan." });
-        setIsEntryFormOpen(false);
-        setEditingSlot(null);
-    };
-
-    const handleSaveTimes = async (updatedPeriods: Period[]) => {
-        const subjectPeriods = updatedPeriods.filter(p => p.type === 'subject');
-        setPeriods(subjectPeriods);
-    
-        if (!activeYear || !firestore) return;
-
-        toast({ title: "Menyimpan Perubahan Jam...", description: "Perubahan ini akan diterapkan ke semua kelas."});
-
-        const batch = writeBatch(firestore);
-        const classLevelsToUpdate = [...Array(7).keys()];
-
-        for (const classLevel of classLevelsToUpdate) {
-            const scheduleId = `${classLevel}_${activeYear.replace('/', '-')}_${scheduleType}`;
-            const scheduleRef = doc(firestore, 'schedules', scheduleId);
-            const currentSchedule = schedulesMap.get(classLevel);
-
-            const newScheduleData: Schedule = currentSchedule ?? {
-                id: scheduleId,
-                classLevel: classLevel,
-                academicYear: activeYear,
-                type: scheduleType,
-                ...JSON.parse(JSON.stringify(initialScheduleData))
-            };
-
-            const scheduleToUpdate = { ...newScheduleData };
-
-            days.forEach(day => {
-                 const existingSubjectEntries = scheduleToUpdate[day.key]?.filter(e => e.type === 'subject') || [];
-                
-                 scheduleToUpdate[day.key] = subjectPeriods.map((period, index) => {
-                    const existingEntry = existingSubjectEntries[index] || {};
-                    return {
-                        ...existingEntry,
-                        type: 'subject',
-                        startTime: period.startTime,
-                        endTime: period.endTime,
-                    };
-                });
-            });
-            batch.set(scheduleRef, scheduleToUpdate, { merge: true });
-        }
-        
-        await batch.commit();
-        toast({ title: "Jam Diperbarui", description: "Waktu jadwal telah disimpan untuk semua kelas." });
-    }
-
-    const subjectsForClass = useMemo(() => {
-        if (!curriculumData || !editingSlot) return [];
-        return curriculumData.filter(c => c.classLevel === editingSlot.classLevel);
-    }, [curriculumData, editingSlot]);
+        return initialPeriods;
+    }, [schedulesMap, selectedClass, allSchedulesData]);
     
     const isLoading = loadingCurriculum || loadingTeachers || loadingAllSchedules;
-
-    const handleDownloadTemplate = () => {
-        const worksheet = XLSX.utils.json_to_sheet([{}], { header: ['Kelas (0-6)', 'Hari (Sabtu, Minggu, Senin, Selasa, Rabu, Kamis)', 'Sesi (Jam ke-1/Jam ke-2)', 'Nama Mapel', 'Nama Guru'] });
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Template Jadwal');
-        XLSX.writeFile(workbook, 'template_jadwal.xlsx');
-    };
-
-    const handleImportSchedules = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (!file || !firestore || !teachers || !curriculumData) {
-            toast({ variant: 'destructive', title: 'Gagal', description: 'Data guru atau kurikulum belum dimuat.' });
-            return;
-        }
-        
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            try {
-                const data = new Uint8Array(e.target?.result as ArrayBuffer);
-                const workbook = XLSX.read(data, { type: 'array' });
-                const sheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[sheetName];
-                const json: any[] = XLSX.utils.sheet_to_json(worksheet);
-
-                if (json.length === 0) {
-                    toast({ variant: "destructive", title: "File Kosong", description: "File Excel yang Anda unggah tidak berisi data." });
-                    return;
-                }
-
-                toast({ title: "Mengimpor Jadwal...", description: `Memproses ${json.length} baris data.` });
-
-                const schedulesToUpdate = new Map<string, Schedule>();
-                const dayKeyMap = new Map(days.map(d => [d.name.toLowerCase(), d.key]));
-                const periodIndexMap = new Map(periods.map((p, i) => [p.name, i]));
-                let successCount = 0;
-                let errorCount = 0;
-
-                const existingSchedulesQuery = query(collection(firestore, 'schedules'), where('academicYear', '==', activeYear), where('type', '==', scheduleType));
-                const existingSchedulesSnap = await getDocs(existingSchedulesQuery);
-                existingSchedulesSnap.forEach(doc => {
-                    schedulesToUpdate.set(doc.id, doc.data() as Schedule);
-                });
-
-                for (const item of json) {
-                    const classLevel = item['Kelas (0-6)'];
-                    const dayName = item['Hari (Sabtu, Minggu, Senin, Selasa, Rabu, Kamis)'];
-                    const sessionName = item['Sesi (Jam ke-1/Jam ke-2)'];
-                    const subjectName = item['Nama Mapel'];
-                    const teacherName = item['Nama Guru'];
-
-                    if (classLevel === undefined || !dayName || !sessionName) {
-                        errorCount++;
-                        continue;
-                    }
-
-                    const dayKey = dayKeyMap.get(String(dayName).toLowerCase());
-                    const periodIndex = periodIndexMap.get(sessionName);
-
-                    if (!dayKey || periodIndex === undefined || periods[periodIndex].type !== 'subject') {
-                        errorCount++;
-                        continue;
-                    }
-
-                    const subject = subjectName ? curriculumData.find(c => c.subjectName === subjectName && c.classLevel === classLevel) : null;
-                    const teacher = teacherName ? teachers.find(t => t.name === teacherName) : null;
-
-                    const scheduleId = `${classLevel}_${activeYear.replace('/', '-')}_${scheduleType}`;
-                    let schedule = schedulesToUpdate.get(scheduleId);
-                    if (!schedule) {
-                        schedule = {
-                            id: scheduleId,
-                            classLevel: classLevel,
-                            academicYear: activeYear,
-                            type: scheduleType,
-                            ...JSON.parse(JSON.stringify(initialScheduleData))
-                        };
-                    }
-
-                    const daySchedule = schedule[dayKey];
-                    if (daySchedule && daySchedule[periodIndex]) {
-                        daySchedule[periodIndex].subjectId = subject?.id || undefined;
-                        daySchedule[periodIndex].teacherId = teacher?.id || undefined;
-                        successCount++;
-                    } else {
-                        errorCount++;
-                    }
-                    
-                    schedulesToUpdate.set(scheduleId, schedule);
-                }
-                
-                if (schedulesToUpdate.size > 0) {
-                    const batch = writeBatch(firestore);
-                    schedulesToUpdate.forEach(schedule => {
-                        const scheduleRef = doc(firestore, 'schedules', schedule.id);
-                        batch.set(scheduleRef, schedule, { merge: true });
-                    });
-                    await batch.commit();
-                }
-
-                toast({ title: "Impor Selesai", description: `${successCount} slot jadwal berhasil diproses. ${errorCount} gagal.` });
-
-            } catch (error) {
-                toast({ variant: "destructive", title: "Gagal Membaca File", description: "Tidak dapat memproses file Excel." });
-                console.error(error);
-            } finally {
-                if (event.target) event.target.value = '';
-            }
-        };
-        reader.readAsArrayBuffer(file);
-    };
 
     const handleExportExcel = () => {
         if (isLoading) return;
@@ -355,7 +123,6 @@ export default function SchedulePage() {
         classLevels.forEach(classLevel => {
             const dataToExport: any[] = [];
             periods.forEach(period => {
-                if (period.type === 'break') return;
                 const row: { [key: string]: any } = {
                     'Jam': `${period.startTime} - ${period.endTime} (${period.name})`
                 };
@@ -397,7 +164,6 @@ export default function SchedulePage() {
         classLevels.forEach((classLevel, index) => {
             const body: any[] = [];
             periods.forEach((period) => {
-                if (period.type === 'break') return;
                 const rowData: string[] = [`${period.startTime}-${period.endTime} (${period.name})`];
                 days.forEach(day => {
                     const schedule = schedulesMap.get(classLevel);
@@ -468,7 +234,7 @@ export default function SchedulePage() {
                 .card-header { padding: 0.75rem 1rem; border-bottom: 1px solid #e5e7eb; }
                 .card-title { font-size: 1.125rem; font-weight: 600; line-height: 1; }
                 .p-0 { padding: 0 !important; }
-                .overflow-x-auto { overflow-x: visible !important; }
+                .overflow-x-auto { overflow-x: auto !important; }
                 table { width: 100%; border-collapse: collapse; }
                 th, td { border: 1px solid #ddd; padding: 4px; text-align: left; vertical-align: top; }
                 th { background-color: #f2f2f2; }
@@ -501,7 +267,7 @@ export default function SchedulePage() {
                 <CardHeader>
                     <CardTitle>Jadwal</CardTitle>
                     <CardDescription>
-                        Kelola jadwal pelajaran dan ujian untuk setiap kelas. Klik pada slot untuk mengedit.
+                        Lihat jadwal pelajaran dan ujian untuk setiap kelas.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -509,8 +275,8 @@ export default function SchedulePage() {
                         <div className="flex flex-col sm:flex-row gap-4">
                              <Tabs value={scheduleType} onValueChange={(value) => setScheduleType(value as 'pelajaran' | 'ujian')} className="w-full sm:w-auto">
                                 <TabsList className="grid grid-cols-2 w-full sm:w-fit">
-                                    <TabsTrigger value="pelajaran">Jadwal Pelajaran</TabsTrigger>
-                                    <TabsTrigger value="ujian">Jadwal Ujian</TabsTrigger>
+                                    <TabsTrigger value="pelajaran">Pelajaran</TabsTrigger>
+                                    <TabsTrigger value="ujian">Ujian</TabsTrigger>
                                 </TabsList>
                             </Tabs>
                             <Select value={selectedClass} onValueChange={setSelectedClass}>
@@ -526,31 +292,6 @@ export default function SchedulePage() {
                             </Select>
                         </div>
                          <div className="flex items-center gap-2">
-                             <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button size="xs" variant="outline" className="gap-1">
-                                    <FileUp className="h-3 w-3" />
-                                    Impor
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={handleDownloadTemplate}>
-                                    <Download className="mr-2 h-3 w-3" />
-                                    Unduh Template
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
-                                    <Upload className="mr-2 h-3 w-3" />
-                                    Unggah Excel
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                            <input
-                                type="file"
-                                ref={fileInputRef}
-                                className="hidden"
-                                accept=".xlsx, .xls"
-                                onChange={handleImportSchedules}
-                            />
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button size="xs" variant="outline" className="gap-1">
@@ -573,10 +314,6 @@ export default function SchedulePage() {
                                 <Printer className="h-3 w-3" />
                                 Cetak
                             </Button>
-                            <Button size="xs" onClick={() => setIsTimeFormOpen(true)} className="gap-1">
-                                <Clock className="h-3 w-3"/>
-                                Atur Jam
-                            </Button>
                         </div>
                     </div>
                     {isLoading ? (
@@ -588,22 +325,6 @@ export default function SchedulePage() {
                     )}
                 </CardContent>
             </Card>
-            {editingSlot && (
-                <ScheduleEntryForm 
-                    isOpen={isEntryFormOpen}
-                    setIsOpen={setIsEntryFormOpen}
-                    editingSlot={editingSlot}
-                    onSave={handleSaveEntry}
-                    subjects={subjectsForClass}
-                    teachers={teachers || []}
-                />
-            )}
-             <TimeSettingsForm
-                isOpen={isTimeFormOpen}
-                setIsOpen={setIsTimeFormOpen}
-                initialPeriods={periods}
-                onSave={handleSaveTimes}
-            />
         </>
     );
 
@@ -638,10 +359,9 @@ export default function SchedulePage() {
                                     </TableHeader>
                                     <TableBody>
                                         {periods.map((period, periodIndex) => {
-                                            if (period.type === 'break') return null;
                                             return (
                                                 <TableRow key={periodIndex}>
-                                                    <TableCell className="font-medium align-top">
+                                                    <TableCell className="font-medium align-top whitespace-nowrap">
                                                         <div className="flex flex-col">
                                                             <span>{period.name}</span>
                                                             <span className="text-xs text-muted-foreground">{period.startTime} - {period.endTime}</span>
@@ -654,11 +374,7 @@ export default function SchedulePage() {
                                                         const teacher = teachers?.find(t => t.id === entry?.teacherId);
     
                                                         return (
-                                                            <TableCell 
-                                                                key={day.key} 
-                                                                className="cursor-pointer hover:bg-muted transition-colors"
-                                                                onClick={() => handleEdit(classLevel, day.key, periodIndex)}
-                                                            >
+                                                            <TableCell key={day.key}>
                                                                 {subject ? (
                                                                     <div>
                                                                         <p className="font-semibold text-primary whitespace-nowrap">{subject.subjectName}</p>
