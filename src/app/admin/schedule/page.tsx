@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo } from "react";
@@ -57,7 +58,7 @@ export type EditContext = {
 const createEmptySchedule = (classLevel: number, academicYear: string, type: 'pelajaran' | 'ujian', periods: {startTime: string, endTime: string}[]): Schedule => {
     const emptyDay = periods.map(p => ({ type: 'subject' as const, startTime: p.startTime, endTime: p.endTime, subjectId: '', teacherId: '' }));
     return {
-        id: `${classLevel}_${academicYear}_${type}`,
+        id: `${classLevel}_${academicYear.replace('/', '-')}_${type}`,
         classLevel,
         academicYear,
         type,
@@ -103,12 +104,21 @@ export default function SchedulePage() {
     }, [allSchedulesData]);
 
     const periods = useMemo(() => {
-        const firstSchedule = allSchedulesData?.[0];
-        const scheduleEntries = firstSchedule?.saturday?.filter(e => e.type === 'subject') || [];
-        if (scheduleEntries.length > 0) {
-            return scheduleEntries.map(p => ({ startTime: p.startTime, endTime: p.endTime }));
+        if (!allSchedulesData || allSchedulesData.length === 0) {
+            // Default periods if no schedule exists yet for the current year/type
+            return [
+                { startTime: '07:00', endTime: '08:30' },
+                { startTime: '09:00', endTime: '10:30' },
+            ];
         }
-        // Default periods if no schedule exists yet
+
+        const firstScheduleWithEntries = allSchedulesData.find(s => s.saturday && s.saturday.length > 0);
+        const scheduleEntries = firstScheduleWithEntries?.saturday?.filter(e => e.type === 'subject') || [];
+        
+        if (scheduleEntries.length > 0) {
+            return scheduleEntries.map(p => ({ startTime: p.startTime, endTime: p.endTime })).sort((a,b) => a.startTime.localeCompare(b.startTime));
+        }
+
         return [
             { startTime: '07:00', endTime: '08:30' },
             { startTime: '09:00', endTime: '10:30' },
@@ -157,16 +167,22 @@ export default function SchedulePage() {
 
         const entryToUpdate = subjectEntries[periodIndex];
 
-        const updatedEntry = {
-            ...entryToUpdate,
-            subjectId: data.subjectId || '',
-            teacherId: data.teacherId || '',
-        };
-        
-        // Find the original index in the full schedule array
-        const originalIndex = scheduleToUpdate[dayKey].findIndex((e: ScheduleEntry) => e.startTime === entryToUpdate.startTime && e.endTime === entryToUpdate.endTime);
-        
+        // Find the original index in the full schedule array which might include breaks
+        const originalIndex = scheduleToUpdate[dayKey].findIndex((e: ScheduleEntry) => e.startTime === entryToUpdate.startTime && e.endTime === entryToUpdate.endTime && e.type === 'subject');
+
         if (originalIndex !== -1) {
+            const currentEntry = scheduleToUpdate[dayKey][originalIndex];
+            
+            const updatedEntry = {
+                ...currentEntry,
+                subjectId: data.subjectId,
+                teacherId: data.teacherId,
+            };
+
+            // Remove properties if they are empty strings to avoid storing them
+            if (!updatedEntry.subjectId) delete (updatedEntry as Partial<typeof updatedEntry>).subjectId;
+            if (!updatedEntry.teacherId) delete (updatedEntry as Partial<typeof updatedEntry>).teacherId;
+
             scheduleToUpdate[dayKey][originalIndex] = updatedEntry;
         }
 
@@ -178,63 +194,40 @@ export default function SchedulePage() {
         handleSaveEntry({ subjectId: '', teacherId: '' });
     }
 
-    const handleTimeSave = (newPeriods: { startTime: string; endTime: string }[], breakTime: { startTime: string, endTime: string }) => {
+    const handleTimeSave = (newPeriods: { startTime: string; endTime: string }[]) => {
         if (!firestore) return;
-
+    
         const updatedSchedules: Schedule[] = [];
-
-        const allEntries = [
-            ...newPeriods.slice(0, 1),
-            { startTime: breakTime.startTime, endTime: breakTime.endTime, type: 'break' as const },
-            ...newPeriods.slice(1),
-        ].sort((a, b) => a.startTime.localeCompare(b.startTime));
-
+    
         // Update existing schedules
         for (const schedule of schedulesMap.values()) {
-            const newSchedule = JSON.parse(JSON.stringify(schedule)); // Deep copy
+            const newSchedule = JSON.parse(JSON.stringify(schedule));
             days.forEach(day => {
-                newSchedule[day.key] = allEntries.map((entry, index) => {
-                    const existingEntryForTime = newSchedule[day.key]?.find((e: ScheduleEntry) => e.startTime === entry.startTime);
-                    if (entry.type === 'break') {
-                         return { type: 'break', startTime: entry.startTime, endTime: entry.endTime };
-                    }
-                    const subjectEntry = newSchedule[day.key]?.filter((e: ScheduleEntry) => e.type === 'subject')[index > 1 ? index -1 : index];
+                const currentDayEntries = newSchedule[day.key]?.filter((e: ScheduleEntry) => e.type === 'subject') || [];
+                const newDayEntries: ScheduleEntry[] = newPeriods.map((period, index) => {
+                    const existingEntry = currentDayEntries[index];
                     return {
                         type: 'subject',
-                        startTime: entry.startTime,
-                        endTime: entry.endTime,
-                        subjectId: subjectEntry?.subjectId || '',
-                        teacherId: subjectEntry?.teacherId || '',
+                        startTime: period.startTime,
+                        endTime: period.endTime,
+                        subjectId: existingEntry?.subjectId || '',
+                        teacherId: existingEntry?.teacherId || '',
                     };
                 });
+                newSchedule[day.key] = newDayEntries;
             });
             updatedSchedules.push(newSchedule);
         }
-
+    
         // Create schedules for classes that don't have one yet
         classLevels.forEach(level => {
             if (!schedulesMap.has(level)) {
-                 const newSchedule = createEmptySchedule(level, activeYear, scheduleType, periods);
-                 days.forEach(day => {
-                    newSchedule[day.key] = allEntries.map((entry, index) => {
-                         if (entry.type === 'break') {
-                            return { type: 'break', startTime: entry.startTime, endTime: entry.endTime };
-                        }
-                        return { 
-                            type: 'subject',
-                            startTime: entry.startTime,
-                            endTime: entry.endTime,
-                            subjectId: '',
-                            teacherId: ''
-                        };
-                    });
-                 });
-                 updatedSchedules.push(newSchedule);
+                updatedSchedules.push(createEmptySchedule(level, activeYear, scheduleType, newPeriods));
             }
         });
         
         updatedSchedules.forEach(schedule => upsertSchedule(firestore, schedule));
-
+    
         toast({ title: "Jam Disimpan", description: "Waktu jadwal telah diperbarui untuk semua kelas." });
     };
 
@@ -261,8 +254,8 @@ export default function SchedulePage() {
                 body.push(row);
             });
              if (days.length > 1) {
-                body.push(Array(head[0].length).fill('')); // Separator row
-            }
+                // Add a visual separator in the data for PDF/Excel if needed, or handle in styling
+             }
         });
 
         if (body.length === 0) {
@@ -300,9 +293,18 @@ export default function SchedulePage() {
                 styles: { fontSize: 7, cellPadding: 1, overflow: 'linebreak' },
                 headStyles: { fillColor: [230, 230, 230], textColor: 20, fontSize: 8, fontStyle: 'bold' },
                  didParseCell: function (data: any) {
-                    if (data.cell.raw === data.row.raw[0]) { // is first cell in row
-                         data.cell.styles.fontStyle = 'bold';
+                    if (data.row.index > 0 && data.col.index === 0 && data.cell.raw !== '') {
+                        data.cell.styles.valign = 'middle';
+                        data.cell.styles.halign = 'center';
                     }
+                },
+                didDrawCell: (data: any) => {
+                     if (data.row.index === 0) return; // Skip header
+                     if (data.column.index === 0 && data.cell.raw !== "") {
+                        // This logic is tricky with autoTable's rendering.
+                        // A simpler way is to handle rowSpans pre-generation if the library supports it,
+                        // or just leave it as is, which is what this code does.
+                     }
                 }
             });
             doc.save(`${exportFileName}.pdf`);
