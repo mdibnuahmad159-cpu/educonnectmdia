@@ -9,8 +9,13 @@ import { collection, query, where } from 'firebase/firestore';
 import type { Teacher, TeacherAttendance, Schedule, ScheduleEntry } from '@/types';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -151,18 +156,21 @@ export function TeacherAttendanceCard() {
                                     </Avatar>
                                     <span className="text-sm font-medium">{teacher.name}</span>
                                 </div>
-                                <RadioGroup
+                                <Select
                                     value={attendance[teacher.id] || ''}
                                     onValueChange={(value) => handleStatusChange(teacher.id, value as AttendanceStatus)}
-                                    className="flex items-center gap-2 sm:gap-3"
                                 >
-                                    {STATUS_OPTIONS.map(status => (
-                                        <div key={status} className="flex items-center space-x-1.5">
-                                            <RadioGroupItem value={status} id={`${teacher.id}-${status}`} />
-                                            <Label htmlFor={`${teacher.id}-${status}`} className="text-xs">{status}</Label>
-                                        </div>
-                                    ))}
-                                </RadioGroup>
+                                    <SelectTrigger className="w-[110px] text-xs">
+                                        <SelectValue placeholder="Pilih status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {STATUS_OPTIONS.map(status => (
+                                            <SelectItem key={status} value={status}>
+                                                {status}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
                         )) : (
                             <p className="text-sm text-muted-foreground text-center py-4">
