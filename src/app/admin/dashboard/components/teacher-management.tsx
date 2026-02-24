@@ -3,7 +3,7 @@
 
 import { useState, useMemo, useRef } from "react";
 import { PlusCircle, AlertTriangle, Download, Upload, FileDown, FileUp, FileSpreadsheet, FileText, Printer } from "lucide-react";
-import { useCollection, useAuth, useFirestore, useMemoFirebase, useUser } from "@/firebase";
+import { useCollection, useFirestore, useMemoFirebase, useUser } from "@/firebase";
 import { addTeacher, updateTeacher, deleteTeacher } from "@/lib/firebase-helpers";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,7 +41,6 @@ import { TeacherForm } from "./teacher-form";
 import { TeacherDetail } from "./teacher-detail"; 
 import type { Teacher } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { Auth } from "firebase/auth";
 import { collection, Firestore } from "firebase/firestore";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import * as XLSX from 'xlsx';
@@ -58,7 +57,6 @@ export function TeacherManagement() {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
   const { toast } = useToast();
-  const auth = useAuth() as Auth;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [teacherToDelete, setTeacherToDelete] = useState<string | null>(null);
@@ -119,7 +117,7 @@ export function TeacherManagement() {
   };
   
   const handleSave = async (teacherData: any) => {
-    if (!auth || !firestore) return;
+    if (!firestore) return;
 
     if (selectedTeacher) {
       try {
@@ -138,7 +136,7 @@ export function TeacherManagement() {
             return;
         }
         const { id, ...dataToAdd } = teacherData;
-        await addTeacher(auth, firestore, dataToAdd);
+        await addTeacher(firestore, dataToAdd);
         toast({ title: "Guru Ditambahkan", description: "Data guru baru berhasil ditambahkan." });
         setIsFormOpen(false);
         setSelectedTeacher(null);
@@ -173,7 +171,7 @@ export function TeacherManagement() {
 
     const handleImportTeachers = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
-        if (!file || !auth || !firestore) return;
+        if (!file || !firestore) return;
 
         const reader = new FileReader();
         reader.onload = async (e) => {
@@ -207,7 +205,7 @@ export function TeacherManagement() {
 
                     if (!teacherData.email || !teacherData.name) {
                         errorCount++;
-                        console.error("Skipping teacher due to missing required fields (email or name):", teacherData);
+                        console.error(`Skipping teacher due to missing required fields (email or name):`, teacherData);
                         continue;
                     }
 
@@ -216,7 +214,7 @@ export function TeacherManagement() {
                     }
 
                     try {
-                        await addTeacher(auth, firestore, teacherData as Omit<Teacher, 'id'> & {password: string});
+                        await addTeacher(firestore, teacherData as Omit<Teacher, 'id'> & {password: string});
                         successCount++;
                     } catch (error) {
                         errorCount++;
@@ -507,4 +505,3 @@ export function TeacherManagement() {
     </>
   );
 }
-

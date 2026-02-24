@@ -1,8 +1,9 @@
 
 import {
-  Auth,
   createUserWithEmailAndPassword,
+  getAuth,
 } from 'firebase/auth';
+import { initializeApp, deleteApp } from 'firebase/app';
 import {
   Firestore,
   doc,
@@ -18,6 +19,7 @@ import {
 import type { Teacher, Student, SchoolProfile, Curriculum, Alumni } from '@/types';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { firebaseConfig } from '@/firebase/config';
 
 
 // This function creates a student document in Firestore.
@@ -55,12 +57,26 @@ export function deleteStudent(db: Firestore, studentId: string) {
 }
 
 // For teachers, we create an auth user and a firestore document.
-// This client-side flow logs the new teacher in and logs the admin out.
-// In a production app, creating users is typically a server-side (admin) operation.
-export async function addTeacher(auth: Auth, db: Firestore, teacher: Omit<Teacher, 'id'> & {password: string}) {
-    const userCredential = await createUserWithEmailAndPassword(auth, teacher.email, teacher.password);
-    const user = userCredential.user;
+// This is now handled by creating a temporary app instance to avoid logging out the admin.
+export async function addTeacher(db: Firestore, teacher: Omit<Teacher, 'id'> & {password: string}) {
+    // Create a temporary app to create the user without signing out the admin
+    const tempAppName = `teacher-creation-${Date.now()}`;
+    const tempApp = initializeApp(firebaseConfig, tempAppName);
+    const tempAuth = getAuth(tempApp);
+
+    let userCredential;
+    try {
+        userCredential = await createUserWithEmailAndPassword(tempAuth, teacher.email, teacher.password);
+    } catch (error) {
+        // Cleanup the temporary app and re-throw the error
+        await deleteApp(tempApp);
+        throw error;
+    }
     
+    // At this point, the user is created. We can now delete the temp app.
+    await deleteApp(tempApp);
+    
+    const user = userCredential.user;
     const { password, ...teacherData } = teacher;
 
     const teacherRef = doc(db, 'teachers', user.uid);
