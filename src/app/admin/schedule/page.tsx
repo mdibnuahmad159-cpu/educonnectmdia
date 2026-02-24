@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo } from "react";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection, Firestore, query, where } from "firebase/firestore";
 import type { Schedule, Curriculum, Teacher } from "@/types";
@@ -21,18 +21,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-    Tabs,
-    TabsList,
-    TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, FileDown, Printer, FileSpreadsheet, FileText } from "lucide-react";
 import {
@@ -72,7 +61,6 @@ export default function SchedulePage() {
     const { toast } = useToast();
 
     const [scheduleType, setScheduleType] = useState<'pelajaran' | 'ujian'>('pelajaran');
-    const [selectedClass, setSelectedClass] = useState<string>('semua');
     
     const curriculumCollection = useMemoFirebase(() => firestore ? collection(firestore, "curriculum") : null, [firestore]);
     const { data: curriculumData, loading: loadingCurriculum } = useCollection<Curriculum>(curriculumCollection);
@@ -97,8 +85,8 @@ export default function SchedulePage() {
     }, [allSchedulesData]);
 
     const periods = useMemo(() => {
-        const scheduleForClass = selectedClass !== 'semua' ? schedulesMap.get(parseInt(selectedClass)) : allSchedulesData?.[0];
-        const firstDaySchedule = scheduleForClass?.saturday;
+        const firstSchedule = allSchedulesData?.[0];
+        const firstDaySchedule = firstSchedule?.saturday;
         
         if (firstDaySchedule && firstDaySchedule.length > 0) {
              const subjectPeriods = firstDaySchedule.filter(e => e.type === 'subject');
@@ -110,43 +98,47 @@ export default function SchedulePage() {
             if (newPeriods.length > 0) return newPeriods;
         }
         return initialPeriods;
-    }, [schedulesMap, selectedClass, allSchedulesData]);
-    
+    }, [allSchedulesData]);
+
     const isLoading = loadingCurriculum || loadingTeachers || loadingAllSchedules;
+
+    const classLevels = [...Array(7).keys()]; // Kelas 0 to 6
+
+    const getCellData = (classLevel: number, dayKey: (typeof days)[number]['key'], periodIndex: number) => {
+        const schedule = schedulesMap.get(classLevel);
+        const entry = schedule?.[dayKey]?.[periodIndex];
+        const subject = curriculumData?.find(s => s.id === entry?.subjectId);
+        const teacher = teachers?.find(t => t.id === entry?.teacherId);
+
+        return { subject, teacher };
+    };
 
     const handleExportExcel = () => {
         if (isLoading) return;
-        const workbook = XLSX.utils.book_new();
-        const classLevels = selectedClass === 'semua' ? [...Array(7).keys()] : [parseInt(selectedClass, 10)];
-        if (isNaN(classLevels[0])) return;
-    
-        classLevels.forEach(classLevel => {
-            const dataToExport: any[] = [];
-            periods.forEach(period => {
+        
+        const dataToExport: any[] = [];
+        days.forEach(day => {
+            periods.forEach((period, periodIndex) => {
                 const row: { [key: string]: any } = {
-                    'Jam': `${period.startTime} - ${period.endTime} (${period.name})`
+                    'Hari': day.name,
+                    'Jam': `${period.startTime} - ${period.endTime}`,
                 };
-                days.forEach(day => {
-                    const schedule = schedulesMap.get(classLevel);
-                    const periodIndex = periods.findIndex(p => p.name === period.name);
-                    const entry = schedule?.[day.key]?.[periodIndex];
-                    const subject = curriculumData?.find(s => s.id === entry?.subjectId);
-                    const teacher = teachers?.find(t => t.id === entry?.teacherId);
-                    row[day.name] = subject ? `${subject.subjectName} (${teacher?.name || '...'})` : '';
+                classLevels.forEach(classLevel => {
+                    const { subject, teacher } = getCellData(classLevel, day.key, periodIndex);
+                    row[`Kelas ${classLevel}`] = subject ? `${subject.subjectName} (${teacher?.name || '...'})` : '';
                 });
                 dataToExport.push(row);
             });
-            
-            if (dataToExport.length > 0) {
-                const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-                XLSX.utils.book_append_sheet(workbook, worksheet, `Kelas ${classLevel}`);
-            }
         });
-    
-        if (workbook.SheetNames.length === 0) {
+        
+        if (dataToExport.length === 0) {
             toast({ title: "Tidak ada data jadwal untuk diekspor." });
             return;
         }
+
+        const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, `Jadwal`);
         XLSX.writeFile(workbook, `jadwal_${scheduleType}_${activeYear.replace('/', '-')}.xlsx`);
     };
     
@@ -156,50 +148,36 @@ export default function SchedulePage() {
         const doc = new jsPDF({ orientation: 'landscape' });
         doc.text(`Jadwal ${scheduleType === 'pelajaran' ? 'Pelajaran' : 'Ujian'} - Tahun Ajaran ${activeYear}`, 14, 16);
         
-        const classLevels = selectedClass === 'semua' ? [...Array(7).keys()] : [parseInt(selectedClass, 10)];
-        if (isNaN(classLevels[0])) return;
-    
-        let startY = 25;
-    
-        classLevels.forEach((classLevel, index) => {
-            const body: any[] = [];
-            periods.forEach((period) => {
-                const rowData: string[] = [`${period.startTime}-${period.endTime} (${period.name})`];
-                days.forEach(day => {
-                    const schedule = schedulesMap.get(classLevel);
-                    const periodIndex = periods.findIndex(p => p.name === period.name);
-                    const entry = schedule?.[day.key]?.[periodIndex];
-                    const subject = curriculumData?.find(s => s.id === entry?.subjectId);
-                    const teacher = teachers?.find(t => t.id === entry?.teacherId);
-                    rowData.push(subject ? `${subject.subjectName}\n(${teacher?.name || '...'})` : '');
+        const head = [['Hari', 'Jam', ...classLevels.map(cl => `Kelas ${cl}`)]];
+        const body: string[][] = [];
+
+        days.forEach(day => {
+            periods.forEach((period, periodIndex) => {
+                const row: string[] = [
+                    day.name,
+                    `${period.startTime} - ${period.endTime}`
+                ];
+                classLevels.forEach(classLevel => {
+                     const { subject, teacher } = getCellData(classLevel, day.key, periodIndex);
+                     row.push(subject ? `${subject.subjectName}\n(${teacher?.name || '...'})` : '');
                 });
-                body.push(rowData);
+                body.push(row);
             });
-    
-            if (body.length > 0) {
-                const tableHeight = (body.length + 1) * 10 + 15; // rough estimation
-                if (index > 0 && startY + tableHeight > doc.internal.pageSize.getHeight() - 20) {
-                    doc.addPage();
-                    startY = 20;
-                }
-                doc.setFontSize(12);
-                doc.text(`Kelas ${classLevel}`, 14, startY);
-                (doc as any).autoTable({
-                    head: [['Jam', ...days.map(d => d.name)]],
-                    body: body,
-                    startY: startY + 5,
-                    theme: 'grid',
-                    styles: { fontSize: 8, cellPadding: 2 },
-                    headStyles: { fillColor: [230, 230, 230], textColor: 20 },
-                });
-                startY = (doc as any).lastAutoTable.finalY + 15;
-            }
         });
-    
-        if (startY === 25) { // no data was added
+
+        if (body.length === 0) {
             toast({ title: "Tidak ada data jadwal untuk diekspor." });
             return;
         }
+
+        (doc as any).autoTable({
+            head: head,
+            body: body,
+            startY: 20,
+            theme: 'grid',
+            styles: { fontSize: 7, cellPadding: 1, overflow: 'linebreak' },
+            headStyles: { fillColor: [230, 230, 230], textColor: 20, fontSize: 8 },
+        });
         
         doc.save(`jadwal_${scheduleType}_${activeYear.replace('/', '-')}.pdf`);
     };
@@ -211,8 +189,8 @@ export default function SchedulePage() {
           return;
         }
     
-        const tableContainerHtml = document.getElementById('schedule-table-container')?.innerHTML;
-        if (!tableContainerHtml) {
+        const tableHtml = document.getElementById('schedule-table-main')?.outerHTML;
+        if (!tableHtml) {
             toast({ variant: "destructive", title: "Tidak ada data untuk dicetak." });
             return;
         }
@@ -222,33 +200,20 @@ export default function SchedulePage() {
             <head>
               <title>Cetak Jadwal</title>
               <style>
-                body { font-family: sans-serif; font-size: 10px; background-color: #fff; }
+                body { font-family: sans-serif; font-size: 9px; background-color: #fff; }
                 @page { size: A4 landscape; margin: 15mm; }
-                h1 { font-size: 16px; margin-bottom: 1rem; }
-                .card { 
-                    border: 1px solid #e5e7eb; 
-                    border-radius: 0.5rem; 
-                    margin-bottom: 1.5rem; 
-                    break-inside: avoid;
-                }
-                .card-header { padding: 0.75rem 1rem; border-bottom: 1px solid #e5e7eb; }
-                .card-title { font-size: 1.125rem; font-weight: 600; line-height: 1; }
-                .p-0 { padding: 0 !important; }
-                .overflow-x-auto { overflow-x: auto !important; }
+                h1 { font-size: 14px; margin-bottom: 1rem; }
                 table { width: 100%; border-collapse: collapse; }
-                th, td { border: 1px solid #ddd; padding: 4px; text-align: left; vertical-align: top; }
+                th, td { border: 1px solid #ddd; padding: 3px; text-align: left; vertical-align: top; }
                 th { background-color: #f2f2f2; }
                 .font-semibold { font-weight: 600; }
                 .text-primary { color: #15803d; }
-                .text-xs { font-size: 9px; }
                 .text-muted-foreground { color: #555; }
-                .font-medium { font-weight: 500; }
-                .whitespace-nowrap { white-space: nowrap; }
               </style>
             </head>
             <body>
-              <h1>Jadwal ${scheduleType === 'pelajaran' ? 'Pelajaran' : 'Ujian'} - Tahun Ajaran ${activeYear} - Kelas: ${selectedClass === 'semua' ? 'Semua' : `Kelas ${selectedClass}`}</h1>
-              ${tableContainerHtml}
+              <h1>Jadwal ${scheduleType === 'pelajaran' ? 'Pelajaran' : 'Ujian'} - Tahun Ajaran ${activeYear}</h1>
+              ${tableHtml}
             </body>
           </html>
         `;
@@ -267,7 +232,7 @@ export default function SchedulePage() {
                 <CardHeader>
                     <CardTitle>Jadwal</CardTitle>
                     <CardDescription>
-                        Lihat jadwal pelajaran dan ujian untuk setiap kelas.
+                        Lihat jadwal pelajaran dan ujian untuk semua kelas.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -279,17 +244,6 @@ export default function SchedulePage() {
                                     <TabsTrigger value="ujian">Ujian</TabsTrigger>
                                 </TabsList>
                             </Tabs>
-                            <Select value={selectedClass} onValueChange={setSelectedClass}>
-                                <SelectTrigger className="w-full sm:w-[180px]">
-                                    <SelectValue placeholder="Pilih kelas" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="semua">Semua Kelas</SelectItem>
-                                    {[...Array(7).keys()].map(i => (
-                                        <SelectItem key={i} value={String(i)}>Kelas {i}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
                         </div>
                          <div className="flex items-center gap-2">
                             <DropdownMenu>
@@ -321,83 +275,52 @@ export default function SchedulePage() {
                             <Loader2 className="h-8 w-8 animate-spin text-primary" />
                         </div>
                     ) : (
-                        <ScheduleTable />
+                        <div className="overflow-x-auto">
+                            <Table id="schedule-table-main" className="min-w-full">
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead className="w-[80px]">Hari</TableHead>
+                                        <TableHead className="w-[120px]">Jam</TableHead>
+                                        {classLevels.map(cl => <TableHead key={cl} className="min-w-[150px]">Kelas {cl}</TableHead>)}
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {days.map(day => (
+                                        periods.map((period, periodIndex) => (
+                                            <TableRow key={`${day.key}-${periodIndex}`}>
+                                                {periodIndex === 0 && (
+                                                    <TableCell rowSpan={periods.length} className="font-semibold align-middle text-center">
+                                                        {day.name}
+                                                    </TableCell>
+                                                )}
+                                                <TableCell className="font-medium align-top">
+                                                    <div>{period.startTime}</div>
+                                                    <div>{period.endTime}</div>
+                                                </TableCell>
+                                                {classLevels.map(classLevel => {
+                                                    const { subject, teacher } = getCellData(classLevel, day.key, periodIndex);
+                                                    return (
+                                                        <TableCell key={classLevel}>
+                                                            {subject ? (
+                                                                <div>
+                                                                    <p className="font-semibold text-primary">{subject.subjectName}</p>
+                                                                    <p className="text-xs text-muted-foreground">{teacher?.name || '...'}</p>
+                                                                </div>
+                                                            ) : (
+                                                                <div className="h-10"></div>
+                                                            )}
+                                                        </TableCell>
+                                                    );
+                                                })}
+                                            </TableRow>
+                                        ))
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
                     )}
                 </CardContent>
             </Card>
         </>
     );
-
-    function ScheduleTable() {
-        const classLevelsToRender = selectedClass === 'semua' ? [...Array(7).keys()] : [parseInt(selectedClass, 10)];
-    
-        if (isNaN(classLevelsToRender[0])) {
-            return (
-                <div className="flex h-64 items-center justify-center rounded-lg border-2 border-dashed">
-                    <div className="text-center text-muted-foreground">Kelas tidak valid.</div>
-                </div>
-            );
-        }
-    
-        return (
-            <div id="schedule-table-container" className="space-y-6">
-                {classLevelsToRender.map(classLevel => (
-                    <Card key={classLevel}>
-                        <CardHeader>
-                            <CardTitle>Kelas {classLevel}</CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-0">
-                            <div className="overflow-x-auto">
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead className="w-[120px]">Jam</TableHead>
-                                            {days.map(day => (
-                                                <TableHead key={day.key} className="min-w-[150px] whitespace-nowrap">{day.name}</TableHead>
-                                            ))}
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {periods.map((period, periodIndex) => {
-                                            return (
-                                                <TableRow key={periodIndex}>
-                                                    <TableCell className="font-medium align-top whitespace-nowrap">
-                                                        <div className="flex flex-col">
-                                                            <span>{period.name}</span>
-                                                            <span className="text-xs text-muted-foreground">{period.startTime} - {period.endTime}</span>
-                                                        </div>
-                                                    </TableCell>
-                                                    {days.map(day => {
-                                                        const schedule = schedulesMap.get(classLevel);
-                                                        const entry = schedule?.[day.key]?.[periodIndex];
-                                                        const subject = curriculumData?.find(c => c.id === entry?.subjectId);
-                                                        const teacher = teachers?.find(t => t.id === entry?.teacherId);
-    
-                                                        return (
-                                                            <TableCell key={day.key}>
-                                                                {subject ? (
-                                                                    <div>
-                                                                        <p className="font-semibold text-primary whitespace-nowrap">{subject.subjectName}</p>
-                                                                        <p className="text-xs text-muted-foreground whitespace-nowrap">{teacher?.name || '...'}</p>
-                                                                    </div>
-                                                                ) : (
-                                                                    <div className="h-10"></div>
-                                                                )}
-                                                            </TableCell>
-                                                        )
-                                                    })}
-                                                </TableRow>
-                                            )
-                                        })}
-                                    </TableBody>
-                                </Table>
-                            </div>
-                        </CardContent>
-                    </Card>
-                ))}
-            </div>
-        );
-    }
 }
-
-    
