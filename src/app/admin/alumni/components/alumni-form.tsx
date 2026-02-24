@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect } from "react";
@@ -29,7 +30,7 @@ const formSchema = z.object({
   nis: z.string().min(1, "NIS harus diisi"),
   name: z.string().min(1, "Nama harus diisi"),
   tahunLulus: z.string().min(1, "Tahun lulus harus diisi"),
-  address: z.string().min(1, "Alamat harus diisi"),
+  address: z.string().optional(),
   noWa: z.string().optional(),
 });
 
@@ -126,9 +127,9 @@ export function AlumniForm({ isOpen, setIsOpen, alumnus, onSave }: AlumniFormPro
                   name="address"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Alamat</FormLabel>
+                      <FormLabel>Alamat (Opsional)</FormLabel>
                       <FormControl>
-                        <Textarea {...field} />
+                        <Textarea {...field} value={field.value ?? ""} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

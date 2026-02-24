@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useRef } from "react";
@@ -137,7 +138,7 @@ export default function AlumniPage() {
         nis: 'NIS',
         name: 'Nama',
         tahunLulus: 'Tahun Lulus',
-        address: 'Alamat',
+        address: 'Alamat (Opsional)',
         noWa: 'No. WA (Opsional)',
     };
 
@@ -219,7 +220,7 @@ export default function AlumniPage() {
             'Nama': item.name,
             'NIS': item.nis,
             'Tahun Lulus': item.tahunLulus,
-            'Alamat': item.address,
+            'Alamat': item.address || '-',
             'No. WA': item.noWa || '-',
         }));
         const worksheet = XLSX.utils.json_to_sheet(dataToExport);
@@ -239,7 +240,7 @@ export default function AlumniPage() {
                 item.name,
                 item.nis,
                 item.tahunLulus,
-                item.address,
+                item.address || '-',
                 item.noWa || '-',
             ]),
             startY: 20,
@@ -265,7 +266,7 @@ export default function AlumniPage() {
                 <td>${item.name}</td>
                 <td>${item.nis}</td>
                 <td>${item.tahunLulus}</td>
-                <td>${item.address}</td>
+                <td>${item.address || '-'}</td>
                 <td>${item.noWa || '-'}</td>
             </tr>
         `).join('');
@@ -421,7 +422,7 @@ export default function AlumniPage() {
                                     <TableCell className="font-medium">{item.name}</TableCell>
                                     <TableCell>{item.nis}</TableCell>
                                     <TableCell>{item.tahunLulus}</TableCell>
-                                    <TableCell>{item.address}</TableCell>
+                                    <TableCell>{item.address || '-'}</TableCell>
                                     <TableCell>{item.noWa || '-'}</TableCell>
                                     <TableCell className="text-right">
                                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(item)}>

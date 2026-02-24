@@ -266,8 +266,7 @@
         "id",
         "subjectCode",
         "subjectName",
-        "classLevel",
-        "bookName"
+        "classLevel"
       ]
     },
     "Alumni": {

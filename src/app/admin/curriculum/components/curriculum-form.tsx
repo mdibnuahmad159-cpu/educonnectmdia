@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect } from "react";
@@ -35,7 +36,7 @@ const formSchema = z.object({
   subjectCode: z.string().min(1, "Kode Mapel harus diisi"),
   subjectName: z.string().min(1, "Nama Mapel harus diisi"),
   classLevel: z.coerce.number({invalid_type_error: "Kelas harus dipilih"}).min(0, "Kelas harus dipilih"),
-  bookName: z.string().min(1, "Nama Kitab harus diisi"),
+  bookName: z.string().optional(),
 });
 
 type CurriculumFormData = z.infer<typeof formSchema>;
@@ -104,7 +105,7 @@ export function CurriculumForm({ isOpen, setIsOpen, curriculum, onSave }: Curric
                   name="subjectName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Mapel</FormLabel>
+                      <FormLabel>Nama Mapel</FormLabel>
                       <FormControl>
                         <Input {...field} />
                       </FormControl>
@@ -139,9 +140,9 @@ export function CurriculumForm({ isOpen, setIsOpen, curriculum, onSave }: Curric
                   name="bookName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Kitab</FormLabel>
+                      <FormLabel>Nama Kitab (Opsional)</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <Input {...field} value={field.value ?? ""} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

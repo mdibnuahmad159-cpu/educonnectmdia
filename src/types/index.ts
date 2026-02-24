@@ -38,7 +38,7 @@ export type Alumni = {
   nis: string;
   name: string;
   tahunLulus: string;
-  address: string;
+  address?: string;
   noWa?: string;
   reportUrl?: string;
 };
@@ -63,5 +63,6 @@ export type Curriculum = {
   subjectCode: string;
   subjectName: string;
   classLevel: number;
-  bookName: string;
+  bookName?: string;
 };
+

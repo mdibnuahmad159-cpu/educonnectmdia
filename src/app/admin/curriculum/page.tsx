@@ -120,9 +120,9 @@ export default function CurriculumPage() {
     
     const curriculumColumns = {
         subjectCode: 'Kode Mapel',
-        subjectName: 'Mapel',
+        subjectName: 'Nama Mapel',
         classLevel: 'Kelas (0-6)',
-        bookName: 'Kitab',
+        bookName: 'Nama Kitab (Opsional)',
     };
 
     const handleDownloadCurriculumTemplate = () => {
@@ -167,7 +167,7 @@ export default function CurriculumPage() {
                         }
                     }
 
-                    if (!curriculumData.subjectCode || !curriculumData.subjectName || curriculumData.classLevel === undefined || !curriculumData.bookName) {
+                    if (!curriculumData.subjectCode || !curriculumData.subjectName || curriculumData.classLevel === undefined) {
                         errorCount++;
                         console.error("Skipping curriculum item due to missing required fields:", curriculumData);
                         continue;
@@ -202,9 +202,9 @@ export default function CurriculumPage() {
       const dataToExport = filteredData.map((item, index) => ({
           'No.': index + 1,
           'Kode Mapel': item.subjectCode,
-          'Mapel': item.subjectName,
+          'Nama Mapel': item.subjectName,
           'Kelas': `Kelas ${item.classLevel}`,
-          'Kitab': item.bookName,
+          'Nama Kitab': item.bookName || '-',
       }));
       const worksheet = XLSX.utils.json_to_sheet(dataToExport);
       const workbook = XLSX.utils.book_new();
@@ -217,13 +217,13 @@ export default function CurriculumPage() {
         const doc = new jsPDF();
         doc.text('Data Kurikulum', 14, 16);
         (doc as any).autoTable({
-            head: [['No', 'Kode Mapel', 'Mapel', 'Kelas', 'Kitab']],
+            head: [['No', 'Kode Mapel', 'Nama Mapel', 'Kelas', 'Nama Kitab']],
             body: filteredData.map((item, index) => [
                 index + 1,
                 item.subjectCode,
                 item.subjectName,
                 `Kelas ${item.classLevel}`,
-                item.bookName
+                item.bookName || '-'
             ]),
             startY: 20,
         });
@@ -248,7 +248,7 @@ export default function CurriculumPage() {
                 <td>${item.subjectCode}</td>
                 <td>${item.subjectName}</td>
                 <td>Kelas ${item.classLevel}</td>
-                <td>${item.bookName}</td>
+                <td>${item.bookName || '-'}</td>
             </tr>
         `).join('');
 
@@ -270,9 +270,9 @@ export default function CurriculumPage() {
                             <tr>
                                 <th>No.</th>
                                 <th>Kode Mapel</th>
-                                <th>Mapel</th>
+                                <th>Nama Mapel</th>
                                 <th>Kelas</th>
-                                <th>Kitab</th>
+                                <th>Nama Kitab</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -372,9 +372,9 @@ export default function CurriculumPage() {
                             <TableRow>
                                 <TableHead className="w-[40px]">No.</TableHead>
                                 <TableHead>Kode Mapel</TableHead>
-                                <TableHead>Mapel</TableHead>
+                                <TableHead>Nama Mapel</TableHead>
                                 <TableHead>Kelas</TableHead>
-                                <TableHead>Kitab</TableHead>
+                                <TableHead>Nama Kitab</TableHead>
                                 <TableHead className="text-right w-[80px]">Aksi</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -395,7 +395,7 @@ export default function CurriculumPage() {
                                     <TableCell>{item.subjectCode}</TableCell>
                                     <TableCell className="font-medium">{item.subjectName}</TableCell>
                                     <TableCell>Kelas {item.classLevel}</TableCell>
-                                    <TableCell>{item.bookName}</TableCell>
+                                    <TableCell>{item.bookName || '-'}</TableCell>
                                     <TableCell className="text-right">
                                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(item)}>
                                             <Edit className="h-4 w-4" />
