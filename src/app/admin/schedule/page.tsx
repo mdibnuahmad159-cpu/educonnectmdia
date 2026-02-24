@@ -94,7 +94,7 @@ export default function SchedulePage() {
     const { data: scheduleData, isLoading: loadingSchedule } = useDoc<Schedule>(scheduleRef);
 
     useEffect(() => {
-        if (scheduleData) {
+        if (scheduleData && scheduleData.saturday.length === periods.length) {
             // Take times from the first day as the source of truth
             const newPeriods = periods.map((p, index) => ({
                 ...p,
@@ -103,7 +103,7 @@ export default function SchedulePage() {
             }));
             setPeriods(newPeriods);
         } else {
-            // Reset to default if no schedule data
+            // Reset to default if no schedule data or period length mismatch
             setPeriods(initialPeriods);
         }
     }, [scheduleData]);
@@ -213,8 +213,8 @@ export default function SchedulePage() {
                 </CardHeader>
                 <CardContent>
                     <Tabs value={scheduleType} onValueChange={(value) => setScheduleType(value as 'pelajaran' | 'ujian')}>
-                        <div className="flex justify-between items-center mb-4">
-                            <TabsList className="grid grid-cols-2 w-fit">
+                        <div className="flex flex-col gap-4 mb-4">
+                            <TabsList className="grid grid-cols-2 w-full sm:w-fit">
                                 <TabsTrigger value="pelajaran">Jadwal Pelajaran</TabsTrigger>
                                 <TabsTrigger value="ujian">Jadwal Ujian</TabsTrigger>
                             </TabsList>
