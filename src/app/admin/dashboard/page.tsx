@@ -24,7 +24,9 @@ import {
   CreditCard,
   PiggyBank,
   History,
-  AlertTriangle
+  AlertTriangle,
+  ClipboardList,
+  Megaphone
 } from "lucide-react";
 import type { Teacher, Student } from "@/types";
 
@@ -106,13 +108,15 @@ export default function DashboardPage() {
         </TabsList>
         <TabsContent value="akademik">
             <Card>
-                <CardContent className="grid grid-cols-3 gap-2 p-3">
+                <CardContent className="grid grid-cols-3 sm:grid-cols-4 gap-2 p-3">
                     <NavLink href="/admin/teachers" icon={Users} label="Data Guru" />
                     <NavLink href="/admin/curriculum" icon={BookCopy} label="Kurikulum" />
                     <NavLink href="/admin/schedule" icon={Calendar} label="Jadwal" />
                     <NavLink href="/admin/letters" icon={Mail} label="Surat" />
                     <NavLink href="/admin/grades" icon={ClipboardCheck} label="Nilai" />
                     <NavLink href="/admin/reports" icon={FileText} label="Rapor" />
+                    <NavLink href="/admin/attendance" icon={ClipboardList} label="Absensi" />
+                    <NavLink href="/admin/announcements" icon={Megaphone} label="Pengumuman" />
                 </CardContent>
             </Card>
         </TabsContent>
