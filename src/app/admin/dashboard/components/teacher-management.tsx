@@ -22,6 +22,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -50,6 +60,8 @@ export function TeacherManagement() {
   const { toast } = useToast();
   const auth = useAuth() as Auth;
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [teacherToDelete, setTeacherToDelete] = useState<string | null>(null);
 
   const jabatanOrder = useMemo(() => [
     'Pengasuh',
@@ -94,9 +106,16 @@ export function TeacherManagement() {
   };
 
   const handleDelete = (id: string) => {
-    if (!firestore) return;
-    deleteTeacher(firestore, id);
-    toast({ title: "Guru Dihapus", description: "Data guru berhasil dihapus." });
+    setTeacherToDelete(id);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (!firestore || !teacherToDelete) return;
+    deleteTeacher(firestore, teacherToDelete);
+    toast({ title: "Guru Dihapus", description: "Data guru berhasil dihapus dari daftar." });
+    setIsDeleteDialogOpen(false);
+    setTeacherToDelete(null);
   };
   
   const handleSave = async (teacherData: any) => {
@@ -124,7 +143,11 @@ export function TeacherManagement() {
         setIsFormOpen(false);
         setSelectedTeacher(null);
       } catch (error: any) {
-        toast({ variant: "destructive", title: "Gagal Menyimpan", description: error.message });
+        let description = error.message;
+        if (error.code === 'auth/email-already-in-use') {
+            description = 'Email ini sudah terdaftar. Untuk mengaktifkan kembali guru yang telah dihapus, hapus akun mereka dari Firebase Console > Authentication terlebih dahulu.';
+        }
+        toast({ variant: "destructive", title: "Gagal Menyimpan", description: description });
       }
     }
   };
@@ -465,6 +488,23 @@ export function TeacherManagement() {
         onEdit={handleEdit}
         onDelete={handleDelete}
       />
+       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Anda yakin ingin menghapus guru ini?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tindakan ini akan menghapus data guru dari daftar aplikasi, namun <strong>tidak menghapus akun login (autentikasi) mereka.</strong>
+              <br/><br/>
+              Untuk dapat menambahkan kembali guru dengan email yang sama di kemudian hari, Anda harus menghapus akun mereka secara manual dari <strong>Firebase Console &gt; Authentication</strong>.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">Ya, Hapus</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
+
