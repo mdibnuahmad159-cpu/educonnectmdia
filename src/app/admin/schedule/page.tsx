@@ -297,7 +297,7 @@ export default function SchedulePage() {
                             </TableRow>
                         ) : (
                             periods.map((period, periodIndex) => (
-                                <TableRow key={period.index}>
+                                <TableRow key={periodIndex}>
                                     <TableCell className="font-medium align-top">
                                         <div className="flex flex-col">
                                             <span>{period.name}</span>
