@@ -170,7 +170,7 @@ export function LoginForm() {
                         </FormItem>
                       )}
                     />
-                    <Button type="submit" className="w-full" size="sm">
+                    <Button type="submit" className="w-full" size="xs">
                       Login sebagai Admin
                     </Button>
                   </form>
@@ -206,7 +206,7 @@ export function LoginForm() {
                       </FormItem>
                     )}
                   />
-                  <Button type="submit" className="w-full" size="sm">
+                  <Button type="submit" className="w-full" size="xs">
                     Login sebagai Guru
                   </Button>
                 </form>
@@ -242,7 +242,7 @@ export function LoginForm() {
                       </FormItem>
                     )}
                   />
-                  <Button type="submit" className="w-full" size="sm">
+                  <Button type="submit" className="w-full" size="xs">
                     Login sebagai Wali Murid
                   </Button>
                 </form>

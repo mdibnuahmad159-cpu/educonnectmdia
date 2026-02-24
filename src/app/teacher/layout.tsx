@@ -40,14 +40,14 @@ export default function TeacherLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      <header className="sticky top-0 z-10 flex h-12 items-center justify-between gap-4 border-b bg-card px-3 sm:px-4">
+      <header className="sticky top-0 z-10 flex h-11 items-center justify-between gap-4 border-b bg-card px-2 sm:px-3">
         <div className="flex items-center gap-2 text-primary">
             {profile?.logoMadrasahUrl ? (
-                <Image src={profile.logoMadrasahUrl} alt="Logo" width={24} height={24} className="h-6 w-6 object-contain"/>
+                <Image src={profile.logoMadrasahUrl} alt="Logo" width={20} height={20} className="h-5 w-5 object-contain"/>
             ) : (
-                <BookOpenCheck className="h-5 w-5" />
+                <BookOpenCheck className="h-4 w-4" />
             )}
-            <h1 className="text-base font-semibold font-headline">
+            <h1 className="text-sm font-semibold font-headline">
                 {profile?.namaMadrasah || 'EduConnect'}
             </h1>
         </div>

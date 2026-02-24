@@ -257,9 +257,9 @@ export default function CurriculumPage() {
                 <head>
                     <title>Cetak Data Kurikulum</title>
                     <style>
-                        body { font-family: sans-serif; }
+                        body { font-family: sans-serif; font-size: 10px; }
                         table { width: 100%; border-collapse: collapse; }
-                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        th, td { border: 1px solid #ddd; padding: 4px; text-align: left; }
                         th { background-color: #f2f2f2; }
                     </style>
                 </head>
@@ -302,7 +302,7 @@ export default function CurriculumPage() {
                     <div className="flex flex-col gap-2 mb-4">
                         <div className="flex">
                             <Select value={filterClass} onValueChange={setFilterClass}>
-                                <SelectTrigger className="w-full sm:w-[180px] h-8 text-xs">
+                                <SelectTrigger className="w-full sm:w-[180px]">
                                     <SelectValue placeholder="Filter per kelas" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -317,17 +317,17 @@ export default function CurriculumPage() {
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button size="xs" variant="outline" className="gap-1">
-                                    <FileUp className="h-4 w-4" />
+                                    <FileUp className="h-3 w-3" />
                                     Impor
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuItem onClick={handleDownloadCurriculumTemplate}>
-                                    <Download className="mr-2 h-4 w-4" />
+                                    <Download className="mr-2 h-3 w-3" />
                                     Unduh Template
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
-                                    <Upload className="mr-2 h-4 w-4" />
+                                    <Upload className="mr-2 h-3 w-3" />
                                     Unggah Excel
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
@@ -342,40 +342,40 @@ export default function CurriculumPage() {
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button size="xs" variant="outline" className="gap-1">
-                                    <FileDown className="h-4 w-4" />
+                                    <FileDown className="h-3 w-3" />
                                     Ekspor
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuItem onClick={handleExportExcel}>
-                                    <FileSpreadsheet className="mr-2 h-4 w-4" />
-                                    Ekspor ke Excel
+                                    <FileSpreadsheet className="mr-2 h-3 w-3" />
+                                    Excel
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={handleExportPdf}>
-                                    <FileText className="mr-2 h-4 w-4" />
-                                    Ekspor ke PDF
+                                    <FileText className="mr-2 h-3 w-3" />
+                                    PDF
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
                             <Button size="xs" variant="outline" className="gap-1" onClick={handlePrintTable}>
-                                <Printer className="h-4 w-4" />
-                                Cetak Data
+                                <Printer className="h-3 w-3" />
+                                Cetak
                             </Button>
                             <Button size="xs" className="gap-1" onClick={handleAdd}>
-                                <PlusCircle className="h-4 w-4" />
-                                Tambah Data
+                                <PlusCircle className="h-3 w-3" />
+                                Tambah
                             </Button>
                         </div>
                     </div>
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead className="w-[50px]">No.</TableHead>
+                                <TableHead className="w-[40px]">No.</TableHead>
                                 <TableHead>Kode Mapel</TableHead>
                                 <TableHead>Mapel</TableHead>
                                 <TableHead>Kelas</TableHead>
                                 <TableHead>Kitab</TableHead>
-                                <TableHead className="text-right w-[100px]">Aksi</TableHead>
+                                <TableHead className="text-right w-[80px]">Aksi</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -397,10 +397,10 @@ export default function CurriculumPage() {
                                     <TableCell>Kelas {item.classLevel}</TableCell>
                                     <TableCell>{item.bookName}</TableCell>
                                     <TableCell className="text-right">
-                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(item)}>
+                                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(item)}>
                                             <Edit className="h-4 w-4" />
                                         </Button>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(item.id)}>
+                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(item.id)}>
                                             <Trash2 className="h-4 w-4" />
                                         </Button>
                                     </TableCell>

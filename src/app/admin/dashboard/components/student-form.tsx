@@ -123,7 +123,7 @@ export function StudentForm({ isOpen, setIsOpen, student, onSave }: StudentFormP
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>{student ? "Edit Siswa" : "Tambah Siswa"}</DialogTitle>
           <DialogDescription>
@@ -132,9 +132,9 @@ export function StudentForm({ isOpen, setIsOpen, student, onSave }: StudentFormP
         </DialogHeader>
         {student && (
           <div className="flex justify-center pt-2">
-            <Avatar className="h-20 w-20">
+            <Avatar className="h-16 w-16">
               <AvatarImage src={form.watch('avatarUrl') || student.avatarUrl || undefined} alt={student.name} className="object-cover" />
-              <AvatarFallback className="text-2xl">{student.name.charAt(0)}</AvatarFallback>
+              <AvatarFallback className="text-xl">{student.name.charAt(0)}</AvatarFallback>
             </Avatar>
           </div>
         )}
@@ -413,7 +413,7 @@ export function StudentForm({ isOpen, setIsOpen, student, onSave }: StudentFormP
               </div>
             </ScrollArea>
             <DialogFooter className="pt-4">
-              <Button type="submit" size="sm">Simpan</Button>
+              <Button type="submit" size="xs">Simpan</Button>
             </DialogFooter>
           </form>
         </Form>

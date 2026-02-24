@@ -73,18 +73,18 @@ export default function ParentDashboardPage() {
         <Card>
             <CardHeader>
                 <div className="flex items-center gap-4">
-                    <Avatar className="h-20 w-20">
+                    <Avatar className="h-16 w-16">
                         <AvatarImage src={student.avatarUrl} alt={student.name} />
-                        <AvatarFallback className="text-3xl">{student.name.charAt(0)}</AvatarFallback>
+                        <AvatarFallback className="text-2xl">{student.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div>
-                        <CardTitle className="text-2xl">{student.name}</CardTitle>
+                        <CardTitle className="text-xl">{student.name}</CardTitle>
                         <CardDescription>NIS: {student.nis}</CardDescription>
                     </div>
                 </div>
             </CardHeader>
             <CardContent>
-                <div className="grid gap-2 text-sm">
+                <div className="grid gap-2 text-xs">
                     <div className="grid grid-cols-3 items-center">
                         <span className="text-muted-foreground">Jenis Kelamin</span>
                         <span className="col-span-2">{student.gender}</span>

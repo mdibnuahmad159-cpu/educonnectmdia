@@ -234,10 +234,10 @@ export default function ClassManagementPage() {
 
     const tableRows = filteredStudents.map((student, index) => `
       <tr style="border-bottom: 1px solid #ddd;">
-        <td style="padding: 8px; text-align: center;">${index + 1}</td>
-        <td style="padding: 8px;">${student.name}</td>
-        <td style="padding: 8px;">${student.nis}</td>
-        <td style="padding: 8px;">${student.kelas !== undefined ? `Kelas ${student.kelas}` : 'Belum diatur'}</td>
+        <td style="padding: 4px; text-align: center;">${index + 1}</td>
+        <td style="padding: 4px;">${student.name}</td>
+        <td style="padding: 4px;">${student.nis}</td>
+        <td style="padding: 4px;">${student.kelas !== undefined ? `Kelas ${student.kelas}` : 'Belum diatur'}</td>
       </tr>
     `).join('');
 
@@ -246,11 +246,11 @@ export default function ClassManagementPage() {
         <head>
           <title>Cetak Data Manajemen Kelas</title>
           <style>
-            body { font-family: sans-serif; }
+            body { font-family: sans-serif; font-size: 10px; }
             table { width: 100%; border-collapse: collapse; }
-            th, td { border: 1px solid #ccc; text-align: left; padding: 8px; }
+            th, td { border: 1px solid #ccc; text-align: left; padding: 4px; }
             th { background-color: #f2f2f2; }
-            h1 { font-size: 18px; }
+            h1 { font-size: 16px; }
             @media print {
               @page { size: A4; margin: 20mm; }
               body { margin: 0; }
@@ -296,11 +296,11 @@ export default function ClassManagementPage() {
             Kelola kenaikan, penurunan, dan perpindahan kelas siswa.
           </CardDescription>
         </CardHeader>
-        <CardContent className="pt-4">
+        <CardContent>
           <div className="flex flex-col gap-2 mb-4">
               <div className="flex">
                   <Select value={filterClass} onValueChange={setFilterClass}>
-                      <SelectTrigger className="w-full sm:w-[180px] h-8 text-xs">
+                      <SelectTrigger className="w-full sm:w-[180px]">
                           <SelectValue placeholder="Filter per kelas" />
                       </SelectTrigger>
                       <SelectContent>
@@ -315,40 +315,40 @@ export default function ClassManagementPage() {
               <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                       <Button size="xs" variant="outline" onClick={handlePromote} disabled={selectedStudents.length === 0} className="gap-1">
-                      <ChevronsUp /> Naik Kelas
+                      <ChevronsUp className="h-3 w-3" /> Naik Kelas
                       </Button>
                       <Button size="xs" variant="outline" onClick={handleDemote} disabled={selectedStudents.length === 0} className="gap-1">
-                      <ChevronsDown /> Turun Kelas
+                      <ChevronsDown className="h-3 w-3" /> Turun Kelas
                       </Button>
                       <Button size="xs" variant="outline" onClick={() => setIsMoveDialogOpen(true)} disabled={selectedStudents.length === 0} className="gap-1">
-                      <ArrowRightLeft /> Pindah Kelas
+                      <ArrowRightLeft className="h-3 w-3" /> Pindah Kelas
                       </Button>
                       <Button size="xs" variant="destructive" onClick={handleGraduate} disabled={selectedStudents.length === 0} className="gap-1">
-                        <GraduationCap /> Luluskan
+                        <GraduationCap className="h-3 w-3" /> Luluskan
                       </Button>
                   </div>
                   <div className="flex items-center gap-2">
                       <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                               <Button size="xs" variant="outline" className="gap-1">
-                              <FileDown className="h-4 w-4" />
+                              <FileDown className="h-3 w-3" />
                               Ekspor
                               </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                               <DropdownMenuItem onClick={handleExportExcel}>
-                              <FileSpreadsheet className="mr-2 h-4 w-4" />
-                              Ekspor ke Excel
+                              <FileSpreadsheet className="mr-2 h-3 w-3" />
+                              Excel
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={handleExportPdf}>
-                              <FileText className="mr-2 h-4 w-4" />
-                              Ekspor ke PDF
+                              <FileText className="mr-2 h-3 w-3" />
+                              PDF
                               </DropdownMenuItem>
                           </DropdownMenuContent>
                       </DropdownMenu>
                       <Button size="xs" variant="outline" className="gap-1" onClick={handlePrintTable}>
-                          <Printer className="h-4 w-4" />
-                          Cetak Data
+                          <Printer className="h-3 w-3" />
+                          Cetak
                       </Button>
                   </div>
               </div>

@@ -133,9 +133,9 @@ export default function ReportsPage() {
                 <head>
                     <title>Cetak Data Rapor Siswa</title>
                     <style>
-                        body { font-family: sans-serif; }
+                        body { font-family: sans-serif; font-size: 10px; }
                         table { width: 100%; border-collapse: collapse; }
-                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        th, td { border: 1px solid #ddd; padding: 4px; text-align: left; }
                         th { background-color: #f2f2f2; }
                     </style>
                 </head>
@@ -179,41 +179,41 @@ export default function ReportsPage() {
                             placeholder="Cari berdasarkan nama atau NIS..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full sm:max-w-xs h-8 text-xs"
+                            className="w-full sm:max-w-xs"
                         />
                         <div className="flex items-center gap-2">
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button size="xs" variant="outline" className="gap-1">
-                                    <FileDown className="h-4 w-4" />
+                                    <FileDown className="h-3 w-3" />
                                     Ekspor
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuItem onClick={handleExportExcel}>
-                                    <FileSpreadsheet className="mr-2 h-4 w-4" />
-                                    Ekspor ke Excel
+                                    <FileSpreadsheet className="mr-2 h-3 w-3" />
+                                    Excel
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={handleExportPdf}>
-                                    <FileText className="mr-2 h-4 w-4" />
-                                    Ekspor ke PDF
+                                    <FileText className="mr-2 h-3 w-3" />
+                                    PDF
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
                             <Button size="xs" variant="outline" className="gap-1" onClick={handlePrintTable}>
-                                <Printer className="h-4 w-4" />
-                                Cetak Data
+                                <Printer className="h-3 w-3" />
+                                Cetak
                             </Button>
                         </div>
                     </div>
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead className="w-[50px]">No.</TableHead>
+                                <TableHead className="w-[40px]">No.</TableHead>
                                 <TableHead>Nama</TableHead>
                                 <TableHead>NIS</TableHead>
                                 <TableHead>Link Rapor</TableHead>
-                                <TableHead className="text-right w-[100px]">Aksi</TableHead>
+                                <TableHead className="text-right w-[80px]">Aksi</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -234,18 +234,18 @@ export default function ReportsPage() {
                                     <TableCell>{student.nis}</TableCell>
                                     <TableCell>
                                         {student.reportUrl ? (
-                                            <a href={student.reportUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80 text-xs flex items-center gap-1">
+                                            <a href={student.reportUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80 flex items-center gap-1">
                                                 <LinkIcon className="h-3 w-3" />
                                                 Buka Link
                                             </a>
                                         ) : (
-                                            <span className="text-muted-foreground text-xs">Belum diatur</span>
+                                            <span className="text-muted-foreground">Belum diatur</span>
                                         )}
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <Button variant="outline" size="xs" onClick={() => handleEditLink(student)}>
                                             <Edit className="mr-1 h-3 w-3" />
-                                            Edit Link
+                                            Edit
                                         </Button>
                                     </TableCell>
                                 </TableRow>

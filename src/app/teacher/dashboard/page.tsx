@@ -65,18 +65,18 @@ export default function TeacherDashboardPage() {
         <Card>
             <CardHeader>
                 <div className="flex items-center gap-4">
-                    <Avatar className="h-20 w-20">
+                    <Avatar className="h-16 w-16">
                         <AvatarImage src={teacher.avatarUrl} alt={teacher.name} />
-                        <AvatarFallback className="text-3xl">{teacher.name.charAt(0)}</AvatarFallback>
+                        <AvatarFallback className="text-2xl">{teacher.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div>
-                        <CardTitle className="text-2xl">{teacher.name}</CardTitle>
+                        <CardTitle className="text-xl">{teacher.name}</CardTitle>
                         <CardDescription>{teacher.jabatan || 'Guru'}</CardDescription>
                     </div>
                 </div>
             </CardHeader>
             <CardContent>
-                <div className="grid gap-2 text-sm">
+                <div className="grid gap-2 text-xs">
                     <div className="grid grid-cols-3 items-center">
                         <span className="text-muted-foreground">Email</span>
                         <span className="col-span-2">{teacher.email}</span>

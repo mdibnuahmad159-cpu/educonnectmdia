@@ -138,7 +138,7 @@ export function TeacherForm({ isOpen, setIsOpen, teacher, onSave }: TeacherFormP
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>{teacher ? "Edit Guru" : "Tambah Guru"}</DialogTitle>
           <DialogDescription>
@@ -147,9 +147,9 @@ export function TeacherForm({ isOpen, setIsOpen, teacher, onSave }: TeacherFormP
         </DialogHeader>
         {teacher && (
           <div className="flex justify-center pt-2">
-            <Avatar className="h-20 w-20">
+            <Avatar className="h-16 w-16">
               <AvatarImage src={form.watch('avatarUrl') || teacher.avatarUrl || undefined} alt={teacher.name} />
-              <AvatarFallback className="text-2xl">{teacher.name.charAt(0)}</AvatarFallback>
+              <AvatarFallback className="text-xl">{teacher.name.charAt(0)}</AvatarFallback>
             </Avatar>
           </div>
         )}
@@ -321,7 +321,7 @@ export function TeacherForm({ isOpen, setIsOpen, teacher, onSave }: TeacherFormP
               </div>
             </ScrollArea>
             <DialogFooter className="pt-4">
-              <Button type="submit" size="sm">Simpan</Button>
+              <Button type="submit" size="xs">Simpan</Button>
             </DialogFooter>
           </form>
         </Form>

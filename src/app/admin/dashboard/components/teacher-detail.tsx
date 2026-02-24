@@ -138,8 +138,8 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
 
     const tableRows = data.map(item => `
         <tr style="border-bottom: 1px solid #eee;">
-            <td style="padding: 10px; font-weight: 600; width: 150px; vertical-align: top;">${item.label}</td>
-            <td style="padding: 10px; vertical-align: top;">${item.value}</td>
+            <td style="padding: 8px; font-weight: 600; width: 120px; vertical-align: top;">${item.label}</td>
+            <td style="padding: 8px; vertical-align: top;">${item.value}</td>
         </tr>
     `).join('');
 
@@ -152,28 +152,28 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
                 font-family: "PT Sans", sans-serif; 
                 margin: 0;
                 color: #333;
+                font-size: 12px;
             }
             .container {
-                padding: 30px;
+                padding: 20px;
             }
             h1 { 
-                font-size: 22px; 
-                margin-bottom: 20px; 
+                font-size: 18px; 
+                margin-bottom: 15px; 
                 font-weight: 700;
                 color: #111;
             }
             img.avatar { 
-                width: 120px; 
-                height: 120px;
+                width: 80px; 
+                height: 80px;
                 border-radius: 50%;
                 object-fit: cover;
-                margin-bottom: 20px; 
+                margin-bottom: 15px; 
                 border: 2px solid #eee;
             }
             table { 
                 width: 100%; 
                 border-collapse: collapse; 
-                font-size: 14px;
             }
             @media print {
               @page {
@@ -213,18 +213,18 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>Detail Guru</DialogTitle>
           <DialogDescription>Informasi lengkap data guru.</DialogDescription>
         </DialogHeader>
         <div className="flex justify-center pt-4">
-          <Avatar className="h-24 w-24">
+          <Avatar className="h-20 w-20">
             <AvatarImage src={teacher.avatarUrl || undefined} alt={teacher.name} className="object-cover" />
-            <AvatarFallback className="text-3xl">{teacher.name.charAt(0)}</AvatarFallback>
+            <AvatarFallback className="text-2xl">{teacher.name.charAt(0)}</AvatarFallback>
           </Avatar>
         </div>
-        <div className="py-4 space-y-2 text-sm">
+        <div className="py-4 space-y-2 text-xs">
           <div className="grid grid-cols-3 items-center">
             <span className="text-muted-foreground">Nama</span>
             <span className="col-span-2">{teacher.name || "-"}</span>
@@ -274,10 +274,10 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
         </div>
         <DialogFooter>
            <Button variant="outline" size="xs" onClick={handleExportPdf} className="gap-1">
-            <FileDown /> Ekspor PDF
+            <FileDown /> PDF
           </Button>
            <Button variant="outline" size="xs" onClick={handlePrint} className="gap-1">
-            <Printer /> Cetak Detail
+            <Printer /> Cetak
           </Button>
           <DialogClose asChild>
             <Button variant="outline" size="xs">Tutup</Button>

@@ -33,7 +33,7 @@ const NavLink = ({ href, icon: Icon, label }: { href: string; icon: React.Elemen
       href={href} 
       className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors text-center"
     >
-        <Icon className="h-5 w-5" />
+        <Icon className="h-4 w-4" />
         <span className="text-xs font-medium">{label}</span>
     </Link>
 );
@@ -74,7 +74,7 @@ export default function DashboardPage() {
                 <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                <div className="text-xl font-bold">
+                <div className="text-lg font-bold">
                     {loadingTeachers ? "..." : teachers?.length ?? 0}
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -88,7 +88,7 @@ export default function DashboardPage() {
                 <User className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                <div className="text-xl font-bold">
+                <div className="text-lg font-bold">
                     {loadingStudents ? "..." : students?.length ?? 0}
                 </div>
                 <p className="text-xs text-muted-foreground">

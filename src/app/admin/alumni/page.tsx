@@ -275,9 +275,9 @@ export default function AlumniPage() {
                 <head>
                     <title>Cetak Data Alumni</title>
                     <style>
-                        body { font-family: sans-serif; }
+                        body { font-family: sans-serif; font-size: 10px; }
                         table { width: 100%; border-collapse: collapse; }
-                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        th, td { border: 1px solid #ddd; padding: 4px; text-align: left; }
                         th { background-color: #f2f2f2; }
                     </style>
                 </head>
@@ -324,10 +324,10 @@ export default function AlumniPage() {
                                 placeholder="Cari berdasarkan nama atau NIS..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full sm:max-w-xs h-8 text-xs"
+                                className="w-full sm:max-w-xs"
                             />
                             <Select value={filterYear} onValueChange={setFilterYear}>
-                                <SelectTrigger className="w-full sm:w-[180px] h-8 text-xs">
+                                <SelectTrigger className="w-full sm:w-[180px]">
                                     <SelectValue placeholder="Filter per tahun" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -342,17 +342,17 @@ export default function AlumniPage() {
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button size="xs" variant="outline" className="gap-1">
-                                    <FileUp className="h-4 w-4" />
+                                    <FileUp className="h-3 w-3" />
                                     Impor
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuItem onClick={handleDownloadTemplate}>
-                                    <Download className="mr-2 h-4 w-4" />
+                                    <Download className="mr-2 h-3 w-3" />
                                     Unduh Template
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
-                                    <Upload className="mr-2 h-4 w-4" />
+                                    <Upload className="mr-2 h-3 w-3" />
                                     Unggah Excel
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
@@ -367,41 +367,41 @@ export default function AlumniPage() {
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button size="xs" variant="outline" className="gap-1">
-                                    <FileDown className="h-4 w-4" />
+                                    <FileDown className="h-3 w-3" />
                                     Ekspor
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuItem onClick={handleExportExcel}>
-                                    <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                    <FileSpreadsheet className="mr-2 h-3 w-3" />
                                     Ekspor ke Excel
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={handleExportPdf}>
-                                    <FileText className="mr-2 h-4 w-4" />
+                                    <FileText className="mr-2 h-3 w-3" />
                                     Ekspor ke PDF
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
                             <Button size="xs" variant="outline" className="gap-1" onClick={handlePrintTable}>
-                                <Printer className="h-4 w-4" />
-                                Cetak Data
+                                <Printer className="h-3 w-3" />
+                                Cetak
                             </Button>
                              <Button size="xs" className="gap-1" onClick={handleAdd}>
-                                <PlusCircle className="h-4 w-4" />
-                                Tambah Data
+                                <PlusCircle className="h-3 w-3" />
+                                Tambah
                             </Button>
                         </div>
                     </div>
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead className="w-[50px]">No.</TableHead>
+                                <TableHead className="w-[40px]">No.</TableHead>
                                 <TableHead>Nama</TableHead>
                                 <TableHead>NIS</TableHead>
                                 <TableHead>Tahun Lulus</TableHead>
                                 <TableHead>Alamat</TableHead>
                                 <TableHead>No. WA</TableHead>
-                                <TableHead className="text-right w-[100px]">Aksi</TableHead>
+                                <TableHead className="text-right w-[80px]">Aksi</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -424,10 +424,10 @@ export default function AlumniPage() {
                                     <TableCell>{item.address}</TableCell>
                                     <TableCell>{item.noWa || '-'}</TableCell>
                                     <TableCell className="text-right">
-                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(item)}>
+                                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(item)}>
                                             <Edit className="h-4 w-4" />
                                         </Button>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(item.id)}>
+                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(item.id)}>
                                             <Trash2 className="h-4 w-4" />
                                         </Button>
                                     </TableCell>
