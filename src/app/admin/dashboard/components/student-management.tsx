@@ -70,31 +70,24 @@ export function StudentManagement() {
     setIsFormOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
     if (!firestore) return;
-    try {
-        await deleteStudent(firestore, id);
-        toast({ title: "Siswa Dihapus", description: "Data siswa berhasil dihapus." });
-    } catch (error: any) {
-        toast({ variant: "destructive", title: "Gagal Menghapus", description: error.message });
-    }
+    deleteStudent(firestore, id);
+    toast({ title: "Siswa Dihapus", description: "Data siswa berhasil dihapus." });
   };
   
-  const handleSave = async (studentData: any) => {
+  const handleSave = (studentData: any) => {
     if (!firestore) return;
-    try {
-        if (selectedStudent) {
-            await updateStudent(firestore, selectedStudent.id, studentData);
-            toast({ title: "Siswa Diperbarui", description: "Data siswa berhasil diperbarui." });
-        } else {
-            await addStudent(firestore, studentData);
-            toast({ title: "Siswa Ditambahkan", description: "Data siswa baru berhasil ditambahkan." });
-        }
-        setIsFormOpen(false);
-        setSelectedStudent(null);
-    } catch (error: any) {
-        toast({ variant: "destructive", title: "Gagal Menyimpan", description: error.message });
+    
+    if (selectedStudent) {
+        updateStudent(firestore, selectedStudent.id, studentData);
+        toast({ title: "Siswa Diperbarui", description: "Data siswa berhasil diperbarui." });
+    } else {
+        addStudent(firestore, studentData);
+        toast({ title: "Siswa Ditambahkan", description: "Data siswa baru berhasil ditambahkan." });
     }
+    setIsFormOpen(false);
+    setSelectedStudent(null);
   };
 
   const studentColumns = {
@@ -154,7 +147,7 @@ export function StudentManagement() {
                                const year = date.getFullYear();
                                studentData[dataKey] = `${day}-${month}-${year}`;
                            } else {
-                               studentData[dataKey] = item[key];
+                               studentData[dataKey] = item[key] ?? '';
                            }
                       }
                   }
@@ -165,13 +158,8 @@ export function StudentManagement() {
                       continue;
                   }
 
-                  try {
-                      await addStudent(firestore, studentData as Omit<Student, 'id'>);
-                      successCount++;
-                  } catch (error) {
-                      errorCount++;
-                      console.error(`Gagal mengimpor siswa ${studentData.nis}:`, error);
-                  }
+                  addStudent(firestore, studentData as Omit<Student, 'id'>);
+                  successCount++;
               }
 
                toast({ title: "Impor Selesai", description: `${successCount} siswa berhasil diimpor. ${errorCount} gagal.` });

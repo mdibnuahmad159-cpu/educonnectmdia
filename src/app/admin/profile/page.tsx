@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useFirestore, useDoc, useMemoFirebase } from "@/firebase";
@@ -20,14 +21,10 @@ export default function ProfilePage() {
 
     const { data: profile, isLoading, error } = useDoc<SchoolProfile>(profileRef);
 
-    const handleSave = async (profileData: Partial<Omit<SchoolProfile, 'id'>>) => {
+    const handleSave = (profileData: Partial<Omit<SchoolProfile, 'id'>>) => {
         if (!firestore) return;
-        try {
-            await updateSchoolProfile(firestore, profileData);
-            toast({ title: "Profil Diperbarui", description: "Data profil madrasah berhasil disimpan." });
-        } catch (error: any) {
-            toast({ variant: "destructive", title: "Gagal Menyimpan", description: error.message });
-        }
+        updateSchoolProfile(firestore, profileData);
+        toast({ title: "Profil Diperbarui", description: "Data profil madrasah berhasil disimpan." });
     };
 
     if (isLoading) {

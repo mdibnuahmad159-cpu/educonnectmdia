@@ -105,31 +105,23 @@ export default function AlumniPage() {
         setIsDeleteDialogOpen(true);
     };
     
-    const handleSave = async (data: Omit<Alumni, 'id'>) => {
+    const handleSave = (data: Omit<Alumni, 'id'>) => {
         if (!firestore) return;
-        try {
-            if (selectedAlumnus) {
-                await updateAlumnus(firestore, selectedAlumnus.id, data);
-                toast({ title: "Data Alumni Diperbarui", description: "Data alumni berhasil diperbarui." });
-            } else {
-                await addAlumnus(firestore, data);
-                toast({ title: "Alumni Ditambahkan", description: "Data alumni baru berhasil ditambahkan." });
-            }
-            setIsFormOpen(false);
-            setSelectedAlumnus(null);
-        } catch (error: any) {
-            toast({ variant: "destructive", title: "Gagal Menyimpan", description: error.message });
+        if (selectedAlumnus) {
+            updateAlumnus(firestore, selectedAlumnus.id, data);
+            toast({ title: "Data Alumni Diperbarui", description: "Data alumni berhasil diperbarui." });
+        } else {
+            addAlumnus(firestore, data);
+            toast({ title: "Alumni Ditambahkan", description: "Data alumni baru berhasil ditambahkan." });
         }
+        setIsFormOpen(false);
+        setSelectedAlumnus(null);
     };
 
-    const confirmDelete = async () => {
+    const confirmDelete = () => {
         if (!firestore || !alumnusToDelete) return;
-        try {
-            await deleteAlumnus(firestore, alumnusToDelete);
-            toast({ title: "Data Alumni Dihapus", description: "Data berhasil dihapus." });
-        } catch (error: any) {
-            toast({ variant: "destructive", title: "Gagal Menghapus", description: error.message });
-        }
+        deleteAlumnus(firestore, alumnusToDelete);
+        toast({ title: "Data Alumni Dihapus", description: "Data berhasil dihapus." });
         setIsDeleteDialogOpen(false);
         setAlumnusToDelete(null);
     };
@@ -180,7 +172,7 @@ export default function AlumniPage() {
                         const columnIndex = columnValues.indexOf(key);
                         if (columnIndex > -1) {
                              const dataKey = columnKeys[columnIndex];
-                             alumniData[dataKey] = item[key];
+                             alumniData[dataKey] = item[key] ?? '';
                         }
                     }
 
@@ -190,13 +182,8 @@ export default function AlumniPage() {
                         continue;
                     }
 
-                    try {
-                        await addAlumnus(firestore, alumniData as Omit<Alumni, 'id'>);
-                        successCount++;
-                    } catch (error) {
-                        errorCount++;
-                        console.error(`Gagal mengimpor alumni ${alumniData.nis}:`, error);
-                    }
+                    addAlumnus(firestore, alumniData as Omit<Alumni, 'id'>);
+                    successCount++;
                 }
 
                  toast({ title: "Impor Selesai", description: `${successCount} item berhasil diimpor. ${errorCount} gagal.` });

@@ -93,24 +93,24 @@ export function TeacherManagement() {
     setIsDetailOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
     if (!firestore) return;
-    try {
-      await deleteTeacher(firestore, id);
-      toast({ title: "Guru Dihapus", description: "Data guru berhasil dihapus." });
-    } catch (error: any) {
-      toast({ variant: "destructive", title: "Gagal Menghapus", description: error.message });
-    }
+    deleteTeacher(firestore, id);
+    toast({ title: "Guru Dihapus", description: "Data guru berhasil dihapus." });
   };
   
   const handleSave = async (teacherData: any) => {
     if (!auth || !firestore) return;
-    try {
-      if (selectedTeacher) {
-        const { id, ...dataToUpdate } = teacherData;
-        await updateTeacher(firestore, selectedTeacher.id, dataToUpdate);
-        toast({ title: "Guru Diperbarui", description: "Data guru berhasil diperbarui." });
-      } else {
+
+    if (selectedTeacher) {
+      const { id, ...dataToUpdate } = teacherData;
+      updateTeacher(firestore, selectedTeacher.id, dataToUpdate);
+      toast({ title: "Guru Diperbarui", description: "Data guru berhasil diperbarui." });
+      setIsFormOpen(false);
+      setSelectedTeacher(null);
+    } else {
+      // Adding a new teacher is a complex operation involving auth, so it remains async
+      try {
         if (!teacherData.password) {
             toast({ variant: "destructive", title: "Gagal Menyimpan", description: "Password harus diisi untuk guru baru." });
             return;
@@ -118,11 +118,11 @@ export function TeacherManagement() {
         const { id, ...dataToAdd } = teacherData;
         await addTeacher(auth, firestore, dataToAdd);
         toast({ title: "Guru Ditambahkan", description: "Data guru baru berhasil ditambahkan." });
+        setIsFormOpen(false);
+        setSelectedTeacher(null);
+      } catch (error: any) {
+        toast({ variant: "destructive", title: "Gagal Menyimpan", description: error.message });
       }
-      setIsFormOpen(false);
-      setSelectedTeacher(null);
-    } catch (error: any) {
-      toast({ variant: "destructive", title: "Gagal Menyimpan", description: error.message });
     }
   };
 

@@ -89,33 +89,25 @@ export default function CurriculumPage() {
         setIsDeleteDialogOpen(true);
     };
 
-    const confirmDelete = async () => {
+    const confirmDelete = () => {
         if (!firestore || !curriculumToDelete) return;
-        try {
-            await deleteCurriculum(firestore, curriculumToDelete);
-            toast({ title: "Data Kurikulum Dihapus", description: "Data berhasil dihapus." });
-        } catch (error: any) {
-            toast({ variant: "destructive", title: "Gagal Menghapus", description: error.message });
-        }
+        deleteCurriculum(firestore, curriculumToDelete);
+        toast({ title: "Data Kurikulum Dihapus", description: "Data berhasil dihapus." });
         setIsDeleteDialogOpen(false);
         setCurriculumToDelete(null);
     };
 
-    const handleSave = async (data: Omit<Curriculum, 'id'>) => {
+    const handleSave = (data: Omit<Curriculum, 'id'>) => {
         if (!firestore) return;
-        try {
-            if (selectedCurriculum) {
-                await updateCurriculum(firestore, selectedCurriculum.id, data);
-                toast({ title: "Kurikulum Diperbarui", description: "Data kurikulum berhasil diperbarui." });
-            } else {
-                await addCurriculum(firestore, data);
-                toast({ title: "Kurikulum Ditambahkan", description: "Data kurikulum baru berhasil ditambahkan." });
-            }
-            setIsFormOpen(false);
-            setSelectedCurriculum(null);
-        } catch (error: any) {
-            toast({ variant: "destructive", title: "Gagal Menyimpan", description: error.message });
+        if (selectedCurriculum) {
+            updateCurriculum(firestore, selectedCurriculum.id, data);
+            toast({ title: "Kurikulum Diperbarui", description: "Data kurikulum berhasil diperbarui." });
+        } else {
+            addCurriculum(firestore, data);
+            toast({ title: "Kurikulum Ditambahkan", description: "Data kurikulum baru berhasil ditambahkan." });
         }
+        setIsFormOpen(false);
+        setSelectedCurriculum(null);
     };
     
     const curriculumColumns = {
@@ -163,7 +155,7 @@ export default function CurriculumPage() {
                         const columnIndex = columnValues.indexOf(key);
                         if (columnIndex > -1) {
                              const dataKey = columnKeys[columnIndex];
-                             curriculumData[dataKey] = item[key];
+                             curriculumData[dataKey] = item[key] ?? '';
                         }
                     }
 
@@ -173,14 +165,9 @@ export default function CurriculumPage() {
                         continue;
                     }
 
-                    try {
-                        curriculumData.classLevel = Number(curriculumData.classLevel);
-                        await addCurriculum(firestore, curriculumData as Omit<Curriculum, 'id'>);
-                        successCount++;
-                    } catch (error) {
-                        errorCount++;
-                        console.error(`Gagal mengimpor kurikulum ${curriculumData.subjectCode}:`, error);
-                    }
+                    curriculumData.classLevel = Number(curriculumData.classLevel);
+                    addCurriculum(firestore, curriculumData as Omit<Curriculum, 'id'>);
+                    successCount++;
                 }
 
                  toast({ title: "Impor Selesai", description: `${successCount} item berhasil diimpor. ${errorCount} gagal.` });

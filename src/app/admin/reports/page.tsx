@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo } from "react";
@@ -58,22 +59,14 @@ export default function ReportsPage() {
         setIsFormOpen(true);
     };
 
-    const handleSaveLink = async (studentId: string, url: string) => {
+    const handleSaveLink = (studentId: string, url: string) => {
         if (!firestore) return;
-        try {
-            await updateStudent(firestore, studentId, { reportUrl: url });
-            toast({
-                title: "Link Rapor Diperbarui",
-                description: "URL rapor siswa telah berhasil disimpan.",
-            });
-            setIsFormOpen(false);
-        } catch (error: any) {
-             toast({
-                variant: "destructive",
-                title: "Gagal Menyimpan",
-                description: error.message,
-            });
-        }
+        updateStudent(firestore, studentId, { reportUrl: url });
+        toast({
+            title: "Link Rapor Diperbarui",
+            description: "URL rapor siswa telah berhasil disimpan.",
+        });
+        setIsFormOpen(false);
     };
 
     const handleExportExcel = () => {
