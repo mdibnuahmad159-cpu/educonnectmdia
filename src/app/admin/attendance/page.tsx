@@ -8,7 +8,7 @@ import type { Teacher, TeacherAttendance } from '@/types';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { getDaysInMonth, getYear, getMonth, format, startOfMonth, endOfMonth } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
 import { id as dfnsId } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Loader2, Printer, FileSpreadsheet, FileText, FileDown, CalendarIcon } from 'lucide-react';
@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import type { DateRange } from 'react-day-picker';
 
 const getStatusColor = (status: TeacherAttendance['status']) => {
     switch (status) {
@@ -39,22 +40,26 @@ export default function AttendancePage() {
     const firestore = useFirestore();
     const { toast } = useToast();
 
-    const [selectedYear, setSelectedYear] = useState(getYear(new Date()));
-    const [selectedMonth, setSelectedMonth] = useState(getMonth(new Date()));
-    const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+    const [date, setDate] = useState<DateRange | undefined>({
+      from: startOfMonth(new Date()),
+      to: endOfMonth(new Date()),
+    });
     
-    const selectedDate = useMemo(() => new Date(selectedYear, selectedMonth), [selectedYear, selectedMonth]);
-    const daysInMonth = useMemo(() => getDaysInMonth(selectedDate), [selectedDate]);
-    const monthDays = useMemo(() => Array.from({ length: daysInMonth }, (_, i) => i + 1), [daysInMonth]);
+    const daysInRange = useMemo(() => {
+        if (date?.from && date.to) {
+            return eachDayOfInterval({ start: date.from, end: date.to });
+        }
+        return [];
+    }, [date]);
 
-    const startDate = useMemo(() => format(startOfMonth(selectedDate), 'yyyy-MM-dd'), [selectedDate]);
-    const endDate = useMemo(() => format(endOfMonth(selectedDate), 'yyyy-MM-dd'), [selectedDate]);
+    const startDate = useMemo(() => (date?.from ? format(date.from, 'yyyy-MM-dd') : undefined), [date?.from]);
+    const endDate = useMemo(() => (date?.to ? format(date.to, 'yyyy-MM-dd') : undefined), [date?.to]);
 
     const teachersCollection = useMemoFirebase(() => firestore ? collection(firestore, 'teachers') : null, [firestore]);
     const { data: teachers, loading: loadingTeachers } = useCollection<Teacher>(teachersCollection);
     
     const attendanceQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
+        if (!firestore || !startDate || !endDate) return null;
         return query(
             collection(firestore, 'teacher_attendances'),
             where('date', '>=', startDate),
@@ -67,8 +72,7 @@ export default function AttendancePage() {
         const map = new Map<string, TeacherAttendance['status']>();
         if (attendanceData) {
             attendanceData.forEach(att => {
-                const day = new Date(att.date).getUTCDate(); // Use getUTCDate to avoid timezone issues
-                map.set(`${att.teacherId}-${day}`, att.status);
+                map.set(`${att.teacherId}-${att.date}`, att.status);
             });
         }
         return map;
@@ -82,27 +86,30 @@ export default function AttendancePage() {
     const isLoading = loadingTeachers || loadingAttendance;
 
     const handleExport = (formatType: 'excel' | 'pdf') => {
-      if (!sortedTeachers) {
+      if (!sortedTeachers || !date?.from || !date?.to) {
           toast({ title: 'Tidak ada data untuk diekspor', variant: 'destructive' });
           return;
       }
-      const monthName = format(selectedDate, 'MMMM yyyy', { locale: dfnsId });
+      const rangeTitle = `${format(date.from, 'd MMM yyyy', { locale: dfnsId })} - ${format(date.to, 'd MMM yyyy', { locale: dfnsId })}`;
       const head = [
-          ['Nama Guru', ...monthDays.map(String)]
+          ['Nama Guru', ...daysInRange.map(day => format(day, 'd/M'))]
       ];
       const body = sortedTeachers.map(teacher => [
           teacher.name,
-          ...monthDays.map(day => attendanceMap.get(`${teacher.id}-${day}`) || '-')
+          ...daysInRange.map(day => {
+              const dateStr = format(day, 'yyyy-MM-dd');
+              return attendanceMap.get(`${teacher.id}-${dateStr}`) || '-';
+          })
       ]);
 
       if (formatType === 'excel') {
           const ws = XLSX.utils.aoa_to_sheet([...head, ...body]);
           const wb = XLSX.utils.book_new();
-          XLSX.utils.book_append_sheet(wb, ws, `Absensi ${monthName}`);
-          XLSX.writeFile(wb, `absensi_guru_${selectedYear}-${selectedMonth + 1}.xlsx`);
+          XLSX.utils.book_append_sheet(wb, ws, `Absensi`);
+          XLSX.writeFile(wb, `absensi_guru_${format(date.from, 'yyyyMMdd')}-${format(date.to, 'yyyyMMdd')}.xlsx`);
       } else {
           const doc = new jsPDF({ orientation: 'landscape' });
-          doc.text(`Rekap Absensi Guru - ${monthName}`, 14, 15);
+          doc.text(`Rekap Absensi Guru - ${rangeTitle}`, 14, 15);
           (doc as any).autoTable({
               head: head,
               body: body,
@@ -111,23 +118,23 @@ export default function AttendancePage() {
               styles: { fontSize: 8 },
               headStyles: { fillColor: [22, 163, 74] },
           });
-          doc.save(`absensi_guru_${selectedYear}-${selectedMonth + 1}.pdf`);
+          doc.save(`absensi_guru_${format(date.from, 'yyyyMMdd')}-${format(date.to, 'yyyyMMdd')}.pdf`);
       }
     };
     
     const handlePrint = () => {
-       if (!sortedTeachers) {
+       if (!sortedTeachers || !date?.from || !date?.to) {
             toast({ title: 'Tidak ada data untuk dicetak', variant: 'destructive' });
             return;
        }
-        const monthName = format(selectedDate, 'MMMM yyyy', { locale: dfnsId });
+        const rangeTitle = `${format(date.from, 'd MMMM yyyy', { locale: dfnsId })} - ${format(date.to, 'd MMMM yyyy', { locale: dfnsId })}`;
         const printWindow = window.open('', '_blank');
         if (!printWindow) return;
 
         let tableHtml = `
             <html>
                 <head>
-                    <title>Rekap Absensi Guru - ${monthName}</title>
+                    <title>Rekap Absensi Guru - ${rangeTitle}</title>
                     <style>
                         body { font-family: sans-serif; font-size: 10px; }
                         @page { size: A4 landscape; margin: 15mm; }
@@ -146,12 +153,12 @@ export default function AttendancePage() {
                     </style>
                 </head>
                 <body>
-                    <h1>Rekap Absensi Guru - ${monthName}</h1>
+                    <h1>Rekap Absensi Guru - ${rangeTitle}</h1>
                     <table>
                         <thead>
                             <tr>
                                 <th class="teacher-name">Nama Guru</th>
-                                ${monthDays.map(day => `<th>${day}</th>`).join('')}
+                                ${daysInRange.map(day => `<th>${format(day, 'd/M')}</th>`).join('')}
                             </tr>
                         </thead>
                         <tbody>
@@ -159,8 +166,9 @@ export default function AttendancePage() {
         sortedTeachers.forEach(teacher => {
             tableHtml += '<tr>';
             tableHtml += `<td class="teacher-name">${teacher.name}</td>`;
-            monthDays.forEach(day => {
-                const status = attendanceMap.get(`${teacher.id}-${day}`) || '';
+            daysInRange.forEach(day => {
+                const dateStr = format(day, 'yyyy-MM-dd');
+                const status = attendanceMap.get(`${teacher.id}-${dateStr}`) || '';
                 tableHtml += `<td class="${status}">${status.charAt(0) || '-'}</td>`;
             });
             tableHtml += '</tr>';
@@ -179,36 +187,44 @@ export default function AttendancePage() {
         <Card>
             <CardHeader>
                 <CardTitle>Rekap Absensi Guru</CardTitle>
-                <CardDescription>Lihat rekapitulasi absensi guru per bulan.</CardDescription>
+                <CardDescription>Lihat rekapitulasi absensi guru per rentang tanggal.</CardDescription>
             </CardHeader>
             <CardContent>
                 <div className="flex flex-col sm:flex-row justify-between items-center gap-2 mb-4">
-                    <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                     <Popover>
                         <PopoverTrigger asChild>
-                            <Button
-                                variant={"outline"}
-                                className={cn(
-                                    "w-full sm:w-[240px] justify-start text-left font-normal",
-                                    !selectedDate && "text-muted-foreground"
-                                )}
-                            >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {format(selectedDate, 'MMMM yyyy', { locale: dfnsId })}
-                            </Button>
+                        <Button
+                            id="date"
+                            variant={"outline"}
+                            className={cn(
+                            "w-full sm:w-[300px] justify-start text-left font-normal",
+                            !date && "text-muted-foreground"
+                            )}
+                        >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {date?.from ? (
+                            date.to ? (
+                                <>
+                                {format(date.from, "d LLL, y")} -{" "}
+                                {format(date.to, "d LLL, y")}
+                                </>
+                            ) : (
+                                format(date.from, "d LLL, y")
+                            )
+                            ) : (
+                            <span>Pilih tanggal</span>
+                            )}
+                        </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                                mode="single"
-                                selected={selectedDate}
-                                onSelect={(date) => {
-                                    if (date) {
-                                        setSelectedMonth(getMonth(date));
-                                        setSelectedYear(getYear(date));
-                                        setIsDatePickerOpen(false);
-                                    }
-                                }}
-                                initialFocus
-                            />
+                        <Calendar
+                            initialFocus
+                            mode="range"
+                            defaultMonth={date?.from}
+                            selected={date}
+                            onSelect={setDate}
+                            numberOfMonths={2}
+                        />
                         </PopoverContent>
                     </Popover>
                      <div className="flex items-center gap-2">
@@ -247,8 +263,8 @@ export default function AttendancePage() {
                             <TableHeader>
                                 <TableRow>
                                     <TableHead className="sticky left-0 z-10 bg-card min-w-[200px] border">Nama Guru</TableHead>
-                                    {monthDays.map(day => (
-                                        <TableHead key={day} className="text-center border min-w-[40px]">{day}</TableHead>
+                                    {daysInRange.map(day => (
+                                        <TableHead key={day.toISOString()} className="text-center border min-w-[40px]">{format(day, 'd')}</TableHead>
                                     ))}
                                 </TableRow>
                             </TableHeader>
@@ -256,10 +272,11 @@ export default function AttendancePage() {
                                 {sortedTeachers && sortedTeachers.length > 0 ? sortedTeachers.map(teacher => (
                                     <TableRow key={teacher.id}>
                                         <TableCell className="sticky left-0 z-10 bg-card font-medium border">{teacher.name}</TableCell>
-                                        {monthDays.map(day => {
-                                            const status = attendanceMap.get(`${teacher.id}-${day}`);
+                                        {daysInRange.map(day => {
+                                            const dateStr = format(day, 'yyyy-MM-dd');
+                                            const status = attendanceMap.get(`${teacher.id}-${dateStr}`);
                                             return (
-                                                <TableCell key={day} className={cn("text-center text-xs p-1 border", status && getStatusColor(status))}>
+                                                <TableCell key={dateStr} className={cn("text-center text-xs p-1 border", status && getStatusColor(status))}>
                                                     {status ? status.charAt(0) : '-'}
                                                 </TableCell>
                                             );
@@ -267,7 +284,7 @@ export default function AttendancePage() {
                                     </TableRow>
                                 )) : (
                                     <TableRow>
-                                        <TableCell colSpan={daysInMonth + 1} className="text-center h-24">
+                                        <TableCell colSpan={daysInRange.length + 1} className="text-center h-24">
                                             Belum ada data guru.
                                         </TableCell>
                                     </TableRow>
