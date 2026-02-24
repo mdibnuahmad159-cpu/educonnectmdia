@@ -76,7 +76,7 @@ export function CurriculumForm({ isOpen, setIsOpen, curriculum, onSave }: Curric
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-xs">
         <DialogHeader>
           <DialogTitle>{curriculum ? "Edit Kurikulum" : "Tambah Kurikulum"}</DialogTitle>
           <DialogDescription>
@@ -85,7 +85,7 @@ export function CurriculumForm({ isOpen, setIsOpen, curriculum, onSave }: Curric
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
-            <div className="space-y-4 py-4">
+            <div className="space-y-3 py-4">
                 <FormField
                   control={form.control}
                   name="subjectCode"
@@ -104,7 +104,7 @@ export function CurriculumForm({ isOpen, setIsOpen, curriculum, onSave }: Curric
                   name="subjectName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Nama Mapel</FormLabel>
+                      <FormLabel>Mapel</FormLabel>
                       <FormControl>
                         <Input {...field} />
                       </FormControl>
@@ -139,7 +139,7 @@ export function CurriculumForm({ isOpen, setIsOpen, curriculum, onSave }: Curric
                   name="bookName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Nama Kitab</FormLabel>
+                      <FormLabel>Kitab</FormLabel>
                       <FormControl>
                         <Input {...field} />
                       </FormControl>
@@ -149,7 +149,7 @@ export function CurriculumForm({ isOpen, setIsOpen, curriculum, onSave }: Curric
                 />
             </div>
             <DialogFooter className="pt-4">
-              <Button type="submit">Simpan</Button>
+              <Button type="submit" size="xs">Simpan</Button>
             </DialogFooter>
           </form>
         </Form>

@@ -120,9 +120,9 @@ export default function CurriculumPage() {
     
     const curriculumColumns = {
         subjectCode: 'Kode Mapel',
-        subjectName: 'Nama Mapel',
+        subjectName: 'Mapel',
         classLevel: 'Kelas (0-6)',
-        bookName: 'Nama Kitab',
+        bookName: 'Kitab',
     };
 
     const handleDownloadCurriculumTemplate = () => {
