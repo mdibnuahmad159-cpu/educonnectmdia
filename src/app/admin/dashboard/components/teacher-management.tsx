@@ -129,7 +129,7 @@ export function TeacherManagement() {
     const teacherColumns = {
         name: 'Nama Lengkap',
         email: 'Email',
-        password: 'Password (wajib untuk impor)',
+        password: 'Password',
         jabatan: 'Jabatan',
         noWa: 'No. WA',
         nik: 'NIK',
@@ -175,14 +175,18 @@ export function TeacherManagement() {
                     for(const key in item) {
                         const columnIndex = columnValues.indexOf(key);
                         if (columnIndex > -1) {
-                            teacherData[columnKeys[columnIndex]] = item[key];
+                            teacherData[columnKeys[columnIndex]] = item[key] ?? '';
                         }
                     }
 
-                    if (!teacherData.email || !teacherData.password || !teacherData.name) {
+                    if (!teacherData.email || !teacherData.name) {
                         errorCount++;
-                        console.error("Skipping teacher due to missing required fields:", teacherData);
+                        console.error("Skipping teacher due to missing required fields (email or name):", teacherData);
                         continue;
+                    }
+
+                    if (!teacherData.password || teacherData.password.length < 6) {
+                        teacherData.password = "123456";
                     }
 
                     try {
