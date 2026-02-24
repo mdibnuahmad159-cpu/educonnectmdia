@@ -3,7 +3,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useCollection, useDoc, useFirestore, useMemoFirebase } from "@/firebase";
-import { collection, doc, Firestore } from "firebase/firestore";
+import { collection, doc, Firestore, query, where } from "firebase/firestore";
 import type { Schedule, ScheduleEntry, Curriculum, Teacher } from "@/types";
 import { Button } from "@/components/ui/button";
 import {
@@ -84,6 +84,7 @@ export default function SchedulePage() {
     const teachersCollection = useMemoFirebase(() => firestore ? collection(firestore, "teachers") : null, [firestore]);
     const { data: teachers, loading: loadingTeachers } = useCollection<Teacher>(teachersCollection);
     
+    // Fetch a single schedule if a specific class is selected
     const scheduleId = useMemo(() => {
         if (!selectedClass || !activeYear || selectedClass === 'semua') return null;
         return `${selectedClass}_${activeYear.replace('/', '-')}_${scheduleType}`;
@@ -92,32 +93,55 @@ export default function SchedulePage() {
     const scheduleRef = useMemoFirebase(() => scheduleId ? doc(firestore, 'schedules', scheduleId) : null, [scheduleId]);
     const { data: scheduleData, isLoading: loadingSchedule } = useDoc<Schedule>(scheduleRef);
 
+    // Fetch all schedules for the current year/type if 'semua' is selected
+    const allSchedulesQuery = useMemoFirebase(() => {
+        if (!firestore || !activeYear || selectedClass !== 'semua') return null;
+        return query(collection(firestore, 'schedules'), where('academicYear', '==', activeYear), where('type', '==', scheduleType));
+    }, [firestore, activeYear, scheduleType, selectedClass]);
+    const { data: allSchedulesData, isLoading: loadingAllSchedules } = useCollection<Schedule>(allSchedulesQuery);
+
     useEffect(() => {
-        if (scheduleData?.saturday && scheduleData.saturday.length === periods.length) {
+        const scheduleSource = selectedClass === 'semua' ? allSchedulesData?.[0] : scheduleData;
+        if (scheduleSource?.saturday && scheduleSource.saturday.length === periods.length) {
             const newPeriods = periods.map((p, index) => ({
                 ...p,
-                startTime: scheduleData.saturday[index].startTime,
-                endTime: scheduleData.saturday[index].endTime,
+                startTime: scheduleSource.saturday[index].startTime,
+                endTime: scheduleSource.saturday[index].endTime,
             }));
             setPeriods(newPeriods);
         } else if (selectedClass !== 'semua') {
             setPeriods(initialPeriods);
         }
-    }, [scheduleData, selectedClass]);
+    }, [scheduleData, allSchedulesData, selectedClass]);
 
 
-    const handleEdit = (dayKey: typeof days[number]['key'], periodIndex: number) => {
-        const currentEntry = scheduleData?.[dayKey]?.[periodIndex] || initialScheduleData[dayKey][periodIndex];
-        setEditingSlot({ day: dayKey, periodIndex, entry: currentEntry });
+    const handleEdit = (classLevel: number, dayKey: typeof days[number]['key'], periodIndex: number) => {
+        let scheduleForEdit;
+        if (selectedClass === 'semua') {
+            scheduleForEdit = allSchedulesData?.find(s => s.classLevel === classLevel);
+        } else {
+            scheduleForEdit = scheduleData;
+        }
+        const currentEntry = scheduleForEdit?.[dayKey]?.[periodIndex] || initialScheduleData[dayKey][periodIndex];
+        setEditingSlot({ classLevel, day: dayKey, periodIndex, entry: currentEntry });
         setIsEntryFormOpen(true);
     };
 
     const handleSaveEntry = (slot: EditingSlot, updatedData: { subjectId?: string, teacherId?: string }) => {
-        if (!scheduleId || !selectedClass || !activeYear || selectedClass === 'semua') return;
+        if (!firestore || !activeYear) return;
 
-        const newSchedule: Schedule = scheduleData ?? {
-            id: scheduleId,
-            classLevel: parseInt(selectedClass, 10),
+        const scheduleIdToUpdate = `${slot.classLevel}_${activeYear.replace('/', '-')}_${scheduleType}`;
+        
+        let currentSchedule;
+        if (String(slot.classLevel) === selectedClass) {
+            currentSchedule = scheduleData;
+        } else {
+            currentSchedule = allSchedulesData?.find(s => s.classLevel === slot.classLevel);
+        }
+
+        const newSchedule: Schedule = currentSchedule ?? {
+            id: scheduleIdToUpdate,
+            classLevel: slot.classLevel,
             academicYear: activeYear,
             type: scheduleType,
             ...initialScheduleData
@@ -176,14 +200,16 @@ export default function SchedulePage() {
     }
 
     const subjectsForClass = useMemo(() => {
-        if (!curriculumData || selectedClass === 'semua') return [];
-        return curriculumData.filter(c => c.classLevel === parseInt(selectedClass, 10));
-    }, [curriculumData, selectedClass]);
+        if (!curriculumData) return [];
+        const classLevel = editingSlot ? editingSlot.classLevel : parseInt(selectedClass, 10);
+        if (isNaN(classLevel)) return [];
+        return curriculumData.filter(c => c.classLevel === classLevel);
+    }, [curriculumData, selectedClass, editingSlot]);
     
-    const isLoading = loadingCurriculum || loadingTeachers || loadingSchedule;
+    const isLoading = loadingCurriculum || loadingTeachers || (selectedClass !== 'semua' ? loadingSchedule : loadingAllSchedules);
 
-    const renderCellContent = (day: typeof days[number]['key'], periodIndex: number) => {
-        const entry = scheduleData?.[day]?.[periodIndex];
+    const renderCellContent = (schedule: Schedule | undefined, day: typeof days[number]['key'], periodIndex: number) => {
+        const entry = schedule?.[day]?.[periodIndex];
         if (!entry || entry.type === 'break') {
             return periodIndex === 1 ? <span className="text-muted-foreground italic">Istirahat</span> : '-';
         }
@@ -265,6 +291,18 @@ export default function SchedulePage() {
     );
 
     function ScheduleTable() {
+        const schedulesByClass = useMemo(() => {
+            const map = new Map<number, Schedule>();
+            if (allSchedulesData) {
+                for (const schedule of allSchedulesData) {
+                    map.set(schedule.classLevel, schedule);
+                }
+            }
+            return map;
+        }, [allSchedulesData]);
+    
+        const classLevels = [...Array(7).keys()];
+
         return (
             <div className="border rounded-lg overflow-hidden">
                 <Table>
@@ -286,11 +324,33 @@ export default function SchedulePage() {
                                 </TableCell>
                             </TableRow>
                         ) : selectedClass === 'semua' ? (
-                            <TableRow>
-                                <TableCell colSpan={8} className="h-48 text-center text-muted-foreground">
-                                    Pilih kelas untuk melihat atau mengubah jadwal.
-                                </TableCell>
-                            </TableRow>
+                            classLevels.flatMap(classLevel => (
+                                periods.map((period, periodIndex) => (
+                                    <TableRow key={`${classLevel}-${periodIndex}`}>
+                                        <TableCell className="font-medium align-top">
+                                            <div className="flex flex-col">
+                                                <span>{period.name}</span>
+                                                <span className="text-xs text-muted-foreground">{period.startTime} - {period.endTime}</span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="font-medium align-top pt-2.5">
+                                            {`Kelas ${classLevel}`}
+                                        </TableCell>
+                                        {days.map(day => (
+                                            <TableCell 
+                                                key={day.key} 
+                                                className="align-top cursor-pointer hover:bg-muted/50"
+                                                onClick={() => {
+                                                    if (period.type === 'break') return;
+                                                    handleEdit(classLevel, day.key, periodIndex);
+                                                }}
+                                            >
+                                                {renderCellContent(schedulesByClass.get(classLevel), day.key, periodIndex)}
+                                            </TableCell>
+                                        ))}
+                                    </TableRow>
+                                ))
+                            ))
                         ) : (
                             periods.map((period, periodIndex) => (
                                 <TableRow key={periodIndex}>
@@ -309,10 +369,10 @@ export default function SchedulePage() {
                                             className="align-top cursor-pointer hover:bg-muted/50"
                                             onClick={() => {
                                                 if (period.type === 'break') return;
-                                                handleEdit(day.key, periodIndex);
+                                                handleEdit(parseInt(selectedClass, 10), day.key, periodIndex);
                                             }}
                                         >
-                                            {scheduleData ? renderCellContent(day.key, periodIndex) : (period.type === 'break' ? <span className="text-muted-foreground italic">Istirahat</span> : '-')}
+                                            {scheduleData ? renderCellContent(scheduleData, day.key, periodIndex) : (period.type === 'break' ? <span className="text-muted-foreground italic">Istirahat</span> : '-')}
                                         </TableCell>
                                     ))}
                                 </TableRow>

@@ -41,6 +41,7 @@ const formSchema = z.object({
 type ScheduleEntryFormData = z.infer<typeof formSchema>;
 
 export type EditingSlot = {
+    classLevel: number;
     day: string;
     periodIndex: number;
     entry: ScheduleEntry;
@@ -194,7 +195,7 @@ export function TimeSettingsForm({ isOpen, setIsOpen, initialPeriods, onSave }: 
         <DialogHeader>
           <DialogTitle>Atur Jam Pelajaran & Istirahat</DialogTitle>
           <DialogDescription>
-            Atur waktu mulai dan selesai untuk setiap sesi. Perubahan ini akan berlaku untuk semua jadwal.
+            Atur waktu mulai dan selesai untuk setiap sesi. Perubahan ini akan berlaku untuk jadwal kelas yang sedang dipilih.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
