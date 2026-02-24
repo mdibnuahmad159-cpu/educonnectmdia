@@ -16,7 +16,7 @@ import {
   query,
   where,
 } from 'firebase/firestore';
-import type { Teacher, Student, SchoolProfile, Curriculum, Alumni, Schedule } from '@/types';
+import type { Teacher, Student, SchoolProfile, Curriculum, Alumni, Schedule, TeacherAttendance } from '@/types';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { firebaseConfig } from '@/firebase/config';
@@ -259,6 +259,25 @@ export function upsertSchedule(db: Firestore, schedule: Schedule) {
             path: scheduleRef.path,
             operation: 'write',
             requestResourceData: schedule
+        }));
+    });
+}
+
+export function saveTeacherAttendanceBatch(db: Firestore, attendances: Omit<TeacherAttendance, 'id'>[]) {
+    const batch = writeBatch(db);
+
+    attendances.forEach(att => {
+        const attendanceId = `${att.teacherId}_${att.date}`;
+        const attendanceRef = doc(db, 'teacher_attendances', attendanceId);
+        const data = { ...att, id: attendanceId };
+        batch.set(attendanceRef, data);
+    });
+    
+    return batch.commit().catch(error => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: '/teacher_attendances',
+            operation: 'write',
+            requestResourceData: { note: "Batch write failed for teacher attendance" }
         }));
     });
 }

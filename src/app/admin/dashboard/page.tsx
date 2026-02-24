@@ -29,6 +29,7 @@ import {
   Megaphone
 } from "lucide-react";
 import type { Teacher, Student } from "@/types";
+import { TeacherAttendanceCard } from "./components/teacher-attendance-card";
 
 const NavLink = ({ href, icon: Icon, label }: { href: string; icon: React.ElementType; label: string }) => (
     <Link 
@@ -99,6 +100,8 @@ export default function DashboardPage() {
                 </CardContent>
             </Card>
       </div>
+
+      <TeacherAttendanceCard />
       
       <Tabs defaultValue="akademik" className="w-full">
         <TabsList className="grid w-full grid-cols-3">

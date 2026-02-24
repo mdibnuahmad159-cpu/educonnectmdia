@@ -411,6 +411,48 @@
         "academicYear",
         "type"
       ]
+    },
+    "TeacherAttendance": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Teacher Attendance",
+      "type": "object",
+      "description": "Represents a daily attendance record for a single teacher.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the attendance record, typically a composite of teacherId and date."
+        },
+        "teacherId": {
+          "type": "string",
+          "description": "Reference to the Teacher this record belongs to."
+        },
+        "teacherName": {
+          "type": "string",
+          "description": "Denormalized teacher name for display purposes."
+        },
+        "date": {
+          "type": "string",
+          "format": "date",
+          "description": "The date of the attendance record in YYYY-MM-DD format."
+        },
+        "status": {
+          "type": "string",
+          "description": "The attendance status for the day.",
+          "enum": [
+            "Hadir",
+            "Sakit",
+            "Izin",
+            "Alpa"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "teacherId",
+        "teacherName",
+        "date",
+        "status"
+      ]
     }
   },
   "auth": {
@@ -561,6 +603,22 @@
             {
               "name": "scheduleId",
               "description": "The unique ID of the schedule, usually a composite of class, year, and type."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/teacher_attendances/{attendanceId}",
+        "definition": {
+          "entityName": "TeacherAttendance",
+          "schema": {
+            "$ref": "#/backend/entities/TeacherAttendance"
+          },
+          "description": "Stores daily attendance records for teachers. Admin has full CRUD access. The document ID is a composite key like `{teacherId}_{YYYY-MM-DD}` to enforce daily uniqueness.",
+          "params": [
+            {
+              "name": "attendanceId",
+              "description": "Composite unique ID for the attendance record."
             }
           ]
         }

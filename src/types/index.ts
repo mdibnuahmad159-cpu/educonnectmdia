@@ -86,3 +86,11 @@ export type Schedule = {
   wednesday: ScheduleEntry[];
   thursday: ScheduleEntry[];
 };
+
+export type TeacherAttendance = {
+  id: string; // composite key: `${teacherId}_${date}`
+  teacherId: string;
+  teacherName: string; // Denormalized
+  date: string; // YYYY-MM-DD
+  status: 'Hadir' | 'Sakit' | 'Izin' | 'Alpa';
+};
