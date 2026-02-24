@@ -1,4 +1,5 @@
 
+
 export type Teacher = {
   id: string; // Firebase Auth UID
   name: string;

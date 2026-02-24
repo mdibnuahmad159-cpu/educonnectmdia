@@ -4,7 +4,7 @@
 import { useState, useMemo } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
-import type { Teacher, TeacherAttendance } from '@/types';
+import type { Teacher, TeacherAttendance, Schedule, ScheduleEntry } from '@/types';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -25,6 +25,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import type { DateRange } from 'react-day-picker';
+import { useAcademicYear } from '@/context/academic-year-provider';
 
 const getStatusColor = (status: TeacherAttendance['status']) => {
     switch (status) {
@@ -36,9 +37,20 @@ const getStatusColor = (status: TeacherAttendance['status']) => {
     }
 };
 
+const dayMapping: { [key: number]: keyof Omit<Schedule, 'id' | 'classLevel' | 'academicYear' | 'type'> } = {
+    0: 'sunday',
+    1: 'monday',
+    2: 'tuesday',
+    3: 'wednesday',
+    4: 'thursday',
+    // Friday (5) is intentionally omitted
+    6: 'saturday',
+};
+
 export default function AttendancePage() {
     const firestore = useFirestore();
     const { toast } = useToast();
+    const { activeYear } = useAcademicYear();
 
     const [date, setDate] = useState<DateRange | undefined>({
       from: startOfMonth(new Date()),
@@ -67,6 +79,16 @@ export default function AttendancePage() {
         );
     }, [firestore, startDate, endDate]);
     const { data: attendanceData, isLoading: loadingAttendance } = useCollection<TeacherAttendance>(attendanceQuery);
+    
+    const schedulesQuery = useMemoFirebase(() => {
+        if (!firestore || !activeYear) return null;
+        return query(
+            collection(firestore, 'schedules'),
+            where('academicYear', '==', activeYear),
+            where('type', '==', 'pelajaran')
+        );
+    }, [firestore, activeYear]);
+    const { data: schedules, isLoading: loadingSchedules } = useCollection<Schedule>(schedulesQuery);
 
     const attendanceMap = useMemo(() => {
         const map = new Map<string, TeacherAttendance['status']>();
@@ -78,12 +100,33 @@ export default function AttendancePage() {
         return map;
     }, [attendanceData]);
     
+    const scheduledTeachersByDay = useMemo(() => {
+        const map = new Map<string, Set<string>>(); // Map<DayKey, Set<TeacherId>>
+        if (!schedules) return map;
+    
+        for (const dayKey of Object.values(dayMapping)) {
+            const dailyTeacherIds = new Set<string>();
+            for (const schedule of schedules) {
+                const daySchedule = schedule[dayKey as keyof typeof schedule] as ScheduleEntry[] | undefined;
+                if (daySchedule) {
+                    for (const entry of daySchedule) {
+                        if (entry.teacherId) {
+                            dailyTeacherIds.add(entry.teacherId);
+                        }
+                    }
+                }
+            }
+            map.set(dayKey, dailyTeacherIds);
+        }
+        return map;
+    }, [schedules]);
+    
     const sortedTeachers = useMemo(() => {
         if (!teachers) return [];
         return [...teachers].sort((a,b) => a.name.localeCompare(b.name));
     }, [teachers]);
 
-    const isLoading = loadingTeachers || loadingAttendance;
+    const isLoading = loadingTeachers || loadingAttendance || loadingSchedules;
 
     const handleExport = (formatType: 'excel' | 'pdf') => {
       if (!sortedTeachers || !date?.from || !date?.to) {
@@ -147,6 +190,8 @@ export default function AttendancePage() {
                         .Sakit { background-color: #fef9c3 !important; }
                         .Izin { background-color: #dbeafe !important; }
                         .Alpa { background-color: #fee2e2 !important; }
+                        .not-scheduled { background-color: #fee2e2 !important; }
+                        .pending { background-color: #f3f4f6 !important; }
                         @media print {
                             body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
                         }
@@ -168,8 +213,27 @@ export default function AttendancePage() {
             tableHtml += `<td class="teacher-name">${teacher.name}</td>`;
             daysInRange.forEach(day => {
                 const dateStr = format(day, 'yyyy-MM-dd');
-                const status = attendanceMap.get(`${teacher.id}-${dateStr}`) || '';
-                tableHtml += `<td class="${status}">${status.charAt(0) || '-'}</td>`;
+                const status = attendanceMap.get(`${teacher.id}-${dateStr}`);
+                const dayKey = dayMapping[day.getDay()];
+                const isScheduled = dayKey ? scheduledTeachersByDay.get(dayKey)?.has(teacher.id) : false;
+
+                let cellClass = '';
+                let cellContent = '';
+
+                if (status) {
+                    cellClass = status; // Hadir, Sakit, Izin, Alpa
+                    cellContent = status.charAt(0);
+                } else if (!dayKey) {
+                    cellClass = 'pending';
+                    cellContent = '-';
+                } else if (!isScheduled) {
+                    cellClass = 'not-scheduled';
+                    cellContent = '';
+                } else {
+                    cellClass = 'pending';
+                    cellContent = '-';
+                }
+                tableHtml += `<td class="${cellClass}">${cellContent}</td>`;
             });
             tableHtml += '</tr>';
         });
@@ -275,9 +339,22 @@ export default function AttendancePage() {
                                         {daysInRange.map(day => {
                                             const dateStr = format(day, 'yyyy-MM-dd');
                                             const status = attendanceMap.get(`${teacher.id}-${dateStr}`);
+                                            const dayKey = dayMapping[day.getDay()];
+                                            const isScheduled = dayKey ? scheduledTeachersByDay.get(dayKey)?.has(teacher.id) : false;
+
                                             return (
-                                                <TableCell key={dateStr} className={cn("text-center text-xs p-1 border", status && getStatusColor(status))}>
-                                                    {status ? status.charAt(0) : '-'}
+                                                <TableCell 
+                                                    key={dateStr} 
+                                                    className={cn(
+                                                        "text-center text-xs p-1 border",
+                                                        status 
+                                                            ? getStatusColor(status)
+                                                            : !isScheduled && dayKey 
+                                                                ? 'bg-red-100/70 dark:bg-red-900/30' 
+                                                                : 'bg-muted/30'
+                                                    )}
+                                                >
+                                                    {status ? status.charAt(0) : (isScheduled || !dayKey) ? '-' : ''}
                                                 </TableCell>
                                             );
                                         })}
