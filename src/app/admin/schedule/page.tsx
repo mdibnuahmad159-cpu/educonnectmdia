@@ -34,9 +34,10 @@ import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useAcademicYear } from "@/context/academic-year-provider";
+import { TimeSettingsForm } from "./components/time-settings-form";
 import { upsertSchedule } from "@/lib/firebase-helpers";
 import { ScheduleEntryForm } from "./components/schedule-entry-form";
-import { TimeSettingsForm } from "./components/time-settings-form";
+
 
 const days = [
     { key: 'saturday', name: 'Sabtu' },
@@ -56,7 +57,7 @@ export type EditContext = {
 };
 
 const createEmptySchedule = (classLevel: number, academicYear: string, type: 'pelajaran' | 'ujian', periods: {startTime: string, endTime: string}[]): Schedule => {
-    const emptyDay = periods.map(p => ({ type: 'subject' as const, startTime: p.startTime, endTime: p.endTime, subjectId: '', teacherId: '' }));
+    const emptyDay = periods.map(p => ({ type: 'subject' as const, startTime: p.startTime, endTime: p.endTime }));
     const id = `${classLevel}_${academicYear.replace(/\//g, '-')}_${type}`;
     return {
         id,
@@ -106,12 +107,23 @@ export default function SchedulePage() {
 
     const periods = useMemo(() => {
         if (!allSchedulesData || allSchedulesData.length === 0) {
-            return [];
+            // Default periods if no schedules exist yet.
+            return [
+                { startTime: "07:00", endTime: "08:30" },
+                { startTime: "08:30", endTime: "10:00" },
+                { startTime: "10:30", endTime: "12:00" },
+            ];
         }
 
         const firstScheduleWithEntries = allSchedulesData.find(s => s.saturday && s.saturday.length > 0);
         
-        if (!firstScheduleWithEntries) return [];
+        if (!firstScheduleWithEntries) {
+            return [
+                { startTime: "07:00", endTime: "08:30" },
+                { startTime: "08:30", endTime: "10:00" },
+                { startTime: "10:30", endTime: "12:00" },
+            ];
+        }
 
         const scheduleEntries = firstScheduleWithEntries.saturday.filter(e => e.type === 'subject');
         
@@ -130,9 +142,8 @@ export default function SchedulePage() {
         if (!schedule) return { entry: null, subject: null, teacher: null };
         
         const daySchedule = schedule[dayKey];
-        if (!daySchedule) return { entry: null, subject: null, teacher: null };
-
-        const entry = daySchedule.filter(e => e.type === 'subject')[periodIndex];
+        const subjectEntries = daySchedule?.filter(e => e.type === 'subject') || [];
+        const entry = subjectEntries[periodIndex];
         
         if (!entry || !curriculumData || !teachers) {
             return { entry: null, subject: null, teacher: null };
@@ -162,7 +173,7 @@ export default function SchedulePage() {
         }
 
         if (!scheduleToUpdate[dayKey] || scheduleToUpdate[dayKey].length === 0) {
-            scheduleToUpdate[dayKey] = periods.map(p => ({type: 'subject', startTime: p.startTime, endTime: p.endTime, subjectId: '', teacherId: ''}));
+            scheduleToUpdate[dayKey] = periods.map(p => ({type: 'subject', startTime: p.startTime, endTime: p.endTime}));
         }
         
         const subjectEntries = scheduleToUpdate[dayKey].filter((e: ScheduleEntry) => e.type === 'subject');
@@ -179,7 +190,7 @@ export default function SchedulePage() {
             const updatedEntry = { ...currentEntry };
             
             if ('subjectId' in data) {
-                if (data.subjectId) {
+                if (data.subjectId && data.subjectId !== 'clear') {
                     updatedEntry.subjectId = data.subjectId;
                 } else {
                     delete (updatedEntry as Partial<typeof updatedEntry>).subjectId;
@@ -187,7 +198,7 @@ export default function SchedulePage() {
             }
     
             if ('teacherId' in data) {
-                if (data.teacherId) {
+                if (data.teacherId && data.teacherId !== 'clear') {
                     updatedEntry.teacherId = data.teacherId;
                 } else {
                     delete (updatedEntry as Partial<typeof updatedEntry>).teacherId;
@@ -202,7 +213,7 @@ export default function SchedulePage() {
     };
     
     const handleClearEntry = () => {
-        handleSaveEntry({ subjectId: '', teacherId: '' });
+        handleSaveEntry({ subjectId: 'clear', teacherId: 'clear' });
     }
 
     const handleTimeSave = (newPeriods: { startTime: string; endTime: string }[]) => {
@@ -224,7 +235,7 @@ export default function SchedulePage() {
                         subjectId: existingEntry?.subjectId || '',
                         teacherId: existingEntry?.teacherId || '',
                     };
-                });
+                }).filter(Boolean) as ScheduleEntry[];
                 newSchedule[day.key] = newDayEntries;
             });
             updatedSchedules.push(newSchedule);
@@ -334,33 +345,34 @@ export default function SchedulePage() {
             return;
         }
 
-        const tableHeader = `
-            <thead>
-                <tr>
-                    <th style="width: 8%;">Hari</th>
-                    <th style="width: 10%;">Jam</th>
-                    ${classLevels.map(cl => `<th>Kelas ${cl}</th>`).join('')}
-                </tr>
-            </thead>
-        `;
+        const head = [['Hari', 'Jam', ...classLevels.map(cl => `Kelas ${cl}`)]];
+        if (periods.length === 0) {
+            toast({ title: "Tidak ada data jadwal untuk dicetak." });
+            return;
+        }
 
+        const tableHeader = `<thead><tr>${head[0].map(h => `<th>${h}</th>`).join('')}</tr></thead>`;
+        
         const bodyRows: string[] = [];
         days.forEach(day => {
             periods.forEach((period, periodIndex) => {
                 let rowHtml = '<tr>';
-                
+
+                // Day column with rowspan
                 if (periodIndex === 0) {
-                    rowHtml += `<td rowspan="${periods.length}" style="vertical-align: middle; text-align: center; font-weight: 600;">${day.name}</td>`;
+                    rowHtml += `<td rowspan="${periods.length}" style="vertical-align: middle; text-align: center;">${day.name}</td>`;
                 }
 
-                rowHtml += `<td style="text-align: center; vertical-align: middle;">${period.startTime}<br/>-<br/>${period.endTime}</td>`;
+                // Jam column
+                rowHtml += `<td style="text-align: center; vertical-align: middle;">${period.startTime} - ${period.endTime}</td>`;
 
+                // Class columns
                 classLevels.forEach(classLevel => {
                     const { subject, teacher } = getCellData(classLevel, day.key, periodIndex);
-                    const content = subject 
-                        ? `<p style="font-weight: 600; color: #15803d; font-size: 10px; margin: 0; white-space: nowrap;">${subject.subjectName}</p><p style="font-size: 9px; color: #555; margin: 0; white-space: nowrap;">${teacher?.name || '...'}</p>`
+                    const cellContent = subject 
+                        ? `${subject.subjectName}<br/>(${teacher?.name || '...'})`
                         : '';
-                    rowHtml += `<td>${content}</td>`;
+                    rowHtml += `<td>${cellContent}</td>`;
                 });
 
                 rowHtml += '</tr>';
@@ -373,15 +385,14 @@ export default function SchedulePage() {
         const content = `
           <html>
             <head>
-              <title>Cetak Jadwal</title>
+              <title>Cetak Jadwal - ${scheduleType === 'pelajaran' ? 'Pelajaran' : 'Ujian'}</title>
               <style>
-                body { font-family: sans-serif; font-size: 9px; background-color: #fff; }
+                body { font-family: sans-serif; font-size: 8px; }
                 @page { size: A4 landscape; margin: 15mm; }
-                h1 { font-size: 14px; margin-bottom: 1rem; }
+                h1 { font-size: 16px; text-align: left; margin-bottom: 1rem; }
                 table { width: 100%; border-collapse: collapse; }
-                th, td { border: 1px solid #ddd; padding: 4px; text-align: left; vertical-align: top; }
-                th { background-color: #f2f2f2; font-weight: bold; text-align: center; }
-                td { height: 40px; }
+                th, td { border: 1px solid #ccc; padding: 4px; text-align: left; vertical-align: top; overflow-wrap: break-word; }
+                th { background-color: #e6e6e6; font-weight: bold; color: #141414; font-size: 9px; }
               </style>
             </head>
             <body>
@@ -393,7 +404,7 @@ export default function SchedulePage() {
             </body>
           </html>
         `;
-    
+
         printWindow.document.write(content);
         printWindow.document.close();
         printWindow.onload = () => {
