@@ -122,7 +122,7 @@ export default function CurriculumPage() {
         subjectCode: 'Kode Mapel',
         subjectName: 'Nama Mapel',
         classLevel: 'Kelas (0-6)',
-        bookName: 'Nama Kitab (Opsional)',
+        bookName: 'Nama Kitab',
     };
 
     const handleDownloadCurriculumTemplate = () => {
@@ -143,7 +143,7 @@ export default function CurriculumPage() {
                 const workbook = XLSX.read(data, { type: 'array' });
                 const sheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[sheetName];
-                const json: any[] = XLSX.utils.sheet_to_json(worksheet);
+                const json: any[] = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
 
                 if (json.length === 0) {
                     toast({ variant: "destructive", title: "File Kosong", description: "File Excel yang Anda unggah tidak berisi data." });

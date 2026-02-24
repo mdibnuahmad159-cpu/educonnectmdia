@@ -127,7 +127,7 @@ export function AlumniForm({ isOpen, setIsOpen, alumnus, onSave }: AlumniFormPro
                   name="address"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Alamat (Opsional)</FormLabel>
+                      <FormLabel>Alamat</FormLabel>
                       <FormControl>
                         <Textarea {...field} value={field.value ?? ""} />
                       </FormControl>
@@ -140,7 +140,7 @@ export function AlumniForm({ isOpen, setIsOpen, alumnus, onSave }: AlumniFormPro
                   name="noWa"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>No. WA (Opsional)</FormLabel>
+                      <FormLabel>No. WA</FormLabel>
                       <FormControl>
                         <Input type="tel" {...field} value={field.value ?? ""} />
                       </FormControl>

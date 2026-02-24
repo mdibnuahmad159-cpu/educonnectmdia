@@ -138,8 +138,8 @@ export default function AlumniPage() {
         nis: 'NIS',
         name: 'Nama',
         tahunLulus: 'Tahun Lulus',
-        address: 'Alamat (Opsional)',
-        noWa: 'No. WA (Opsional)',
+        address: 'Alamat',
+        noWa: 'No. WA',
     };
 
     const handleDownloadTemplate = () => {
@@ -160,7 +160,7 @@ export default function AlumniPage() {
                 const workbook = XLSX.read(data, { type: 'array' });
                 const sheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[sheetName];
-                const json: any[] = XLSX.utils.sheet_to_json(worksheet);
+                const json: any[] = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
 
                 if (json.length === 0) {
                     toast({ variant: "destructive", title: "File Kosong", description: "File Excel yang Anda unggah tidak berisi data." });
