@@ -22,7 +22,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -33,8 +32,6 @@ import {
 import type { ScheduleEntry, Teacher, Curriculum } from "@/types";
 
 const formSchema = z.object({
-  startTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Format jam tidak valid (HH:MM)"),
-  endTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Format jam tidak valid (HH:MM)"),
   subjectId: z.string().optional(),
   teacherId: z.string().optional(),
 });
@@ -51,14 +48,12 @@ type ScheduleEntryFormProps = {
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   editingSlot: EditingSlot | null;
-  onSave: (slot: EditingSlot, data: ScheduleEntry) => void;
+  onSave: (slot: EditingSlot, data: {subjectId?: string, teacherId?: string}) => void;
   subjects: Curriculum[];
   teachers: Teacher[];
 };
 
 const defaultValues: ScheduleEntryFormData = {
-    startTime: "00:00",
-    endTime: "00:00",
     subjectId: "",
     teacherId: "",
 };
@@ -72,8 +67,6 @@ export function ScheduleEntryForm({ isOpen, setIsOpen, editingSlot, onSave, subj
   useEffect(() => {
     if (editingSlot) {
         form.reset({
-            startTime: editingSlot.entry.startTime,
-            endTime: editingSlot.entry.endTime,
             subjectId: editingSlot.entry.subjectId || "",
             teacherId: editingSlot.entry.teacherId || "",
         });
@@ -82,25 +75,12 @@ export function ScheduleEntryForm({ isOpen, setIsOpen, editingSlot, onSave, subj
   
   const onSubmit = (values: ScheduleEntryFormData) => {
     if (!editingSlot) return;
-
-    const updatedEntry: ScheduleEntry = {
-        ...editingSlot.entry,
-        startTime: values.startTime,
-        endTime: values.endTime,
-        subjectId: values.subjectId || undefined,
-        teacherId: values.teacherId || undefined,
-    };
-    onSave(editingSlot, updatedEntry);
+    onSave(editingSlot, values);
   };
   
   const handleClear = () => {
     if (!editingSlot) return;
-    const clearedEntry: ScheduleEntry = {
-        type: 'subject',
-        startTime: editingSlot.entry.startTime,
-        endTime: editingSlot.entry.endTime,
-    };
-    onSave(editingSlot, clearedEntry);
+    onSave(editingSlot, { subjectId: undefined, teacherId: undefined });
   }
 
   return (
@@ -115,34 +95,6 @@ export function ScheduleEntryForm({ isOpen, setIsOpen, editingSlot, onSave, subj
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <div className="space-y-3 py-4">
-                <div className="grid grid-cols-2 gap-2">
-                    <FormField
-                      control={form.control}
-                      name="startTime"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Mulai</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="endTime"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Selesai</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                </div>
                 <FormField
                   control={form.control}
                   name="subjectId"
