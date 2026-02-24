@@ -82,7 +82,11 @@ export function ScheduleEntryForm({
   }, [context, initialData, form]);
 
   const onSubmit = (values: ScheduleEntryFormData) => {
-    onSave(values);
+    const dataToSave = {
+      subjectId: values.subjectId === 'clear' ? '' : values.subjectId,
+      teacherId: values.teacherId === 'clear' ? '' : values.teacherId,
+    };
+    onSave(dataToSave as ScheduleEntryFormData);
     setIsOpen(false);
   };
   
@@ -130,7 +134,7 @@ export function ScheduleEntryForm({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">-- Kosongkan --</SelectItem>
+                        <SelectItem value="clear">-- Kosongkan --</SelectItem>
                         {filteredCurriculum.map(item => (
                           <SelectItem key={item.id} value={item.id}>
                             {item.subjectName}
@@ -155,7 +159,7 @@ export function ScheduleEntryForm({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">-- Kosongkan --</SelectItem>
+                        <SelectItem value="clear">-- Kosongkan --</SelectItem>
                         {teachers.map(teacher => (
                           <SelectItem key={teacher.id} value={teacher.id}>
                             {teacher.name}
