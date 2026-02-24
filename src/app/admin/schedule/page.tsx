@@ -137,7 +137,7 @@ export default function SchedulePage() {
 
     const handleSaveEntry = (slot: EditingSlot, updatedData: { subjectId?: string, teacherId?: string }) => {
         if (!firestore || !activeYear) return;
-
+    
         const scheduleIdToUpdate = `${slot.classLevel}_${activeYear.replace('/', '-')}_${scheduleType}`;
         
         let currentSchedule;
@@ -146,7 +146,7 @@ export default function SchedulePage() {
         } else {
             currentSchedule = allSchedulesData?.find(s => s.classLevel === slot.classLevel);
         }
-
+    
         const newSchedule: Schedule = currentSchedule ?? {
             id: scheduleIdToUpdate,
             classLevel: slot.classLevel,
@@ -154,21 +154,30 @@ export default function SchedulePage() {
             type: scheduleType,
             ...initialScheduleData
         };
-
+    
         const updatedDaySchedule = [...newSchedule[slot.day]];
-        const updatedEntry: ScheduleEntry = {
+        
+        const updatedEntry = {
             ...updatedDaySchedule[slot.periodIndex],
-            subjectId: updatedData.subjectId || undefined,
-            teacherId: updatedData.teacherId || undefined,
+            subjectId: updatedData.subjectId,
+            teacherId: updatedData.teacherId,
         };
-        updatedDaySchedule[slot.periodIndex] = updatedEntry;
-
-
+    
+        if (!updatedEntry.subjectId) {
+            delete (updatedEntry as Partial<ScheduleEntry>).subjectId;
+        }
+    
+        if (!updatedEntry.teacherId) {
+            delete (updatedEntry as Partial<ScheduleEntry>).teacherId;
+        }
+    
+        updatedDaySchedule[slot.periodIndex] = updatedEntry as ScheduleEntry;
+    
         const finalSchedule = {
             ...newSchedule,
             [slot.day]: updatedDaySchedule,
         };
-
+    
         upsertSchedule(firestore, finalSchedule);
         toast({ title: "Jadwal Diperbarui", description: "Perubahan jadwal telah disimpan." });
         setIsEntryFormOpen(false);
