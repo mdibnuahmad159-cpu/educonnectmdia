@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -30,6 +30,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { ScheduleEntry, Teacher, Curriculum } from "@/types";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const formSchema = z.object({
   subjectId: z.string().optional(),
@@ -146,6 +148,87 @@ export function ScheduleEntryForm({ isOpen, setIsOpen, editingSlot, onSave, subj
             </DialogFooter>
           </form>
         </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+export type Period = {
+  name: string;
+  startTime: string;
+  endTime: string;
+  type: 'subject' | 'break';
+  isEditable: boolean;
+};
+
+type TimeSettingsFormProps = {
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
+  initialPeriods: Period[];
+  onSave: (updatedPeriods: Period[]) => void;
+};
+
+export function TimeSettingsForm({ isOpen, setIsOpen, initialPeriods, onSave }: TimeSettingsFormProps) {
+  const [periods, setPeriods] = useState(initialPeriods);
+
+  useEffect(() => {
+    if (isOpen) {
+      setPeriods(initialPeriods);
+    }
+  }, [isOpen, initialPeriods]);
+
+  const handleTimeChange = (index: number, field: 'startTime' | 'endTime', value: string) => {
+    const newPeriods = [...periods];
+    newPeriods[index] = { ...newPeriods[index], [field]: value };
+    setPeriods(newPeriods);
+  };
+
+  const handleSaveChanges = () => {
+    onSave(periods);
+    setIsOpen(false);
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Atur Jam Pelajaran & Istirahat</DialogTitle>
+          <DialogDescription>
+            Atur waktu mulai dan selesai untuk setiap sesi. Perubahan ini akan berlaku untuk semua jadwal.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
+          {periods.map((period, index) => (
+            <div key={index} className="space-y-2">
+              <Label className="font-semibold">{period.name}</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label htmlFor={`start-time-${index}`} className="text-xs text-muted-foreground">Waktu Mulai</Label>
+                  <Input
+                    id={`start-time-${index}`}
+                    value={period.startTime}
+                    onChange={(e) => handleTimeChange(index, 'startTime', e.target.value)}
+                    placeholder="HH:MM"
+                    disabled={!period.isEditable}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor={`end-time-${index}`} className="text-xs text-muted-foreground">Waktu Selesai</Label>
+                  <Input
+                    id={`end-time-${index}`}
+                    value={period.endTime}
+                    onChange={(e) => handleTimeChange(index, 'endTime', e.target.value)}
+                    placeholder="HH:MM"
+                    disabled={!period.isEditable}
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <DialogFooter>
+          <Button onClick={handleSaveChanges}>Simpan Perubahan</Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

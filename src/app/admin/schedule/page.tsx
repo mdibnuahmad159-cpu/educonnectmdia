@@ -35,12 +35,10 @@ import {
     TabsTrigger,
 } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Clock } from "lucide-react";
 import { useAcademicYear } from "@/context/academic-year-provider";
 import { upsertSchedule } from "@/lib/firebase-helpers";
-import { ScheduleEntryForm, type EditingSlot } from "./components/schedule-entry-form";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { ScheduleEntryForm, TimeSettingsForm, type EditingSlot, type Period } from "./components/schedule-entry-form";
 
 const days = [
     { key: 'saturday', name: 'Sabtu' },
@@ -51,10 +49,10 @@ const days = [
     { key: 'thursday', name: 'Kamis' },
 ] as const;
 
-const initialPeriods = [
-    { name: 'Jam ke-1', startTime: '07:00', endTime: '08:30', type: 'subject' as const, isEditable: true },
-    { name: 'Istirahat', startTime: '08:30', endTime: '09:00', type: 'break' as const, isEditable: true },
-    { name: 'Jam ke-2', startTime: '09:00', endTime: '10:30', type: 'subject' as const, isEditable: true },
+const initialPeriods: Period[] = [
+    { name: 'Jam ke-1', startTime: '07:00', endTime: '08:30', type: 'subject', isEditable: true },
+    { name: 'Istirahat', startTime: '08:30', endTime: '09:00', type: 'break', isEditable: true },
+    { name: 'Jam ke-2', startTime: '09:00', endTime: '10:30', type: 'subject', isEditable: true },
 ];
 
 const initialScheduleData: Omit<Schedule, 'id' | 'classLevel' | 'academicYear' | 'type'> = {
@@ -73,9 +71,10 @@ export default function SchedulePage() {
     const { toast } = useToast();
 
     const [scheduleType, setScheduleType] = useState<'pelajaran' | 'ujian'>('pelajaran');
-    const [selectedClass, setSelectedClass] = useState<string>('0');
+    const [selectedClass, setSelectedClass] = useState<string>('semua');
     
-    const [isFormOpen, setIsFormOpen] = useState(false);
+    const [isEntryFormOpen, setIsEntryFormOpen] = useState(false);
+    const [isTimeFormOpen, setIsTimeFormOpen] = useState(false);
     const [editingSlot, setEditingSlot] = useState<EditingSlot | null>(null);
     const [periods, setPeriods] = useState(initialPeriods);
 
@@ -94,7 +93,6 @@ export default function SchedulePage() {
     const { data: scheduleData, isLoading: loadingSchedule } = useDoc<Schedule>(scheduleRef);
 
     useEffect(() => {
-        // Only update periods if schedule data exists for the first day and lengths match
         if (scheduleData?.saturday && scheduleData.saturday.length === periods.length) {
             const newPeriods = periods.map((p, index) => ({
                 ...p,
@@ -103,7 +101,6 @@ export default function SchedulePage() {
             }));
             setPeriods(newPeriods);
         } else if (selectedClass !== 'semua') {
-            // Reset to default if no schedule data for a specific class
             setPeriods(initialPeriods);
         }
     }, [scheduleData, selectedClass]);
@@ -112,10 +109,10 @@ export default function SchedulePage() {
     const handleEdit = (dayKey: typeof days[number]['key'], periodIndex: number) => {
         const currentEntry = scheduleData?.[dayKey]?.[periodIndex] || initialScheduleData[dayKey][periodIndex];
         setEditingSlot({ day: dayKey, periodIndex, entry: currentEntry });
-        setIsFormOpen(true);
+        setIsEntryFormOpen(true);
     };
 
-    const handleSave = (slot: EditingSlot, updatedData: { subjectId?: string, teacherId?: string }) => {
+    const handleSaveEntry = (slot: EditingSlot, updatedData: { subjectId?: string, teacherId?: string }) => {
         if (!scheduleId || !selectedClass || !activeYear || selectedClass === 'semua') return;
 
         const newSchedule: Schedule = scheduleData ?? {
@@ -142,19 +139,15 @@ export default function SchedulePage() {
 
         upsertSchedule(firestore, finalSchedule);
         toast({ title: "Jadwal Diperbarui", description: "Perubahan jadwal telah disimpan." });
-        setIsFormOpen(false);
+        setIsEntryFormOpen(false);
         setEditingSlot(null);
     };
 
-    const handlePeriodTimeChange = (index: number, field: 'startTime' | 'endTime', value: string) => {
-        const newPeriods = [...periods];
-        newPeriods[index] = { ...newPeriods[index], [field]: value };
-        setPeriods(newPeriods);
-    };
+    const handleSaveTimes = (updatedPeriods: Period[]) => {
+        setPeriods(updatedPeriods);
 
-    const handleSaveTimes = () => {
         if (!scheduleId || !selectedClass || !activeYear || !firestore || selectedClass === 'semua') {
-            toast({ variant: "destructive", title: "Gagal Menyimpan", description: "Pilih kelas spesifik untuk menyimpan jam." });
+            toast({ variant: "destructive", title: "Pilih Kelas Spesifik", description: "Anda harus memilih kelas spesifik untuk dapat menyimpan pengaturan jam." });
             return;
         }
 
@@ -169,10 +162,12 @@ export default function SchedulePage() {
         const scheduleToUpdate = { ...newSchedule };
 
         days.forEach(day => {
-            scheduleToUpdate[day.key] = scheduleToUpdate[day.key].map((entry, index) => ({
+            const daySchedule = scheduleToUpdate[day.key]?.length ? scheduleToUpdate[day.key] : initialPeriods.map(p => ({...p}));
+            
+            scheduleToUpdate[day.key] = daySchedule.map((entry, index) => ({
                 ...entry,
-                startTime: periods[index].startTime,
-                endTime: periods[index].endTime,
+                startTime: updatedPeriods[index].startTime,
+                endTime: updatedPeriods[index].endTime,
             }));
         });
 
@@ -215,48 +210,30 @@ export default function SchedulePage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div className="flex flex-col gap-4 mb-4">
-                        <Tabs value={scheduleType} onValueChange={(value) => setScheduleType(value as 'pelajaran' | 'ujian')} className="w-full">
-                            <TabsList className="grid grid-cols-2 w-full sm:w-fit">
-                                <TabsTrigger value="pelajaran">Jadwal Pelajaran</TabsTrigger>
-                                <TabsTrigger value="ujian">Jadwal Ujian</TabsTrigger>
-                            </TabsList>
-                        </Tabs>
-                         <Select value={selectedClass} onValueChange={setSelectedClass}>
-                            <SelectTrigger className="w-full sm:w-[180px]">
-                                <SelectValue placeholder="Pilih kelas" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="semua">Semua Kelas</SelectItem>
-                                {[...Array(7).keys()].map(i => (
-                                    <SelectItem key={i} value={String(i)}>Kelas {i}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="flex flex-wrap gap-x-4 gap-y-2 items-end mb-4 p-3 border rounded-lg">
-                        {periods.map((period, index) => (
-                            <div key={index} className="flex-grow">
-                                <Label className="text-xs font-medium">{period.name}</Label>
-                                <div className="flex gap-2 mt-1">
-                                    <Input 
-                                        value={period.startTime} 
-                                        onChange={(e) => handlePeriodTimeChange(index, 'startTime', e.target.value)} 
-                                        className="w-full"
-                                        placeholder="Mulai"
-                                        disabled={!period.isEditable}
-                                    />
-                                    <Input 
-                                        value={period.endTime} 
-                                        onChange={(e) => handlePeriodTimeChange(index, 'endTime', e.target.value)} 
-                                        className="w-full"
-                                        placeholder="Selesai"
-                                        disabled={!period.isEditable}
-                                    />
-                                </div>
-                            </div>
-                        ))}
-                        <Button size="xs" onClick={handleSaveTimes}>Simpan Jam</Button>
+                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+                        <div className="flex flex-col sm:flex-row gap-4">
+                             <Tabs value={scheduleType} onValueChange={(value) => setScheduleType(value as 'pelajaran' | 'ujian')} className="w-full sm:w-auto">
+                                <TabsList className="grid grid-cols-2 w-full sm:w-fit">
+                                    <TabsTrigger value="pelajaran">Jadwal Pelajaran</TabsTrigger>
+                                    <TabsTrigger value="ujian">Jadwal Ujian</TabsTrigger>
+                                </TabsList>
+                            </Tabs>
+                            <Select value={selectedClass} onValueChange={setSelectedClass}>
+                                <SelectTrigger className="w-full sm:w-[180px]">
+                                    <SelectValue placeholder="Pilih kelas" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="semua">Semua Kelas</SelectItem>
+                                    {[...Array(7).keys()].map(i => (
+                                        <SelectItem key={i} value={String(i)}>Kelas {i}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                         <Button size="xs" onClick={() => setIsTimeFormOpen(true)} className="gap-1">
+                            <Clock className="h-3 w-3"/>
+                            Atur Jam
+                        </Button>
                     </div>
                     <Tabs value={scheduleType}>
                         <TabsContent value="pelajaran" className="mt-0">
@@ -270,14 +247,20 @@ export default function SchedulePage() {
             </Card>
             {editingSlot && (
                 <ScheduleEntryForm 
-                    isOpen={isFormOpen}
-                    setIsOpen={setIsFormOpen}
+                    isOpen={isEntryFormOpen}
+                    setIsOpen={setIsEntryFormOpen}
                     editingSlot={editingSlot}
-                    onSave={handleSave}
+                    onSave={handleSaveEntry}
                     subjects={subjectsForClass}
                     teachers={teachers || []}
                 />
             )}
+             <TimeSettingsForm
+                isOpen={isTimeFormOpen}
+                setIsOpen={setIsTimeFormOpen}
+                initialPeriods={periods}
+                onSave={handleSaveTimes}
+            />
         </>
     );
 
