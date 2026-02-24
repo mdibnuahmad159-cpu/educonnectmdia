@@ -157,18 +157,18 @@ export default function SchedulePage() {
     
         const updatedDaySchedule = [...newSchedule[slot.day]];
         
-        const updatedEntry = {
+        const updatedEntry: Partial<ScheduleEntry> = {
             ...updatedDaySchedule[slot.periodIndex],
             subjectId: updatedData.subjectId,
             teacherId: updatedData.teacherId,
         };
     
         if (!updatedEntry.subjectId) {
-            delete (updatedEntry as Partial<ScheduleEntry>).subjectId;
+            delete updatedEntry.subjectId;
         }
     
         if (!updatedEntry.teacherId) {
-            delete (updatedEntry as Partial<ScheduleEntry>).teacherId;
+            delete updatedEntry.teacherId;
         }
     
         updatedDaySchedule[slot.periodIndex] = updatedEntry as ScheduleEntry;
@@ -236,8 +236,8 @@ export default function SchedulePage() {
         
         return (
             <div className="flex flex-col text-left">
-                <span className="font-semibold">{subject?.subjectName || '...'}</span>
-                <span className="text-muted-foreground">{teacher?.name || '...'}</span>
+                <span className="font-semibold whitespace-nowrap">{subject?.subjectName || '...'}</span>
+                <span className="text-muted-foreground whitespace-nowrap">{teacher?.name || '...'}</span>
             </div>
         );
     };
@@ -680,7 +680,7 @@ export default function SchedulePage() {
                         <TableRow>
                             <TableHead className="w-[80px]">Kelas</TableHead>
                             <TableHead className="w-[120px]">Jam</TableHead>
-                            {days.map(day => <TableHead key={day.key}>{day.name}</TableHead>)}
+                            {days.map(day => <TableHead key={day.key} className="min-w-[140px]">{day.name}</TableHead>)}
                         </TableRow>
                     </TableHeader>
                     <TableBody>
