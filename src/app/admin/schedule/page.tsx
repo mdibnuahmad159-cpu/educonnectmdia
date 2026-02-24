@@ -59,7 +59,6 @@ const days = [
 
 const initialPeriods: Period[] = [
     { name: 'Jam ke-1', startTime: '07:00', endTime: '08:30', type: 'subject', isEditable: true },
-    { name: 'Istirahat', startTime: '08:30', endTime: '09:00', type: 'break', isEditable: true },
     { name: 'Jam ke-2', startTime: '09:00', endTime: '10:30', type: 'subject', isEditable: true },
 ];
 
@@ -112,11 +111,12 @@ export default function SchedulePage() {
     useEffect(() => {
         const firstScheduleWithData = allSchedulesData?.find(s => s.saturday && s.saturday.length > 0);
         if (firstScheduleWithData?.saturday) {
-             const newPeriods = firstScheduleWithData.saturday.map((entry, index) => ({
-                name: periods[index]?.name || (entry.type === 'subject' ? `Jam ke-${index + 1}` : 'Istirahat'),
+             const subjectPeriods = firstScheduleWithData.saturday.filter(e => e.type === 'subject');
+             const newPeriods = subjectPeriods.map((entry, index) => ({
+                name: `Jam ke-${index + 1}`,
                 startTime: entry.startTime,
                 endTime: entry.endTime,
-                type: entry.type,
+                type: 'subject',
                 isEditable: true
             }));
             if (newPeriods.length > 0) {
@@ -209,13 +209,17 @@ export default function SchedulePage() {
             const scheduleToUpdate = { ...newScheduleData };
 
             days.forEach(day => {
-                 const daySchedule = scheduleToUpdate[day.key]?.length === updatedPeriods.length ? scheduleToUpdate[day.key] : periods.map(p => ({ type: p.type, startTime: p.startTime, endTime: p.endTime }));
+                 const existingSubjectEntries = scheduleToUpdate[day.key]?.filter(e => e.type === 'subject') || [];
                 
-                 scheduleToUpdate[day.key] = daySchedule.map((entry, index) => ({
-                    ...entry,
-                    startTime: updatedPeriods[index].startTime,
-                    endTime: updatedPeriods[index].endTime,
-                }));
+                 scheduleToUpdate[day.key] = updatedPeriods.map((period, index) => {
+                    const existingEntry = existingSubjectEntries[index] || {};
+                    return {
+                        ...existingEntry,
+                        type: 'subject',
+                        startTime: period.startTime,
+                        endTime: period.endTime,
+                    };
+                });
             });
             batch.set(scheduleRef, scheduleToUpdate, { merge: true });
         }
@@ -593,26 +597,15 @@ export default function SchedulePage() {
                  <Table className="min-w-full border">
                     <TableHeader>
                         <TableRow>
-                            <TableHead className="w-40">Jam</TableHead>
-                            <TableHead className="w-24">Kelas</TableHead>
+                            <TableHead className="w-[100px]">Jam</TableHead>
+                            <TableHead className="w-[80px]">Kelas</TableHead>
                             {days.map(day => (
-                                <TableHead key={day.key} className="min-w-40">{day.name}</TableHead>
+                                <TableHead key={day.key} className="min-w-[150px]">{day.name}</TableHead>
                             ))}
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {periods.map((period, periodIndex) => {
-                            if (period.type === 'break') {
-                                return (
-                                    <TableRow key={`break-${periodIndex}`}>
-                                        <TableCell>{period.startTime} - {period.endTime}</TableCell>
-                                        <TableCell colSpan={days.length + 1} className="text-center font-medium bg-muted/50 italic">
-                                            Istirahat
-                                        </TableCell>
-                                    </TableRow>
-                                );
-                            }
-
                             return classLevelsToRender.map((classLevel, classIndex) => (
                                 <TableRow key={`${periodIndex}-${classLevel}`}>
                                     {classIndex === 0 && (
@@ -638,8 +631,8 @@ export default function SchedulePage() {
                                             >
                                                 {subject ? (
                                                     <div>
-                                                        <p className="font-semibold text-primary">{subject.subjectName}</p>
-                                                        <p className="text-xs text-muted-foreground">{teacher?.name || '...'}</p>
+                                                        <p className="font-semibold text-primary whitespace-nowrap">{subject.subjectName}</p>
+                                                        <p className="text-xs text-muted-foreground whitespace-nowrap">{teacher?.name || '...'}</p>
                                                     </div>
                                                 ) : (
                                                     <div className="h-10"></div>
