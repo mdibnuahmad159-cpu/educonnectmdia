@@ -157,6 +157,8 @@ export function StudentManagement() {
                       console.error("Skipping student due to missing required fields:", studentData);
                       continue;
                   }
+                  
+                  studentData.nis = String(studentData.nis);
 
                   addStudent(firestore, studentData as Omit<Student, 'id'>);
                   successCount++;
@@ -427,7 +429,3 @@ export function StudentManagement() {
     </>
   );
 }
-
-    
-
-    

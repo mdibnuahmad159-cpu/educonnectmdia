@@ -181,6 +181,8 @@ export default function AlumniPage() {
                         console.error("Skipping alumni item due to missing required fields:", alumniData);
                         continue;
                     }
+                    
+                    alumniData.nis = String(alumniData.nis);
 
                     addAlumnus(firestore, alumniData as Omit<Alumni, 'id'>);
                     successCount++;
