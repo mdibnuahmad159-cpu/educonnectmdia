@@ -304,12 +304,12 @@ export default function SchedulePage() {
         const classLevels = [...Array(7).keys()];
 
         return (
-            <div className="border rounded-lg overflow-hidden">
+            <div className="border rounded-lg">
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead className="w-[120px]">Jam</TableHead>
                             <TableHead className="w-[80px]">Kelas</TableHead>
+                            <TableHead className="w-[120px]">Jam</TableHead>
                             {days.map(day => <TableHead key={day.key}>{day.name}</TableHead>)}
                         </TableRow>
                     </TableHeader>
@@ -327,14 +327,16 @@ export default function SchedulePage() {
                             classLevels.flatMap(classLevel => (
                                 periods.map((period, periodIndex) => (
                                     <TableRow key={`${classLevel}-${periodIndex}`}>
+                                        {periodIndex === 0 && (
+                                            <TableCell rowSpan={periods.length} className="font-medium align-top pt-2.5">
+                                               {`Kelas ${classLevel}`}
+                                            </TableCell>
+                                        )}
                                         <TableCell className="font-medium align-top">
                                             <div className="flex flex-col">
                                                 <span>{period.name}</span>
                                                 <span className="text-xs text-muted-foreground">{period.startTime} - {period.endTime}</span>
                                             </div>
-                                        </TableCell>
-                                        <TableCell className="font-medium align-top pt-2.5">
-                                            {`Kelas ${classLevel}`}
                                         </TableCell>
                                         {days.map(day => (
                                             <TableCell 
@@ -354,14 +356,14 @@ export default function SchedulePage() {
                         ) : (
                             periods.map((period, periodIndex) => (
                                 <TableRow key={periodIndex}>
+                                    <TableCell className="font-medium align-top pt-2.5">
+                                        {`Kelas ${selectedClass}`}
+                                    </TableCell>
                                     <TableCell className="font-medium align-top">
                                         <div className="flex flex-col">
                                             <span>{period.name}</span>
                                             <span className="text-xs text-muted-foreground">{period.startTime} - {period.endTime}</span>
                                         </div>
-                                    </TableCell>
-                                    <TableCell className="font-medium align-top pt-2.5">
-                                        {`Kelas ${selectedClass}`}
                                     </TableCell>
                                     {days.map(day => (
                                         <TableCell 
@@ -387,9 +389,20 @@ export default function SchedulePage() {
                                 </td>
                             </TableRow>
                         )}
+                         {!isLoading && selectedClass === 'semua' && allSchedulesData?.length === 0 && (
+                            <TableRow>
+                                <td colSpan={8}>
+                                    <div className="h-24 flex items-center justify-center text-center text-muted-foreground">
+                                        Belum ada jadwal untuk tahun ajaran dan tipe ini.
+                                    </div>
+                                </td>
+                            </TableRow>
+                        )}
                     </TableBody>
                 </Table>
             </div>
         );
     }
 }
+
+    
