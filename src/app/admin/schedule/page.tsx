@@ -52,9 +52,9 @@ const days = [
 ] as const;
 
 const initialPeriods = [
-    { name: 'Jam ke-1', startTime: '07:00', endTime: '08:30', type: 'subject' as const },
-    { name: 'Istirahat', startTime: '08:30', endTime: '09:00', type: 'break' as const },
-    { name: 'Jam ke-2', startTime: '09:00', endTime: '10:30', type: 'subject' as const },
+    { name: 'Jam ke-1', startTime: '07:00', endTime: '08:30', type: 'subject' as const, isEditable: true },
+    { name: 'Istirahat', startTime: '08:30', endTime: '09:00', type: 'break' as const, isEditable: true },
+    { name: 'Jam ke-2', startTime: '09:00', endTime: '10:30', type: 'subject' as const, isEditable: true },
 ];
 
 const initialScheduleData: Omit<Schedule, 'id' | 'classLevel' | 'academicYear' | 'type'> = {
@@ -86,7 +86,7 @@ export default function SchedulePage() {
     const { data: teachers, loading: loadingTeachers } = useCollection<Teacher>(teachersCollection);
     
     const scheduleId = useMemo(() => {
-        if (!selectedClass || !activeYear) return null;
+        if (!selectedClass || !activeYear || selectedClass === 'semua') return null;
         return `${selectedClass}_${activeYear.replace('/', '-')}_${scheduleType}`;
     }, [selectedClass, activeYear, scheduleType]);
 
@@ -94,19 +94,19 @@ export default function SchedulePage() {
     const { data: scheduleData, isLoading: loadingSchedule } = useDoc<Schedule>(scheduleRef);
 
     useEffect(() => {
-        if (scheduleData && scheduleData.saturday.length === periods.length) {
-            // Take times from the first day as the source of truth
+        // Only update periods if schedule data exists for the first day and lengths match
+        if (scheduleData?.saturday && scheduleData.saturday.length === periods.length) {
             const newPeriods = periods.map((p, index) => ({
                 ...p,
                 startTime: scheduleData.saturday[index].startTime,
                 endTime: scheduleData.saturday[index].endTime,
             }));
             setPeriods(newPeriods);
-        } else {
-            // Reset to default if no schedule data or period length mismatch
+        } else if (selectedClass !== 'semua') {
+            // Reset to default if no schedule data for a specific class
             setPeriods(initialPeriods);
         }
-    }, [scheduleData]);
+    }, [scheduleData, selectedClass]);
 
 
     const handleEdit = (dayKey: typeof days[number]['key'], periodIndex: number) => {
@@ -116,7 +116,7 @@ export default function SchedulePage() {
     };
 
     const handleSave = (slot: EditingSlot, updatedData: { subjectId?: string, teacherId?: string }) => {
-        if (!scheduleId || !selectedClass || !activeYear) return;
+        if (!scheduleId || !selectedClass || !activeYear || selectedClass === 'semua') return;
 
         const newSchedule: Schedule = scheduleData ?? {
             id: scheduleId,
@@ -153,7 +153,10 @@ export default function SchedulePage() {
     };
 
     const handleSaveTimes = () => {
-        if (!scheduleId || !selectedClass || !activeYear || !firestore) return;
+        if (!scheduleId || !selectedClass || !activeYear || !firestore || selectedClass === 'semua') {
+            toast({ variant: "destructive", title: "Gagal Menyimpan", description: "Pilih kelas spesifik untuk menyimpan jam." });
+            return;
+        }
 
         const newSchedule: Schedule = scheduleData ? { ...scheduleData } : {
             id: scheduleId,
@@ -178,7 +181,7 @@ export default function SchedulePage() {
     }
 
     const subjectsForClass = useMemo(() => {
-        if (!curriculumData) return [];
+        if (!curriculumData || selectedClass === 'semua') return [];
         return curriculumData.filter(c => c.classLevel === parseInt(selectedClass, 10));
     }, [curriculumData, selectedClass]);
     
@@ -212,49 +215,54 @@ export default function SchedulePage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Tabs value={scheduleType} onValueChange={(value) => setScheduleType(value as 'pelajaran' | 'ujian')}>
-                        <div className="flex flex-col gap-4 mb-4">
+                    <div className="flex flex-col gap-4 mb-4">
+                        <Tabs value={scheduleType} onValueChange={(value) => setScheduleType(value as 'pelajaran' | 'ujian')} className="w-full">
                             <TabsList className="grid grid-cols-2 w-full sm:w-fit">
                                 <TabsTrigger value="pelajaran">Jadwal Pelajaran</TabsTrigger>
                                 <TabsTrigger value="ujian">Jadwal Ujian</TabsTrigger>
                             </TabsList>
-                             <Select value={selectedClass} onValueChange={setSelectedClass}>
-                                <SelectTrigger className="w-full sm:w-[180px]">
-                                    <SelectValue placeholder="Pilih kelas" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {[...Array(7).keys()].map(i => (
-                                        <SelectItem key={i} value={String(i)}>Kelas {i}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="flex flex-wrap gap-x-4 gap-y-2 items-end mb-4 p-3 border rounded-lg">
-                            {periods.map((period, index) => (
-                                <div key={index} className="flex-grow">
-                                    <Label className="text-xs font-medium">{period.name}</Label>
-                                    <div className="flex gap-2 mt-1">
-                                        <Input 
-                                            value={period.startTime} 
-                                            onChange={(e) => handlePeriodTimeChange(index, 'startTime', e.target.value)} 
-                                            className="w-full"
-                                            placeholder="Mulai"
-                                        />
-                                        <Input 
-                                            value={period.endTime} 
-                                            onChange={(e) => handlePeriodTimeChange(index, 'endTime', e.target.value)} 
-                                            className="w-full"
-                                            placeholder="Selesai"
-                                        />
-                                    </div>
+                        </Tabs>
+                         <Select value={selectedClass} onValueChange={setSelectedClass}>
+                            <SelectTrigger className="w-full sm:w-[180px]">
+                                <SelectValue placeholder="Pilih kelas" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="semua">Semua Kelas</SelectItem>
+                                {[...Array(7).keys()].map(i => (
+                                    <SelectItem key={i} value={String(i)}>Kelas {i}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="flex flex-wrap gap-x-4 gap-y-2 items-end mb-4 p-3 border rounded-lg">
+                        {periods.map((period, index) => (
+                            <div key={index} className="flex-grow">
+                                <Label className="text-xs font-medium">{period.name}</Label>
+                                <div className="flex gap-2 mt-1">
+                                    <Input 
+                                        value={period.startTime} 
+                                        onChange={(e) => handlePeriodTimeChange(index, 'startTime', e.target.value)} 
+                                        className="w-full"
+                                        placeholder="Mulai"
+                                        disabled={!period.isEditable}
+                                    />
+                                    <Input 
+                                        value={period.endTime} 
+                                        onChange={(e) => handlePeriodTimeChange(index, 'endTime', e.target.value)} 
+                                        className="w-full"
+                                        placeholder="Selesai"
+                                        disabled={!period.isEditable}
+                                    />
                                 </div>
-                            ))}
-                            <Button size="xs" onClick={handleSaveTimes}>Simpan Jam</Button>
-                        </div>
-                        <TabsContent value="pelajaran" className="space-y-4">
+                            </div>
+                        ))}
+                        <Button size="xs" onClick={handleSaveTimes}>Simpan Jam</Button>
+                    </div>
+                    <Tabs value={scheduleType}>
+                        <TabsContent value="pelajaran" className="mt-0">
                              <ScheduleTable />
                         </TabsContent>
-                        <TabsContent value="ujian" className="space-y-4">
+                        <TabsContent value="ujian" className="mt-0">
                             <ScheduleTable />
                         </TabsContent>
                     </Tabs>
@@ -280,17 +288,24 @@ export default function SchedulePage() {
                     <TableHeader>
                         <TableRow>
                             <TableHead className="w-[120px]">Jam</TableHead>
+                            <TableHead className="w-[80px]">Kelas</TableHead>
                             {days.map(day => <TableHead key={day.key}>{day.name}</TableHead>)}
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {isLoading ? (
                             <TableRow>
-                                <TableCell colSpan={7} className="h-48 text-center">
+                                <TableCell colSpan={8} className="h-48 text-center">
                                     <div className="flex justify-center items-center gap-2 text-muted-foreground">
                                         <Loader2 className="h-4 w-4 animate-spin"/>
                                         <span>Memuat data jadwal...</span>
                                     </div>
+                                </TableCell>
+                            </TableRow>
+                        ) : selectedClass === 'semua' ? (
+                            <TableRow>
+                                <TableCell colSpan={8} className="h-48 text-center text-muted-foreground">
+                                    Pilih kelas untuk melihat atau mengubah jadwal.
                                 </TableCell>
                             </TableRow>
                         ) : (
@@ -302,17 +317,32 @@ export default function SchedulePage() {
                                             <span className="text-xs text-muted-foreground">{period.startTime} - {period.endTime}</span>
                                         </div>
                                     </TableCell>
+                                    <TableCell className="font-medium align-top pt-2.5">
+                                        {`Kelas ${selectedClass}`}
+                                    </TableCell>
                                     {days.map(day => (
                                         <TableCell 
                                             key={day.key} 
                                             className="align-top cursor-pointer hover:bg-muted/50"
-                                            onClick={() => period.type !== 'break' && handleEdit(day.key, periodIndex)}
+                                            onClick={() => {
+                                                if (period.type === 'break') return;
+                                                handleEdit(day.key, periodIndex);
+                                            }}
                                         >
-                                            {renderCellContent(day.key, periodIndex)}
+                                            {scheduleData ? renderCellContent(day.key, periodIndex) : (period.type === 'break' ? <span className="text-muted-foreground italic">Istirahat</span> : '-')}
                                         </TableCell>
                                     ))}
                                 </TableRow>
                             ))
+                        )}
+                        {!isLoading && selectedClass !== 'semua' && !scheduleData && (
+                            <TableRow>
+                                <td colSpan={8}>
+                                    <div className="h-24 flex items-center justify-center text-center text-muted-foreground">
+                                        Belum ada jadwal untuk kelas ini. <br/> Klik pada slot untuk mulai mengisi.
+                                    </div>
+                                </td>
+                            </TableRow>
                         )}
                     </TableBody>
                 </Table>
