@@ -34,9 +34,9 @@ import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useAcademicYear } from "@/context/academic-year-provider";
-import { TimeSettingsForm } from "./components/time-settings-form";
 import { upsertSchedule } from "@/lib/firebase-helpers";
 import { ScheduleEntryForm } from "./components/schedule-entry-form";
+import { TimeSettingsForm } from "./components/time-settings-form";
 
 const days = [
     { key: 'saturday', name: 'Sabtu' },
@@ -57,8 +57,9 @@ export type EditContext = {
 
 const createEmptySchedule = (classLevel: number, academicYear: string, type: 'pelajaran' | 'ujian', periods: {startTime: string, endTime: string}[]): Schedule => {
     const emptyDay = periods.map(p => ({ type: 'subject' as const, startTime: p.startTime, endTime: p.endTime, subjectId: '', teacherId: '' }));
+    const id = `${classLevel}_${academicYear.replace(/\//g, '-')}_${type}`;
     return {
-        id: `${classLevel}_${academicYear.replace(/\//g, '-')}_${type}`,
+        id,
         classLevel,
         academicYear,
         type,
@@ -105,12 +106,14 @@ export default function SchedulePage() {
 
     const periods = useMemo(() => {
         if (!allSchedulesData || allSchedulesData.length === 0) {
-            // Default periods if no schedule exists yet for the current year/type
             return [];
         }
 
         const firstScheduleWithEntries = allSchedulesData.find(s => s.saturday && s.saturday.length > 0);
-        const scheduleEntries = firstScheduleWithEntries?.saturday?.filter(e => e.type === 'subject') || [];
+        
+        if (!firstScheduleWithEntries) return [];
+
+        const scheduleEntries = firstScheduleWithEntries.saturday.filter(e => e.type === 'subject');
         
         if (scheduleEntries.length > 0) {
             return scheduleEntries.map(p => ({ startTime: p.startTime, endTime: p.endTime })).sort((a,b) => a.startTime.localeCompare(b.startTime));
@@ -124,7 +127,12 @@ export default function SchedulePage() {
 
     const getCellData = (classLevel: number, dayKey: DayKey, periodIndex: number) => {
         const schedule = schedulesMap.get(classLevel);
-        const entry = schedule?.[dayKey]?.filter(e => e.type === 'subject')[periodIndex];
+        if (!schedule) return { entry: null, subject: null, teacher: null };
+        
+        const daySchedule = schedule[dayKey];
+        if (!daySchedule) return { entry: null, subject: null, teacher: null };
+
+        const entry = daySchedule.filter(e => e.type === 'subject')[periodIndex];
         
         if (!entry || !curriculumData || !teachers) {
             return { entry: null, subject: null, teacher: null };
@@ -163,7 +171,6 @@ export default function SchedulePage() {
 
         const entryToUpdate = subjectEntries[periodIndex];
 
-        // Find the original index in the full schedule array which might include breaks
         const originalIndex = scheduleToUpdate[dayKey].findIndex((e: ScheduleEntry) => e.startTime === entryToUpdate.startTime && e.endTime === entryToUpdate.endTime && e.type === 'subject');
 
         if (originalIndex !== -1) {
@@ -171,16 +178,20 @@ export default function SchedulePage() {
             
             const updatedEntry = { ...currentEntry };
             
-            if (data.subjectId) {
-                updatedEntry.subjectId = data.subjectId;
-            } else {
-                delete (updatedEntry as Partial<typeof updatedEntry>).subjectId;
+            if ('subjectId' in data) {
+                if (data.subjectId) {
+                    updatedEntry.subjectId = data.subjectId;
+                } else {
+                    delete (updatedEntry as Partial<typeof updatedEntry>).subjectId;
+                }
             }
-
-            if (data.teacherId) {
-                updatedEntry.teacherId = data.teacherId;
-            } else {
-                 delete (updatedEntry as Partial<typeof updatedEntry>).teacherId;
+    
+            if ('teacherId' in data) {
+                if (data.teacherId) {
+                    updatedEntry.teacherId = data.teacherId;
+                } else {
+                    delete (updatedEntry as Partial<typeof updatedEntry>).teacherId;
+                }
             }
             
             scheduleToUpdate[dayKey][originalIndex] = updatedEntry;
@@ -312,18 +323,53 @@ export default function SchedulePage() {
     };
     
     const handlePrintTable = () => {
-        const printWindow = window.open('', '_blank');
-        if (!printWindow) {
-          toast({ variant: "destructive", title: "Gagal membuka jendela cetak." });
-          return;
-        }
-    
-        const tableHtml = document.getElementById('schedule-table-main')?.outerHTML;
-        if (!tableHtml) {
-            toast({ variant: "destructive", title: "Tidak ada data untuk dicetak." });
+        if (isLoading) {
+            toast({ variant: "destructive", title: "Data belum siap", description: "Harap tunggu data jadwal selesai dimuat." });
             return;
         }
-        
+
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) {
+            toast({ variant: "destructive", title: "Gagal membuka jendela cetak." });
+            return;
+        }
+
+        const tableHeader = `
+            <thead>
+                <tr>
+                    <th style="width: 8%;">Hari</th>
+                    <th style="width: 10%;">Jam</th>
+                    ${classLevels.map(cl => `<th>Kelas ${cl}</th>`).join('')}
+                </tr>
+            </thead>
+        `;
+
+        const bodyRows: string[] = [];
+        days.forEach(day => {
+            periods.forEach((period, periodIndex) => {
+                let rowHtml = '<tr>';
+                
+                if (periodIndex === 0) {
+                    rowHtml += `<td rowspan="${periods.length}" style="vertical-align: middle; text-align: center; font-weight: 600;">${day.name}</td>`;
+                }
+
+                rowHtml += `<td style="text-align: center; vertical-align: middle;">${period.startTime}<br/>-<br/>${period.endTime}</td>`;
+
+                classLevels.forEach(classLevel => {
+                    const { subject, teacher } = getCellData(classLevel, day.key, periodIndex);
+                    const content = subject 
+                        ? `<p style="font-weight: 600; color: #15803d; font-size: 10px; margin: 0; white-space: nowrap;">${subject.subjectName}</p><p style="font-size: 9px; color: #555; margin: 0; white-space: nowrap;">${teacher?.name || '...'}</p>`
+                        : '';
+                    rowHtml += `<td>${content}</td>`;
+                });
+
+                rowHtml += '</tr>';
+                bodyRows.push(rowHtml);
+            });
+        });
+
+        const tableBody = `<tbody>${bodyRows.join('')}</tbody>`;
+
         const content = `
           <html>
             <head>
@@ -333,18 +379,17 @@ export default function SchedulePage() {
                 @page { size: A4 landscape; margin: 15mm; }
                 h1 { font-size: 14px; margin-bottom: 1rem; }
                 table { width: 100%; border-collapse: collapse; }
-                th, td { border: 1px solid #ddd; padding: 4px; text-align: left; vertical-align: top; white-space: normal; }
-                th { background-color: #f2f2f2; font-weight: bold; }
-                td.schedule-cell { height: 40px; }
-                .font-semibold { font-weight: 600; }
-                .text-primary { color: #15803d; }
-                .text-xs { font-size: 8px; }
-                .text-muted-foreground { color: #555; }
+                th, td { border: 1px solid #ddd; padding: 4px; text-align: left; vertical-align: top; }
+                th { background-color: #f2f2f2; font-weight: bold; text-align: center; }
+                td { height: 40px; }
               </style>
             </head>
             <body>
               <h1>Jadwal ${scheduleType === 'pelajaran' ? 'Pelajaran' : 'Ujian'} - Tahun Ajaran ${activeYear}</h1>
-              ${tableHtml}
+              <table>
+                ${tableHeader}
+                ${tableBody}
+              </table>
             </body>
           </html>
         `;
