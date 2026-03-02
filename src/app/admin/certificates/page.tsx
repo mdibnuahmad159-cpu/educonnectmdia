@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection, Firestore, query, orderBy } from "firebase/firestore";
 import type { Certificate, Student, CertificateTemplate } from "@/types";
@@ -43,7 +43,9 @@ import {
     FileDown, 
     FileSpreadsheet, 
     FileText,
-    CopyCheck
+    CopyCheck,
+    FileUp,
+    Download
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
@@ -66,6 +68,7 @@ export default function CertificatesPage() {
     const firestore = useFirestore() as Firestore;
     const { activeYear } = useAcademicYear();
     const { toast } = useToast();
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const certificatesQuery = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -135,6 +138,94 @@ export default function CertificatesPage() {
         }
         setIsFormOpen(false);
         setSelectedCertificate(null);
+    };
+
+    const certificateImportColumns = {
+        nis: 'NIS Siswa (Wajib)',
+        rank: 'Juara (Pertama/Kedua/Ketiga)',
+        competitionName: 'Nama Lomba',
+        date: 'Tanggal (YYYY-MM-DD)'
+    };
+
+    const handleDownloadTemplate = () => {
+        const worksheet = XLSX.utils.json_to_sheet([{}], { header: Object.values(certificateImportColumns) });
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Template Sertifikat');
+        XLSX.writeFile(workbook, 'template_impor_sertifikat.xlsx');
+    };
+
+    const handleImportCertificates = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file || !firestore || !students) return;
+        
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+             try {
+                const data = new Uint8Array(e.target?.result as ArrayBuffer);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const json: any[] = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+
+                if (json.length === 0) {
+                    toast({ variant: "destructive", title: "File Kosong", description: "File Excel yang Anda unggah tidak berisi data." });
+                    return;
+                }
+
+                toast({ title: "Mengimpor Data", description: `Mulai mengimpor ${json.length} data sertifikat...` });
+
+                let successCount = 0;
+                let errorCount = 0;
+
+                for (const item of json) {
+                    const certData: any = {};
+                    const columnKeys = Object.keys(certificateImportColumns);
+                    const columnValues = Object.values(certificateImportColumns);
+                    
+                    for(const key in item) {
+                        const columnIndex = columnValues.indexOf(key);
+                        if (columnIndex > -1) {
+                             const dataKey = columnKeys[columnIndex];
+                             certData[dataKey] = item[key] ?? '';
+                        }
+                    }
+
+                    // Validation
+                    const student = students.find(s => String(s.nis) === String(certData.nis));
+                    const validRanks = ['Pertama', 'Kedua', 'Ketiga'];
+                    
+                    if (!student || !certData.rank || !certData.competitionName || !certData.date || !validRanks.includes(certData.rank)) {
+                        errorCount++;
+                        console.error("Skipping certificate item due to invalid data:", certData);
+                        continue;
+                    }
+
+                    const finalData: Omit<Certificate, 'id'> = {
+                        studentId: student.id,
+                        studentName: student.name,
+                        category: 'lomba',
+                        rank: certData.rank as any,
+                        competitionName: certData.competitionName,
+                        date: String(certData.date),
+                        academicYear: activeYear
+                    };
+
+                    addCertificate(firestore, finalData);
+                    successCount++;
+                }
+
+                 toast({ title: "Impor Selesai", description: `${successCount} sertifikat berhasil diimpor. ${errorCount} gagal.` });
+
+            } catch (error) {
+                toast({ variant: "destructive", title: "Gagal Membaca File", description: "Tidak dapat memproses file Excel." });
+                console.error(error);
+            } finally {
+                if (event.target) {
+                    event.target.value = '';
+                }
+            }
+        };
+        reader.readAsArrayBuffer(file);
     };
 
     const handlePrintCertificate = (certificate: Certificate) => {
@@ -355,6 +446,32 @@ export default function CertificatesPage() {
                     <p className="text-xs text-muted-foreground">Kelola catatan prestasi dan cetak sertifikat digital.</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button size="xs" variant="outline" className="gap-2 border-primary/30 text-primary font-normal">
+                                <FileUp className="h-3.5 w-3.5" />
+                                Impor
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={handleDownloadTemplate}>
+                                <Download className="mr-2 h-3.5 w-3.5" />
+                                Unduh Template
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
+                                <Upload className="mr-2 h-3.5 w-3.5" />
+                                Unggah Excel
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        className="hidden"
+                        accept=".xlsx, .xls"
+                        onChange={handleImportCertificates}
+                    />
+
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button size="xs" variant="outline" className="gap-2 border-primary/30 text-primary font-normal">
