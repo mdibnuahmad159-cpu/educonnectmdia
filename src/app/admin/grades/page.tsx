@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2, Save, Users, BookOpen, User, CheckCircle2, Info } from "lucide-react";
+import { Loader2, Save, Users, BookOpen, User, CheckCircle2, Info, ChevronLeft, ArrowLeft } from "lucide-react";
 import { useAcademicYear } from "@/context/academic-year-provider";
 import { useToast } from "@/hooks/use-toast";
 import { saveGradesBatch } from "@/lib/firebase-helpers";
@@ -79,7 +79,7 @@ export default function GradesPage() {
 
     useEffect(() => {
         setSelectedStudentId(null);
-    }, [selectedClass]);
+    }, [selectedClass, selectedGradeType]);
 
     const subjects = useMemo(() => {
         if (!curriculum) return [];
@@ -148,20 +148,21 @@ export default function GradesPage() {
     const isLoading = loadingStudents || loadingCurriculum || loadingGrades;
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-4 max-w-full overflow-hidden">
+            {/* Header Sticky */}
             <Card className="border-none shadow-none bg-transparent">
                 <CardHeader className="p-0 pb-2">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                         <div>
-                            <CardTitle className="text-xl font-bold font-headline text-primary">Manajemen Nilai</CardTitle>
-                            <CardDescription>
-                                Pengisian nilai {selectedGradeType} Tahun Ajaran {activeYear}
+                            <CardTitle className="text-lg font-bold font-headline text-primary">Input Nilai</CardTitle>
+                            <CardDescription className="text-[10px]">
+                                {selectedGradeType} TA {activeYear}
                             </CardDescription>
                         </div>
                         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                             <Select value={selectedClass} onValueChange={setSelectedClass}>
-                                <SelectTrigger className="w-[110px] h-8 text-xs font-semibold">
-                                    <Users className="h-3.5 w-3.5 mr-2 opacity-70" />
+                                <SelectTrigger className="flex-1 sm:w-[100px] h-8 text-xs font-semibold">
+                                    <Users className="h-3 w-3 mr-1.5 opacity-70" />
                                     <SelectValue placeholder="Kelas" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -171,45 +172,50 @@ export default function GradesPage() {
                                 </SelectContent>
                             </Select>
                             <Select value={selectedGradeType} onValueChange={(v) => setSelectedGradeType(v as GradeType)}>
-                                <SelectTrigger className="w-[110px] h-8 text-xs font-semibold">
-                                    <BookOpen className="h-3.5 w-3.5 mr-2 opacity-70" />
+                                <SelectTrigger className="flex-1 sm:w-[100px] h-8 text-xs font-semibold">
+                                    <BookOpen className="h-3 w-3 mr-1.5 opacity-70" />
                                     <SelectValue placeholder="Jenis" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="PH">PH (Harian)</SelectItem>
-                                    <SelectItem value="UTS">UTS (Tengah)</SelectItem>
-                                    <SelectItem value="UAS">UAS (Akhir)</SelectItem>
+                                    <SelectItem value="PH">Harian</SelectItem>
+                                    <SelectItem value="UTS">UTS</SelectItem>
+                                    <SelectItem value="UAS">UAS</SelectItem>
                                 </SelectContent>
                             </Select>
-                            <Button onClick={handleSave} disabled={isLoading || isSaving} size="xs" className="h-8 gap-2 px-4 shadow-sm">
-                                {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-                                Simpan Semua
+                            <Button 
+                                onClick={handleSave} 
+                                disabled={isLoading || isSaving} 
+                                size="xs" 
+                                className="w-full sm:w-auto h-8 gap-1.5 px-3 shadow-sm bg-primary hover:bg-primary/90"
+                            >
+                                {isSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                                Simpan
                             </Button>
                         </div>
                     </div>
                 </CardHeader>
             </Card>
 
-            <div className="flex flex-col md:flex-row gap-4 h-[calc(100vh-12rem)] overflow-hidden">
-                {/* Tabel Nama Siswa (Sisi Kiri) */}
-                <Card className="w-full md:w-[320px] flex flex-col overflow-hidden shadow-sm border-primary/10">
-                    <CardHeader className="p-3 border-b bg-primary/5">
+            <div className="flex flex-col md:flex-row gap-4 h-[calc(100vh-13rem)] sm:h-[calc(100vh-11rem)]">
+                {/* Tabel Nama Siswa */}
+                <Card className={cn(
+                    "w-full md:w-[300px] flex flex-col overflow-hidden shadow-sm border-primary/10 transition-all duration-300",
+                    selectedStudentId ? "hidden md:flex" : "flex"
+                )}>
+                    <CardHeader className="p-3 border-b bg-primary/5 flex flex-row items-center justify-between space-y-0">
                         <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-primary flex items-center gap-2">
-                            <Users className="h-3 w-3" /> Tabel Nama Siswa
+                            <Users className="h-3 w-3" /> Daftar Siswa
                         </CardTitle>
+                        <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-bold">
+                            {sortedStudents.length} SISWA
+                        </span>
                     </CardHeader>
                     <ScrollArea className="flex-1">
                         <Table>
-                            <TableHeader className="bg-muted/30 sticky top-0 z-10">
-                                <TableRow className="h-8">
-                                    <TableHead className="w-[40px] text-center text-[10px]">No</TableHead>
-                                    <TableHead className="text-[10px]">Nama Lengkap</TableHead>
-                                </TableRow>
-                            </TableHeader>
                             <TableBody>
                                 {isLoading ? (
                                     <TableRow>
-                                        <TableCell colSpan={2} className="h-24 text-center">
+                                        <TableCell className="h-32 text-center">
                                             <Loader2 className="h-5 w-5 animate-spin mx-auto text-primary/40" />
                                         </TableCell>
                                     </TableRow>
@@ -221,25 +227,25 @@ export default function GradesPage() {
                                             <TableRow 
                                                 key={student.id} 
                                                 className={cn(
-                                                    "cursor-pointer transition-colors group h-12",
+                                                    "cursor-pointer transition-colors group h-14",
                                                     isSelected ? "bg-primary/10 hover:bg-primary/15" : "hover:bg-muted/50"
                                                 )}
                                                 onClick={() => setSelectedStudentId(student.id)}
                                             >
-                                                <TableCell className="text-center font-mono text-[10px] text-muted-foreground">
+                                                <TableCell className="w-[40px] text-center font-mono text-[9px] text-muted-foreground p-0">
                                                     {index + 1}
                                                 </TableCell>
-                                                <TableCell className="py-2">
-                                                    <div className="flex flex-col gap-1">
+                                                <TableCell className="py-2 pr-3">
+                                                    <div className="flex flex-col gap-1.5">
                                                         <div className="flex items-center justify-between">
                                                             <span className={cn(
-                                                                "text-xs font-bold truncate max-w-[160px]",
+                                                                "text-xs font-bold truncate max-w-[180px]",
                                                                 isSelected ? "text-primary" : "text-foreground"
                                                             )}>
                                                                 {student.name}
                                                             </span>
                                                             {progress === 100 ? (
-                                                                <CheckCircle2 className="h-3 w-3 text-green-500" />
+                                                                <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
                                                             ) : progress > 0 ? (
                                                                 <span className="text-[9px] text-orange-500 font-mono font-bold">{progress}%</span>
                                                             ) : null}
@@ -252,8 +258,8 @@ export default function GradesPage() {
                                     })
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={2} className="h-24 text-center text-[10px] text-muted-foreground">
-                                            Tidak ada data siswa.
+                                        <TableCell className="h-32 text-center text-[10px] text-muted-foreground italic">
+                                            Belum ada siswa di kelas ini.
                                         </TableCell>
                                     </TableRow>
                                 )}
@@ -262,72 +268,85 @@ export default function GradesPage() {
                     </ScrollArea>
                 </Card>
 
-                {/* Tabel Input Nilai (Sisi Kanan) */}
-                <Card className="flex-1 flex flex-col overflow-hidden shadow-sm border-primary/10">
-                    <CardHeader className="p-3 border-b bg-muted/20">
-                        <div className="flex justify-between items-center">
+                {/* Tabel Input Nilai */}
+                <Card className={cn(
+                    "flex-1 flex flex-col overflow-hidden shadow-sm border-primary/10 transition-all duration-300",
+                    !selectedStudentId ? "hidden md:flex" : "flex"
+                )}>
+                    <CardHeader className="p-3 border-b bg-muted/20 flex flex-row items-center justify-between space-y-0">
+                        <div className="flex items-center gap-2">
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="md:hidden h-7 w-7" 
+                                onClick={() => setSelectedStudentId(null)}
+                            >
+                                <ArrowLeft className="h-4 w-4" />
+                            </Button>
                             <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                                <BookOpen className="h-3 w-3" /> Tabel Nilai & Mapel
+                                <BookOpen className="h-3 w-3" /> Input Nilai {selectedGradeType}
                             </CardTitle>
-                            {selectedStudent && (
-                                <div className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase border border-primary/20">
-                                    {selectedStudent.name}
-                                </div>
-                            )}
                         </div>
+                        {selectedStudent && (
+                            <div className="px-2 py-0.5 rounded-full bg-primary text-white text-[10px] font-bold uppercase shadow-sm truncate max-w-[120px] sm:max-w-none">
+                                {selectedStudent.name}
+                            </div>
+                        )}
                     </CardHeader>
+                    
                     <ScrollArea className="flex-1">
                         {!selectedStudentId ? (
-                            <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-12">
-                                <Info className="h-10 w-10 mb-4 opacity-10" />
-                                <p className="text-sm font-medium">Silakan pilih siswa dari tabel kiri</p>
-                                <p className="text-xs opacity-60">Pilih nama siswa untuk mengaktifkan tabel input nilai.</p>
+                            <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-12 text-center">
+                                <User className="h-12 w-12 mb-4 opacity-5" />
+                                <p className="text-sm font-bold opacity-40">Pilih Siswa Terlebih Dahulu</p>
+                                <p className="text-[10px] opacity-30 mt-1">Pilih salah satu nama siswa di panel kiri untuk mulai menginput nilai.</p>
                             </div>
                         ) : subjects.length > 0 ? (
                             <Table>
-                                <TableHeader className="bg-muted/30 sticky top-0 z-10">
-                                    <TableRow className="h-8">
-                                        <TableHead className="w-[50px] text-center text-[10px]">No</TableHead>
-                                        <TableHead className="text-[10px]">Mata Pelajaran</TableHead>
-                                        <TableHead className="w-[140px] text-center text-[10px]">Input Nilai</TableHead>
+                                <TableHeader className="bg-muted/30 sticky top-0 z-10 shadow-sm">
+                                    <TableRow className="h-9">
+                                        <TableHead className="w-[40px] text-center text-[10px] p-0">No</TableHead>
+                                        <TableHead className="text-[10px] p-2">Mata Pelajaran</TableHead>
+                                        <TableHead className="w-[100px] sm:w-[140px] text-center text-[10px] p-2">Nilai</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {subjects.map((subject, index) => {
                                         const key = `${selectedStudentId}_${subject.id}`;
+                                        const val = localGrades[key];
                                         return (
-                                            <TableRow key={subject.id} className="hover:bg-muted/30 h-14">
-                                                <TableCell className="text-center font-mono text-[10px] text-muted-foreground">
+                                            <TableRow key={subject.id} className="hover:bg-muted/30 h-16 sm:h-14">
+                                                <TableCell className="text-center font-mono text-[10px] text-muted-foreground p-0">
                                                     {index + 1}
                                                 </TableCell>
-                                                <TableCell>
+                                                <TableCell className="p-2">
                                                     <div className="flex flex-col">
-                                                        <span className="text-xs font-bold">{subject.subjectName}</span>
-                                                        <span className="text-[9px] text-muted-foreground font-mono uppercase">
-                                                            {subject.subjectCode} • {subject.bookName || 'Kitab belum diatur'}
+                                                        <span className="text-xs font-bold leading-tight">{subject.subjectName}</span>
+                                                        <span className="text-[9px] text-muted-foreground font-mono uppercase mt-0.5">
+                                                            {subject.subjectCode} • {subject.bookName || 'No Kitab'}
                                                         </span>
                                                     </div>
                                                 </TableCell>
-                                                <TableCell>
-                                                    <div className="flex items-center gap-3">
+                                                <TableCell className="p-2">
+                                                    <div className="flex items-center justify-center gap-2">
                                                         <Input 
                                                             type="number"
                                                             min="0"
                                                             max="100"
-                                                            value={localGrades[key] === undefined ? "" : localGrades[key]}
+                                                            value={val === undefined ? "" : val}
                                                             onChange={(e) => handleGradeChange(selectedStudentId, subject.id, e.target.value)}
                                                             className={cn(
-                                                                "h-9 w-20 text-center font-mono font-bold text-sm shadow-inner transition-all focus:ring-2 focus:ring-primary",
-                                                                localGrades[key] > 0 ? "border-primary/50 text-primary bg-primary/5" : "border-input"
+                                                                "h-10 sm:h-9 w-16 sm:w-20 text-center font-mono font-bold text-sm shadow-inner transition-all",
+                                                                val > 0 ? "border-primary/50 text-primary bg-primary/5" : "border-input"
                                                             )}
                                                             placeholder="0"
                                                         />
-                                                        <span className={cn(
-                                                            "text-[10px] font-bold w-10 text-center",
-                                                            localGrades[key] >= 75 ? "text-green-600" : localGrades[key] > 0 ? "text-orange-500" : "text-muted-foreground/30"
+                                                        <div className={cn(
+                                                            "hidden sm:flex items-center justify-center w-8 h-8 rounded-full border text-[8px] font-black",
+                                                            val >= 75 ? "bg-green-50 text-green-600 border-green-200" : val > 0 ? "bg-orange-50 text-orange-500 border-orange-200" : "text-muted-foreground/20 border-muted/20"
                                                         )}>
-                                                            {localGrades[key] >= 75 ? 'LULUS' : localGrades[key] > 0 ? 'REMID' : '-'}
-                                                        </span>
+                                                            {val >= 75 ? 'PASS' : val > 0 ? 'REM' : '-'}
+                                                        </div>
                                                     </div>
                                                 </TableCell>
                                             </TableRow>
@@ -336,16 +355,20 @@ export default function GradesPage() {
                                 </TableBody>
                             </Table>
                         ) : (
-                            <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-12">
-                                <BookOpen className="h-10 w-10 mb-4 opacity-10" />
-                                <p className="text-sm font-medium">Kurikulum belum diatur</p>
-                                <p className="text-xs opacity-60">Atur kurikulum Kelas {selectedClass} terlebih dahulu.</p>
+                            <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-12 text-center">
+                                <BookOpen className="h-12 w-12 mb-4 opacity-5" />
+                                <p className="text-sm font-bold opacity-40">Kurikulum Belum Ada</p>
+                                <p className="text-[10px] opacity-30 mt-1">Harap atur kurikulum untuk Kelas {selectedClass} di menu Kurikulum.</p>
                             </div>
                         )}
                     </ScrollArea>
-                    <div className="p-2 border-t bg-muted/10 text-right">
-                        <p className="text-[9px] text-muted-foreground italic">
-                            * Nilai disimpan sementara di aplikasi. Tekan <strong>Simpan Semua</strong> di atas untuk menyimpan ke database.
+                    <div className="p-3 border-t bg-muted/5 flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                            <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                            <span className="text-[9px] font-bold text-muted-foreground">≥ 75 Lulus</span>
+                        </div>
+                        <p className="text-[9px] text-muted-foreground italic flex items-center gap-1">
+                            <Info className="h-3 w-3" /> Auto-save saat tekan tombol Simpan
                         </p>
                     </div>
                 </Card>
