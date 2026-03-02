@@ -34,7 +34,6 @@ import {
 } from "@/components/ui/select";
 import type { Announcement } from "@/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import Image from "next/image";
 
 const formSchema = z.object({
   title: z.string().min(1, "Judul harus diisi"),
@@ -162,8 +161,12 @@ export function AnnouncementForm({ isOpen, setIsOpen, announcement, onSave }: An
                         <FormLabel>Gambar (Opsional)</FormLabel>
                         <Input type="file" accept="image/*" onChange={handleImageChange} />
                         {form.watch("imageUrl") && (
-                            <div className="mt-2 relative h-32 w-full rounded-md overflow-hidden border">
-                                <Image src={form.watch("imageUrl")!} alt="Preview" fill className="object-contain" />
+                            <div className="mt-2 relative w-full rounded-md overflow-hidden border bg-muted/30">
+                                <img 
+                                    src={form.watch("imageUrl")!} 
+                                    alt="Preview" 
+                                    className="w-full h-auto max-h-[300px] object-contain" 
+                                />
                                 <Button 
                                     type="button" 
                                     variant="destructive" 

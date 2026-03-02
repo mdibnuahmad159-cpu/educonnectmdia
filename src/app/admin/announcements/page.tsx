@@ -26,12 +26,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { PlusCircle, Edit, Trash2, Loader2, Link as LinkIcon, Image as ImageIcon, AlertTriangle, ExternalLink, Calendar } from "lucide-react";
+import { PlusCircle, Edit, Trash2, Loader2, Image as ImageIcon, AlertTriangle, ExternalLink, Calendar } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { id as dfnsId } from "date-fns/locale";
 import { addAnnouncement, updateAnnouncement, deleteAnnouncement } from "@/lib/firebase-helpers";
 import { AnnouncementForm } from "./components/announcement-form";
-import Image from "next/image";
 
 export default function AnnouncementsPage() {
     const firestore = useFirestore() as Firestore;
@@ -120,25 +119,24 @@ export default function AnnouncementsPage() {
                     <span className="text-sm">Memuat daftar pengumuman...</span>
                 </div>
             ) : announcements && announcements.length > 0 ? (
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 items-start">
                     {announcements.map((item) => (
                         <Card key={item.id} className="flex flex-col overflow-hidden hover:shadow-md transition-shadow">
                             {item.imageUrl ? (
-                                <div className="relative h-48 w-full bg-muted/50 p-2">
-                                    <Image 
+                                <div className="relative w-full bg-muted/50">
+                                    <img 
                                         src={item.imageUrl} 
                                         alt={item.title} 
-                                        fill 
-                                        className="object-contain"
+                                        className="w-full h-auto max-h-[400px] object-contain"
                                     />
                                     <div className="absolute top-2 left-2">
                                         {getTargetBadge(item.target)}
                                     </div>
                                 </div>
                             ) : (
-                                <div className="h-24 bg-gradient-to-br from-primary/10 to-primary/5 p-4 flex items-start justify-between">
+                                <div className="h-20 bg-gradient-to-br from-primary/10 to-primary/5 p-4 flex items-start justify-between">
                                     {getTargetBadge(item.target)}
-                                    <ImageIcon className="h-8 w-8 text-primary/20" />
+                                    <ImageIcon className="h-6 w-6 text-primary/20" />
                                 </div>
                             )}
                             
@@ -151,7 +149,7 @@ export default function AnnouncementsPage() {
                             </CardHeader>
                             
                             <CardContent className="p-4 pt-0 flex-1">
-                                <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">
+                                <p className="text-xs text-muted-foreground line-clamp-4 leading-relaxed">
                                     {item.content}
                                 </p>
                                 {item.linkUrl && (
