@@ -32,14 +32,34 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { PlusCircle, Edit, Trash2, Loader2, Search, Upload, Printer } from "lucide-react";
+import { 
+    PlusCircle, 
+    Edit, 
+    Trash2, 
+    Loader2, 
+    Search, 
+    Upload, 
+    Printer, 
+    FileDown, 
+    FileSpreadsheet, 
+    FileText,
+    CopyCheck
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { addCertificate, updateCertificate, deleteCertificate } from "@/lib/firebase-helpers";
 import { CertificateForm } from "./components/certificate-form";
 import { TemplateUploadDialog } from "./components/template-upload-dialog";
 import { format, parseISO } from "date-fns";
 import { id as dfnsId } from "date-fns/locale";
 import jsPDF from "jspdf";
+import 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 import { useAcademicYear } from "@/context/academic-year-provider";
 
 export default function CertificatesPage() {
@@ -156,6 +176,97 @@ export default function CertificatesPage() {
         doc.save(`Sertifikat_${certificate.studentName}_${certificate.category}.pdf`);
     };
 
+    const handleBulkPrint = () => {
+        if (!filteredCertificates.length) {
+            toast({ variant: "destructive", title: "Tidak Ada Data", description: "Tidak ada sertifikat untuk dicetak." });
+            return;
+        }
+
+        // Check if all required templates are uploaded
+        const uniqueCategories = new Set(filteredCertificates.map(c => c.category));
+        const missingTemplates = Array.from(uniqueCategories).filter(cat => !templates?.find(t => t.id === cat));
+
+        if (missingTemplates.length > 0) {
+            toast({ 
+                variant: "destructive", 
+                title: "Template Belum Lengkap", 
+                description: `Silakan unggah template untuk kategori: ${missingTemplates.join(', ')}` 
+            });
+            return;
+        }
+
+        const doc = new jsPDF({ orientation: "landscape", unit: "px", format: "a4" });
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+
+        filteredCertificates.forEach((certificate, index) => {
+            if (index > 0) doc.addPage();
+            
+            const template = templates!.find(t => t.id === certificate.category)!;
+            doc.addImage(template.imageUrl, "JPEG", 0, 0, pageWidth, pageHeight);
+
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(28);
+            doc.setTextColor(0, 0, 0);
+            
+            const nameText = certificate.studentName.toUpperCase();
+            doc.text(nameText, pageWidth / 2, pageHeight / 2 - 20, { align: "center" });
+
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(18);
+            
+            const rankText = certificate.category === 'bintang' ? 'Sebagai Bintang Pelajar' : `Sebagai Peringkat ${certificate.rank}`;
+            doc.text(rankText, pageWidth / 2, pageHeight / 2 + 20, { align: "center" });
+
+            if (certificate.category === 'lomba' && certificate.competitionName) {
+                doc.text(`Dalam Kegiatan ${certificate.competitionName}`, pageWidth / 2, pageHeight / 2 + 50, { align: "center" });
+            } else {
+                doc.text(`Semester ${certificate.academicYear}`, pageWidth / 2, pageHeight / 2 + 50, { align: "center" });
+            }
+
+            const dateFormatted = format(parseISO(certificate.date), "d MMMM yyyy", { locale: dfnsId });
+            doc.setFontSize(12);
+            doc.text(dateFormatted, pageWidth - 60, pageHeight - 60, { align: "right" });
+        });
+
+        doc.save(`Sertifikat_Massal_${activeYear.replace('/', '-')}.pdf`);
+    };
+
+    const handleExportExcel = () => {
+        if (!filteredCertificates.length) return;
+        const data = filteredCertificates.map((c, i) => ({
+            'No': i + 1,
+            'Nama Siswa': c.studentName,
+            'Juara': c.rank,
+            'Kategori': c.category,
+            'Lomba/Keterangan': c.category === 'lomba' ? c.competitionName : `Semester ${c.academicYear}`,
+            'Tanggal': c.date
+        }));
+        const worksheet = XLSX.utils.json_to_sheet(data);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Daftar Prestasi");
+        XLSX.writeFile(workbook, `Data_Prestasi_Siswa_${activeYear.replace('/', '-')}.xlsx`);
+    };
+
+    const handleExportPdf = () => {
+        if (!filteredCertificates.length) return;
+        const doc = new jsPDF();
+        doc.text(`Data Prestasi Siswa - TA ${activeYear}`, 14, 15);
+        (doc as any).autoTable({
+            head: [['No', 'Nama', 'Juara', 'Lomba']],
+            body: filteredCertificates.map((c, i) => [
+                i + 1,
+                c.studentName,
+                c.rank,
+                c.category === 'lomba' ? c.competitionName : `${c.category} (TA ${c.academicYear})`
+            ]),
+            startY: 20,
+            theme: 'grid',
+            headStyles: { fillColor: [46, 125, 50] }
+        });
+        doc.save(`Data_Prestasi_Siswa_${activeYear.replace('/', '-')}.pdf`);
+    };
+
     const getRankBadge = (rank: Certificate['rank']) => {
         switch (rank) {
             case 'Pertama': return <Badge className="bg-yellow-500 hover:bg-yellow-600 border-none font-normal">Juara 1</Badge>;
@@ -184,6 +295,30 @@ export default function CertificatesPage() {
                     <p className="text-xs text-muted-foreground">Kelola catatan prestasi dan cetak sertifikat digital.</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button size="xs" variant="outline" className="gap-2 border-primary/30 text-primary font-normal">
+                                <FileDown className="h-3.5 w-3.5" />
+                                Ekspor
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={handleExportExcel}>
+                                <FileSpreadsheet className="mr-2 h-3.5 w-3.5" />
+                                Ekspor ke Excel
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={handleExportPdf}>
+                                <FileText className="mr-2 h-3.5 w-3.5" />
+                                Ekspor ke PDF
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+
+                    <Button size="xs" variant="outline" className="gap-2 border-primary/30 text-primary font-normal" onClick={handleBulkPrint}>
+                        <CopyCheck className="h-3.5 w-3.5" />
+                        Cetak Massal
+                    </Button>
+
                     <Button size="xs" variant="outline" className="gap-2 border-primary/30 text-primary font-normal" onClick={() => setIsTemplateOpen(true)}>
                         <Upload className="h-3.5 w-3.5" />
                         Upload Template
