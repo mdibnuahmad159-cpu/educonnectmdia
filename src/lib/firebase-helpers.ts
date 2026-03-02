@@ -16,7 +16,7 @@ import {
   query,
   where,
 } from 'firebase/firestore';
-import type { Teacher, Student, SchoolProfile, Curriculum, Alumni, Schedule, TeacherAttendance, StudentAttendance, Announcement, Grade, ReportSummary, Certificate } from '@/types';
+import type { Teacher, Student, SchoolProfile, Curriculum, Alumni, Schedule, TeacherAttendance, StudentAttendance, Announcement, Grade, ReportSummary, Certificate, CertificateTemplate } from '@/types';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { firebaseConfig } from '@/firebase/config';
@@ -401,6 +401,17 @@ export function deleteCertificate(db: Firestore, id: string) {
     errorEmitter.emit('permission-error', new FirestorePermissionError({
       path: ref.path,
       operation: 'delete',
+    }));
+  });
+}
+
+export function upsertCertificateTemplate(db: Firestore, template: CertificateTemplate) {
+  const ref = doc(db, 'certificate_templates', template.id);
+  setDoc(ref, template).catch(error => {
+    errorEmitter.emit('permission-error', new FirestorePermissionError({
+      path: ref.path,
+      operation: 'write',
+      requestResourceData: template,
     }));
   });
 }

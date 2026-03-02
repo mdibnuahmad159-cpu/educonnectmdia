@@ -535,12 +535,23 @@
         "id": { "type": "string" },
         "studentId": { "type": "string" },
         "studentName": { "type": "string" },
+        "category": { "type": "string", "enum": ["lomba", "ranking", "bintang"] },
         "rank": { "type": "string", "enum": ["Pertama", "Kedua", "Ketiga"] },
         "competitionName": { "type": "string" },
         "date": { "type": "string", "format": "date" },
         "academicYear": { "type": "string" }
       },
-      "required": ["id", "studentId", "rank", "competitionName", "date"]
+      "required": ["id", "studentId", "category", "rank", "date"]
+    },
+    "CertificateTemplate": {
+      "title": "Certificate Template",
+      "type": "object",
+      "description": "Stores blank canvas images for different certificate types.",
+      "properties": {
+        "id": { "type": "string", "description": "Type of template: lomba, ranking, or bintang" },
+        "imageUrl": { "type": "string", "description": "Base64 encoded image data" }
+      },
+      "required": ["id", "imageUrl"]
     }
   },
   "auth": {
@@ -774,8 +785,24 @@
             }
           ]
         }
+      },
+      {
+        "path": "/certificate_templates/{templateId}",
+        "definition": {
+          "entityName": "CertificateTemplate",
+          "schema": {
+            "$ref": "#/backend/entities/CertificateTemplate"
+          },
+          "description": "Stores certificate templates.",
+          "params": [
+            {
+              "name": "templateId",
+              "description": "ID of the template (lomba, ranking, bintang)."
+            }
+          ]
+        }
       }
     ],
-    "reasoning": "Added Certificate entity to manage student achievements/awards."
+    "reasoning": "Added CertificateTemplate entity and category to Certificate for templated certificate generation."
   }
 }

@@ -30,13 +30,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { Certificate, Student, CertificateRank } from "@/types";
+import type { Certificate, Student, CertificateRank, CertificateCategory } from "@/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 const formSchema = z.object({
   studentId: z.string().min(1, "Siswa harus dipilih"),
+  category: z.enum(["lomba", "ranking", "bintang"], { required_error: "Kategori harus dipilih" }),
   rank: z.enum(["Pertama", "Kedua", "Ketiga"], { required_error: "Juara harus dipilih" }),
-  competitionName: z.string().min(1, "Nama lomba harus diisi"),
+  competitionName: z.string().optional(),
   date: z.string().min(1, "Tanggal harus diisi"),
   academicYear: z.string().min(1, "Tahun ajaran harus diisi"),
 });
@@ -56,6 +57,7 @@ export function CertificateForm({ isOpen, setIsOpen, certificate, students, onSa
     resolver: zodResolver(formSchema),
     defaultValues: {
       studentId: "",
+      category: "lomba",
       rank: "Pertama",
       competitionName: "",
       date: new Date().toISOString().split('T')[0],
@@ -68,14 +70,16 @@ export function CertificateForm({ isOpen, setIsOpen, certificate, students, onSa
         if (certificate) {
           form.reset({
             studentId: certificate.studentId,
+            category: certificate.category || "lomba",
             rank: certificate.rank,
-            competitionName: certificate.competitionName,
+            competitionName: certificate.competitionName || "",
             date: certificate.date,
             academicYear: certificate.academicYear,
           });
         } else {
           form.reset({
             studentId: "",
+            category: "lomba",
             rank: "Pertama",
             competitionName: "",
             date: new Date().toISOString().split('T')[0],
@@ -86,9 +90,11 @@ export function CertificateForm({ isOpen, setIsOpen, certificate, students, onSa
   }, [certificate, form, isOpen]);
   
   const onSubmit = (values: CertificateFormData) => {
-    onSave(values);
+    onSave(values as Omit<Certificate, 'id' | 'studentName'>);
     setIsOpen(false);
   };
+
+  const category = form.watch("category");
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -129,10 +135,32 @@ export function CertificateForm({ isOpen, setIsOpen, certificate, students, onSa
                     />
                     <FormField
                     control={form.control}
+                    name="category"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Kategori Sertifikat</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Pilih kategori" />
+                            </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                <SelectItem value="lomba">Sertifikat Lomba</SelectItem>
+                                <SelectItem value="ranking">Sertifikat Ranking</SelectItem>
+                                <SelectItem value="bintang">Sertifikat Bintang Pelajar</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <FormField
+                    control={form.control}
                     name="rank"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>Juara</FormLabel>
+                        <FormLabel>Juara / Peringkat</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                             <SelectTrigger>
@@ -149,19 +177,21 @@ export function CertificateForm({ isOpen, setIsOpen, certificate, students, onSa
                         </FormItem>
                     )}
                     />
-                    <FormField
-                    control={form.control}
-                    name="competitionName"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Nama Lomba</FormLabel>
-                        <FormControl>
-                            <Input placeholder="Contoh: Lomba MTQ Nasional" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
+                    {category === "lomba" && (
+                        <FormField
+                        control={form.control}
+                        name="competitionName"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Nama Lomba</FormLabel>
+                            <FormControl>
+                                <Input placeholder="Contoh: Lomba MTQ Nasional" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
                     )}
-                    />
                     <FormField
                     control={form.control}
                     name="date"

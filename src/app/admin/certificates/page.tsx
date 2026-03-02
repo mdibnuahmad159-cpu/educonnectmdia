@@ -4,7 +4,7 @@
 import { useState, useMemo } from "react";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection, Firestore, query, orderBy } from "firebase/firestore";
-import type { Certificate, Student } from "@/types";
+import type { Certificate, Student, CertificateTemplate } from "@/types";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -33,12 +33,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { PlusCircle, Edit, Trash2, Loader2, Award, Search } from "lucide-react";
+import { PlusCircle, Edit, Trash2, Loader2, Award, Search, Upload, Printer } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { addCertificate, updateCertificate, deleteCertificate } from "@/lib/firebase-helpers";
 import { CertificateForm } from "./components/certificate-form";
+import { TemplateUploadDialog } from "./components/template-upload-dialog";
 import { format, parseISO } from "date-fns";
 import { id as dfnsId } from "date-fns/locale";
+import jsPDF from "jspdf";
 
 export default function CertificatesPage() {
     const firestore = useFirestore() as Firestore;
@@ -51,10 +53,14 @@ export default function CertificatesPage() {
     
     const studentsCollection = useMemoFirebase(() => firestore ? collection(firestore, "students") : null, [firestore]);
     const { data: students, loading: loadingStudents } = useCollection<Student>(studentsCollection);
+
+    const templatesCollection = useMemoFirebase(() => firestore ? collection(firestore, "certificate_templates") : null, [firestore]);
+    const { data: templates } = useCollection<CertificateTemplate>(templatesCollection);
     
     const { toast } = useToast();
 
     const [isFormOpen, setIsFormOpen] = useState(false);
+    const [isTemplateOpen, setIsTemplateOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [selectedCertificate, setSelectedCertificate] = useState<Certificate | null>(null);
     const [idToDelete, setIdToDelete] = useState<string | null>(null);
@@ -64,7 +70,7 @@ export default function CertificatesPage() {
         if (!certificates) return [];
         return certificates.filter(c => 
             c.studentName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            c.competitionName.toLowerCase().includes(searchTerm.toLowerCase())
+            (c.competitionName && c.competitionName.toLowerCase().includes(searchTerm.toLowerCase()))
         );
     }, [certificates, searchTerm]);
 
@@ -110,12 +116,69 @@ export default function CertificatesPage() {
         setSelectedCertificate(null);
     };
 
+    const handlePrintCertificate = (certificate: Certificate) => {
+        const template = templates?.find(t => t.id === certificate.category);
+        if (!template) {
+            toast({ variant: "destructive", title: "Template Tidak Ditemukan", description: `Silakan unggah template untuk kategori ${certificate.category} terlebih dahulu.` });
+            return;
+        }
+
+        const doc = new jsPDF({ orientation: "landscape", unit: "px", format: "a4" });
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+
+        // Render Background Template
+        doc.addImage(template.imageUrl, "JPEG", 0, 0, pageWidth, pageHeight);
+
+        // Render Dynamic Text
+        // Catatan: Posisi X dan Y ini adalah estimasi umum, admin mungkin perlu menyesuaikan desain template-nya.
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(28);
+        doc.setTextColor(0, 0, 0);
+        
+        // Nama Siswa
+        const nameText = certificate.studentName.toUpperCase();
+        doc.text(nameText, pageWidth / 2, pageHeight / 2 - 20, { align: "center" });
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(18);
+        
+        // Keterangan Juara
+        const rankText = `Sebagai Juara ${certificate.rank}`;
+        doc.text(rankText, pageWidth / 2, pageHeight / 2 + 20, { align: "center" });
+
+        // Keterangan Lomba/Prestasi
+        if (certificate.category === 'lomba' && certificate.competitionName) {
+            doc.text(`Dalam Kegiatan ${certificate.competitionName}`, pageWidth / 2, pageHeight / 2 + 50, { align: "center" });
+        } else if (certificate.category === 'ranking') {
+            doc.text(`Peringkat Kelas Semester ${certificate.academicYear}`, pageWidth / 2, pageHeight / 2 + 50, { align: "center" });
+        } else if (certificate.category === 'bintang') {
+            doc.text(`Bintang Pelajar Tahun Ajaran ${certificate.academicYear}`, pageWidth / 2, pageHeight / 2 + 50, { align: "center" });
+        }
+
+        // Tanggal
+        const dateFormatted = format(parseISO(certificate.date), "d MMMM yyyy", { locale: dfnsId });
+        doc.setFontSize(12);
+        doc.text(dateFormatted, pageWidth - 60, pageHeight - 60, { align: "right" });
+
+        doc.save(`Sertifikat_${certificate.studentName}_${certificate.category}.pdf`);
+    };
+
     const getRankBadge = (rank: Certificate['rank']) => {
         switch (rank) {
             case 'Pertama': return <Badge className="bg-yellow-500 hover:bg-yellow-600 border-none">Juara 1</Badge>;
             case 'Kedua': return <Badge className="bg-slate-400 hover:bg-slate-500 border-none">Juara 2</Badge>;
             case 'Ketiga': return <Badge className="bg-amber-700 hover:bg-amber-800 border-none">Juara 3</Badge>;
             default: return <Badge variant="outline">{rank}</Badge>;
+        }
+    };
+
+    const getCategoryLabel = (category: Certificate['category']) => {
+        switch (category) {
+            case 'lomba': return 'Lomba';
+            case 'ranking': return 'Ranking';
+            case 'bintang': return 'Bintang Pelajar';
+            default: return category;
         }
     };
 
@@ -126,12 +189,18 @@ export default function CertificatesPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-xl font-bold font-headline text-primary">Sertifikat & Prestasi</h1>
-                    <p className="text-xs text-muted-foreground">Kelola catatan prestasi dan juara lomba siswa.</p>
+                    <p className="text-xs text-muted-foreground">Kelola catatan prestasi dan cetak sertifikat digital.</p>
                 </div>
-                <Button size="sm" className="gap-2" onClick={handleAdd}>
-                    <PlusCircle className="h-4 w-4" />
-                    Tambah Sertifikat
-                </Button>
+                <div className="flex gap-2">
+                    <Button size="sm" variant="outline" className="gap-2 border-primary/30 text-primary" onClick={() => setIsTemplateOpen(true)}>
+                        <Upload className="h-4 w-4" />
+                        Upload Template
+                    </Button>
+                    <Button size="sm" className="gap-2" onClick={handleAdd}>
+                        <PlusCircle className="h-4 w-4" />
+                        Tambah Prestasi
+                    </Button>
+                </div>
             </div>
 
             <Card>
@@ -152,10 +221,10 @@ export default function CertificatesPage() {
                             <TableRow>
                                 <TableHead className="w-[50px]">No.</TableHead>
                                 <TableHead>Nama Siswa</TableHead>
+                                <TableHead>Kategori</TableHead>
                                 <TableHead>Juara</TableHead>
-                                <TableHead>Nama Lomba</TableHead>
-                                <TableHead>Tanggal</TableHead>
-                                <TableHead className="text-right w-[100px]">Aksi</TableHead>
+                                <TableHead>Keterangan</TableHead>
+                                <TableHead className="text-right w-[120px]">Aksi</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -173,13 +242,18 @@ export default function CertificatesPage() {
                                 <TableRow key={item.id}>
                                     <TableCell className="text-xs">{index + 1}</TableCell>
                                     <TableCell className="font-medium text-xs">{item.studentName}</TableCell>
+                                    <TableCell className="text-[10px] uppercase text-muted-foreground">
+                                        {getCategoryLabel(item.category)}
+                                    </TableCell>
                                     <TableCell>{getRankBadge(item.rank)}</TableCell>
-                                    <TableCell className="text-xs">{item.competitionName}</TableCell>
                                     <TableCell className="text-xs">
-                                        {item.date ? format(parseISO(item.date), "d MMM yyyy", { locale: dfnsId }) : '-'}
+                                        {item.category === 'lomba' ? item.competitionName : `Semester ${item.academicYear}`}
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <div className="flex justify-end gap-1">
+                                            <Button variant="ghost" size="icon" className="h-7 w-7 text-blue-600" onClick={() => handlePrintCertificate(item)}>
+                                                <Printer className="h-3.5 w-3.5" />
+                                            </Button>
                                             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(item)}>
                                                 <Edit className="h-3.5 w-3.5" />
                                             </Button>
@@ -208,6 +282,12 @@ export default function CertificatesPage() {
                 certificate={selectedCertificate}
                 students={students || []}
                 onSave={handleSave}
+            />
+
+            <TemplateUploadDialog
+                isOpen={isTemplateOpen}
+                setIsOpen={setIsTemplateOpen}
+                existingTemplates={templates || []}
             />
             
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>

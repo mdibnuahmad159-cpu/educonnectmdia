@@ -56,5 +56,6 @@ service cloud.firestore {
     match /grades/{gradeId} { allow read: if isSignedIn(); }
     match /report_summaries/{summaryId} { allow read: if isSignedIn(); }
     match /certificates/{certificateId} { allow read: if isSignedIn(); }
+    match /certificate_templates/{templateId} { allow read: if isSignedIn(); }
   }
 }

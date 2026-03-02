@@ -140,13 +140,20 @@ export type ReportSummary = {
 };
 
 export type CertificateRank = 'Pertama' | 'Kedua' | 'Ketiga';
+export type CertificateCategory = 'lomba' | 'ranking' | 'bintang';
 
 export type Certificate = {
   id: string;
   studentId: string;
   studentName: string;
+  category: CertificateCategory;
   rank: CertificateRank;
-  competitionName: string;
+  competitionName?: string; // Optional for non-lomba
   date: string;
   academicYear: string;
+};
+
+export type CertificateTemplate = {
+  id: CertificateCategory;
+  imageUrl: string;
 };
