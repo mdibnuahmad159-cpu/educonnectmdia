@@ -434,38 +434,17 @@ export default function GradesPage() {
     return (
         <div className="space-y-4 max-w-full overflow-hidden font-body">
             <Card className="border-none shadow-none bg-transparent">
-                <CardHeader className="p-0 pb-2">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                        <div>
-                            <CardTitle className="text-lg font-headline text-primary font-normal">Input Nilai</CardTitle>
-                            <CardDescription className="text-[10px]">
-                                Semester {selectedGradeType} TA {activeYear}
-                            </CardDescription>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-                            <Select value={selectedClass} onValueChange={setSelectedClass}>
-                                <SelectTrigger className="flex-1 sm:w-[100px] h-8 text-xs font-normal">
-                                    <Users className="h-3 w-3 mr-1.5 opacity-70" />
-                                    <SelectValue placeholder="Kelas" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {[...Array(7).keys()].map(i => (
-                                        <SelectItem key={i} value={String(i)}>Kelas {i}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <Select value={selectedGradeType} onValueChange={(v) => setSelectedGradeType(v as GradeType)}>
-                                <SelectTrigger className="flex-1 sm:w-[100px] h-8 text-xs font-normal">
-                                    <BookOpen className="h-3 w-3 mr-1.5 opacity-70" />
-                                    <SelectValue placeholder="Semester" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Ganjil">Ganjil</SelectItem>
-                                    <SelectItem value="Genap">Genap</SelectItem>
-                                </SelectContent>
-                            </Select>
+                <CardHeader className="p-0 pb-4">
+                    <div className="space-y-4">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                            <div>
+                                <CardTitle className="text-lg font-headline text-primary font-normal">Input Nilai</CardTitle>
+                                <CardDescription className="text-[10px]">
+                                    Semester {selectedGradeType} TA {activeYear}
+                                </CardDescription>
+                            </div>
                             
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-1.5">
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                         <Button variant="outline" size="xs" className="h-8 gap-1.5 px-3 font-normal border-primary/20">
@@ -520,11 +499,35 @@ export default function GradesPage() {
                                 </Button>
                             </div>
                         </div>
+
+                        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto pt-2 border-t border-primary/5">
+                            <Select value={selectedClass} onValueChange={setSelectedClass}>
+                                <SelectTrigger className="flex-1 sm:w-[120px] h-8 text-xs font-normal bg-card">
+                                    <Users className="h-3 w-3 mr-1.5 opacity-70" />
+                                    <SelectValue placeholder="Kelas" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {[...Array(7).keys()].map(i => (
+                                        <SelectItem key={i} value={String(i)}>Kelas {i}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <Select value={selectedGradeType} onValueChange={(v) => setSelectedGradeType(v as GradeType)}>
+                                <SelectTrigger className="flex-1 sm:w-[120px] h-8 text-xs font-normal bg-card">
+                                    <BookOpen className="h-3 w-3 mr-1.5 opacity-70" />
+                                    <SelectValue placeholder="Semester" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Ganjil">Ganjil</SelectItem>
+                                    <SelectItem value="Genap">Genap</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
                 </CardHeader>
             </Card>
 
-            <div className="flex flex-col md:flex-row gap-4 h-[calc(100vh-13rem)] sm:h-[calc(100vh-11rem)]">
+            <div className="flex flex-col md:flex-row gap-4 h-[calc(100vh-15rem)] sm:h-[calc(100vh-13rem)]">
                 <Card className={cn(
                     "w-full md:w-[350px] flex flex-col overflow-hidden shadow-sm border-primary/10 transition-all duration-300",
                     selectedStudentId ? "hidden md:flex" : "flex"
