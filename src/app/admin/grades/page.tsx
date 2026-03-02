@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2, Save, Users, BookOpen, User, CheckCircle2, Info, ChevronLeft, ArrowLeft } from "lucide-react";
+import { Loader2, Save, Users, BookOpen, User, CheckCircle2, Info, ArrowLeft } from "lucide-react";
 import { useAcademicYear } from "@/context/academic-year-provider";
 import { useToast } from "@/hooks/use-toast";
 import { saveGradesBatch } from "@/lib/firebase-helpers";
@@ -31,7 +31,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
 
-type GradeType = 'PH' | 'UTS' | 'UAS';
+type GradeType = 'Ganjil' | 'Genap';
 
 export default function GradesPage() {
     const firestore = useFirestore() as Firestore;
@@ -39,7 +39,7 @@ export default function GradesPage() {
     const { toast } = useToast();
 
     const [selectedClass, setSelectedClass] = useState<string>("0");
-    const [selectedGradeType, setSelectedGradeType] = useState<GradeType>("PH");
+    const [selectedGradeType, setSelectedGradeType] = useState<GradeType>("Ganjil");
     const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
     
@@ -128,7 +128,7 @@ export default function GradesPage() {
 
         try {
             await saveGradesBatch(firestore, gradesToSave);
-            toast({ title: "Nilai Berhasil Disimpan", description: `Data nilai ${selectedGradeType} Kelas ${selectedClass} telah diperbarui.` });
+            toast({ title: "Nilai Berhasil Disimpan", description: `Data nilai Semester ${selectedGradeType} Kelas ${selectedClass} telah diperbarui.` });
         } catch (error) {
             toast({ variant: "destructive", title: "Gagal Menyimpan", description: "Terjadi kesalahan saat menyimpan data nilai." });
         } finally {
@@ -149,14 +149,13 @@ export default function GradesPage() {
 
     return (
         <div className="space-y-4 max-w-full overflow-hidden">
-            {/* Header Sticky */}
             <Card className="border-none shadow-none bg-transparent">
                 <CardHeader className="p-0 pb-2">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                         <div>
                             <CardTitle className="text-lg font-bold font-headline text-primary">Input Nilai</CardTitle>
                             <CardDescription className="text-[10px]">
-                                {selectedGradeType} TA {activeYear}
+                                Semester {selectedGradeType} TA {activeYear}
                             </CardDescription>
                         </div>
                         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
@@ -174,12 +173,11 @@ export default function GradesPage() {
                             <Select value={selectedGradeType} onValueChange={(v) => setSelectedGradeType(v as GradeType)}>
                                 <SelectTrigger className="flex-1 sm:w-[100px] h-8 text-xs font-semibold">
                                     <BookOpen className="h-3 w-3 mr-1.5 opacity-70" />
-                                    <SelectValue placeholder="Jenis" />
+                                    <SelectValue placeholder="Semester" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="PH">Harian</SelectItem>
-                                    <SelectItem value="UTS">UTS</SelectItem>
-                                    <SelectItem value="UAS">UAS</SelectItem>
+                                    <SelectItem value="Ganjil">Ganjil</SelectItem>
+                                    <SelectItem value="Genap">Genap</SelectItem>
                                 </SelectContent>
                             </Select>
                             <Button 
@@ -197,7 +195,6 @@ export default function GradesPage() {
             </Card>
 
             <div className="flex flex-col md:flex-row gap-4 h-[calc(100vh-13rem)] sm:h-[calc(100vh-11rem)]">
-                {/* Tabel Nama Siswa */}
                 <Card className={cn(
                     "w-full md:w-[300px] flex flex-col overflow-hidden shadow-sm border-primary/10 transition-all duration-300",
                     selectedStudentId ? "hidden md:flex" : "flex"
@@ -268,7 +265,6 @@ export default function GradesPage() {
                     </ScrollArea>
                 </Card>
 
-                {/* Tabel Input Nilai */}
                 <Card className={cn(
                     "flex-1 flex flex-col overflow-hidden shadow-sm border-primary/10 transition-all duration-300",
                     !selectedStudentId ? "hidden md:flex" : "flex"
@@ -284,7 +280,7 @@ export default function GradesPage() {
                                 <ArrowLeft className="h-4 w-4" />
                             </Button>
                             <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                                <BookOpen className="h-3 w-3" /> Input Nilai {selectedGradeType}
+                                <BookOpen className="h-3 w-3" /> Input Nilai Semester {selectedGradeType}
                             </CardTitle>
                         </div>
                         {selectedStudent && (

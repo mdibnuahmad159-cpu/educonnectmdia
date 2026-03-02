@@ -120,7 +120,7 @@ export type Grade = {
   studentId: string;
   subjectId: string;
   academicYear: string;
-  type: 'PH' | 'UTS' | 'UAS';
+  type: 'Ganjil' | 'Genap';
   score: number;
   updatedAt: string;
 };

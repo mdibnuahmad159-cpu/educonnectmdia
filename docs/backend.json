@@ -498,13 +498,13 @@
     "Grade": {
       "title": "Grade",
       "type": "object",
-      "description": "Represents a student's academic grade for a specific subject, type, and academic year.",
+      "description": "Represents a student's academic grade for a specific subject, semester, and academic year.",
       "properties": {
         "id": { "type": "string" },
         "studentId": { "type": "string" },
         "subjectId": { "type": "string" },
         "academicYear": { "type": "string" },
-        "type": { "type": "string", "enum": ["PH", "UTS", "UAS"] },
+        "type": { "type": "string", "enum": ["Ganjil", "Genap"] },
         "score": { "type": "number" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },
