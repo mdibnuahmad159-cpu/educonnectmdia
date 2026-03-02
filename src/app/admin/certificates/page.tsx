@@ -4,7 +4,7 @@
 import { useState, useMemo } from "react";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection, Firestore, query, orderBy, getDocs, where } from "firebase/firestore";
-import type { Certificate, Student, CertificateTemplate, Grade, Curriculum } from "@/types";
+import type { Certificate, Student, CertificateTemplate, Grade } from "@/types";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -48,7 +48,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { PlusCircle, Edit, Trash2, Loader2, Award, Search, Upload, Printer, DatabaseZap } from "lucide-react";
+import { PlusCircle, Edit, Trash2, Loader2, Search, Upload, Printer, DatabaseZap } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { addCertificate, updateCertificate, deleteCertificate, addCertificatesBatch } from "@/lib/firebase-helpers";
 import { CertificateForm } from "./components/certificate-form";
@@ -145,14 +145,12 @@ export default function CertificatesPage() {
         setIsPulling(true);
 
         try {
-            // 1. Get Students in class
             const studentsInClass = students.filter(s => s.kelas === Number(pullClass));
             if (studentsInClass.length === 0) {
                 toast({ variant: "destructive", title: "Data Tidak Ditemukan", description: `Tidak ada siswa di Kelas ${pullClass}.` });
                 return;
             }
 
-            // 2. Get Grades for those students, year, and semester
             const gradesQuery = query(
                 collection(firestore, "grades"),
                 where("academicYear", "==", activeYear),
@@ -161,7 +159,6 @@ export default function CertificatesPage() {
             const gradesSnap = await getDocs(gradesQuery);
             const allGrades = gradesSnap.docs.map(doc => doc.data() as Grade);
 
-            // 3. Get Curriculum to know how many subjects
             const currQuery = query(collection(firestore, "curriculum"), where("classLevel", "==", Number(pullClass)));
             const currSnap = await getDocs(currQuery);
             const subjectsCount = currSnap.docs.length;
@@ -171,7 +168,6 @@ export default function CertificatesPage() {
                 return;
             }
 
-            // 4. Calculate Stats
             const stats = studentsInClass.map(student => {
                 const studentGrades = allGrades.filter(g => g.studentId === student.id);
                 const total = studentGrades.reduce((sum, g) => sum + g.score, 0);
@@ -180,12 +176,10 @@ export default function CertificatesPage() {
 
             const ranked = stats.sort((a, b) => b.total - a.total);
 
-            // 5. Create Certificates
             const certificatesToCreate: Omit<Certificate, 'id'>[] = [];
             const dateStr = new Date().toISOString().split('T')[0];
 
             if (pullCategory === 'ranking') {
-                // Top 3
                 const ranks: ("Pertama" | "Kedua" | "Ketiga")[] = ["Pertama", "Kedua", "Ketiga"];
                 ranked.slice(0, 3).forEach((item, index) => {
                     certificatesToCreate.push({
@@ -198,7 +192,6 @@ export default function CertificatesPage() {
                     });
                 });
             } else {
-                // Bintang Pelajar (Top 1)
                 if (ranked.length > 0) {
                     certificatesToCreate.push({
                         studentId: ranked[0].id,
@@ -326,17 +319,16 @@ export default function CertificatesPage() {
                         <TableHeader>
                             <TableRow className="bg-muted/30">
                                 <TableHead className="w-[50px] font-normal px-4">No.</TableHead>
-                                <TableHead className="font-normal">Nama Siswa</TableHead>
-                                <TableHead className="font-normal">Kategori</TableHead>
-                                <TableHead className="font-normal">Juara/Rank</TableHead>
-                                <TableHead className="font-normal">Keterangan</TableHead>
+                                <TableHead className="font-normal">Nama</TableHead>
+                                <TableHead className="font-normal">Juara</TableHead>
+                                <TableHead className="font-normal">Lomba</TableHead>
                                 <TableHead className="text-right w-[120px] font-normal px-4">Aksi</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {isLoading ? (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="text-center h-24">
+                                    <TableCell colSpan={5} className="text-center h-24">
                                         <div className="flex justify-center items-center gap-2 text-muted-foreground">
                                             <Loader2 className="h-4 w-4 animate-spin"/>
                                             <span className="text-xs">Memuat data prestasi...</span>
@@ -348,12 +340,9 @@ export default function CertificatesPage() {
                                 <TableRow key={item.id} className="hover:bg-muted/10">
                                     <TableCell className="text-xs px-4">{index + 1}</TableCell>
                                     <TableCell className="text-xs font-normal">{item.studentName}</TableCell>
-                                    <TableCell className="text-[10px] uppercase text-muted-foreground font-normal">
-                                        {getCategoryLabel(item.category)}
-                                    </TableCell>
                                     <TableCell>{getRankBadge(item.rank)}</TableCell>
                                     <TableCell className="text-xs font-normal">
-                                        {item.category === 'lomba' ? item.competitionName : `TA ${item.academicYear}`}
+                                        {item.category === 'lomba' ? item.competitionName : `${getCategoryLabel(item.category)} (TA ${item.academicYear})`}
                                     </TableCell>
                                     <TableCell className="text-right px-4">
                                         <div className="flex justify-end gap-1">
@@ -374,7 +363,7 @@ export default function CertificatesPage() {
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="h-24 text-center text-xs text-muted-foreground italic">
+                                    <TableCell colSpan={5} className="h-24 text-center text-xs text-muted-foreground italic">
                                         {searchTerm ? "Tidak ada hasil pencarian." : "Belum ada data sertifikat yang dicatat."}
                                     </TableCell>
                                 </TableRow>
