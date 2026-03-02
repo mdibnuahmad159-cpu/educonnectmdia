@@ -1,8 +1,9 @@
 
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { useCollection, useFirestore, useMemoFirebase, useUser } from "@/firebase";
+import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection } from "firebase/firestore";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { 
@@ -30,6 +31,7 @@ import {
 } from "lucide-react";
 import type { Teacher, Student } from "@/types";
 import { TeacherAttendanceCard } from "./components/teacher-attendance-card";
+import { StudentAttendanceCard } from "./components/student-attendance-card";
 
 const NavLink = ({ href, icon: Icon, label }: { href: string; icon: React.ElementType; label: string }) => (
     <Link 
@@ -43,12 +45,13 @@ const NavLink = ({ href, icon: Icon, label }: { href: string; icon: React.Elemen
 
 export default function DashboardPage() {
   const firestore = useFirestore();
+  const [activeTab, setActiveTab] = useState("akademik");
+
   const teachersCollection = useMemoFirebase(() => firestore ? collection(firestore, "teachers") : null, [firestore]);
   const studentsCollection = useMemoFirebase(() => firestore ? collection(firestore, "students") : null, [firestore]);
   
   const { data: teachers, loading: loadingTeachers, error: teachersError } = useCollection<Teacher>(teachersCollection);
   const { data: students, loading: loadingStudents, error: studentsError } = useCollection<Student>(studentsCollection);
-  const { user } = useUser();
 
   const hasPermissionError = teachersError || studentsError;
 
@@ -101,7 +104,7 @@ export default function DashboardPage() {
             </Card>
       </div>
 
-      <Tabs defaultValue="akademik" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="akademik">Akademik</TabsTrigger>
             <TabsTrigger value="siswa">Siswa</TabsTrigger>
@@ -141,7 +144,8 @@ export default function DashboardPage() {
         </TabsContent>
       </Tabs>
       
-      <TeacherAttendanceCard />
+      {activeTab === "akademik" && <TeacherAttendanceCard />}
+      {activeTab === "siswa" && <StudentAttendanceCard />}
 
     </div>
   );

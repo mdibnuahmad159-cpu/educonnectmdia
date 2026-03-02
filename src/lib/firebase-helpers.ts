@@ -16,7 +16,7 @@ import {
   query,
   where,
 } from 'firebase/firestore';
-import type { Teacher, Student, SchoolProfile, Curriculum, Alumni, Schedule, TeacherAttendance } from '@/types';
+import type { Teacher, Student, SchoolProfile, Curriculum, Alumni, Schedule, TeacherAttendance, StudentAttendance } from '@/types';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { firebaseConfig } from '@/firebase/config';
@@ -127,8 +127,6 @@ export function deleteTeacher(db: Firestore, teacherId: string) {
           operation: 'delete'
         }));
     });
-    // IMPORTANT: This only deletes the Firestore document, not the Firebase Authentication user.
-    // Deleting auth users requires admin privileges and should be handled in a secure server environment (e.g., Firebase Functions).
 }
 
 export function updateSchoolProfile(db: Firestore, profileData: Partial<Omit<SchoolProfile, 'id'>>) {
@@ -278,6 +276,25 @@ export function saveTeacherAttendanceBatch(db: Firestore, attendances: Omit<Teac
             path: '/teacher_attendances',
             operation: 'write',
             requestResourceData: { note: "Batch write failed for teacher attendance" }
+        }));
+    });
+}
+
+export function saveStudentAttendanceBatch(db: Firestore, attendances: Omit<StudentAttendance, 'id'>[]) {
+    const batch = writeBatch(db);
+
+    attendances.forEach(att => {
+        const attendanceId = `${att.studentId}_${att.date}`;
+        const attendanceRef = doc(db, 'student_attendances', attendanceId);
+        const data = { ...att, id: attendanceId };
+        batch.set(attendanceRef, data);
+    });
+    
+    return batch.commit().catch(error => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: '/student_attendances',
+            operation: 'write',
+            requestResourceData: { note: "Batch write failed for student attendance" }
         }));
     });
 }

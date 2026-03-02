@@ -1,4 +1,5 @@
 
+
 /**
  * # Firestore Security Rules: EduConnect
  *
@@ -177,6 +178,31 @@ service cloud.firestore {
     match /alumni/{alumniId} {
       allow read: if isSignedIn();
       allow create, update, delete: if isAdmin();
+    }
+
+    /**
+     * @description Weekly schedules. Admin has full CRUD. Signed-in users can read.
+     * @path /schedules/{scheduleId}
+     */
+    match /schedules/{scheduleId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    /**
+     * @description Teacher attendance records. Admin has full CRUD.
+     * @path /teacher_attendances/{attendanceId}
+     */
+    match /teacher_attendances/{attendanceId} {
+      allow read, write: if isAdmin();
+    }
+
+    /**
+     * @description Student attendance records. Admin has full CRUD.
+     * @path /student_attendances/{attendanceId}
+     */
+    match /student_attendances/{attendanceId} {
+      allow read, write: if isAdmin();
     }
   }
 }

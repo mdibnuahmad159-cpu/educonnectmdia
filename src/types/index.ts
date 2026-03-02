@@ -95,3 +95,13 @@ export type TeacherAttendance = {
   date: string; // YYYY-MM-DD
   status: 'Hadir' | 'Sakit' | 'Izin' | 'Alpa';
 };
+
+export type StudentAttendance = {
+  id: string; // composite key: `${studentId}_${date}`
+  studentId: string;
+  studentName: string;
+  nis: string;
+  kelas: number;
+  date: string; // YYYY-MM-DD
+  status: 'Hadir' | 'Sakit' | 'Izin' | 'Alpa';
+};
