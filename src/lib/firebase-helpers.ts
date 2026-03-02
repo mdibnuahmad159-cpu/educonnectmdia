@@ -384,6 +384,15 @@ export function addCertificate(db: Firestore, certificate: Omit<Certificate, 'id
   });
 }
 
+export function addCertificatesBatch(db: Firestore, certificates: Omit<Certificate, 'id'>[]) {
+    const batch = writeBatch(db);
+    certificates.forEach(c => {
+        const newRef = doc(collection(db, 'certificates'));
+        batch.set(newRef, { ...c, id: newRef.id });
+    });
+    return batch.commit();
+}
+
 export function updateCertificate(db: Firestore, id: string, certificate: Partial<Omit<Certificate, 'id'>>) {
   const ref = doc(db, 'certificates', id);
   setDoc(ref, certificate, { merge: true }).catch(error => {

@@ -30,16 +30,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { Certificate, Student, CertificateRank, CertificateCategory } from "@/types";
+import type { Certificate, Student } from "@/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useAcademicYear } from "@/context/academic-year-provider";
 
 const formSchema = z.object({
   studentId: z.string().min(1, "Siswa harus dipilih"),
-  category: z.enum(["lomba", "ranking", "bintang"], { required_error: "Kategori harus dipilih" }),
   rank: z.enum(["Pertama", "Kedua", "Ketiga"], { required_error: "Juara harus dipilih" }),
-  competitionName: z.string().optional(),
+  competitionName: z.string().min(1, "Nama lomba harus diisi"),
   date: z.string().min(1, "Tanggal harus diisi"),
-  academicYear: z.string().min(1, "Tahun ajaran harus diisi"),
 });
 
 type CertificateFormData = z.infer<typeof formSchema>;
@@ -53,15 +52,14 @@ type CertificateFormProps = {
 };
 
 export function CertificateForm({ isOpen, setIsOpen, certificate, students, onSave }: CertificateFormProps) {
+  const { activeYear } = useAcademicYear();
   const form = useForm<CertificateFormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       studentId: "",
-      category: "lomba",
       rank: "Pertama",
       competitionName: "",
       date: new Date().toISOString().split('T')[0],
-      academicYear: "",
     },
   });
   
@@ -70,39 +68,37 @@ export function CertificateForm({ isOpen, setIsOpen, certificate, students, onSa
         if (certificate) {
           form.reset({
             studentId: certificate.studentId,
-            category: certificate.category || "lomba",
             rank: certificate.rank,
             competitionName: certificate.competitionName || "",
             date: certificate.date,
-            academicYear: certificate.academicYear,
           });
         } else {
           form.reset({
             studentId: "",
-            category: "lomba",
             rank: "Pertama",
             competitionName: "",
             date: new Date().toISOString().split('T')[0],
-            academicYear: "",
           });
         }
     }
   }, [certificate, form, isOpen]);
   
   const onSubmit = (values: CertificateFormData) => {
-    onSave(values as Omit<Certificate, 'id' | 'studentName'>);
+    onSave({
+        ...values,
+        category: "lomba",
+        academicYear: activeYear,
+    });
     setIsOpen(false);
   };
-
-  const category = form.watch("category");
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{certificate ? "Edit Sertifikat" : "Tambah Sertifikat"}</DialogTitle>
+          <DialogTitle>{certificate ? "Edit Sertifikat Lomba" : "Tambah Sertifikat Lomba"}</DialogTitle>
           <DialogDescription>
-            Isi detail prestasi siswa untuk sertifikat digital.
+            Input prestasi lomba siswa secara manual. Untuk Ranking dan Bintang Pelajar, gunakan fitur "Tarik Data Nilai".
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -117,7 +113,7 @@ export function CertificateForm({ isOpen, setIsOpen, certificate, students, onSa
                         <FormLabel>Pilih Siswa</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
-                            <SelectTrigger>
+                            <SelectTrigger className="font-normal">
                                 <SelectValue placeholder="Pilih siswa" />
                             </SelectTrigger>
                             </FormControl>
@@ -135,71 +131,34 @@ export function CertificateForm({ isOpen, setIsOpen, certificate, students, onSa
                     />
                     <FormField
                     control={form.control}
-                    name="category"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Kategori Sertifikat</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Pilih kategori" />
-                            </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                                <SelectItem value="lomba">Sertifikat Lomba</SelectItem>
-                                <SelectItem value="ranking">Sertifikat Ranking</SelectItem>
-                                <SelectItem value="bintang">Sertifikat Bintang Pelajar</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                    <FormField
-                    control={form.control}
                     name="rank"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>Juara / Peringkat</FormLabel>
+                        <FormLabel>Juara</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
-                            <SelectTrigger>
+                            <SelectTrigger className="font-normal">
                                 <SelectValue placeholder="Pilih juara" />
                             </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                                <SelectItem value="Pertama">Pertama</SelectItem>
-                                <SelectItem value="Kedua">Kedua</SelectItem>
-                                <SelectItem value="Ketiga">Ketiga</SelectItem>
+                                <SelectItem value="Pertama">Juara Pertama</SelectItem>
+                                <SelectItem value="Kedua">Juara Kedua</SelectItem>
+                                <SelectItem value="Ketiga">Juara Ketiga</SelectItem>
                             </SelectContent>
                         </Select>
                         <FormMessage />
                         </FormItem>
                     )}
                     />
-                    {category === "lomba" && (
-                        <FormField
-                        control={form.control}
-                        name="competitionName"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Nama Lomba</FormLabel>
-                            <FormControl>
-                                <Input placeholder="Contoh: Lomba MTQ Nasional" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                        />
-                    )}
                     <FormField
                     control={form.control}
-                    name="date"
+                    name="competitionName"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>Tanggal</FormLabel>
+                        <FormLabel>Nama Lomba</FormLabel>
                         <FormControl>
-                            <Input type="date" {...field} />
+                            <Input placeholder="Contoh: Lomba MTQ Tingkat Kabupaten" {...field} className="font-normal" />
                         </FormControl>
                         <FormMessage />
                         </FormItem>
@@ -207,12 +166,12 @@ export function CertificateForm({ isOpen, setIsOpen, certificate, students, onSa
                     />
                     <FormField
                     control={form.control}
-                    name="academicYear"
+                    name="date"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>Tahun Ajaran</FormLabel>
+                        <FormLabel>Tanggal Pelaksanaan</FormLabel>
                         <FormControl>
-                            <Input placeholder="Contoh: 2023/2024" {...field} />
+                            <Input type="date" {...field} className="font-normal" />
                         </FormControl>
                         <FormMessage />
                         </FormItem>
@@ -221,7 +180,7 @@ export function CertificateForm({ isOpen, setIsOpen, certificate, students, onSa
                 </div>
             </ScrollArea>
             <DialogFooter className="pt-4">
-              <Button type="submit">Simpan</Button>
+              <Button type="submit" className="font-normal">Simpan Prestasi</Button>
             </DialogFooter>
           </form>
         </Form>
