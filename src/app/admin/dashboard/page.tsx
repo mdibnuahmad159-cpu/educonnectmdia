@@ -27,7 +27,8 @@ import {
   History,
   AlertTriangle,
   ClipboardList,
-  Megaphone
+  Megaphone,
+  UserCheck
 } from "lucide-react";
 import type { Teacher, Student } from "@/types";
 import { TeacherAttendanceCard } from "./components/teacher-attendance-card";
@@ -119,7 +120,7 @@ export default function DashboardPage() {
                     <NavLink href="/admin/letters" icon={Mail} label="Surat" />
                     <NavLink href="/admin/grades" icon={ClipboardCheck} label="Nilai" />
                     <NavLink href="/admin/reports" icon={FileText} label="Rapor" />
-                    <NavLink href="/admin/attendance" icon={ClipboardList} label="Absensi" />
+                    <NavLink href="/admin/attendance" icon={ClipboardList} label="Absen Guru" />
                     <NavLink href="/admin/announcements" icon={Megaphone} label="Pengumuman" />
                 </CardContent>
             </Card>
@@ -130,6 +131,7 @@ export default function DashboardPage() {
                     <NavLink href="/admin/students" icon={User} label="Data Siswa" />
                     <NavLink href="/admin/class-management" icon={School} label="Manajemen Kelas" />
                     <NavLink href="/admin/alumni" icon={GraduationCap} label="Alumni" />
+                    <NavLink href="/admin/student-attendance" icon={UserCheck} label="Absen Siswa" />
                 </CardContent>
             </Card>
         </TabsContent>
