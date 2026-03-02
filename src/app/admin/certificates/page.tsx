@@ -1,10 +1,9 @@
-
 "use client";
 
 import { useState, useMemo } from "react";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
-import { collection, Firestore, query, orderBy, getDocs, where } from "firebase/firestore";
-import type { Certificate, Student, CertificateTemplate, Grade } from "@/types";
+import { collection, Firestore, query, orderBy } from "firebase/firestore";
+import type { Certificate, Student, CertificateTemplate } from "@/types";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -31,26 +30,11 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogFooter,
-} from "@/components/ui/dialog";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { PlusCircle, Edit, Trash2, Loader2, Search, Upload, Printer, DatabaseZap } from "lucide-react";
+import { PlusCircle, Edit, Trash2, Loader2, Search, Upload, Printer } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { addCertificate, updateCertificate, deleteCertificate, addCertificatesBatch } from "@/lib/firebase-helpers";
+import { addCertificate, updateCertificate, deleteCertificate } from "@/lib/firebase-helpers";
 import { CertificateForm } from "./components/certificate-form";
 import { TemplateUploadDialog } from "./components/template-upload-dialog";
 import { format, parseISO } from "date-fns";
@@ -78,17 +62,10 @@ export default function CertificatesPage() {
     
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isTemplateOpen, setIsTemplateOpen] = useState(false);
-    const [isPullDialogOpen, setIsPullDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [selectedCertificate, setSelectedCertificate] = useState<Certificate | null>(null);
     const [idToDelete, setIdToDelete] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
-
-    // Pull Logic State
-    const [pullClass, setPullClass] = useState<string>("0");
-    const [pullSemester, setPullSemester] = useState<"Ganjil" | "Genap">("Ganjil");
-    const [pullCategory, setPullCategory] = useState<"ranking" | "bintang">("ranking");
-    const [isPulling, setIsPulling] = useState(false);
 
     const filteredCertificates = useMemo(() => {
         if (!certificates) return [];
@@ -138,86 +115,6 @@ export default function CertificatesPage() {
         }
         setIsFormOpen(false);
         setSelectedCertificate(null);
-    };
-
-    const handlePullData = async () => {
-        if (!firestore || !students) return;
-        setIsPulling(true);
-
-        try {
-            const studentsInClass = students.filter(s => s.kelas === Number(pullClass));
-            if (studentsInClass.length === 0) {
-                toast({ variant: "destructive", title: "Data Tidak Ditemukan", description: `Tidak ada siswa di Kelas ${pullClass}.` });
-                return;
-            }
-
-            const gradesQuery = query(
-                collection(firestore, "grades"),
-                where("academicYear", "==", activeYear),
-                where("type", "==", pullSemester)
-            );
-            const gradesSnap = await getDocs(gradesQuery);
-            const allGrades = gradesSnap.docs.map(doc => doc.data() as Grade);
-
-            const currQuery = query(collection(firestore, "curriculum"), where("classLevel", "==", Number(pullClass)));
-            const currSnap = await getDocs(currQuery);
-            const subjectsCount = currSnap.docs.length;
-
-            if (subjectsCount === 0) {
-                toast({ variant: "destructive", title: "Kurikulum Kosong", description: `Atur kurikulum Kelas ${pullClass} terlebih dahulu.` });
-                return;
-            }
-
-            const stats = studentsInClass.map(student => {
-                const studentGrades = allGrades.filter(g => g.studentId === student.id);
-                const total = studentGrades.reduce((sum, g) => sum + g.score, 0);
-                return { id: student.id, name: student.name, total };
-            });
-
-            const ranked = stats.sort((a, b) => b.total - a.total);
-
-            const certificatesToCreate: Omit<Certificate, 'id'>[] = [];
-            const dateStr = new Date().toISOString().split('T')[0];
-
-            if (pullCategory === 'ranking') {
-                const ranks: ("Pertama" | "Kedua" | "Ketiga")[] = ["Pertama", "Kedua", "Ketiga"];
-                ranked.slice(0, 3).forEach((item, index) => {
-                    certificatesToCreate.push({
-                        studentId: item.id,
-                        studentName: item.name,
-                        category: "ranking",
-                        rank: ranks[index],
-                        academicYear: `${activeYear} (${pullSemester})`,
-                        date: dateStr
-                    });
-                });
-            } else {
-                if (ranked.length > 0) {
-                    certificatesToCreate.push({
-                        studentId: ranked[0].id,
-                        studentName: ranked[0].name,
-                        category: "bintang",
-                        rank: "Pertama",
-                        academicYear: `${activeYear} (${pullSemester})`,
-                        date: dateStr
-                    });
-                }
-            }
-
-            if (certificatesToCreate.length > 0) {
-                await addCertificatesBatch(firestore, certificatesToCreate);
-                toast({ title: "Sinkronisasi Berhasil", description: `${certificatesToCreate.length} sertifikat baru telah dihasilkan.` });
-            } else {
-                toast({ title: "Tidak Ada Data", description: "Tidak ada data nilai yang cukup untuk diproses." });
-            }
-
-            setIsPullDialogOpen(false);
-        } catch (error) {
-            console.error(error);
-            toast({ variant: "destructive", title: "Gagal Tarik Data" });
-        } finally {
-            setIsPulling(false);
-        }
     };
 
     const handlePrintCertificate = (certificate: Certificate) => {
@@ -287,10 +184,6 @@ export default function CertificatesPage() {
                     <p className="text-xs text-muted-foreground">Kelola catatan prestasi dan cetak sertifikat digital.</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                    <Button size="xs" variant="outline" className="gap-2 border-primary/30 text-primary font-normal" onClick={() => setIsPullDialogOpen(true)}>
-                        <DatabaseZap className="h-3.5 w-3.5" />
-                        Tarik Data Nilai
-                    </Button>
                     <Button size="xs" variant="outline" className="gap-2 border-primary/30 text-primary font-normal" onClick={() => setIsTemplateOpen(true)}>
                         <Upload className="h-3.5 w-3.5" />
                         Upload Template
@@ -372,63 +265,6 @@ export default function CertificatesPage() {
                     </Table>
                 </CardContent>
             </Card>
-
-            {/* Pull Data Dialog */}
-            <Dialog open={isPullDialogOpen} onOpenChange={setIsPullDialogOpen}>
-                <DialogContent className="sm:max-w-xs">
-                    <DialogHeader>
-                        <DialogTitle>Sinkronisasi Data Nilai</DialogTitle>
-                        <DialogDescription>
-                            Hasilkan sertifikat Ranking atau Bintang Pelajar secara otomatis berdasarkan data nilai kelas.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase font-semibold text-muted-foreground">Pilih Kelas</label>
-                            <Select value={pullClass} onValueChange={setPullClass}>
-                                <SelectTrigger className="h-9 font-normal">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {[...Array(7).keys()].map(i => (
-                                        <SelectItem key={i} value={String(i)}>Kelas {i}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase font-semibold text-muted-foreground">Semester</label>
-                            <Select value={pullSemester} onValueChange={(v) => setPullSemester(v as any)}>
-                                <SelectTrigger className="h-9 font-normal">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Ganjil">Ganjil</SelectItem>
-                                    <SelectItem value="Genap">Genap</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase font-semibold text-muted-foreground">Jenis Sertifikat</label>
-                            <Select value={pullCategory} onValueChange={(v) => setPullCategory(v as any)}>
-                                <SelectTrigger className="h-9 font-normal">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="ranking">Ranking 1, 2, & 3</SelectItem>
-                                    <SelectItem value="bintang">Bintang Pelajar (Rank 1)</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <Button onClick={handlePullData} disabled={isPulling} className="w-full font-normal gap-2">
-                            {isPulling ? <Loader2 className="h-4 w-4 animate-spin" /> : <DatabaseZap className="h-4 w-4" />}
-                            Proses Sinkronisasi
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
 
             <CertificateForm 
                 isOpen={isFormOpen}
