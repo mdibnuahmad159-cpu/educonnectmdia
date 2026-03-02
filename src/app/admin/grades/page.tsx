@@ -239,7 +239,7 @@ export default function GradesPage() {
 
         try {
             await saveGradesBatch(firestore, gradesToSave, summariesToSave);
-            toast({ title: "Data Berhasil Disimpan", description: `Nilai, Absensi dan Keterangan Semester ${selectedGradeType} Kelas ${selectedClass} telah diperbarui.` });
+            toast({ title: "Data Berhasil Simpan", description: `Nilai, Absensi dan Keterangan Semester ${selectedGradeType} Kelas ${selectedClass} telah diperbarui.` });
         } catch (error) {
             toast({ variant: "destructive", title: "Gagal Menyimpan", description: "Terjadi kesalahan saat menyimpan data." });
         } finally {
@@ -345,7 +345,8 @@ export default function GradesPage() {
         doc.setFontSize(10);
         doc.text(`Tahun Ajaran: ${activeYear}`, 14, 22);
 
-        const tableHeaders = [['No', 'Nama', ...subjects.map(s => s.subjectCode), 'Total', 'Rerata', 'Rank']];
+        // Menggunakan Nama Mata Pelajaran penuh sebagai header
+        const tableHeaders = [['No', 'Nama', ...subjects.map(s => s.subjectName), 'Total', 'Rerata', 'Rank']];
         const tableBody = studentsWithStats.map((student, idx) => [
             idx + 1,
             student.name,
@@ -371,7 +372,8 @@ export default function GradesPage() {
         const printWindow = window.open('', '_blank');
         if (!printWindow) return;
 
-        const subjectsHtml = subjects.map(s => `<th style="font-size: 8px;">${s.subjectCode}</th>`).join('');
+        // Menggunakan Nama Mata Pelajaran penuh sebagai header
+        const subjectsHtml = subjects.map(s => `<th style="font-size: 8px;">${s.subjectName}</th>`).join('');
         const rowsHtml = studentsWithStats.map((s, idx) => `
             <tr>
                 <td style="text-align: center;">${idx + 1}</td>
