@@ -1,6 +1,4 @@
 
-
-
 export type Teacher = {
   id: string; // Firebase Auth UID
   name: string;
@@ -115,4 +113,14 @@ export type Announcement = {
   linkUrl?: string;
   target: 'Semua' | 'Guru' | 'Wali Murid';
   createdAt: string;
+};
+
+export type Grade = {
+  id: string;
+  studentId: string;
+  subjectId: string;
+  academicYear: string;
+  type: 'PH' | 'UTS' | 'UAS';
+  score: number;
+  updatedAt: string;
 };

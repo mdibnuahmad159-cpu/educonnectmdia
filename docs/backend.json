@@ -494,6 +494,21 @@
         "target",
         "createdAt"
       ]
+    },
+    "Grade": {
+      "title": "Grade",
+      "type": "object",
+      "description": "Represents a student's academic grade for a specific subject, type, and academic year.",
+      "properties": {
+        "id": { "type": "string" },
+        "studentId": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "academicYear": { "type": "string" },
+        "type": { "type": "string", "enum": ["PH", "UTS", "UAS"] },
+        "score": { "type": "number" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "studentId", "subjectId", "academicYear", "type", "score"]
     }
   },
   "auth": {
@@ -679,8 +694,24 @@
             }
           ]
         }
+      },
+      {
+        "path": "/grades/{gradeId}",
+        "definition": {
+          "entityName": "Grade",
+          "schema": {
+            "$ref": "#/backend/entities/Grade"
+          },
+          "description": "Stores academic grades.",
+          "params": [
+            {
+              "name": "gradeId",
+              "description": "Composite unique ID for the grade record."
+            }
+          ]
+        }
       }
     ],
-    "reasoning": "The Firestore structure is extended to support announcements, following the established RBAC and path-based segregation principles. Announcements are stored in a top-level collection for broad readability while maintaining restricted write access for administrators."
+    "reasoning": "The Firestore structure is extended to support grades, following the established path-based segregation principles. Grades are stored in a top-level collection for efficient querying across students and academic years."
   }
 }
