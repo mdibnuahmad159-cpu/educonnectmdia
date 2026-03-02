@@ -8,10 +8,11 @@ import type { Teacher, TeacherAttendance, Schedule, ScheduleEntry } from '@/type
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
+import { Input } from '@/components/ui/input';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, parseISO } from 'date-fns';
 import { id as dfnsId } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { Loader2, Printer, FileSpreadsheet, FileText, FileDown, CalendarIcon } from 'lucide-react';
+import { Loader2, Printer, FileSpreadsheet, FileText, FileDown } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -22,9 +23,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import type { DateRange } from 'react-day-picker';
 import { useAcademicYear } from '@/context/academic-year-provider';
 
 const getStatusColor = (status: TeacherAttendance['status']) => {
@@ -52,32 +50,34 @@ export default function AttendancePage() {
     const { toast } = useToast();
     const { activeYear } = useAcademicYear();
 
-    const [date, setDate] = useState<DateRange | undefined>({
-      from: startOfMonth(new Date()),
-      to: endOfMonth(new Date()),
-    });
+    const [fromDate, setFromDate] = useState<string>(format(startOfMonth(new Date()), 'yyyy-MM-dd'));
+    const [toDate, setToDate] = useState<string>(format(endOfMonth(new Date()), 'yyyy-MM-dd'));
     
     const daysInRange = useMemo(() => {
-        if (date?.from && date.to) {
-            return eachDayOfInterval({ start: date.from, end: date.to });
+        if (fromDate && toDate) {
+            try {
+                return eachDayOfInterval({ 
+                    start: parseISO(fromDate), 
+                    end: parseISO(toDate) 
+                });
+            } catch (e) {
+                return [];
+            }
         }
         return [];
-    }, [date]);
-
-    const startDate = useMemo(() => (date?.from ? format(date.from, 'yyyy-MM-dd') : undefined), [date?.from]);
-    const endDate = useMemo(() => (date?.to ? format(date.to, 'yyyy-MM-dd') : undefined), [date?.to]);
+    }, [fromDate, toDate]);
 
     const teachersCollection = useMemoFirebase(() => firestore ? collection(firestore, 'teachers') : null, [firestore]);
     const { data: teachers, loading: loadingTeachers } = useCollection<Teacher>(teachersCollection);
     
     const attendanceQuery = useMemoFirebase(() => {
-        if (!firestore || !startDate || !endDate) return null;
+        if (!firestore || !fromDate || !toDate) return null;
         return query(
             collection(firestore, 'teacher_attendances'),
-            where('date', '>=', startDate),
-            where('date', '<=', endDate)
+            where('date', '>=', fromDate),
+            where('date', '<=', toDate)
         );
-    }, [firestore, startDate, endDate]);
+    }, [firestore, fromDate, toDate]);
     const { data: attendanceData, isLoading: loadingAttendance } = useCollection<TeacherAttendance>(attendanceQuery);
     
     const schedulesQuery = useMemoFirebase(() => {
@@ -157,11 +157,13 @@ export default function AttendancePage() {
     }, [sortedTeachers, daysInRange, attendanceMap]);
 
     const handleExport = (formatType: 'excel' | 'pdf') => {
-      if (!sortedTeachers || !date?.from || !date?.to) {
+      if (!sortedTeachers || !fromDate || !toDate) {
           toast({ title: 'Tidak ada data untuk diekspor', variant: 'destructive' });
           return;
       }
-      const rangeTitle = `${format(date.from, 'd MMM yyyy', { locale: dfnsId })} - ${format(date.to, 'd MMM yyyy', { locale: dfnsId })}`;
+      const start = parseISO(fromDate);
+      const end = parseISO(toDate);
+      const rangeTitle = `${format(start, 'd MMM yyyy', { locale: dfnsId })} - ${format(end, 'd MMM yyyy', { locale: dfnsId })}`;
       const head = [
           ['Nama Guru', ...daysInRange.map(day => format(day, 'd/M'))]
       ];
@@ -175,9 +177,9 @@ export default function AttendancePage() {
 
       if (formatType === 'excel') {
           const ws = XLSX.utils.aoa_to_sheet([...head, ...body]);
-          const wb = XLSX.utils.book_new();
-          XLSX.utils.book_append_sheet(wb, ws, `Absensi`);
-          XLSX.writeFile(wb, `absensi_guru_${format(date.from, 'yyyyMMdd')}-${format(date.to, 'yyyyMMdd')}.xlsx`);
+          const workbook = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(workbook, ws, `Absensi`);
+          XLSX.writeFile(workbook, `absensi_guru_${fromDate}_${toDate}.xlsx`);
       } else {
           const doc = new jsPDF({ orientation: 'landscape' });
           doc.text(`Rekap Absensi Guru - ${rangeTitle}`, 14, 15);
@@ -189,16 +191,18 @@ export default function AttendancePage() {
               styles: { fontSize: 8 },
               headStyles: { fillColor: [22, 163, 74] },
           });
-          doc.save(`absensi_guru_${format(date.from, 'yyyyMMdd')}-${format(date.to, 'yyyyMMdd')}.pdf`);
+          doc.save(`absensi_guru_${fromDate}_${toDate}.pdf`);
       }
     };
     
     const handlePrint = () => {
-       if (!sortedTeachers || !date?.from || !date?.to) {
+       if (!sortedTeachers || !fromDate || !toDate) {
             toast({ title: 'Tidak ada data untuk dicetak', variant: 'destructive' });
             return;
        }
-        const rangeTitle = `${format(date.from, 'd MMMM yyyy', { locale: dfnsId })} - ${format(date.to, 'd MMMM yyyy', { locale: dfnsId })}`;
+        const start = parseISO(fromDate);
+        const end = parseISO(toDate);
+        const rangeTitle = `${format(start, 'd MMMM yyyy', { locale: dfnsId })} - ${format(end, 'd MMMM yyyy', { locale: dfnsId })}`;
         const printWindow = window.open('', '_blank');
         if (!printWindow) return;
 
@@ -283,64 +287,49 @@ export default function AttendancePage() {
                     <CardDescription>Lihat rekapitulasi absensi guru per rentang tanggal.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div className="flex flex-col sm:flex-row justify-between items-center gap-2 mb-4">
-                        <Popover>
-                            <PopoverTrigger asChild>
-                            <Button
-                                id="date"
-                                variant={"outline"}
-                                className={cn(
-                                "w-full sm:w-[300px] justify-start text-left font-normal",
-                                !date && "text-muted-foreground"
-                                )}
-                            >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {date?.from ? (
-                                date.to ? (
-                                    <>
-                                    {format(date.from, "d LLL, y")} -{" "}
-                                    {format(date.to, "d LLL, y")}
-                                    </>
-                                ) : (
-                                    format(date.from, "d LLL, y")
-                                )
-                                ) : (
-                                <span>Pilih tanggal</span>
-                                )}
-                            </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                                initialFocus
-                                mode="range"
-                                defaultMonth={date?.from}
-                                selected={date}
-                                onSelect={setDate}
-                                numberOfMonths={2}
-                            />
-                            </PopoverContent>
-                        </Popover>
-                        <div className="flex items-center gap-2">
+                    <div className="flex flex-col lg:flex-row justify-between items-end gap-4 mb-6">
+                        <div className="grid grid-cols-2 gap-3 w-full lg:w-auto">
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-semibold text-muted-foreground uppercase ml-1">Dari Tanggal</label>
+                                <Input 
+                                    type="date" 
+                                    value={fromDate} 
+                                    onChange={(e) => setFromDate(e.target.value)}
+                                    className="h-9"
+                                />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-semibold text-muted-foreground uppercase ml-1">Sampai Tanggal</label>
+                                <Input 
+                                    type="date" 
+                                    value={toDate} 
+                                    onChange={(e) => setToDate(e.target.value)}
+                                    className="h-9"
+                                />
+                            </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-2 w-full lg:w-auto justify-end">
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button size="xs" variant="outline" className="gap-1">
-                                    <FileDown className="h-3 w-3" />
+                                    <Button size="sm" variant="outline" className="gap-1 h-9">
+                                    <FileDown className="h-4 w-4" />
                                     Ekspor
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuItem onClick={() => handleExport('excel')}>
-                                    <FileSpreadsheet className="mr-2 h-3 w-3" />
+                                    <FileSpreadsheet className="mr-2 h-4 w-4" />
                                     Excel
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => handleExport('pdf')}>
-                                    <FileText className="mr-2 h-3 w-3" />
+                                    <FileText className="mr-2 h-4 w-4" />
                                     PDF
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
-                            <Button size="xs" variant="outline" className="gap-1" onClick={handlePrint}>
-                                <Printer className="h-3 w-3" />
+                            <Button size="sm" variant="outline" className="gap-1 h-9" onClick={handlePrint}>
+                                <Printer className="h-4 w-4" />
                                 Cetak
                             </Button>
                         </div>
@@ -351,20 +340,20 @@ export default function AttendancePage() {
                             <Loader2 className="h-8 w-8 animate-spin text-primary" />
                         </div>
                     ) : (
-                        <div className="overflow-x-auto">
+                        <div className="overflow-x-auto border rounded-md">
                             <Table className="min-w-full border-collapse">
                                 <TableHeader>
-                                    <TableRow>
-                                        <TableHead className="sticky left-0 z-10 bg-card min-w-[200px] border">Nama Guru</TableHead>
+                                    <TableRow className="bg-muted/50">
+                                        <TableHead className="sticky left-0 z-10 bg-muted/50 min-w-[180px] border-r font-bold">Nama Guru</TableHead>
                                         {daysInRange.map(day => (
-                                            <TableHead key={day.toISOString()} className="text-center border min-w-[40px]">{format(day, 'd')}</TableHead>
+                                            <TableHead key={day.toISOString()} className="text-center border-r min-w-[35px] px-1 text-[10px] font-bold">{format(day, 'd')}</TableHead>
                                         ))}
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {sortedTeachers && sortedTeachers.length > 0 ? sortedTeachers.map(teacher => (
                                         <TableRow key={teacher.id}>
-                                            <TableCell className="sticky left-0 z-10 bg-card font-medium border">{teacher.name}</TableCell>
+                                            <TableCell className="sticky left-0 z-10 bg-card font-medium border-r text-xs py-2">{teacher.name}</TableCell>
                                             {daysInRange.map(day => {
                                                 const dateStr = format(day, 'yyyy-MM-dd');
                                                 const status = attendanceMap.get(`${teacher.id}-${dateStr}`);
@@ -375,7 +364,7 @@ export default function AttendancePage() {
                                                     <TableCell 
                                                         key={dateStr} 
                                                         className={cn(
-                                                            "text-center text-xs p-1 border",
+                                                            "text-center text-[10px] p-0 border-r h-8",
                                                             status 
                                                                 ? getStatusColor(status)
                                                                 : !isScheduled && dayKey 
@@ -403,21 +392,21 @@ export default function AttendancePage() {
             </Card>
 
             <Card className="mt-4">
-                <CardHeader>
-                    <CardTitle>Ringkasan Absensi</CardTitle>
-                    <CardDescription>
+                <CardHeader className="py-3">
+                    <CardTitle className="text-sm">Ringkasan Absensi</CardTitle>
+                    <CardDescription className="text-[10px]">
                         Total kehadiran guru untuk rentang tanggal yang dipilih.
                     </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="px-3 pb-3">
                     <Table>
                         <TableHeader>
-                            <TableRow>
-                                <TableHead>Nama Guru</TableHead>
-                                <TableHead className="text-center">Hadir</TableHead>
-                                <TableHead className="text-center">Sakit</TableHead>
-                                <TableHead className="text-center">Izin</TableHead>
-                                <TableHead className="text-center">Alpa</TableHead>
+                            <TableRow className="h-8">
+                                <TableHead className="text-xs">Nama Guru</TableHead>
+                                <TableHead className="text-center text-xs w-[60px]">Hadir</TableHead>
+                                <TableHead className="text-center text-xs w-[60px]">Sakit</TableHead>
+                                <TableHead className="text-center text-xs w-[60px]">Izin</TableHead>
+                                <TableHead className="text-center text-xs w-[60px]">Alpa</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -426,23 +415,23 @@ export default function AttendancePage() {
                                     <TableCell colSpan={5} className="text-center h-24">
                                         <div className="flex justify-center items-center gap-2 text-muted-foreground">
                                             <Loader2 className="h-4 w-4 animate-spin"/>
-                                            <span>Memuat ringkasan...</span>
+                                            <span className="text-xs">Memuat ringkasan...</span>
                                         </div>
                                     </TableCell>
                                 </TableRow>
                             ) : attendanceSummary.length > 0 ? (
                                 attendanceSummary.map(item => (
-                                    <TableRow key={item.teacherId}>
-                                        <TableCell className="font-medium">{item.teacherName}</TableCell>
-                                        <TableCell className="text-center">{item.summary.Hadir}</TableCell>
-                                        <TableCell className="text-center">{item.summary.Sakit}</TableCell>
-                                        <TableCell className="text-center">{item.summary.Izin}</TableCell>
-                                        <TableCell className="text-center">{item.summary.Alpa}</TableCell>
+                                    <TableRow key={item.teacherId} className="h-8">
+                                        <TableCell className="font-medium text-xs py-1">{item.teacherName}</TableCell>
+                                        <TableCell className="text-center text-xs py-1 text-green-600 font-bold">{item.summary.Hadir}</TableCell>
+                                        <TableCell className="text-center text-xs py-1 text-yellow-600 font-bold">{item.summary.Sakit}</TableCell>
+                                        <TableCell className="text-center text-xs py-1 text-blue-600 font-bold">{item.summary.Izin}</TableCell>
+                                        <TableCell className="text-center text-xs py-1 text-red-600 font-bold">{item.summary.Alpa}</TableCell>
                                     </TableRow>
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="text-center h-24">
+                                    <TableCell colSpan={5} className="text-center h-24 text-xs">
                                         Tidak ada data ringkasan untuk ditampilkan.
                                     </TableCell>
                                 </TableRow>
