@@ -16,7 +16,7 @@ export default function TeacherDashboardPage() {
     return doc(firestore, "teachers", user.uid);
   }, [firestore, user]);
 
-  const { data: teacher, isLoading: isTeacherLoading, error } = useDoc<Teacher>(teacherRef);
+  const { data: teacher, loading: isTeacherLoading, error } = useDoc<Teacher>(teacherRef);
 
   const isLoading = isUserLoading || isTeacherLoading;
 

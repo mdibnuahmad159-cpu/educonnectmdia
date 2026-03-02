@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo } from 'react';
@@ -78,7 +77,7 @@ export default function AttendancePage() {
             where('date', '<=', toDate)
         );
     }, [firestore, fromDate, toDate]);
-    const { data: attendanceData, isLoading: loadingAttendance } = useCollection<TeacherAttendance>(attendanceQuery);
+    const { data: attendanceData, loading: loadingAttendance } = useCollection<TeacherAttendance>(attendanceQuery);
     
     const schedulesQuery = useMemoFirebase(() => {
         if (!firestore || !activeYear) return null;
@@ -88,7 +87,7 @@ export default function AttendancePage() {
             where('type', '==', 'pelajaran')
         );
     }, [firestore, activeYear]);
-    const { data: schedules, isLoading: loadingSchedules } = useCollection<Schedule>(schedulesQuery);
+    const { data: schedules, loading: loadingSchedules } = useCollection<Schedule>(schedulesQuery);
 
     const attendanceMap = useMemo(() => {
         const map = new Map<string, TeacherAttendance['status']>();

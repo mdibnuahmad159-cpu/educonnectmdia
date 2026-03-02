@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo } from 'react';
@@ -78,7 +77,7 @@ export default function StudentAttendancePage() {
             where('date', '<=', toDate)
         );
     }, [firestore, fromDate, toDate, selectedClass]);
-    const { data: attendanceData, isLoading: loadingAttendance } = useCollection<StudentAttendance>(attendanceQuery);
+    const { data: attendanceData, loading: loadingAttendance } = useCollection<StudentAttendance>(attendanceQuery);
     
     const attendanceMap = useMemo(() => {
         const map = new Map<string, StudentAttendance['status']>();

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo } from "react";
@@ -33,7 +32,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { PlusCircle, Edit, Trash2, Loader2, Megaphone, Link as LinkIcon, Image as ImageIcon } from "lucide-react";
+import { PlusCircle, Edit, Trash2, Loader2, Link as LinkIcon, Image as ImageIcon, AlertTriangle } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { id as dfnsId } from "date-fns/locale";
 import { addAnnouncement, updateAnnouncement, deleteAnnouncement } from "@/lib/firebase-helpers";
@@ -45,7 +44,7 @@ export default function AnnouncementsPage() {
         if (!firestore) return null;
         return query(collection(firestore, "announcements"), orderBy("createdAt", "desc"));
     }, [firestore]);
-    const { data: announcements, loading } = useCollection<Announcement>(announcementsQuery);
+    const { data: announcements, loading, error } = useCollection<Announcement>(announcementsQuery);
     const { toast } = useToast();
 
     const [isFormOpen, setIsFormOpen] = useState(false);
@@ -97,6 +96,18 @@ export default function AnnouncementsPage() {
 
     return (
         <div className="space-y-4">
+            {error && (
+                <Card className="border-destructive bg-destructive/10">
+                    <CardContent className="flex items-center gap-3 p-4 text-destructive">
+                        <AlertTriangle className="h-5 w-5" />
+                        <div className="text-xs">
+                            <p className="font-bold">Gagal memuat pengumuman</p>
+                            <p>{error.message}</p>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
             <Card>
                 <CardHeader>
                     <div className="flex items-center justify-between">
@@ -137,7 +148,7 @@ export default function AnnouncementsPage() {
                                 announcements.map((item) => (
                                 <TableRow key={item.id}>
                                     <TableCell className="text-xs">
-                                        {format(parseISO(item.createdAt), "d MMM yyyy", { locale: dfnsId })}
+                                        {item.createdAt ? format(parseISO(item.createdAt), "d MMM yyyy", { locale: dfnsId }) : '-'}
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex flex-col">

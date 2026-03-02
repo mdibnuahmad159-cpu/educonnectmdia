@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -24,7 +23,7 @@ export default function ParentDashboardPage() {
     return doc(firestore, "students", nis);
   }, [firestore, nis]);
 
-  const { data: student, isLoading: isStudentLoading, error } = useDoc<Student>(studentRef);
+  const { data: student, loading: isStudentLoading, error } = useDoc<Student>(studentRef);
   
   const isLoading = !nis || isStudentLoading;
 

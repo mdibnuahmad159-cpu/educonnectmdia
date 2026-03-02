@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useFirestore, useDoc, useMemoFirebase } from "@/firebase";
@@ -19,7 +18,7 @@ export default function ProfilePage() {
         return doc(firestore, "schoolProfile", "main");
     }, [firestore]);
 
-    const { data: profile, isLoading, error } = useDoc<SchoolProfile>(profileRef);
+    const { data: profile, loading, error } = useDoc<SchoolProfile>(profileRef);
 
     const handleSave = (profileData: Partial<Omit<SchoolProfile, 'id'>>) => {
         if (!firestore) return;
@@ -27,7 +26,7 @@ export default function ProfilePage() {
         toast({ title: "Profil Diperbarui", description: "Data profil madrasah berhasil disimpan." });
     };
 
-    if (isLoading) {
+    if (loading) {
         return (
           <div className="flex h-full w-full items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
