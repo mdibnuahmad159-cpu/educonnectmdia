@@ -1,5 +1,6 @@
 
 
+
 export type Teacher = {
   id: string; // Firebase Auth UID
   name: string;
@@ -104,4 +105,14 @@ export type StudentAttendance = {
   kelas: number;
   date: string; // YYYY-MM-DD
   status: 'Hadir' | 'Sakit' | 'Izin' | 'Alpa';
+};
+
+export type Announcement = {
+  id: string;
+  title: string;
+  content: string;
+  imageUrl?: string;
+  linkUrl?: string;
+  target: 'Semua' | 'Guru' | 'Wali Murid';
+  createdAt: string;
 };

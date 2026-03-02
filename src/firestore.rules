@@ -68,19 +68,13 @@ service cloud.firestore {
      * Verifies that the user's UID is in the denormalized parentUids array.
      */
     function isParentOfStudent(studentDoc) {
-      // This rule requires that the student document has a 'parentUids' array field.
-      // NOTE: This is not currently used by the anonymous parent login flow.
       return request.auth.uid in studentDoc.data.parentUids;
     }
 
     /**
      * Checks if the requesting user is a teacher of the student.
-     * This performs a get() on the teacher's own profile to retrieve their list of
-     * assigned class IDs and checks if the student's class ID is in that list.
      */
     function isTeacherOfStudent(studentDoc) {
-      // This rule requires the teacher's document to have 'classIds' array field.
-      // NOTE: The current Teacher type in the app does not have this field.
       let teacherProfile = get(/databases/$(database)/documents/teachers/$(request.auth.uid));
       return teacherProfile != null && studentDoc.data.classId in teacherProfile.data.classIds;
     }
@@ -127,9 +121,7 @@ service cloud.firestore {
      * @path /students/{studentId}
      */
     match /students/{studentId} {
-      // Allow unauthenticated get for parent login check. Allow get for authorized roles post-login.
       allow get: if request.auth == null || isAdmin() || isTeacher() || isParent();
-      // List is more restrictive to prevent data enumeration.
       allow list: if isAdmin() || isTeacher();
       allow create, update, delete: if isAdmin();
     }
@@ -203,6 +195,15 @@ service cloud.firestore {
      */
     match /student_attendances/{attendanceId} {
       allow read, write: if isAdmin();
+    }
+
+    /**
+     * @description Announcements. All signed-in users can read. Only Admin can manage.
+     * @path /announcements/{announcementId}
+     */
+    match /announcements/{announcementId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
     }
   }
 }

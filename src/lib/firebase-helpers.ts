@@ -1,4 +1,5 @@
 
+
 import {
   createUserWithEmailAndPassword,
   getAuth,
@@ -16,7 +17,7 @@ import {
   query,
   where,
 } from 'firebase/firestore';
-import type { Teacher, Student, SchoolProfile, Curriculum, Alumni, Schedule, TeacherAttendance, StudentAttendance } from '@/types';
+import type { Teacher, Student, SchoolProfile, Curriculum, Alumni, Schedule, TeacherAttendance, StudentAttendance, Announcement } from '@/types';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { firebaseConfig } from '@/firebase/config';
@@ -297,4 +298,41 @@ export function saveStudentAttendanceBatch(db: Firestore, attendances: Omit<Stud
             requestResourceData: { note: "Batch write failed for student attendance" }
         }));
     });
+}
+
+export function addAnnouncement(db: Firestore, announcement: Omit<Announcement, 'id' | 'createdAt'>) {
+  const newRef = doc(collection(db, 'announcements'));
+  const data = {
+    ...announcement,
+    id: newRef.id,
+    createdAt: new Date().toISOString(),
+  };
+  setDoc(newRef, data).catch(error => {
+    errorEmitter.emit('permission-error', new FirestorePermissionError({
+      path: newRef.path,
+      operation: 'create',
+      requestResourceData: data,
+    }));
+  });
+}
+
+export function updateAnnouncement(db: Firestore, id: string, announcement: Partial<Omit<Announcement, 'id'>>) {
+  const ref = doc(db, 'announcements', id);
+  setDoc(ref, announcement, { merge: true }).catch(error => {
+    errorEmitter.emit('permission-error', new FirestorePermissionError({
+      path: ref.path,
+      operation: 'update',
+      requestResourceData: announcement,
+    }));
+  });
+}
+
+export function deleteAnnouncement(db: Firestore, id: string) {
+  const ref = doc(db, 'announcements', id);
+  deleteDoc(ref).catch(error => {
+    errorEmitter.emit('permission-error', new FirestorePermissionError({
+      path: ref.path,
+      operation: 'delete',
+    }));
+  });
 }
