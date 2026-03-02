@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo } from "react";
@@ -11,15 +12,8 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -32,11 +26,12 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { PlusCircle, Edit, Trash2, Loader2, Link as LinkIcon, Image as ImageIcon, AlertTriangle } from "lucide-react";
+import { PlusCircle, Edit, Trash2, Loader2, Link as LinkIcon, Image as ImageIcon, AlertTriangle, ExternalLink, Calendar } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { id as dfnsId } from "date-fns/locale";
 import { addAnnouncement, updateAnnouncement, deleteAnnouncement } from "@/lib/firebase-helpers";
 import { AnnouncementForm } from "./components/announcement-form";
+import Image from "next/image";
 
 export default function AnnouncementsPage() {
     const firestore = useFirestore() as Firestore;
@@ -95,7 +90,18 @@ export default function AnnouncementsPage() {
     };
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-xl font-bold font-headline text-primary">Pengumuman</h1>
+                    <p className="text-xs text-muted-foreground">Kelola informasi dan berita untuk guru serta wali murid.</p>
+                </div>
+                <Button size="sm" className="gap-2" onClick={handleAdd}>
+                    <PlusCircle className="h-4 w-4" />
+                    Buat Pengumuman
+                </Button>
+            </div>
+
             {error && (
                 <Card className="border-destructive bg-destructive/10">
                     <CardContent className="flex items-center gap-3 p-4 text-destructive">
@@ -108,85 +114,79 @@ export default function AnnouncementsPage() {
                 </Card>
             )}
 
-            <Card>
-                <CardHeader>
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <CardTitle>Pengumuman</CardTitle>
-                            <CardDescription>
-                                Kelola informasi dan berita untuk guru serta wali murid.
-                            </CardDescription>
-                        </div>
-                        <Button size="xs" className="gap-1" onClick={handleAdd}>
-                            <PlusCircle className="h-3.5 w-3.5" />
-                            Buat Pengumuman
-                        </Button>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Tanggal</TableHead>
-                                <TableHead>Judul</TableHead>
-                                <TableHead>Target</TableHead>
-                                <TableHead>Media</TableHead>
-                                <TableHead className="text-right">Aksi</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {loading ? (
-                                <TableRow>
-                                    <TableCell colSpan={5} className="text-center h-24">
-                                        <div className="flex justify-center items-center gap-2 text-muted-foreground">
-                                            <Loader2 className="h-4 w-4 animate-spin"/>
-                                            <span>Memuat pengumuman...</span>
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            ) : announcements && announcements.length > 0 ? (
-                                announcements.map((item) => (
-                                <TableRow key={item.id}>
-                                    <TableCell className="text-xs">
-                                        {item.createdAt ? format(parseISO(item.createdAt), "d MMM yyyy", { locale: dfnsId }) : '-'}
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex flex-col">
-                                            <span className="font-medium text-xs line-clamp-1">{item.title}</span>
-                                            <span className="text-[10px] text-muted-foreground line-clamp-1">{item.content}</span>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>{getTargetBadge(item.target)}</TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center gap-2">
-                                            {item.imageUrl && <ImageIcon className="h-3 w-3 text-muted-foreground" title="Ada gambar" />}
-                                            {item.linkUrl && <LinkIcon className="h-3 w-3 text-muted-foreground" title="Ada tautan" />}
-                                            {!item.imageUrl && !item.linkUrl && <span className="text-[10px] text-muted-foreground">-</span>}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <div className="flex justify-end gap-1">
-                                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(item)}>
-                                                <Edit className="h-3.5 w-3.5" />
-                                            </Button>
-                                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(item.id)}>
-                                                <Trash2 className="h-3.5 w-3.5" />
-                                            </Button>
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                                ))
+            {loading ? (
+                <div className="flex flex-col items-center justify-center h-64 gap-3 text-muted-foreground">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary"/>
+                    <span className="text-sm">Memuat daftar pengumuman...</span>
+                </div>
+            ) : announcements && announcements.length > 0 ? (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {announcements.map((item) => (
+                        <Card key={item.id} className="flex flex-col overflow-hidden hover:shadow-md transition-shadow">
+                            {item.imageUrl ? (
+                                <div className="relative h-40 w-full bg-muted">
+                                    <Image 
+                                        src={item.imageUrl} 
+                                        alt={item.title} 
+                                        fill 
+                                        className="object-cover"
+                                    />
+                                    <div className="absolute top-2 left-2">
+                                        {getTargetBadge(item.target)}
+                                    </div>
+                                </div>
                             ) : (
-                                <TableRow>
-                                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                                        Belum ada pengumuman yang dibuat.
-                                    </TableCell>
-                                </TableRow>
+                                <div className="h-24 bg-gradient-to-br from-primary/10 to-primary/5 p-4 flex items-start justify-between">
+                                    {getTargetBadge(item.target)}
+                                    <ImageIcon className="h-8 w-8 text-primary/20" />
+                                </div>
                             )}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
+                            
+                            <CardHeader className="p-4 pb-2">
+                                <div className="flex items-center gap-2 text-[10px] text-muted-foreground mb-1">
+                                    <Calendar className="h-3 w-3" />
+                                    {item.createdAt ? format(parseISO(item.createdAt), "d MMMM yyyy", { locale: dfnsId }) : '-'}
+                                </div>
+                                <CardTitle className="text-sm font-bold line-clamp-2">{item.title}</CardTitle>
+                            </CardHeader>
+                            
+                            <CardContent className="p-4 pt-0 flex-1">
+                                <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">
+                                    {item.content}
+                                </p>
+                                {item.linkUrl && (
+                                    <a 
+                                        href={item.linkUrl} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer" 
+                                        className="mt-3 inline-flex items-center gap-1.5 text-[10px] text-primary font-medium hover:underline"
+                                    >
+                                        <ExternalLink className="h-3 w-3" />
+                                        Tautan Terkait
+                                    </a>
+                                )}
+                            </CardContent>
+                            
+                            <CardFooter className="p-3 border-t bg-muted/30 flex justify-end gap-2">
+                                <Button variant="ghost" size="xs" className="h-8 w-8 p-0" onClick={() => handleEdit(item)}>
+                                    <Edit className="h-3.5 w-3.5" />
+                                    <span className="sr-only">Edit</span>
+                                </Button>
+                                <Button variant="ghost" size="xs" className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => handleDelete(item.id)}>
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                    <span className="sr-only">Hapus</span>
+                                </Button>
+                            </CardFooter>
+                        </Card>
+                    ))}
+                </div>
+            ) : (
+                <div className="flex flex-col items-center justify-center h-64 border-2 border-dashed rounded-lg bg-muted/20 text-muted-foreground">
+                    <ImageIcon className="h-12 w-12 mb-2 opacity-20" />
+                    <p className="text-sm">Belum ada pengumuman yang dibuat.</p>
+                    <Button variant="link" size="sm" onClick={handleAdd}>Buat sekarang</Button>
+                </div>
+            )}
 
             <AnnouncementForm 
                 isOpen={isFormOpen}
@@ -205,7 +205,7 @@ export default function AnnouncementsPage() {
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel>Batal</AlertDialogCancel>
-                    <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">Hapus</AlertDialogAction>
+                    <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90 text-white">Hapus</AlertDialogAction>
                 </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
