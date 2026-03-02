@@ -83,9 +83,9 @@ export default function AnnouncementsPage() {
 
     const getTargetBadge = (target: Announcement['target']) => {
         switch (target) {
-            case 'Guru': return <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-none">Guru</Badge>;
-            case 'Wali Murid': return <Badge variant="secondary" className="bg-orange-100 text-orange-800 border-none">Wali Murid</Badge>;
-            default: return <Badge variant="secondary" className="bg-green-100 text-green-800 border-none">Semua</Badge>;
+            case 'Guru': return <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-none text-[10px]">Guru</Badge>;
+            case 'Wali Murid': return <Badge variant="secondary" className="bg-orange-100 text-orange-800 border-none text-[10px]">Wali Murid</Badge>;
+            default: return <Badge variant="secondary" className="bg-green-100 text-green-800 border-none text-[10px]">Semua</Badge>;
         }
     };
 
@@ -124,12 +124,12 @@ export default function AnnouncementsPage() {
                     {announcements.map((item) => (
                         <Card key={item.id} className="flex flex-col overflow-hidden hover:shadow-md transition-shadow">
                             {item.imageUrl ? (
-                                <div className="relative h-40 w-full bg-muted">
+                                <div className="relative h-48 w-full bg-muted/50 p-2">
                                     <Image 
                                         src={item.imageUrl} 
                                         alt={item.title} 
                                         fill 
-                                        className="object-cover"
+                                        className="object-contain"
                                     />
                                     <div className="absolute top-2 left-2">
                                         {getTargetBadge(item.target)}
