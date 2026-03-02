@@ -148,19 +148,19 @@ export default function GradesPage() {
     const isLoading = loadingStudents || loadingCurriculum || loadingGrades;
 
     return (
-        <div className="space-y-4 max-w-full overflow-hidden">
+        <div className="space-y-4 max-w-full overflow-hidden font-body">
             <Card className="border-none shadow-none bg-transparent">
                 <CardHeader className="p-0 pb-2">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                         <div>
-                            <CardTitle className="text-lg font-bold font-headline text-primary">Input Nilai</CardTitle>
+                            <CardTitle className="text-lg font-headline text-primary">Input Nilai</CardTitle>
                             <CardDescription className="text-[10px]">
                                 Semester {selectedGradeType} TA {activeYear}
                             </CardDescription>
                         </div>
                         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                             <Select value={selectedClass} onValueChange={setSelectedClass}>
-                                <SelectTrigger className="flex-1 sm:w-[100px] h-8 text-xs font-semibold">
+                                <SelectTrigger className="flex-1 sm:w-[100px] h-8 text-xs">
                                     <Users className="h-3 w-3 mr-1.5 opacity-70" />
                                     <SelectValue placeholder="Kelas" />
                                 </SelectTrigger>
@@ -171,7 +171,7 @@ export default function GradesPage() {
                                 </SelectContent>
                             </Select>
                             <Select value={selectedGradeType} onValueChange={(v) => setSelectedGradeType(v as GradeType)}>
-                                <SelectTrigger className="flex-1 sm:w-[100px] h-8 text-xs font-semibold">
+                                <SelectTrigger className="flex-1 sm:w-[100px] h-8 text-xs">
                                     <BookOpen className="h-3 w-3 mr-1.5 opacity-70" />
                                     <SelectValue placeholder="Semester" />
                                 </SelectTrigger>
@@ -200,10 +200,10 @@ export default function GradesPage() {
                     selectedStudentId ? "hidden md:flex" : "flex"
                 )}>
                     <CardHeader className="p-3 border-b bg-primary/5 flex flex-row items-center justify-between space-y-0">
-                        <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-primary flex items-center gap-2">
+                        <CardTitle className="text-[10px] uppercase tracking-widest text-primary flex items-center gap-2">
                             <Users className="h-3 w-3" /> Daftar Siswa
                         </CardTitle>
-                        <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-bold">
+                        <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded">
                             {sortedStudents.length} SISWA
                         </span>
                     </CardHeader>
@@ -236,7 +236,7 @@ export default function GradesPage() {
                                                     <div className="flex flex-col gap-1.5">
                                                         <div className="flex items-center justify-between">
                                                             <span className={cn(
-                                                                "text-xs font-bold truncate max-w-[180px]",
+                                                                "text-xs truncate max-w-[180px]",
                                                                 isSelected ? "text-primary" : "text-foreground"
                                                             )}>
                                                                 {student.name}
@@ -244,7 +244,7 @@ export default function GradesPage() {
                                                             {progress === 100 ? (
                                                                 <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
                                                             ) : progress > 0 ? (
-                                                                <span className="text-[9px] text-orange-500 font-mono font-bold">{progress}%</span>
+                                                                <span className="text-[9px] text-orange-500 font-mono">{progress}%</span>
                                                             ) : null}
                                                         </div>
                                                         <Progress value={progress} className="h-1 bg-muted" />
@@ -279,12 +279,12 @@ export default function GradesPage() {
                             >
                                 <ArrowLeft className="h-4 w-4" />
                             </Button>
-                            <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                            <CardTitle className="text-[10px] uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                                 <BookOpen className="h-3 w-3" /> Input Nilai Semester {selectedGradeType}
                             </CardTitle>
                         </div>
                         {selectedStudent && (
-                            <div className="px-2 py-0.5 rounded-full bg-primary text-white text-[10px] font-bold uppercase shadow-sm truncate max-w-[120px] sm:max-w-none">
+                            <div className="px-2 py-0.5 rounded-full bg-primary text-white text-[10px] uppercase shadow-sm truncate max-w-[120px] sm:max-w-none">
                                 {selectedStudent.name}
                             </div>
                         )}
@@ -294,7 +294,7 @@ export default function GradesPage() {
                         {!selectedStudentId ? (
                             <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-12 text-center">
                                 <User className="h-12 w-12 mb-4 opacity-5" />
-                                <p className="text-sm font-bold opacity-40">Pilih Siswa Terlebih Dahulu</p>
+                                <p className="text-sm opacity-40">Pilih Siswa Terlebih Dahulu</p>
                                 <p className="text-[10px] opacity-30 mt-1">Pilih salah satu nama siswa di panel kiri untuk mulai menginput nilai.</p>
                             </div>
                         ) : subjects.length > 0 ? (
@@ -317,7 +317,7 @@ export default function GradesPage() {
                                                 </TableCell>
                                                 <TableCell className="p-2">
                                                     <div className="flex flex-col">
-                                                        <span className="text-xs font-bold leading-tight">{subject.subjectName}</span>
+                                                        <span className="text-xs leading-tight">{subject.subjectName}</span>
                                                         <span className="text-[9px] text-muted-foreground font-mono uppercase mt-0.5">
                                                             {subject.subjectCode} • {subject.bookName || 'No Kitab'}
                                                         </span>
@@ -332,13 +332,13 @@ export default function GradesPage() {
                                                             value={val === undefined ? "" : val}
                                                             onChange={(e) => handleGradeChange(selectedStudentId, subject.id, e.target.value)}
                                                             className={cn(
-                                                                "h-10 sm:h-9 w-16 sm:w-20 text-center font-mono font-bold text-sm shadow-inner transition-all",
+                                                                "h-10 sm:h-9 w-16 sm:w-20 text-center font-mono text-sm shadow-inner transition-all",
                                                                 val > 0 ? "border-primary/50 text-primary bg-primary/5" : "border-input"
                                                             )}
                                                             placeholder="0"
                                                         />
                                                         <div className={cn(
-                                                            "hidden sm:flex items-center justify-center w-8 h-8 rounded-full border text-[8px] font-black",
+                                                            "hidden sm:flex items-center justify-center w-8 h-8 rounded-full border text-[8px]",
                                                             val >= 75 ? "bg-green-50 text-green-600 border-green-200" : val > 0 ? "bg-orange-50 text-orange-500 border-orange-200" : "text-muted-foreground/20 border-muted/20"
                                                         )}>
                                                             {val >= 75 ? 'PASS' : val > 0 ? 'REM' : '-'}
@@ -353,7 +353,7 @@ export default function GradesPage() {
                         ) : (
                             <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-12 text-center">
                                 <BookOpen className="h-12 w-12 mb-4 opacity-5" />
-                                <p className="text-sm font-bold opacity-40">Kurikulum Belum Ada</p>
+                                <p className="text-sm opacity-40">Kurikulum Belum Ada</p>
                                 <p className="text-[10px] opacity-30 mt-1">Harap atur kurikulum untuk Kelas {selectedClass} di menu Kurikulum.</p>
                             </div>
                         )}
@@ -361,7 +361,7 @@ export default function GradesPage() {
                     <div className="p-3 border-t bg-muted/5 flex items-center justify-between">
                         <div className="flex items-center gap-1.5">
                             <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                            <span className="text-[9px] font-bold text-muted-foreground">≥ 75 Lulus</span>
+                            <span className="text-[9px] text-muted-foreground">≥ 75 Lulus</span>
                         </div>
                         <p className="text-[9px] text-muted-foreground italic flex items-center gap-1">
                             <Info className="h-3 w-3" /> Auto-save saat tekan tombol Simpan
