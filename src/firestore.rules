@@ -53,5 +53,7 @@ service cloud.firestore {
     match /alumni/{alumniId} { allow read: if isSignedIn(); }
     match /schedules/{scheduleId} { allow read: if isSignedIn(); }
     match /schoolProfile/{profileId} { allow read: if isSignedIn(); }
+    match /grades/{gradeId} { allow read: if isSignedIn(); }
+    match /report_summaries/{summaryId} { allow read: if isSignedIn(); }
   }
 }

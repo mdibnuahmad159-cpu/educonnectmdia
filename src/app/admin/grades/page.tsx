@@ -4,7 +4,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection, query, where, Firestore } from "firebase/firestore";
-import type { Student, Curriculum, Grade } from "@/types";
+import type { Student, Curriculum, Grade, ReportSummary, ReportSummaryStatus } from "@/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2, Save, Users, BookOpen, User, CheckCircle2, Info, ArrowLeft, BarChart3, TrendingUp } from "lucide-react";
+import { Loader2, Save, Users, BookOpen, User, CheckCircle2, Info, ArrowLeft, TrendingUp, AlertCircle } from "lucide-react";
 import { useAcademicYear } from "@/context/academic-year-provider";
 import { useToast } from "@/hooks/use-toast";
 import { saveGradesBatch } from "@/lib/firebase-helpers";
@@ -32,6 +32,8 @@ import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
 
 type GradeType = 'Ganjil' | 'Genap';
+
+const STATUS_OPTIONS: ReportSummaryStatus[] = ['Naik Kelas', 'Turun Kelas', 'Lanjut Semester'];
 
 export default function GradesPage() {
     const firestore = useFirestore() as Firestore;
@@ -44,6 +46,7 @@ export default function GradesPage() {
     const [isSaving, setIsSaving] = useState(false);
     
     const [localGrades, setLocalGrades] = useState<Record<string, number>>({});
+    const [localSummaries, setLocalSummaries] = useState<Record<string, ReportSummaryStatus>>({});
 
     const studentsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -67,6 +70,16 @@ export default function GradesPage() {
     }, [firestore, activeYear, selectedGradeType]);
     const { data: existingGrades, loading: loadingGrades } = useCollection<Grade>(gradesQuery);
 
+    const summariesQuery = useMemoFirebase(() => {
+        if (!firestore || !activeYear) return null;
+        return query(
+            collection(firestore, "report_summaries"),
+            where("academicYear", "==", activeYear),
+            where("semester", "==", selectedGradeType)
+        );
+    }, [firestore, activeYear, selectedGradeType]);
+    const { data: existingSummaries, loading: loadingSummaries } = useCollection<ReportSummary>(summariesQuery);
+
     useEffect(() => {
         if (existingGrades) {
             const gradeMap: Record<string, number> = {};
@@ -76,6 +89,16 @@ export default function GradesPage() {
             setLocalGrades(gradeMap);
         }
     }, [existingGrades]);
+
+    useEffect(() => {
+        if (existingSummaries) {
+            const summaryMap: Record<string, ReportSummaryStatus> = {};
+            existingSummaries.forEach(s => {
+                summaryMap[s.studentId] = s.status;
+            });
+            setLocalSummaries(summaryMap);
+        }
+    }, [existingSummaries]);
 
     useEffect(() => {
         setSelectedStudentId(null);
@@ -91,7 +114,6 @@ export default function GradesPage() {
         return [...students].sort((a, b) => a.name.localeCompare(b.name));
     }, [students]);
 
-    // Calculate stats and ranking reactively
     const studentsWithStats = useMemo(() => {
         if (!sortedStudents.length) return [];
 
@@ -109,7 +131,6 @@ export default function GradesPage() {
             };
         });
 
-        // Sort by total score to determine rank
         const ranked = [...stats].sort((a, b) => b.total - a.total);
         
         return stats.map(student => {
@@ -132,11 +153,19 @@ export default function GradesPage() {
         }));
     };
 
+    const handleStatusChange = (studentId: string, status: ReportSummaryStatus) => {
+        setLocalSummaries(prev => ({
+            ...prev,
+            [studentId]: status
+        }));
+    };
+
     const handleSave = async () => {
         if (!firestore || !sortedStudents.length || !subjects.length) return;
         setIsSaving(true);
 
         const gradesToSave: Omit<Grade, 'id' | 'updatedAt'>[] = [];
+        const summariesToSave: Omit<ReportSummary, 'updatedAt'>[] = [];
 
         sortedStudents.forEach(student => {
             subjects.forEach(subject => {
@@ -151,13 +180,23 @@ export default function GradesPage() {
                     });
                 }
             });
+
+            if (localSummaries[student.id]) {
+                summariesToSave.push({
+                    id: `${student.id}_${selectedGradeType}_${activeYear.replace(/\//g, '-')}`,
+                    studentId: student.id,
+                    academicYear: activeYear,
+                    semester: selectedGradeType,
+                    status: localSummaries[student.id]
+                });
+            }
         });
 
         try {
-            await saveGradesBatch(firestore, gradesToSave);
-            toast({ title: "Nilai Berhasil Disimpan", description: `Data nilai Semester ${selectedGradeType} Kelas ${selectedClass} telah diperbarui.` });
+            await saveGradesBatch(firestore, gradesToSave, summariesToSave);
+            toast({ title: "Data Berhasil Disimpan", description: `Nilai dan keterangan Semester ${selectedGradeType} Kelas ${selectedClass} telah diperbarui.` });
         } catch (error) {
-            toast({ variant: "destructive", title: "Gagal Menyimpan", description: "Terjadi kesalahan saat menyimpan data nilai." });
+            toast({ variant: "destructive", title: "Gagal Menyimpan", description: "Terjadi kesalahan saat menyimpan data." });
         } finally {
             setIsSaving(false);
         }
@@ -172,7 +211,7 @@ export default function GradesPage() {
         return Math.round((count / subjects.length) * 100);
     };
 
-    const isLoading = loadingStudents || loadingCurriculum || loadingGrades;
+    const isLoading = loadingStudents || loadingCurriculum || loadingGrades || loadingSummaries;
 
     return (
         <div className="space-y-4 max-w-full overflow-hidden font-body">
@@ -342,58 +381,84 @@ export default function GradesPage() {
                                 <p className="text-[10px] opacity-30 mt-1 font-normal">Pilih salah satu nama siswa di panel kiri untuk mulai menginput nilai.</p>
                             </div>
                         ) : subjects.length > 0 ? (
-                            <Table>
-                                <TableHeader className="bg-muted/30 sticky top-0 z-10 shadow-sm">
-                                    <TableRow className="h-9">
-                                        <TableHead className="w-[40px] text-center text-[10px] p-0 font-normal">No</TableHead>
-                                        <TableHead className="text-[10px] p-2 font-normal">Mata Pelajaran</TableHead>
-                                        <TableHead className="w-[100px] sm:w-[140px] text-center text-[10px] p-2 font-normal">Nilai</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {subjects.map((subject, index) => {
-                                        const key = `${selectedStudentId}_${subject.id}`;
-                                        const val = localGrades[key];
-                                        return (
-                                            <TableRow key={subject.id} className="hover:bg-muted/30 h-16 sm:h-14">
-                                                <TableCell className="text-center font-mono text-[10px] text-muted-foreground p-0">
-                                                    {index + 1}
-                                                </TableCell>
-                                                <TableCell className="p-2">
-                                                    <div className="flex flex-col">
-                                                        <span className="text-xs leading-tight font-normal">{subject.subjectName}</span>
-                                                        <span className="text-[9px] text-muted-foreground font-mono uppercase mt-0.5">
-                                                            {subject.subjectCode} • {subject.bookName || 'No Kitab'}
-                                                        </span>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell className="p-2">
-                                                    <div className="flex items-center justify-center gap-2">
-                                                        <Input 
-                                                            type="number"
-                                                            min="0"
-                                                            max="100"
-                                                            value={val === undefined ? "" : val}
-                                                            onChange={(e) => handleGradeChange(selectedStudentId, subject.id, e.target.value)}
-                                                            className={cn(
-                                                                "h-10 sm:h-9 w-16 sm:w-20 text-center font-mono text-sm shadow-inner transition-all",
-                                                                val > 0 ? "border-primary/50 text-primary bg-primary/5" : "border-input"
-                                                            )}
-                                                            placeholder="0"
-                                                        />
-                                                        <div className={cn(
-                                                            "hidden sm:flex items-center justify-center w-8 h-8 rounded-full border text-[8px]",
-                                                            val >= 75 ? "bg-green-50 text-green-600 border-green-200" : val > 0 ? "bg-orange-50 text-orange-500 border-orange-200" : "text-muted-foreground/20 border-muted/20"
-                                                        )}>
-                                                            {val >= 75 ? 'PASS' : val > 0 ? 'REM' : '-'}
+                            <div className="flex flex-col min-h-full">
+                                <Table>
+                                    <TableHeader className="bg-muted/30 sticky top-0 z-10 shadow-sm">
+                                        <TableRow className="h-9">
+                                            <TableHead className="w-[40px] text-center text-[10px] p-0 font-normal">No</TableHead>
+                                            <TableHead className="text-[10px] p-2 font-normal">Mata Pelajaran</TableHead>
+                                            <TableHead className="w-[100px] sm:w-[140px] text-center text-[10px] p-2 font-normal">Nilai</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {subjects.map((subject, index) => {
+                                            const key = `${selectedStudentId}_${subject.id}`;
+                                            const val = localGrades[key];
+                                            return (
+                                                <TableRow key={subject.id} className="hover:bg-muted/30 h-16 sm:h-14">
+                                                    <TableCell className="text-center font-mono text-[10px] text-muted-foreground p-0">
+                                                        {index + 1}
+                                                    </TableCell>
+                                                    <TableCell className="p-2">
+                                                        <div className="flex flex-col">
+                                                            <span className="text-xs leading-tight font-normal">{subject.subjectName}</span>
+                                                            <span className="text-[9px] text-muted-foreground font-mono uppercase mt-0.5">
+                                                                {subject.subjectCode} • {subject.bookName || 'No Kitab'}
+                                                            </span>
                                                         </div>
-                                                    </div>
-                                                </TableCell>
-                                            </TableRow>
-                                        );
-                                    })}
-                                </TableBody>
-                            </Table>
+                                                    </TableCell>
+                                                    <TableCell className="p-2">
+                                                        <div className="flex items-center justify-center gap-2">
+                                                            <Input 
+                                                                type="number"
+                                                                min="0"
+                                                                max="100"
+                                                                value={val === undefined ? "" : val}
+                                                                onChange={(e) => handleGradeChange(selectedStudentId, subject.id, e.target.value)}
+                                                                className={cn(
+                                                                    "h-10 sm:h-9 w-16 sm:w-20 text-center font-mono text-sm shadow-inner transition-all",
+                                                                    val > 0 ? "border-primary/50 text-primary bg-primary/5" : "border-input"
+                                                                )}
+                                                                placeholder="0"
+                                                            />
+                                                            <div className={cn(
+                                                                "hidden sm:flex items-center justify-center w-8 h-8 rounded-full border text-[8px]",
+                                                                val >= 75 ? "bg-green-50 text-green-600 border-green-200" : val > 0 ? "bg-orange-50 text-orange-500 border-orange-200" : "text-muted-foreground/20 border-muted/20"
+                                                            )}>
+                                                                {val >= 75 ? 'PASS' : val > 0 ? 'REM' : '-'}
+                                                            </div>
+                                                        </div>
+                                                    </TableCell>
+                                                </TableRow>
+                                            );
+                                        })}
+                                    </TableBody>
+                                </Table>
+                                
+                                <div className="mt-auto p-4 bg-muted/10 border-t">
+                                    <div className="flex flex-col gap-3">
+                                        <label className="text-[10px] uppercase font-semibold text-muted-foreground flex items-center gap-2">
+                                            <AlertCircle className="h-3.5 w-3.5" /> Keterangan Hasil Semester
+                                        </label>
+                                        <Select 
+                                            value={localSummaries[selectedStudentId] || ""} 
+                                            onValueChange={(v) => handleStatusChange(selectedStudentId, v as ReportSummaryStatus)}
+                                        >
+                                            <SelectTrigger className="h-10 text-xs font-normal border-primary/20 bg-background">
+                                                <SelectValue placeholder="Pilih status kenaikan/lanjut" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {STATUS_OPTIONS.map(opt => (
+                                                    <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <p className="text-[9px] text-muted-foreground font-normal italic">
+                                            * Status ini akan muncul pada halaman rapor siswa/wali murid.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
                         ) : (
                             <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-12 text-center">
                                 <BookOpen className="h-12 w-12 mb-4 opacity-5" />

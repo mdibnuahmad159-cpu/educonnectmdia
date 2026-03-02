@@ -124,3 +124,14 @@ export type Grade = {
   score: number;
   updatedAt: string;
 };
+
+export type ReportSummaryStatus = 'Naik Kelas' | 'Turun Kelas' | 'Lanjut Semester';
+
+export type ReportSummary = {
+  id: string;
+  studentId: string;
+  academicYear: string;
+  semester: 'Ganjil' | 'Genap';
+  status: ReportSummaryStatus;
+  updatedAt: string;
+};

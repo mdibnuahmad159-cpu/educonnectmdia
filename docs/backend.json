@@ -509,6 +509,20 @@
         "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["id", "studentId", "subjectId", "academicYear", "type", "score"]
+    },
+    "ReportSummary": {
+      "title": "Report Summary",
+      "type": "object",
+      "description": "Stores semester summary information like promotion status.",
+      "properties": {
+        "id": { "type": "string" },
+        "studentId": { "type": "string" },
+        "academicYear": { "type": "string" },
+        "semester": { "type": "string", "enum": ["Ganjil", "Genap"] },
+        "status": { "type": "string", "enum": ["Naik Kelas", "Turun Kelas", "Lanjut Semester"] },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "studentId", "academicYear", "semester", "status"]
     }
   },
   "auth": {
@@ -710,8 +724,24 @@
             }
           ]
         }
+      },
+      {
+        "path": "/report_summaries/{summaryId}",
+        "definition": {
+          "entityName": "ReportSummary",
+          "schema": {
+            "$ref": "#/backend/entities/ReportSummary"
+          },
+          "description": "Stores report summary details like promotion status.",
+          "params": [
+            {
+              "name": "summaryId",
+              "description": "Composite unique ID for the report summary record."
+            }
+          ]
+        }
       }
     ],
-    "reasoning": "The Firestore structure is extended to support grades, following the established path-based segregation principles. Grades are stored in a top-level collection for efficient querying across students and academic years."
+    "reasoning": "Extended schema to include ReportSummary for tracking student promotion status per semester/academic year."
   }
 }

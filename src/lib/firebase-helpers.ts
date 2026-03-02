@@ -16,7 +16,7 @@ import {
   query,
   where,
 } from 'firebase/firestore';
-import type { Teacher, Student, SchoolProfile, Curriculum, Alumni, Schedule, TeacherAttendance, StudentAttendance, Announcement, Grade } from '@/types';
+import type { Teacher, Student, SchoolProfile, Curriculum, Alumni, Schedule, TeacherAttendance, StudentAttendance, Announcement, Grade, ReportSummary } from '@/types';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { firebaseConfig } from '@/firebase/config';
@@ -336,7 +336,7 @@ export function deleteAnnouncement(db: Firestore, id: string) {
   });
 }
 
-export function saveGradesBatch(db: Firestore, grades: Omit<Grade, 'id' | 'updatedAt'>[]) {
+export function saveGradesBatch(db: Firestore, grades: Omit<Grade, 'id' | 'updatedAt'>[], reportSummaries?: Omit<ReportSummary, 'updatedAt'>[]) {
   const batch = writeBatch(db);
   const now = new Date().toISOString();
 
@@ -350,11 +350,23 @@ export function saveGradesBatch(db: Firestore, grades: Omit<Grade, 'id' | 'updat
     }, { merge: true });
   });
 
+  if (reportSummaries) {
+    reportSummaries.forEach(summary => {
+        const summaryId = `${summary.studentId}_${summary.semester}_${summary.academicYear.replace(/\//g, '-')}`;
+        const summaryRef = doc(db, 'report_summaries', summaryId);
+        batch.set(summaryRef, {
+            ...summary,
+            id: summaryId,
+            updatedAt: now,
+        }, { merge: true });
+    });
+  }
+
   return batch.commit().catch(error => {
     errorEmitter.emit('permission-error', new FirestorePermissionError({
-      path: '/grades',
+      path: '/grades-and-summaries',
       operation: 'write',
-      requestResourceData: { note: "Batch grade save failed" },
+      requestResourceData: { note: "Batch save failed" },
     }));
     throw error;
   });
