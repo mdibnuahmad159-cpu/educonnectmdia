@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2, Save, Users, BookOpen, User, CheckCircle2, Info, ArrowLeft, TrendingUp, AlertCircle } from "lucide-react";
+import { Loader2, Save, Users, BookOpen, User, CheckCircle2, Info, ArrowLeft, TrendingUp, AlertCircle, ClipboardCheck } from "lucide-react";
 import { useAcademicYear } from "@/context/academic-year-provider";
 import { useToast } from "@/hooks/use-toast";
 import { saveGradesBatch } from "@/lib/firebase-helpers";
@@ -46,7 +46,7 @@ export default function GradesPage() {
     const [isSaving, setIsSaving] = useState(false);
     
     const [localGrades, setLocalGrades] = useState<Record<string, number>>({});
-    const [localSummaries, setLocalSummaries] = useState<Record<string, ReportSummaryStatus>>({});
+    const [localSummaries, setLocalSummaries] = useState<Record<string, { status: ReportSummaryStatus, sakit: number, izin: number, alpa: number }>>({});
 
     const studentsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -92,9 +92,14 @@ export default function GradesPage() {
 
     useEffect(() => {
         if (existingSummaries) {
-            const summaryMap: Record<string, ReportSummaryStatus> = {};
+            const summaryMap: Record<string, { status: ReportSummaryStatus, sakit: number, izin: number, alpa: number }> = {};
             existingSummaries.forEach(s => {
-                summaryMap[s.studentId] = s.status;
+                summaryMap[s.studentId] = {
+                    status: s.status,
+                    sakit: s.sakit || 0,
+                    izin: s.izin || 0,
+                    alpa: s.alpa || 0,
+                };
             });
             setLocalSummaries(summaryMap);
         }
@@ -153,10 +158,17 @@ export default function GradesPage() {
         }));
     };
 
-    const handleStatusChange = (studentId: string, status: ReportSummaryStatus) => {
+    const handleSummaryUpdate = (studentId: string, updates: Partial<{ status: ReportSummaryStatus, sakit: number, izin: number, alpa: number }>) => {
         setLocalSummaries(prev => ({
             ...prev,
-            [studentId]: status
+            [studentId]: {
+                status: 'Lanjut Semester',
+                sakit: 0,
+                izin: 0,
+                alpa: 0,
+                ...prev[studentId],
+                ...updates
+            }
         }));
     };
 
@@ -181,20 +193,24 @@ export default function GradesPage() {
                 }
             });
 
-            if (localSummaries[student.id]) {
+            const summary = localSummaries[student.id];
+            if (summary) {
                 summariesToSave.push({
                     id: `${student.id}_${selectedGradeType}_${activeYear.replace(/\//g, '-')}`,
                     studentId: student.id,
                     academicYear: activeYear,
                     semester: selectedGradeType,
-                    status: localSummaries[student.id]
+                    status: summary.status,
+                    sakit: summary.sakit,
+                    izin: summary.izin,
+                    alpa: summary.alpa,
                 });
             }
         });
 
         try {
             await saveGradesBatch(firestore, gradesToSave, summariesToSave);
-            toast({ title: "Data Berhasil Disimpan", description: `Nilai dan keterangan Semester ${selectedGradeType} Kelas ${selectedClass} telah diperbarui.` });
+            toast({ title: "Data Berhasil Disimpan", description: `Nilai, Absensi dan Keterangan Semester ${selectedGradeType} Kelas ${selectedClass} telah diperbarui.` });
         } catch (error) {
             toast({ variant: "destructive", title: "Gagal Menyimpan", description: "Terjadi kesalahan saat menyimpan data." });
         } finally {
@@ -269,7 +285,7 @@ export default function GradesPage() {
                         <CardTitle className="text-[10px] uppercase tracking-widest text-primary flex items-center gap-2 font-normal">
                             <Users className="h-3 w-3" /> Daftar Siswa
                         </CardTitle>
-                        <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded">
+                        <span className="text-[9px] font-normal bg-primary/10 text-primary px-1.5 py-0.5 rounded">
                             {studentsWithStats.length} SISWA
                         </span>
                     </CardHeader>
@@ -435,14 +451,52 @@ export default function GradesPage() {
                                     </TableBody>
                                 </Table>
                                 
-                                <div className="mt-auto p-4 bg-muted/10 border-t">
-                                    <div className="flex flex-col gap-3">
+                                <div className="mt-auto p-4 space-y-6 bg-muted/10 border-t">
+                                    <div className="space-y-3">
+                                        <label className="text-[10px] uppercase font-semibold text-muted-foreground flex items-center gap-2">
+                                            <ClipboardCheck className="h-3.5 w-3.5" /> Ringkasan Kehadiran
+                                        </label>
+                                        <div className="grid grid-cols-3 gap-4">
+                                            <div className="space-y-1.5">
+                                                <label className="text-[9px] text-muted-foreground">Sakit</label>
+                                                <Input 
+                                                    type="number" 
+                                                    min="0"
+                                                    value={localSummaries[selectedStudentId]?.sakit ?? 0}
+                                                    onChange={(e) => handleSummaryUpdate(selectedStudentId, { sakit: Number(e.target.value) })}
+                                                    className="h-9 text-center font-mono"
+                                                />
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <label className="text-[9px] text-muted-foreground">Izin</label>
+                                                <Input 
+                                                    type="number" 
+                                                    min="0"
+                                                    value={localSummaries[selectedStudentId]?.izin ?? 0}
+                                                    onChange={(e) => handleSummaryUpdate(selectedStudentId, { izin: Number(e.target.value) })}
+                                                    className="h-9 text-center font-mono"
+                                                />
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <label className="text-[9px] text-muted-foreground">Alpa</label>
+                                                <Input 
+                                                    type="number" 
+                                                    min="0"
+                                                    value={localSummaries[selectedStudentId]?.alpa ?? 0}
+                                                    onChange={(e) => handleSummaryUpdate(selectedStudentId, { alpa: Number(e.target.value) })}
+                                                    className="h-9 text-center font-mono"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-3">
                                         <label className="text-[10px] uppercase font-semibold text-muted-foreground flex items-center gap-2">
                                             <AlertCircle className="h-3.5 w-3.5" /> Keterangan Hasil Semester
                                         </label>
                                         <Select 
-                                            value={localSummaries[selectedStudentId] || ""} 
-                                            onValueChange={(v) => handleStatusChange(selectedStudentId, v as ReportSummaryStatus)}
+                                            value={localSummaries[selectedStudentId]?.status || ""} 
+                                            onValueChange={(v) => handleSummaryUpdate(selectedStudentId, { status: v as ReportSummaryStatus })}
                                         >
                                             <SelectTrigger className="h-10 text-xs font-normal border-primary/20 bg-background">
                                                 <SelectValue placeholder="Pilih status kenaikan/lanjut" />
@@ -454,7 +508,7 @@ export default function GradesPage() {
                                             </SelectContent>
                                         </Select>
                                         <p className="text-[9px] text-muted-foreground font-normal italic">
-                                            * Status ini akan muncul pada halaman rapor siswa/wali murid.
+                                            * Status dan absensi akan muncul pada halaman rapor siswa/wali murid.
                                         </p>
                                     </div>
                                 </div>

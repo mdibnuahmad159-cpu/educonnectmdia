@@ -133,5 +133,8 @@ export type ReportSummary = {
   academicYear: string;
   semester: 'Ganjil' | 'Genap';
   status: ReportSummaryStatus;
+  sakit?: number;
+  izin?: number;
+  alpa?: number;
   updatedAt: string;
 };

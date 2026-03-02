@@ -513,13 +513,16 @@
     "ReportSummary": {
       "title": "Report Summary",
       "type": "object",
-      "description": "Stores semester summary information like promotion status.",
+      "description": "Stores semester summary information like promotion status and attendance.",
       "properties": {
         "id": { "type": "string" },
         "studentId": { "type": "string" },
         "academicYear": { "type": "string" },
         "semester": { "type": "string", "enum": ["Ganjil", "Genap"] },
         "status": { "type": "string", "enum": ["Naik Kelas", "Turun Kelas", "Lanjut Semester"] },
+        "sakit": { "type": "number" },
+        "izin": { "type": "number" },
+        "alpa": { "type": "number" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["id", "studentId", "academicYear", "semester", "status"]
@@ -732,7 +735,7 @@
           "schema": {
             "$ref": "#/backend/entities/ReportSummary"
           },
-          "description": "Stores report summary details like promotion status.",
+          "description": "Stores report summary details like promotion status and attendance.",
           "params": [
             {
               "name": "summaryId",
@@ -742,6 +745,6 @@
         }
       }
     ],
-    "reasoning": "Extended schema to include ReportSummary for tracking student promotion status per semester/academic year."
+    "reasoning": "Extended schema to include ReportSummary for tracking student promotion status and attendance per semester/academic year."
   }
 }
