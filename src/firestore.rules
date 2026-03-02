@@ -2,207 +2,56 @@
 /**
  * # Firestore Security Rules: EduConnect
  *
- * ## Core Philosophy
- * This ruleset implements a Role-Based Access Control (RBAC) model with strict user ownership principles.
- * Administrative users, designated by a development-only mechanism, have global privileges.
- * Regular users (Teachers, Parents) have explicit, limited permissions based on their role and direct relationships to data.
- * The default security posture is 'deny all', with permissions being explicitly and granularly granted.
+ * Sinkronisasi dengan file aturan utama.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // =====================================================================
-    // Helper Functions
-    // =====================================================================
-
-    /**
-     * Checks if the user is authenticated.
-     */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /**
-     * Checks if the requesting user's UID matches the given userId.
-     * Used for document ownership validation.
-     */
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-
-    /**
-     * Checks if the user is an admin.
-     * An admin is an authenticated user with the specific admin email address.
-     */
     function isAdmin() {
       return isSignedIn() && request.auth.token.email == 'mdibnuahmad159@gmail.com';
     }
-    
-    /**
-     * Checks if the requesting user is a registered Teacher.
-     */
+
+    // Super-Admin Override
+    match /{allPaths=**} {
+      allow read, write: if isAdmin();
+    }
+
     function isTeacher() {
       return exists(/databases/$(database)/documents/teachers/$(request.auth.uid));
     }
 
-    /**
-     * Checks if the requesting user is a registered Parent.
-     * This now includes anonymous users, which is the method used for parent login.
-     */
     function isParent() {
       return (isSignedIn() && request.auth.token.firebase.sign_in_provider == 'anonymous')
           || exists(/databases/$(database)/documents/parents/$(request.auth.uid));
     }
-    
-    /**
-     * Checks if the requesting user is the homeroom teacher for the given class document.
-     */
-    function isHomeroomTeacher(classDoc) {
-      return request.auth.uid == classDoc.data.homeroomTeacherId;
-    }
 
-    /**
-     * Checks if the requesting user is a parent of the student represented by the student document.
-     * Verifies that the user's UID is in the denormalized parentUids array.
-     */
-    function isParentOfStudent(studentDoc) {
-      return request.auth.uid in studentDoc.data.parentUids;
-    }
-
-    /**
-     * Checks if the requesting user is a teacher of the student.
-     */
-    function isTeacherOfStudent(studentDoc) {
-      let teacherProfile = get(/databases/$(database)/documents/teachers/$(request.auth.uid));
-      return teacherProfile != null && studentDoc.data.classId in teacherProfile.data.classIds;
-    }
-
-
-    // =====================================================================
-    // Collection Rules
-    // =====================================================================
-
-    /**
-     * @description Admin roles collection. This collection is no longer used for authorization.
-     * @path /roles_admin/{adminUid}
-     */
-    match /roles_admin/{adminUid} {
-      allow read, write: if false;
-    }
-
-    /**
-     * @description Teacher profiles. Admins have full CRUD. Teachers can read/update their own profile.
-     * @path /teachers/{teacherId}
-     */
-    match /teachers/{teacherId} {
-      allow get: if isAdmin() || isOwner(teacherId);
-      allow list: if isAdmin();
-      allow create: if isAdmin();
-      allow update: if isAdmin() || isOwner(teacherId);
-      allow delete: if isAdmin();
-    }
-
-    /**
-     * @description Parent profiles. Admins have full CRUD. Parents can read/update their own profile.
-     * @path /parents/{parentId}
-     */
-    match /parents/{parentId} {
-      allow get: if isAdmin() || isOwner(parentId);
-      allow list: if isAdmin();
-      allow create: if isAdmin();
-      allow update: if isAdmin() || isOwner(parentId);
-      allow delete: if isAdmin();
-    }
-
-    /**
-     * @description Student records. Admins have full CRUD. Parents and teachers have read access.
-     * @path /students/{studentId}
-     */
-    match /students/{studentId} {
-      allow get: if request.auth == null || isAdmin() || isTeacher() || isParent();
-      allow list: if isAdmin() || isTeacher();
-      allow create, update, delete: if isAdmin();
-    }
-
-    /**
-     * @description Class details. Admins have full CRUD. Read is public for signed-in users. Homeroom teachers can update.
-     * @path /classes/{classId}
-     */
-    match /classes/{classId} {
-      allow get, list: if isAdmin() || isSignedIn();
-      allow create, delete: if isAdmin();
-      allow update: if isAdmin() || isHomeroomTeacher(resource);
-    }
-
-    /**
-     * @description Academic subject details. Admins have full CRUD. Read is public for signed-in users.
-     * @path /subjects/{subjectId}
-     */
-    match /subjects/{subjectId} {
-      allow get, list: if isAdmin() || isSignedIn();
-      allow create, update, delete: if isAdmin();
-    }
-    
-    /**
-     * @description School Profile. Any signed-in user can read, only Admin can write.
-     * @path /schoolProfile/{profileId}
-     */
-    match /schoolProfile/{profileId} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
-    }
-
-    /**
-     * @description School Curriculum. Admin has full CRUD. Signed in users can read.
-     * @path /curriculum/{curriculumId}
-     */
-    match /curriculum/{curriculumId} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
-    }
-
-    /**
-     * @description Alumni records. Admin has full CRUD. Other authenticated users can read.
-     * @path /alumni/{alumniId}
-     */
-    match /alumni/{alumniId} {
-      allow read: if isSignedIn();
-      allow create, update, delete: if isAdmin();
-    }
-
-    /**
-     * @description Weekly schedules. Admin has full CRUD. Signed-in users can read.
-     * @path /schedules/{scheduleId}
-     */
-    match /schedules/{scheduleId} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
-    }
-
-    /**
-     * @description Teacher attendance records. Admin has full CRUD.
-     * @path /teacher_attendances/{attendanceId}
-     */
-    match /teacher_attendances/{attendanceId} {
-      allow read, write: if isAdmin();
-    }
-
-    /**
-     * @description Student attendance records. Admin has full CRUD.
-     * @path /student_attendances/{attendanceId}
-     */
-    match /student_attendances/{attendanceId} {
-      allow read, write: if isAdmin();
-    }
-
-    /**
-     * @description Announcements. All signed-in users can read. Only Admin can manage.
-     * @path /announcements/{announcementId}
-     */
+    // Announcements
     match /announcements/{announcementId} {
       allow read: if isSignedIn();
-      allow write: if isAdmin();
     }
+
+    // Teachers
+    match /teachers/{teacherId} {
+      allow get, update: if isSignedIn() && request.auth.uid == teacherId;
+    }
+
+    // Students
+    match /students/{studentId} {
+      allow get: if request.auth == null || isTeacher() || isParent();
+      allow list: if isTeacher();
+    }
+
+    // Academic Data
+    match /classes/{classId} { allow read: if isSignedIn(); }
+    match /subjects/{subjectId} { allow read: if isSignedIn(); }
+    match /curriculum/{curriculumId} { allow read: if isSignedIn(); }
+    match /alumni/{alumniId} { allow read: if isSignedIn(); }
+    match /schedules/{scheduleId} { allow read: if isSignedIn(); }
+    match /schoolProfile/{profileId} { allow read: if isSignedIn(); }
   }
 }

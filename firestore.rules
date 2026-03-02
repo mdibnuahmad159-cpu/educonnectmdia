@@ -3,10 +3,10 @@
  * # Firestore Security Rules: EduConnect
  *
  * ## Core Philosophy
- * This ruleset implements a Role-Based Access Control (RBAC) model with strict user ownership principles.
- * Administrative users, designated by a development-only mechanism, have global privileges.
- * Regular users (Teachers, Parents) have explicit, limited permissions based on their role and direct relationships to data.
- * The default security posture is 'deny all', with permissions being explicitly and granularly granted.
+ * Aturan ini menggunakan model Role-Based Access Control (RBAC).
+ * 1. Super-Admin: Email khusus 'mdibnuahmad159@gmail.com' memiliki akses penuh ke semua data.
+ * 2. Regular Users: Guru dan Wali Murid memiliki akses terbatas berdasarkan peran mereka.
+ * 3. Default: Tolak semua akses yang tidak didefinisikan secara eksplisit.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -16,184 +16,75 @@ service cloud.firestore {
     // Helper Functions
     // =====================================================================
 
-    /**
-     * Checks if the user is authenticated.
-     */
+    /** Cek apakah pengguna sudah login */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /**
-     * Checks if the requesting user's UID matches the given userId.
-     * Used for document ownership validation.
-     */
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-
-    /**
-     * Checks if the user is an admin.
-     * An admin is an authenticated user with the specific admin email address.
-     */
+    /** Cek apakah pengguna adalah Super-Admin */
     function isAdmin() {
       return isSignedIn() && request.auth.token.email == 'mdibnuahmad159@gmail.com';
     }
     
-    /**
-     * Checks if the requesting user is a registered Teacher.
-     */
+    /** Cek apakah pengguna adalah Guru terdaftar */
     function isTeacher() {
       return exists(/databases/$(database)/documents/teachers/$(request.auth.uid));
     }
 
-    /**
-     * Checks if the requesting user is a registered Parent.
-     * This now includes anonymous users, which is the method used for parent login.
-     */
+    /** Cek apakah pengguna adalah Wali Murid (termasuk anonim untuk login) */
     function isParent() {
       return (isSignedIn() && request.auth.token.firebase.sign_in_provider == 'anonymous')
           || exists(/databases/$(database)/documents/parents/$(request.auth.uid));
     }
-    
-    /**
-     * Checks if the requesting user is the homeroom teacher for the given class document.
-     */
-    function isHomeroomTeacher(classDoc) {
-      return request.auth.uid == classDoc.data.homeroomTeacherId;
-    }
-
-    /**
-     * Checks if the requesting user is a parent of the student represented by the student document.
-     * Verifies that the user's UID is in the denormalized parentUids array.
-     */
-    function isParentOfStudent(studentDoc) {
-      // This rule requires that the student document has a 'parentUids' array field.
-      // NOTE: This is not currently used by the anonymous parent login flow.
-      return request.auth.uid in studentDoc.data.parentUids;
-    }
-
-    /**
-     * Checks if the requesting user is a teacher of the student.
-     * This performs a get() on the teacher's own profile to retrieve their list of
-     * assigned class IDs and checks if the student's class ID is in that list.
-     */
-    function isTeacherOfStudent(studentDoc) {
-      // This rule requires the teacher's document to have 'classIds' array field.
-      // NOTE: The current Teacher type in the app does not have this field.
-      let teacherProfile = get(/databases/$(database)/documents/teachers/$(request.auth.uid));
-      return teacherProfile != null && studentDoc.data.classId in teacherProfile.data.classIds;
-    }
-
 
     // =====================================================================
-    // Collection Rules
+    // Super-Admin Override
     // =====================================================================
-
-    /**
-     * @description Admin roles collection. This collection is no longer used for authorization.
-     * @path /roles_admin/{adminUid}
-     */
-    match /roles_admin/{adminUid} {
-      allow read, write: if false;
-    }
-
-    /**
-     * @description Teacher profiles. Admins have full CRUD. Teachers can read/update their own profile.
-     * @path /teachers/{teacherId}
-     */
-    match /teachers/{teacherId} {
-      allow get: if isAdmin() || isOwner(teacherId);
-      allow list: if isAdmin();
-      allow create: if isAdmin();
-      allow update: if isAdmin() || isOwner(teacherId);
-      allow delete: if isAdmin();
-    }
-
-    /**
-     * @description Parent profiles. Admins have full CRUD. Parents can read/update their own profile.
-     * @path /parents/{parentId}
-     */
-    match /parents/{parentId} {
-      allow get: if isAdmin() || isOwner(parentId);
-      allow list: if isAdmin();
-      allow create: if isAdmin();
-      allow update: if isAdmin() || isOwner(parentId);
-      allow delete: if isAdmin();
-    }
-
-    /**
-     * @description Student records. Admins have full CRUD. Parents and teachers have read access.
-     * @path /students/{studentId}
-     */
-    match /students/{studentId} {
-      // Allow unauthenticated get for parent login check. Allow get for authorized roles post-login.
-      allow get: if request.auth == null || isAdmin() || isTeacher() || isParent();
-      // List is more restrictive to prevent data enumeration.
-      allow list: if isAdmin() || isTeacher();
-      allow create, update, delete: if isAdmin();
-    }
-
-    /**
-     * @description Class details. Admins have full CRUD. Read is public for signed-in users. Homeroom teachers can update.
-     * @path /classes/{classId}
-     */
-    match /classes/{classId} {
-      allow get, list: if isAdmin() || isSignedIn();
-      allow create, delete: if isAdmin();
-      allow update: if isAdmin() || isHomeroomTeacher(resource);
-    }
-
-    /**
-     * @description Academic subject details. Admins have full CRUD. Read is public for signed-in users.
-     * @path /subjects/{subjectId}
-     */
-    match /subjects/{subjectId} {
-      allow get, list: if isAdmin() || isSignedIn();
-      allow create, update, delete: if isAdmin();
-    }
-    
-    /**
-     * @description School Profile. Any signed-in user can read, only Admin can write.
-     * @path /schoolProfile/{profileId}
-     */
-    match /schoolProfile/{profileId} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
-    }
-
-    /**
-     * @description School Curriculum. Admin has full CRUD. Signed in users can read.
-     * @path /curriculum/{curriculumId}
-     */
-    match /curriculum/{curriculumId} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
-    }
-
-    /**
-     * @description Alumni records. Admin has full CRUD. Other authenticated users can read.
-     * @path /alumni/{alumniId}
-     */
-    match /alumni/{alumniId} {
-      allow read: if isSignedIn();
-      allow create, update, delete: if isAdmin();
-    }
-
-    /**
-     * @description Weekly schedules. Admin has full CRUD. Signed-in users can read.
-     * @path /schedules/{scheduleId}
-     */
-    match /schedules/{scheduleId} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
-    }
-
-    /**
-     * @description Teacher attendance records. Admin has full CRUD.
-     * @path /teacher_attendances/{attendanceId}
-     */
-    match /teacher_attendances/{attendanceId} {
+    // Memberikan akses penuh ke semua jalur untuk administrator
+    match /{allPaths=**} {
       allow read, write: if isAdmin();
+    }
+
+    // =====================================================================
+    // Specific Collection Rules (Untuk Non-Admin)
+    // =====================================================================
+
+    /** Pengumuman: Semua yang login bisa baca, hanya admin yang bisa tulis (sudah dihandle super-admin) */
+    match /announcements/{announcementId} {
+      allow read: if isSignedIn();
+    }
+
+    /** Profil Guru: Guru bisa baca/ubah profil sendiri */
+    match /teachers/{teacherId} {
+      allow get, update: if isSignedIn() && request.auth.uid == teacherId;
+    }
+
+    /** Profil Wali Murid: Wali bisa baca/ubah profil sendiri */
+    match /parents/{parentId} {
+      allow get, update: if isSignedIn() && request.auth.uid == parentId;
+    }
+
+    /** Data Siswa: Guru dan Wali Murid bisa baca data siswa tertentu */
+    match /students/{studentId} {
+      // Izinkan akses 'get' tanpa login untuk proses pengecekan NIS saat login parent
+      allow get: if request.auth == null || isTeacher() || isParent();
+      allow list: if isTeacher();
+    }
+
+    /** Data Akademik & Sekolah: Bisa dibaca oleh semua yang login */
+    match /classes/{classId} { allow read: if isSignedIn(); }
+    match /subjects/{subjectId} { allow read: if isSignedIn(); }
+    match /curriculum/{curriculumId} { allow read: if isSignedIn(); }
+    match /alumni/{alumniId} { allow read: if isSignedIn(); }
+    match /schedules/{scheduleId} { allow read: if isSignedIn(); }
+    match /schoolProfile/{profileId} { allow read: if isSignedIn(); }
+
+    /** Absensi: Hanya Admin yang bisa baca/tulis (sudah dihandle oleh Super-Admin rule) */
+    match /teacher_attendances/{attendanceId} {
+      allow read, write: if false; // Hanya admin lewat super-admin rule
+    }
+    match /student_attendances/{attendanceId} {
+      allow read, write: if false; // Hanya admin lewat super-admin rule
     }
   }
 }
