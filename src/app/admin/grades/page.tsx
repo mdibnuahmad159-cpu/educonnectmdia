@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection, query, where, Firestore } from "firebase/firestore";
 import type { Student, Curriculum, Grade, ReportSummary, ReportSummaryStatus } from "@/types";
@@ -21,15 +21,43 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2, Save, Users, BookOpen, User, CheckCircle2, Info, ArrowLeft, TrendingUp, AlertCircle, ClipboardCheck } from "lucide-react";
+import { 
+    Loader2, 
+    Save, 
+    Users, 
+    BookOpen, 
+    User, 
+    CheckCircle2, 
+    Info, 
+    ArrowLeft, 
+    TrendingUp, 
+    AlertCircle, 
+    ClipboardCheck,
+    FileDown,
+    FileUp,
+    Download,
+    Upload,
+    FileSpreadsheet,
+    FileText,
+    Printer
+} from "lucide-react";
 import { useAcademicYear } from "@/context/academic-year-provider";
 import { useToast } from "@/hooks/use-toast";
 import { saveGradesBatch } from "@/lib/firebase-helpers";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 type GradeType = 'Ganjil' | 'Genap';
 
@@ -39,6 +67,7 @@ export default function GradesPage() {
     const firestore = useFirestore() as Firestore;
     const { activeYear } = useAcademicYear();
     const { toast } = useToast();
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [selectedClass, setSelectedClass] = useState<string>("0");
     const [selectedGradeType, setSelectedGradeType] = useState<GradeType>("Ganjil");
@@ -218,6 +247,179 @@ export default function GradesPage() {
         }
     };
 
+    const handleDownloadTemplate = () => {
+        if (!sortedStudents.length || !subjects.length) {
+            toast({ variant: "destructive", title: "Data Tidak Lengkap", description: "Pastikan data siswa dan kurikulum sudah tersedia untuk kelas ini." });
+            return;
+        }
+
+        const data: any[] = [];
+        sortedStudents.forEach(student => {
+            subjects.forEach(subject => {
+                data.push({
+                    'NIS': student.nis,
+                    'Nama': student.name,
+                    'Kode Mapel': subject.subjectCode,
+                    'Mata Pelajaran': subject.subjectName,
+                    'Nilai (0-100)': localGrades[`${student.id}_${subject.id}`] || 0
+                });
+            });
+        });
+
+        const worksheet = XLSX.utils.json_to_sheet(data);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Template Nilai");
+        XLSX.writeFile(workbook, `template_nilai_kelas_${selectedClass}_${selectedGradeType}.xlsx`);
+    };
+
+    const handleImportExcel = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = new Uint8Array(e.target?.result as ArrayBuffer);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const json: any[] = XLSX.utils.sheet_to_json(worksheet);
+
+                const newGrades = { ...localGrades };
+                let updateCount = 0;
+
+                json.forEach(row => {
+                    const student = sortedStudents.find(s => String(s.nis) === String(row['NIS']));
+                    const subject = subjects.find(sub => sub.subjectCode === row['Kode Mapel']);
+                    const score = Number(row['Nilai (0-100)']);
+
+                    if (student && subject && !isNaN(score)) {
+                        newGrades[`${student.id}_${subject.id}`] = Math.min(100, Math.max(0, score));
+                        updateCount++;
+                    }
+                });
+
+                setLocalGrades(newGrades);
+                toast({ title: "Impor Selesai", description: `${updateCount} entri nilai berhasil dimuat ke tabel.` });
+            } catch (error) {
+                toast({ variant: "destructive", title: "Gagal Mengimpor", description: "Pastikan format file sesuai dengan template." });
+            } finally {
+                if (event.target) event.target.value = '';
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    };
+
+    const handleExportExcel = () => {
+        if (!studentsWithStats.length) return;
+
+        // Header: No, Nama, NIS, [Mata Pelajaran...], Total, Rata-rata, Ranking
+        const headers = ['No', 'Nama', 'NIS', ...subjects.map(s => s.subjectName), 'Total', 'Rata-rata', 'Ranking'];
+        const data = studentsWithStats.map((student, idx) => {
+            const row: any = {
+                'No': idx + 1,
+                'Nama': student.name,
+                'NIS': student.nis,
+            };
+            subjects.forEach(sub => {
+                row[sub.subjectName] = localGrades[`${student.id}_${sub.id}`] || 0;
+            });
+            row['Total'] = student.total;
+            row['Rata-rata'] = student.average.toFixed(2);
+            row['Ranking'] = student.rank;
+            return row;
+        });
+
+        const worksheet = XLSX.utils.json_to_sheet(data);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Legger Nilai");
+        XLSX.writeFile(workbook, `legger_nilai_kelas_${selectedClass}_${selectedGradeType}.xlsx`);
+    };
+
+    const handleExportPdf = () => {
+        if (!studentsWithStats.length) return;
+        const doc = new jsPDF({ orientation: 'landscape' });
+        
+        doc.setFontSize(14);
+        doc.text(`Legger Nilai Kelas ${selectedClass} - Semester ${selectedGradeType}`, 14, 15);
+        doc.setFontSize(10);
+        doc.text(`Tahun Ajaran: ${activeYear}`, 14, 22);
+
+        const tableHeaders = [['No', 'Nama', ...subjects.map(s => s.subjectCode), 'Total', 'Rerata', 'Rank']];
+        const tableBody = studentsWithStats.map((student, idx) => [
+            idx + 1,
+            student.name,
+            ...subjects.map(sub => localGrades[`${student.id}_${sub.id}`] || 0),
+            student.total,
+            student.average.toFixed(1),
+            student.rank
+        ]);
+
+        (doc as any).autoTable({
+            head: tableHeaders,
+            body: tableBody,
+            startY: 30,
+            theme: 'grid',
+            styles: { fontSize: 7, cellPadding: 1 },
+            headStyles: { fillColor: [46, 125, 50] }
+        });
+
+        doc.save(`legger_nilai_kelas_${selectedClass}_${selectedGradeType}.pdf`);
+    };
+
+    const handlePrint = () => {
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) return;
+
+        const subjectsHtml = subjects.map(s => `<th style="font-size: 8px;">${s.subjectCode}</th>`).join('');
+        const rowsHtml = studentsWithStats.map((s, idx) => `
+            <tr>
+                <td style="text-align: center;">${idx + 1}</td>
+                <td>${s.name}</td>
+                ${subjects.map(sub => `<td style="text-align: center;">${localGrades[`${s.id}_${sub.id}`] || 0}</td>`).join('')}
+                <td style="text-align: center; font-weight: bold;">${s.total}</td>
+                <td style="text-align: center;">${s.average.toFixed(1)}</td>
+                <td style="text-align: center;">${s.rank}</td>
+            </tr>
+        `).join('');
+
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Cetak Nilai Kelas ${selectedClass}</title>
+                    <style>
+                        body { font-family: 'PT Sans', sans-serif; padding: 20px; }
+                        h1 { text-align: center; font-size: 18px; margin-bottom: 5px; }
+                        p { text-align: center; font-size: 12px; margin-bottom: 20px; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                        th, td { border: 1px solid #333; padding: 4px; font-size: 10px; text-align: left; }
+                        th { background-color: #f0f0f0; }
+                        @media print { @page { size: landscape; } }
+                    </style>
+                </head>
+                <body>
+                    <h1>Legger Nilai Kelas ${selectedClass}</h1>
+                    <p>Semester ${selectedGradeType} | Tahun Ajaran ${activeYear}</p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 30px;">No</th>
+                                <th>Nama Siswa</th>
+                                ${subjectsHtml}
+                                <th>Total</th>
+                                <th>Rata</th>
+                                <th>Rank</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rowsHtml}</tbody>
+                    </table>
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
+        printWindow.print();
+    };
+
     const getStudentProgress = (studentId: string) => {
         if (!subjects.length) return 0;
         let count = 0;
@@ -262,15 +464,61 @@ export default function GradesPage() {
                                     <SelectItem value="Genap">Genap</SelectItem>
                                 </SelectContent>
                             </Select>
-                            <Button 
-                                onClick={handleSave} 
-                                disabled={isLoading || isSaving} 
-                                size="xs" 
-                                className="w-full sm:w-auto h-8 gap-1.5 px-3 shadow-sm bg-primary hover:bg-primary/90 font-normal"
-                            >
-                                {isSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
-                                Simpan
-                            </Button>
+                            
+                            <div className="flex items-center gap-1">
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="outline" size="xs" className="h-8 gap-1.5 px-3 font-normal border-primary/20">
+                                            <FileUp className="h-3.5 w-3.5" />
+                                            Impor
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuItem onClick={handleDownloadTemplate}>
+                                            <Download className="mr-2 h-3.5 w-3.5" />
+                                            Unduh Template
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
+                                            <Upload className="mr-2 h-3.5 w-3.5" />
+                                            Unggah Excel
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                                <input type="file" ref={fileInputRef} className="hidden" accept=".xlsx,.xls" onChange={handleImportExcel} />
+
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="outline" size="xs" className="h-8 gap-1.5 px-3 font-normal border-primary/20">
+                                            <FileDown className="h-3.5 w-3.5" />
+                                            Ekspor
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuItem onClick={handleExportExcel}>
+                                            <FileSpreadsheet className="mr-2 h-3.5 w-3.5" />
+                                            Legger (Excel)
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={handleExportPdf}>
+                                            <FileText className="mr-2 h-3.5 w-3.5" />
+                                            Legger (PDF)
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={handlePrint}>
+                                            <Printer className="mr-2 h-3.5 w-3.5" />
+                                            Cetak
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+
+                                <Button 
+                                    onClick={handleSave} 
+                                    disabled={isLoading || isSaving} 
+                                    size="xs" 
+                                    className="h-8 gap-1.5 px-3 shadow-sm bg-primary hover:bg-primary/90 font-normal"
+                                >
+                                    {isSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                                    Simpan
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 </CardHeader>
