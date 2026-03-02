@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useRef } from "react";
@@ -63,10 +64,12 @@ import jsPDF from "jspdf";
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { useAcademicYear } from "@/context/academic-year-provider";
+import { useSchoolProfile } from "@/context/school-profile-provider";
 
 export default function CertificatesPage() {
     const firestore = useFirestore() as Firestore;
     const { activeYear } = useAcademicYear();
+    const { profile } = useSchoolProfile();
     const { toast } = useToast();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -242,15 +245,18 @@ export default function CertificatesPage() {
         }
 
         const dateFormatted = format(parseISO(certificate.date), "d MMMM yyyy", { locale: dfnsId });
-        const rankText = certificate.category === 'bintang' ? 'Sebagai Bintang Pelajar' : `Sebagai Peringkat ${certificate.rank}`;
-        const subText = certificate.category === 'lomba' && certificate.competitionName 
-            ? `Dalam Kegiatan ${certificate.competitionName}` 
-            : `Semester ${certificate.academicYear}`;
+        const location = profile?.alamat?.split(',')[0] || "Sampang";
+        const schoolName = profile?.namaMadrasah || "Madrasah Diniyah Ibnu Ahmad";
+        
+        // Lowercase for descriptive text as seen in reference image
+        const rankText = certificate.rank.toLowerCase();
+        const competitionText = (certificate.competitionName || "lomba").toLowerCase();
 
         printWindow.document.write(`
             <html>
                 <head>
                     <title>Cetak Sertifikat - ${certificate.studentName}</title>
+                    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Playfair+Display:wght@900&family=PT+Sans:wght@400;700&display=swap" rel="stylesheet">
                     <style>
                         @page { size: landscape; margin: 0; }
                         body { 
@@ -258,6 +264,7 @@ export default function CertificatesPage() {
                             padding: 0; 
                             font-family: 'PT Sans', sans-serif; 
                             background-color: white;
+                            color: #333;
                         }
                         .certificate-container {
                             position: relative;
@@ -272,34 +279,79 @@ export default function CertificatesPage() {
                             justify-content: center;
                             text-align: center;
                             box-sizing: border-box;
+                            overflow: hidden;
                         }
-                        .content {
-                            width: 80%;
-                            margin-top: 20px;
+                        .header-text {
+                            margin-bottom: 40px;
                         }
-                        .name {
-                            font-size: 42pt;
-                            font-weight: bold;
-                            color: #000;
+                        .title-main {
+                            font-family: 'Playfair Display', serif;
+                            font-size: 64pt;
+                            color: #9c27b0;
+                            margin: 0;
+                            line-height: 1;
                             text-transform: uppercase;
-                            margin-bottom: 30px;
                         }
-                        .rank {
-                            font-size: 24pt;
-                            color: #333;
-                            margin-bottom: 10px;
+                        .title-sub {
+                            font-family: 'Playfair Display', serif;
+                            font-size: 32pt;
+                            color: #9c27b0;
+                            margin: -10px 0 0 0;
+                            font-weight: 900;
                         }
-                        .description {
-                            font-size: 20pt;
+                        .intro-text {
+                            font-size: 16pt;
+                            margin-top: 20px;
                             color: #444;
                         }
-                        .date-location {
+                        .student-name {
+                            font-family: 'Dancing Script', cursive;
+                            font-size: 72pt;
+                            color: #9c27b0;
+                            margin: 20px 0;
+                            border-bottom: 2px solid #000;
+                            display: inline-block;
+                            padding: 0 40px;
+                        }
+                        .description {
+                            font-size: 18pt;
+                            max-width: 80%;
+                            line-height: 1.4;
+                            margin-top: 10px;
+                        }
+                        .footer {
                             position: absolute;
-                            bottom: 120px;
-                            right: 100px;
-                            text-align: right;
+                            bottom: 80px;
+                            width: 85%;
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: flex-end;
+                            padding: 0 50px;
+                        }
+                        .signature {
+                            text-align: center;
+                            min-width: 250px;
+                        }
+                        .sig-name {
+                            font-weight: bold;
+                            font-size: 16pt;
+                            border-bottom: 1px solid #000;
+                            display: inline-block;
+                            margin-bottom: 5px;
+                            padding: 0 10px;
+                        }
+                        .sig-title {
                             font-size: 14pt;
-                            color: #000;
+                            color: #555;
+                        }
+                        .date-location {
+                            text-align: center;
+                            font-size: 16pt;
+                        }
+                        .medal-placeholder {
+                            width: 100px;
+                            height: 100px;
+                            opacity: 0.1; /* Usually template already has it */
                         }
                         @media print {
                             body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -309,13 +361,30 @@ export default function CertificatesPage() {
                 </head>
                 <body>
                     <div class="certificate-container">
-                        <div class="content">
-                            <div class="name">${certificate.studentName}</div>
-                            <div class="rank">${rankText}</div>
-                            <div class="description">${subText}</div>
+                        <div class="header-text">
+                            <h1 class="title-main">SERTIFIKAT</h1>
+                            <h2 class="title-sub">Penghargaan</h2>
                         </div>
-                        <div class="date-location">
-                            ${dateFormatted}
+
+                        <div class="intro-text">Sertifikat ini dipersembahkan kepada</div>
+                        
+                        <div class="student-name">${certificate.studentName}</div>
+
+                        <div class="description">
+                            sebagai juara ${rankText} pada ${competitionText}<br>
+                            Yang diselenggarakan di ${schoolName} pada tahun ajaran ${certificate.academicYear}.
+                        </div>
+
+                        <div class="footer">
+                            <div class="signature">
+                                <div class="sig-name">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div>
+                                <div class="sig-title">Kepala Madrasah</div>
+                            </div>
+                            
+                            <div class="date-location">
+                                ${location},<br>
+                                ${dateFormatted}
+                            </div>
                         </div>
                     </div>
                 </body>
@@ -323,8 +392,10 @@ export default function CertificatesPage() {
         `);
         printWindow.document.close();
         printWindow.onload = () => {
-            printWindow.focus();
-            printWindow.print();
+            setTimeout(() => {
+                printWindow.focus();
+                printWindow.print();
+            }, 500);
         };
     };
 
@@ -358,21 +429,22 @@ export default function CertificatesPage() {
 
             doc.setFont("helvetica", "bold");
             doc.setFontSize(28);
-            doc.setTextColor(0, 0, 0);
+            doc.setTextColor(156, 39, 176); // Purple matching #9c27b0
             
             const nameText = certificate.studentName.toUpperCase();
             doc.text(nameText, pageWidth / 2, pageHeight / 2 - 20, { align: "center" });
 
             doc.setFont("helvetica", "normal");
             doc.setFontSize(18);
+            doc.setTextColor(51, 51, 51);
             
-            const rankText = certificate.category === 'bintang' ? 'Sebagai Bintang Pelajar' : `Sebagai Peringkat ${certificate.rank}`;
+            const rankText = certificate.category === 'bintang' ? 'Sebagai Bintang Pelajar' : `sebagai juara ${certificate.rank.toLowerCase()}`;
             doc.text(rankText, pageWidth / 2, pageHeight / 2 + 20, { align: "center" });
 
             if (certificate.category === 'lomba' && certificate.competitionName) {
-                doc.text(`Dalam Kegiatan ${certificate.competitionName}`, pageWidth / 2, pageHeight / 2 + 50, { align: "center" });
+                doc.text(`pada ${certificate.competitionName.toLowerCase()}`, pageWidth / 2, pageHeight / 2 + 45, { align: "center" });
             } else {
-                doc.text(`Semester ${certificate.academicYear}`, pageWidth / 2, pageHeight / 2 + 50, { align: "center" });
+                doc.text(`Semester ${certificate.academicYear}`, pageWidth / 2, pageHeight / 2 + 45, { align: "center" });
             }
 
             const dateFormatted = format(parseISO(certificate.date), "d MMMM yyyy", { locale: dfnsId });
