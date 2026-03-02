@@ -137,7 +137,7 @@ export default function GradesPage() {
                         <div>
                             <CardTitle>Input Nilai Siswa</CardTitle>
                             <CardDescription>
-                                Masukkan nilai akademik berdasarkan kelas dan jenis penilaian.
+                                Kelola nilai akademik berdasarkan kolom Nama, Mapel, dan Nilai.
                             </CardDescription>
                         </div>
                         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
@@ -165,7 +165,7 @@ export default function GradesPage() {
                             </Select>
                             <Button onClick={handleSave} disabled={isLoading || isSaving} className="h-9 gap-2">
                                 {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                                Simpan
+                                Simpan Nilai
                             </Button>
                         </div>
                     </div>
@@ -174,53 +174,63 @@ export default function GradesPage() {
                     {isLoading ? (
                         <div className="flex flex-col items-center justify-center h-64 gap-3 text-muted-foreground">
                             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                            <span className="text-sm">Menyiapkan tabel nilai...</span>
+                            <span className="text-sm">Menyiapkan daftar nilai...</span>
                         </div>
                     ) : sortedStudents.length > 0 && subjects.length > 0 ? (
-                        <div className="border rounded-md overflow-hidden bg-card">
-                            <div className="overflow-x-auto">
-                                <Table className="border-collapse">
-                                    <TableHeader>
-                                        <TableRow className="bg-muted/50">
-                                            <TableHead className="sticky left-0 z-20 bg-muted/50 border-r min-w-[180px] font-bold">
-                                                Nama Siswa
-                                            </TableHead>
-                                            {subjects.map(subject => (
-                                                <TableHead key={subject.id} className="text-center border-r min-w-[100px] text-[10px] font-bold leading-tight py-2">
-                                                    <span className="block uppercase text-primary/70 mb-1">{subject.subjectCode}</span>
-                                                    {subject.subjectName}
-                                                </TableHead>
-                                            ))}
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {sortedStudents.map(student => (
-                                            <TableRow key={student.id} className="hover:bg-muted/30">
-                                                <TableCell className="sticky left-0 z-10 bg-card border-r font-medium text-xs py-3">
-                                                    {student.name}
-                                                    <span className="block text-[9px] text-muted-foreground font-normal">{student.nis}</span>
-                                                </TableCell>
-                                                {subjects.map(subject => {
-                                                    const key = `${student.id}_${subject.id}`;
-                                                    return (
-                                                        <TableCell key={subject.id} className="p-1 border-r text-center">
-                                                            <Input 
-                                                                type="number"
-                                                                min="0"
-                                                                max="100"
-                                                                value={localGrades[key] === undefined ? "" : localGrades[key]}
-                                                                onChange={(e) => handleGradeChange(student.id, subject.id, e.target.value)}
-                                                                className="h-8 w-full text-center text-xs border-none bg-transparent focus-visible:ring-1 focus-visible:ring-primary shadow-none"
-                                                                placeholder="0"
-                                                            />
-                                                        </TableCell>
-                                                    );
-                                                })}
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </div>
+                        <div className="border rounded-md bg-card">
+                            <Table>
+                                <TableHeader className="bg-muted/50">
+                                    <TableRow>
+                                        <TableHead className="w-[50px] text-center">No.</TableHead>
+                                        <TableHead className="min-w-[200px]">Nama Siswa</TableHead>
+                                        <TableHead className="min-w-[200px]">Mata Pelajaran</TableHead>
+                                        <TableHead className="w-[120px] text-center">Nilai (0-100)</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {sortedStudents.map((student, sIdx) => (
+                                        subjects.map((subject, subIdx) => {
+                                            const key = `${student.id}_${subject.id}`;
+                                            const isFirstSubject = subIdx === 0;
+                                            
+                                            return (
+                                                <TableRow key={key} className="hover:bg-muted/30">
+                                                    <TableCell className="text-center text-muted-foreground">
+                                                        {isFirstSubject ? sIdx + 1 : ""}
+                                                    </TableCell>
+                                                    <TableCell className={isFirstSubject ? "font-medium" : "text-muted-foreground/50"}>
+                                                        {isFirstSubject ? (
+                                                            <div>
+                                                                <p className="text-xs">{student.name}</p>
+                                                                <p className="text-[10px] font-normal">{student.nis}</p>
+                                                            </div>
+                                                        ) : (
+                                                            <span className="text-[10px]">〃</span>
+                                                        )}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="flex flex-col">
+                                                            <span className="text-xs font-medium">{subject.subjectName}</span>
+                                                            <span className="text-[9px] text-muted-foreground uppercase">{subject.subjectCode}</span>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Input 
+                                                            type="number"
+                                                            min="0"
+                                                            max="100"
+                                                            value={localGrades[key] === undefined ? "" : localGrades[key]}
+                                                            onChange={(e) => handleGradeChange(student.id, subject.id, e.target.value)}
+                                                            className="h-8 w-20 mx-auto text-center text-xs font-bold"
+                                                            placeholder="0"
+                                                        />
+                                                    </TableCell>
+                                                </TableRow>
+                                            );
+                                        })
+                                    ))}
+                                </TableBody>
+                            </Table>
                         </div>
                     ) : (
                         <div className="flex flex-col items-center justify-center h-64 border-2 border-dashed rounded-lg bg-muted/20 text-muted-foreground text-center p-6">
