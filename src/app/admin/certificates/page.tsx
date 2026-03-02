@@ -248,7 +248,6 @@ export default function CertificatesPage() {
         const location = profile?.alamat?.split(',')[0] || "Sampang";
         const schoolName = profile?.namaMadrasah || "Madrasah Diniyah Ibnu Ahmad";
         
-        // Lowercase for descriptive text as seen in reference image
         const rankText = certificate.rank.toLowerCase();
         const competitionText = (certificate.competitionName || "lomba").toLowerCase();
 
@@ -256,7 +255,7 @@ export default function CertificatesPage() {
             <html>
                 <head>
                     <title>Cetak Sertifikat - ${certificate.studentName}</title>
-                    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Playfair+Display:wght@900&family=PT+Sans:wght@400;700&display=swap" rel="stylesheet">
+                    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;700&family=Playfair+Display:wght@700;900&family=PT+Sans:wght@400;700&display=swap" rel="stylesheet">
                     <style>
                         @page { size: landscape; margin: 0; }
                         body { 
@@ -265,6 +264,7 @@ export default function CertificatesPage() {
                             font-family: 'PT Sans', sans-serif; 
                             background-color: white;
                             color: #333;
+                            -webkit-print-color-adjust: exact;
                         }
                         .certificate-container {
                             position: relative;
@@ -282,41 +282,48 @@ export default function CertificatesPage() {
                             overflow: hidden;
                         }
                         .header-text {
+                            margin-top: -20px;
                             margin-bottom: 40px;
                         }
                         .title-main {
                             font-family: 'Playfair Display', serif;
-                            font-size: 64pt;
+                            font-size: 72pt;
+                            font-weight: 900;
                             color: #9c27b0;
                             margin: 0;
                             line-height: 1;
                             text-transform: uppercase;
+                            letter-spacing: 4px;
                         }
                         .title-sub {
                             font-family: 'Playfair Display', serif;
-                            font-size: 32pt;
+                            font-size: 36pt;
+                            font-weight: 700;
                             color: #9c27b0;
-                            margin: -10px 0 0 0;
-                            font-weight: 900;
+                            margin: -5px 0 0 0;
                         }
                         .intro-text {
-                            font-size: 16pt;
-                            margin-top: 20px;
-                            color: #444;
+                            font-size: 18pt;
+                            margin-bottom: 15px;
+                            color: #000;
+                        }
+                        .name-container {
+                            margin-bottom: 30px;
                         }
                         .student-name {
                             font-family: 'Dancing Script', cursive;
-                            font-size: 72pt;
+                            font-size: 82pt;
                             color: #9c27b0;
-                            margin: 20px 0;
-                            border-bottom: 2px solid #000;
                             display: inline-block;
-                            padding: 0 40px;
+                            padding: 0 60px;
+                            border-bottom: 3px solid #000;
+                            line-height: 1.1;
                         }
                         .description {
-                            font-size: 18pt;
-                            max-width: 80%;
+                            font-size: 20pt;
+                            max-width: 85%;
                             line-height: 1.4;
+                            color: #000;
                             margin-top: 10px;
                         }
                         .footer {
@@ -326,32 +333,29 @@ export default function CertificatesPage() {
                             display: flex;
                             justify-content: space-between;
                             align-items: flex-end;
-                            padding: 0 50px;
+                            padding: 0 40px;
                         }
                         .signature {
                             text-align: center;
                             min-width: 250px;
                         }
                         .sig-name {
-                            font-weight: bold;
-                            font-size: 16pt;
-                            border-bottom: 1px solid #000;
+                            font-weight: 700;
+                            font-size: 18pt;
+                            border-bottom: 2px solid #000;
                             display: inline-block;
                             margin-bottom: 5px;
                             padding: 0 10px;
                         }
                         .sig-title {
-                            font-size: 14pt;
-                            color: #555;
+                            font-size: 16pt;
+                            color: #333;
                         }
                         .date-location {
                             text-align: center;
-                            font-size: 16pt;
-                        }
-                        .medal-placeholder {
-                            width: 100px;
-                            height: 100px;
-                            opacity: 0.1; /* Usually template already has it */
+                            font-size: 18pt;
+                            color: #000;
+                            line-height: 1.3;
                         }
                         @media print {
                             body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -362,22 +366,24 @@ export default function CertificatesPage() {
                 <body>
                     <div class="certificate-container">
                         <div class="header-text">
-                            <h1 class="title-main">SERTIFIKAT</h1>
-                            <h2 class="title-sub">Penghargaan</h2>
+                            <div class="title-main">SERTIFIKAT</div>
+                            <div class="title-sub">Penghargaan</div>
                         </div>
 
                         <div class="intro-text">Sertifikat ini dipersembahkan kepada</div>
                         
-                        <div class="student-name">${certificate.studentName}</div>
+                        <div class="name-container">
+                            <div class="student-name">${certificate.studentName}</div>
+                        </div>
 
                         <div class="description">
                             sebagai juara ${rankText} pada ${competitionText}<br>
-                            Yang diselenggarakan di ${schoolName} pada tahun ajaran ${certificate.academicYear}.
+                            Yang diselenggarakan di ${schoolName.toLowerCase()} pada tahun ajaran ${certificate.academicYear}.
                         </div>
 
                         <div class="footer">
                             <div class="signature">
-                                <div class="sig-name">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</div>
+                                <div class="sig-name">Juliana Silva</div>
                                 <div class="sig-title">Kepala Madrasah</div>
                             </div>
                             
