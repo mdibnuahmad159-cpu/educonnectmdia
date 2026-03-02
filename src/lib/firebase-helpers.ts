@@ -16,7 +16,7 @@ import {
   query,
   where,
 } from 'firebase/firestore';
-import type { Teacher, Student, SchoolProfile, Curriculum, Alumni, Schedule, TeacherAttendance, StudentAttendance, Announcement, Grade, ReportSummary } from '@/types';
+import type { Teacher, Student, SchoolProfile, Curriculum, Alumni, Schedule, TeacherAttendance, StudentAttendance, Announcement, Grade, ReportSummary, Certificate } from '@/types';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { firebaseConfig } from '@/firebase/config';
@@ -369,5 +369,38 @@ export function saveGradesBatch(db: Firestore, grades: Omit<Grade, 'id' | 'updat
       requestResourceData: { note: "Batch save failed" },
     }));
     throw error;
+  });
+}
+
+export function addCertificate(db: Firestore, certificate: Omit<Certificate, 'id'>) {
+  const newRef = doc(collection(db, 'certificates'));
+  const data = { ...certificate, id: newRef.id };
+  setDoc(newRef, data).catch(error => {
+    errorEmitter.emit('permission-error', new FirestorePermissionError({
+      path: newRef.path,
+      operation: 'create',
+      requestResourceData: data,
+    }));
+  });
+}
+
+export function updateCertificate(db: Firestore, id: string, certificate: Partial<Omit<Certificate, 'id'>>) {
+  const ref = doc(db, 'certificates', id);
+  setDoc(ref, certificate, { merge: true }).catch(error => {
+    errorEmitter.emit('permission-error', new FirestorePermissionError({
+      path: ref.path,
+      operation: 'update',
+      requestResourceData: certificate,
+    }));
+  });
+}
+
+export function deleteCertificate(db: Firestore, id: string) {
+  const ref = doc(db, 'certificates', id);
+  deleteDoc(ref).catch(error => {
+    errorEmitter.emit('permission-error', new FirestorePermissionError({
+      path: ref.path,
+      operation: 'delete',
+    }));
   });
 }

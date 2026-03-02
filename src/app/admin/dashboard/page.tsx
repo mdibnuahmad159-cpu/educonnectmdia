@@ -28,7 +28,8 @@ import {
   AlertTriangle,
   ClipboardList,
   Megaphone,
-  UserCheck
+  UserCheck,
+  Award
 } from "lucide-react";
 import type { Teacher, Student } from "@/types";
 import { TeacherAttendanceCard } from "./components/teacher-attendance-card";
@@ -122,6 +123,7 @@ export default function DashboardPage() {
                     <NavLink href="/admin/reports" icon={FileText} label="Rapor" />
                     <NavLink href="/admin/attendance" icon={ClipboardList} label="Absen Guru" />
                     <NavLink href="/admin/announcements" icon={Megaphone} label="Pengumuman" />
+                    <NavLink href="/admin/certificates" icon={Award} label="Sertifikat" />
                 </CardContent>
             </Card>
         </TabsContent>

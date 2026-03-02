@@ -526,6 +526,21 @@
         "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["id", "studentId", "academicYear", "semester", "status"]
+    },
+    "Certificate": {
+      "title": "Certificate",
+      "type": "object",
+      "description": "Represents an achievement certificate for a student.",
+      "properties": {
+        "id": { "type": "string" },
+        "studentId": { "type": "string" },
+        "studentName": { "type": "string" },
+        "rank": { "type": "string", "enum": ["Pertama", "Kedua", "Ketiga"] },
+        "competitionName": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "academicYear": { "type": "string" }
+      },
+      "required": ["id", "studentId", "rank", "competitionName", "date"]
     }
   },
   "auth": {
@@ -743,8 +758,24 @@
             }
           ]
         }
+      },
+      {
+        "path": "/certificates/{certificateId}",
+        "definition": {
+          "entityName": "Certificate",
+          "schema": {
+            "$ref": "#/backend/entities/Certificate"
+          },
+          "description": "Stores student achievement certificates.",
+          "params": [
+            {
+              "name": "certificateId",
+              "description": "Unique ID for the certificate record."
+            }
+          ]
+        }
       }
     ],
-    "reasoning": "Extended schema to include ReportSummary for tracking student promotion status and attendance per semester/academic year."
+    "reasoning": "Added Certificate entity to manage student achievements/awards."
   }
 }

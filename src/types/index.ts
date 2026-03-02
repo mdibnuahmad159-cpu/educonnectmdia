@@ -138,3 +138,15 @@ export type ReportSummary = {
   alpa?: number;
   updatedAt: string;
 };
+
+export type CertificateRank = 'Pertama' | 'Kedua' | 'Ketiga';
+
+export type Certificate = {
+  id: string;
+  studentId: string;
+  studentName: string;
+  rank: CertificateRank;
+  competitionName: string;
+  date: string;
+  academicYear: string;
+};
