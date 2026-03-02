@@ -23,10 +23,12 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2, Save, Users, BookOpen, GraduationCap } from "lucide-react";
+import { Loader2, Save, Users, BookOpen, User, CheckCircle2 } from "lucide-react";
 import { useAcademicYear } from "@/context/academic-year-provider";
 import { useToast } from "@/hooks/use-toast";
 import { saveGradesBatch } from "@/lib/firebase-helpers";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
 
 type GradeType = 'PH' | 'UTS' | 'UAS';
 
@@ -37,6 +39,7 @@ export default function GradesPage() {
 
     const [selectedClass, setSelectedClass] = useState<string>("0");
     const [selectedGradeType, setSelectedGradeType] = useState<GradeType>("PH");
+    const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
     
     // State lokal untuk menampung input nilai sebelum disimpan
@@ -78,6 +81,11 @@ export default function GradesPage() {
         }
     }, [existingGrades]);
 
+    // Reset student selection when class changes
+    useEffect(() => {
+        setSelectedStudentId(null);
+    }, [selectedClass]);
+
     const subjects = useMemo(() => {
         if (!curriculum) return [];
         return [...curriculum].sort((a, b) => a.subjectName.localeCompare(b.subjectName));
@@ -88,9 +96,13 @@ export default function GradesPage() {
         return [...students].sort((a, b) => a.name.localeCompare(b.name));
     }, [students]);
 
+    const selectedStudent = useMemo(() => {
+        return sortedStudents.find(s => s.id === selectedStudentId);
+    }, [sortedStudents, selectedStudentId]);
+
     const handleGradeChange = (studentId: string, subjectId: string, value: string) => {
         const score = value === "" ? 0 : Number(value);
-        if (isNaN(score)) return;
+        if (isNaN(score) || score < 0 || score > 100) return;
         
         setLocalGrades(prev => ({
             ...prev,
@@ -104,16 +116,19 @@ export default function GradesPage() {
 
         const gradesToSave: Omit<Grade, 'id' | 'updatedAt'>[] = [];
 
+        // Save grades for all students in the class that have data in localGrades
         sortedStudents.forEach(student => {
             subjects.forEach(subject => {
-                const score = localGrades[`${student.id}_${subject.id}`] || 0;
-                gradesToSave.push({
-                    studentId: student.id,
-                    subjectId: subject.id,
-                    academicYear: activeYear,
-                    type: selectedGradeType,
-                    score: score
-                });
+                const key = `${student.id}_${subject.id}`;
+                if (localGrades[key] !== undefined) {
+                    gradesToSave.push({
+                        studentId: student.id,
+                        subjectId: subject.id,
+                        academicYear: activeYear,
+                        type: selectedGradeType,
+                        score: localGrades[key]
+                    });
+                }
             });
         });
 
@@ -129,22 +144,32 @@ export default function GradesPage() {
 
     const isLoading = loadingStudents || loadingCurriculum || loadingGrades;
 
+    // Menghitung berapa banyak nilai yang sudah terisi untuk setiap siswa
+    const getStudentProgress = (studentId: string) => {
+        if (!subjects.length) return 0;
+        let count = 0;
+        subjects.forEach(s => {
+            if (localGrades[`${studentId}_${s.id}`] > 0) count++;
+        });
+        return Math.round((count / subjects.length) * 100);
+    };
+
     return (
         <div className="space-y-4">
-            <Card>
-                <CardHeader>
+            <Card className="border-none shadow-none bg-transparent">
+                <CardHeader className="p-0 pb-4">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <div>
-                            <CardTitle>Input Nilai Siswa</CardTitle>
+                            <CardTitle className="text-xl">Input Nilai Siswa</CardTitle>
                             <CardDescription>
-                                Kelola nilai akademik berdasarkan kolom Nama, Mapel, dan Nilai.
+                                Pilih siswa untuk mengisi nilai pada setiap mata pelajaran.
                             </CardDescription>
                         </div>
                         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                             <Select value={selectedClass} onValueChange={setSelectedClass}>
-                                <SelectTrigger className="w-[120px] h-9">
-                                    <Users className="h-4 w-4 mr-2 opacity-70" />
-                                    <SelectValue placeholder="Pilih Kelas" />
+                                <SelectTrigger className="w-[110px] h-8 text-xs">
+                                    <Users className="h-3.5 w-3.5 mr-2 opacity-70" />
+                                    <SelectValue placeholder="Kelas" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {[...Array(7).keys()].map(i => (
@@ -153,9 +178,9 @@ export default function GradesPage() {
                                 </SelectContent>
                             </Select>
                             <Select value={selectedGradeType} onValueChange={(v) => setSelectedGradeType(v as GradeType)}>
-                                <SelectTrigger className="w-[120px] h-9">
-                                    <BookOpen className="h-4 w-4 mr-2 opacity-70" />
-                                    <SelectValue placeholder="Jenis Nilai" />
+                                <SelectTrigger className="w-[110px] h-8 text-xs">
+                                    <BookOpen className="h-3.5 w-3.5 mr-2 opacity-70" />
+                                    <SelectValue placeholder="Jenis" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="PH">PH (Harian)</SelectItem>
@@ -163,55 +188,101 @@ export default function GradesPage() {
                                     <SelectItem value="UAS">UAS (Akhir)</SelectItem>
                                 </SelectContent>
                             </Select>
-                            <Button onClick={handleSave} disabled={isLoading || isSaving} className="h-9 gap-2">
-                                {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                                Simpan Nilai
+                            <Button onClick={handleSave} disabled={isLoading || isSaving} size="xs" className="h-8 gap-2 px-4">
+                                {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                                Simpan Semua
                             </Button>
                         </div>
                     </div>
                 </CardHeader>
-                <CardContent>
-                    {isLoading ? (
-                        <div className="flex flex-col items-center justify-center h-64 gap-3 text-muted-foreground">
-                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                            <span className="text-sm">Menyiapkan daftar nilai...</span>
+            </Card>
+
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 h-[calc(100vh-12rem)]">
+                {/* Kolom Kiri: Daftar Siswa */}
+                <Card className="md:col-span-4 flex flex-col overflow-hidden">
+                    <CardHeader className="p-3 border-b bg-muted/20">
+                        <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                            <User className="h-3.5 w-3.5" /> Daftar Siswa
+                        </CardTitle>
+                    </CardHeader>
+                    <ScrollArea className="flex-1">
+                        <div className="p-1">
+                            {isLoading ? (
+                                <div className="flex justify-center p-8">
+                                    <Loader2 className="h-6 w-6 animate-spin text-primary/50" />
+                                </div>
+                            ) : sortedStudents.length > 0 ? (
+                                sortedStudents.map((student) => {
+                                    const progress = getStudentProgress(student.id);
+                                    return (
+                                        <button
+                                            key={student.id}
+                                            onClick={() => setSelectedStudentId(student.id)}
+                                            className={cn(
+                                                "w-full text-left p-3 rounded-md transition-all mb-1 group flex items-center justify-between",
+                                                selectedStudentId === student.id 
+                                                    ? "bg-primary text-primary-foreground shadow-md" 
+                                                    : "hover:bg-muted"
+                                            )}
+                                        >
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-semibold">{student.name}</span>
+                                                <span className={cn(
+                                                    "text-[10px]",
+                                                    selectedStudentId === student.id ? "text-primary-foreground/80" : "text-muted-foreground"
+                                                )}>{student.nis}</span>
+                                            </div>
+                                            {progress === 100 && (
+                                                <CheckCircle2 className={cn(
+                                                    "h-4 w-4",
+                                                    selectedStudentId === student.id ? "text-primary-foreground" : "text-green-500"
+                                                )} />
+                                            )}
+                                        </button>
+                                    );
+                                })
+                            ) : (
+                                <p className="text-center text-xs text-muted-foreground p-8">Tidak ada siswa di kelas ini.</p>
+                            )}
                         </div>
-                    ) : sortedStudents.length > 0 && subjects.length > 0 ? (
-                        <div className="border rounded-md bg-card">
-                            <Table>
-                                <TableHeader className="bg-muted/50">
-                                    <TableRow>
-                                        <TableHead className="w-[50px] text-center">No.</TableHead>
-                                        <TableHead className="min-w-[200px]">Nama Siswa</TableHead>
-                                        <TableHead className="min-w-[200px]">Mata Pelajaran</TableHead>
-                                        <TableHead className="w-[120px] text-center">Nilai (0-100)</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {sortedStudents.map((student, sIdx) => (
-                                        subjects.map((subject, subIdx) => {
-                                            const key = `${student.id}_${subject.id}`;
-                                            const isFirstSubject = subIdx === 0;
-                                            
+                    </ScrollArea>
+                </Card>
+
+                {/* Kolom Kanan: Tabel Nilai */}
+                <Card className="md:col-span-8 flex flex-col overflow-hidden">
+                    <CardHeader className="p-3 border-b bg-muted/20">
+                        <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                            {selectedStudent ? `Input Nilai: ${selectedStudent.name}` : "Pilih Siswa"}
+                        </CardTitle>
+                    </CardHeader>
+                    <ScrollArea className="flex-1">
+                        <CardContent className="p-0">
+                            {!selectedStudentId ? (
+                                <div className="flex flex-col items-center justify-center h-64 text-muted-foreground text-center p-6">
+                                    <User className="h-12 w-12 mb-3 opacity-10" />
+                                    <p className="text-sm">Silakan pilih siswa di sebelah kiri<br/>untuk mulai mengisi nilai.</p>
+                                </div>
+                            ) : subjects.length > 0 ? (
+                                <Table>
+                                    <TableHeader className="bg-muted/30 sticky top-0 z-10">
+                                        <TableRow>
+                                            <TableHead className="w-[50px] text-center">No.</TableHead>
+                                            <TableHead>Mata Pelajaran</TableHead>
+                                            <TableHead className="w-[120px] text-center">Nilai (0-100)</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {subjects.map((subject, index) => {
+                                            const key = `${selectedStudentId}_${subject.id}`;
                                             return (
-                                                <TableRow key={key} className="hover:bg-muted/30">
-                                                    <TableCell className="text-center text-muted-foreground">
-                                                        {isFirstSubject ? sIdx + 1 : ""}
-                                                    </TableCell>
-                                                    <TableCell className={isFirstSubject ? "font-medium" : "text-muted-foreground/50"}>
-                                                        {isFirstSubject ? (
-                                                            <div>
-                                                                <p className="text-xs">{student.name}</p>
-                                                                <p className="text-[10px] font-normal">{student.nis}</p>
-                                                            </div>
-                                                        ) : (
-                                                            <span className="text-[10px]">〃</span>
-                                                        )}
+                                                <TableRow key={subject.id} className="hover:bg-muted/30 h-12">
+                                                    <TableCell className="text-center text-muted-foreground text-[10px]">
+                                                        {index + 1}
                                                     </TableCell>
                                                     <TableCell>
                                                         <div className="flex flex-col">
-                                                            <span className="text-xs font-medium">{subject.subjectName}</span>
-                                                            <span className="text-[9px] text-muted-foreground uppercase">{subject.subjectCode}</span>
+                                                            <span className="text-sm font-medium">{subject.subjectName}</span>
+                                                            <span className="text-[10px] text-muted-foreground uppercase">{subject.subjectCode}</span>
                                                         </div>
                                                     </TableCell>
                                                     <TableCell>
@@ -220,29 +291,33 @@ export default function GradesPage() {
                                                             min="0"
                                                             max="100"
                                                             value={localGrades[key] === undefined ? "" : localGrades[key]}
-                                                            onChange={(e) => handleGradeChange(student.id, subject.id, e.target.value)}
-                                                            className="h-8 w-20 mx-auto text-center text-xs font-bold"
+                                                            onChange={(e) => handleGradeChange(selectedStudentId, subject.id, e.target.value)}
+                                                            className="h-8 w-20 mx-auto text-center text-sm font-bold focus:ring-primary"
                                                             placeholder="0"
                                                         />
                                                     </TableCell>
                                                 </TableRow>
                                             );
-                                        })
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    ) : (
-                        <div className="flex flex-col items-center justify-center h-64 border-2 border-dashed rounded-lg bg-muted/20 text-muted-foreground text-center p-6">
-                            <GraduationCap className="h-12 w-12 mb-3 opacity-20" />
-                            <p className="text-sm font-medium">Data Belum Tersedia</p>
-                            <p className="text-xs max-w-[250px] mt-1">
-                                {!sortedStudents.length ? `Tidak ada siswa terdaftar di Kelas ${selectedClass}.` : `Kurikulum (Mata Pelajaran) untuk Kelas ${selectedClass} belum diatur.`}
-                            </p>
+                                        })}
+                                    </TableBody>
+                                </Table>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center h-64 text-muted-foreground text-center p-6">
+                                    <BookOpen className="h-12 w-12 mb-3 opacity-10" />
+                                    <p className="text-sm">Kurikulum belum diatur untuk kelas ini.</p>
+                                </div>
+                            )}
+                        </CardContent>
+                    </ScrollArea>
+                    {selectedStudentId && subjects.length > 0 && (
+                        <div className="p-3 border-t bg-muted/10 flex justify-between items-center">
+                            <span className="text-[10px] text-muted-foreground">
+                                Perubahan disimpan sementara di memori hingga Anda menekan "Simpan Semua".
+                            </span>
                         </div>
                     )}
-                </CardContent>
-            </Card>
+                </Card>
+            </div>
         </div>
     );
 }
