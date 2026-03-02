@@ -89,8 +89,34 @@ export function AnnouncementForm({ isOpen, setIsOpen, announcement, onSave }: An
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        form.setValue("imageUrl", reader.result as string);
+      reader.onload = (event) => {
+        const img = new Image();
+        const imageUrl = event.target?.result as string;
+        img.src = imageUrl;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 800; // Lebar maksimal untuk efisiensi penyimpanan
+          
+          let width = img.width;
+          let height = img.height;
+
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            // Kompres gambar ke format JPEG dengan kualitas 70%
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+            form.setValue('imageUrl', dataUrl);
+          } else {
+            form.setValue('imageUrl', imageUrl);
+          }
+        };
       };
       reader.readAsDataURL(file);
     }
@@ -160,6 +186,7 @@ export function AnnouncementForm({ isOpen, setIsOpen, announcement, onSave }: An
                     <div className="space-y-2">
                         <FormLabel>Gambar (Opsional)</FormLabel>
                         <Input type="file" accept="image/*" onChange={handleImageChange} />
+                        <p className="text-[10px] text-muted-foreground italic">Gambar akan dioptimalkan secara otomatis untuk pengiriman yang lebih cepat.</p>
                         {form.watch("imageUrl") && (
                             <div className="mt-2 relative w-full rounded-md overflow-hidden border bg-muted/30">
                                 <img 

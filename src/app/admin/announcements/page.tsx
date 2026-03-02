@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection, Firestore, query, orderBy } from "firebase/firestore";
 import type { Announcement } from "@/types";
@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
   CardFooter,
@@ -78,6 +77,9 @@ export default function AnnouncementsPage() {
             addAnnouncement(firestore, data);
             toast({ title: "Pengumuman Terkirim", description: "Pengumuman baru telah dipublikasikan." });
         }
+        // Pastikan form ditutup dan state dibersihkan
+        setIsFormOpen(false);
+        setSelectedAnnouncement(null);
     };
 
     const getTargetBadge = (target: Announcement['target']) => {
