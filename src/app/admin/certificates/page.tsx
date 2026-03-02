@@ -144,36 +144,97 @@ export default function CertificatesPage() {
             return;
         }
 
-        const doc = new jsPDF({ orientation: "landscape", unit: "px", format: "a4" });
-        const pageWidth = doc.internal.pageSize.getWidth();
-        const pageHeight = doc.internal.pageSize.getHeight();
-
-        doc.addImage(template.imageUrl, "JPEG", 0, 0, pageWidth, pageHeight);
-
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(28);
-        doc.setTextColor(0, 0, 0);
-        
-        const nameText = certificate.studentName.toUpperCase();
-        doc.text(nameText, pageWidth / 2, pageHeight / 2 - 20, { align: "center" });
-
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(18);
-        
-        const rankText = certificate.category === 'bintang' ? 'Sebagai Bintang Pelajar' : `Sebagai Peringkat ${certificate.rank}`;
-        doc.text(rankText, pageWidth / 2, pageHeight / 2 + 20, { align: "center" });
-
-        if (certificate.category === 'lomba' && certificate.competitionName) {
-            doc.text(`Dalam Kegiatan ${certificate.competitionName}`, pageWidth / 2, pageHeight / 2 + 50, { align: "center" });
-        } else {
-            doc.text(`Semester ${certificate.academicYear}`, pageWidth / 2, pageHeight / 2 + 50, { align: "center" });
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) {
+            toast({ variant: "destructive", title: "Gagal Membuka Jendela", description: "Mohon izinkan pop-up untuk mencetak sertifikat." });
+            return;
         }
 
         const dateFormatted = format(parseISO(certificate.date), "d MMMM yyyy", { locale: dfnsId });
-        doc.setFontSize(12);
-        doc.text(dateFormatted, pageWidth - 60, pageHeight - 60, { align: "right" });
+        const rankText = certificate.category === 'bintang' ? 'Sebagai Bintang Pelajar' : `Sebagai Peringkat ${certificate.rank}`;
+        const subText = certificate.category === 'lomba' && certificate.competitionName 
+            ? `Dalam Kegiatan ${certificate.competitionName}` 
+            : `Semester ${certificate.academicYear}`;
 
-        doc.save(`Sertifikat_${certificate.studentName}_${certificate.category}.pdf`);
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Cetak Sertifikat - ${certificate.studentName}</title>
+                    <style>
+                        @page { size: landscape; margin: 0; }
+                        body { 
+                            margin: 0; 
+                            padding: 0; 
+                            font-family: 'PT Sans', sans-serif; 
+                            background-color: white;
+                        }
+                        .certificate-container {
+                            position: relative;
+                            width: 100vw;
+                            height: 100vh;
+                            background-image: url('${template.imageUrl}');
+                            background-size: 100% 100%;
+                            background-repeat: no-repeat;
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            justify-content: center;
+                            text-align: center;
+                            box-sizing: border-box;
+                        }
+                        .content {
+                            width: 80%;
+                            margin-top: 20px;
+                        }
+                        .name {
+                            font-size: 42pt;
+                            font-weight: bold;
+                            color: #000;
+                            text-transform: uppercase;
+                            margin-bottom: 30px;
+                        }
+                        .rank {
+                            font-size: 24pt;
+                            color: #333;
+                            margin-bottom: 10px;
+                        }
+                        .description {
+                            font-size: 20pt;
+                            color: #444;
+                        }
+                        .date-location {
+                            position: absolute;
+                            bottom: 120px;
+                            right: 100px;
+                            text-align: right;
+                            font-size: 14pt;
+                            color: #000;
+                        }
+                        @media print {
+                            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                            .certificate-container { width: 100%; height: 100%; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="certificate-container">
+                        <div class="content">
+                            <div class="name">${certificate.studentName}</div>
+                            <div class="rank">${rankText}</div>
+                            <div class="description">${subText}</div>
+                        </div>
+                        <div class="date-location">
+                            ${dateFormatted}
+                        </div>
+                    </div>
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
+        printWindow.onload = () => {
+            printWindow.focus();
+            printWindow.print();
+        };
     };
 
     const handleBulkPrint = () => {
@@ -182,7 +243,6 @@ export default function CertificatesPage() {
             return;
         }
 
-        // Check if all required templates are uploaded
         const uniqueCategories = new Set(filteredCertificates.map(c => c.category));
         const missingTemplates = Array.from(uniqueCategories).filter(cat => !templates?.find(t => t.id === cat));
 
