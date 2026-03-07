@@ -22,12 +22,12 @@ service cloud.firestore {
     }
 
     function isTeacher() {
-      return exists(/databases/$(database)/documents/teachers/$(request.auth.uid));
+      return isSignedIn() && exists(/databases/$(database)/documents/teachers/$(request.auth.uid));
     }
 
     function isParent() {
       return (isSignedIn() && request.auth.token.firebase.sign_in_provider == 'anonymous')
-          || exists(/databases/$(database)/documents/parents/$(request.auth.uid));
+          || (isSignedIn() && exists(/databases/$(database)/documents/parents/$(request.auth.uid)));
     }
 
     // Announcements
@@ -52,10 +52,11 @@ service cloud.firestore {
     match /curriculum/{curriculumId} { allow read: if isSignedIn(); }
     match /alumni/{alumniId} { allow read: if isSignedIn(); }
     match /schedules/{scheduleId} { allow read: if isSignedIn(); }
-    match /schoolProfile/{profileId} { allow read: if isSignedIn(); }
+    match /schoolProfile/{profileId} { allow read: if true; } // Allow public read for school branding on login page
     match /grades/{gradeId} { allow read: if isSignedIn(); }
     match /report_summaries/{summaryId} { allow read: if isSignedIn(); }
     match /certificates/{certificateId} { allow read: if isSignedIn(); }
     match /certificate_templates/{templateId} { allow read: if isSignedIn(); }
+    match /sppPayments/{paymentId} { allow read: if isSignedIn(); }
   }
 }
