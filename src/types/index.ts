@@ -56,6 +56,7 @@ export type SchoolProfile = {
   logoMadrasahUrl?: string;
   kopSuratUrl?: string;
   activeAcademicYear?: string;
+  defaultSppAmount?: number;
 };
 
 export type Curriculum = {
@@ -156,4 +157,20 @@ export type Certificate = {
 export type CertificateTemplate = {
   id: CertificateCategory;
   imageUrl: string;
+};
+
+export type SPPPaymentStatus = 'Paid' | 'Unpaid' | 'Partial';
+
+export type SPPPayment = {
+  id: string;
+  studentId: string;
+  classId: string;
+  month: number;
+  year: number;
+  amountDue: number;
+  amountPaid: number;
+  paymentDate: string;
+  status: SPPPaymentStatus;
+  notes?: string;
+  updatedAt?: any;
 };

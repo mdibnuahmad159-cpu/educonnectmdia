@@ -5,7 +5,7 @@ import { useState, useMemo } from "react";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection, query, where, Firestore } from "firebase/firestore";
 import type { Student, SPPPayment } from "@/types";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { 
     Loader2, 
     CreditCard, 
@@ -24,14 +25,14 @@ import {
     Users, 
     User,
     CalendarDays,
-    ChevronRight,
-    AlertCircle
+    AlertCircle,
+    Settings2
 } from "lucide-react";
 import { useAcademicYear } from "@/context/academic-year-provider";
+import { useSchoolProfile } from "@/context/school-profile-provider";
 import { useToast } from "@/hooks/use-toast";
-import { saveSPPPayment } from "@/lib/firebase-helpers";
+import { saveSPPPayment, updateSchoolProfile } from "@/lib/firebase-helpers";
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
 import { format, parseISO } from "date-fns";
 import { id as dfnsId } from "date-fns/locale";
 import { PaymentForm } from "./components/payment-form";
@@ -57,6 +58,7 @@ const MONTHS = [
 export default function SppPage() {
     const firestore = useFirestore() as Firestore;
     const { activeYear } = useAcademicYear();
+    const { profile } = useSchoolProfile();
     const { toast } = useToast();
 
     const [selectedClass, setSelectedClass] = useState<string>("0");
@@ -64,18 +66,14 @@ export default function SppPage() {
     const [isPaymentFormOpen, setIsPaymentFormOpen] = useState(false);
     const [activeMonth, setActiveMonth] = useState<{id: number, name: string} | null>(null);
 
-    // Fetch students based on class
     const studentsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
         return query(collection(firestore, "students"), where("kelas", "==", Number(selectedClass)));
     }, [firestore, selectedClass]);
     const { data: students, loading: loadingStudents } = useCollection<Student>(studentsQuery);
 
-    // Fetch payments for the selected student and academic year
     const paymentsQuery = useMemoFirebase(() => {
         if (!firestore || !selectedStudentId || !activeYear) return null;
-        // In a real app, you might want to fetch by studentId AND academicYear if your logic supports it.
-        // For simplicity, we filter by studentId and will manage year mapping in memory.
         return query(collection(firestore, "sppPayments"), where("studentId", "==", selectedStudentId));
     }, [firestore, selectedStudentId, activeYear]);
     const { data: payments, loading: loadingPayments } = useCollection<SPPPayment>(paymentsQuery);
@@ -84,12 +82,10 @@ export default function SppPage() {
         return students?.find(s => s.id === selectedStudentId);
     }, [students, selectedStudentId]);
 
-    // Map payments to months
     const paymentStatusMap = useMemo(() => {
         const map = new Map<number, SPPPayment>();
         if (payments) {
             payments.forEach(p => {
-                // Assuming year is correct for the active academic cycle
                 map.set(p.month, p);
             });
         }
@@ -104,7 +100,6 @@ export default function SppPage() {
     const handleSavePayment = async (data: any) => {
         if (!firestore || !selectedStudent || !activeMonth) return;
 
-        // Determine actual year based on month (School year 2023/2024 starts 2023 for July-Dec, 2024 for Jan-Jun)
         const [startYear, endYear] = activeYear.split('/').map(Number);
         const actualYear = activeMonth.id >= 7 ? startYear : endYear;
 
@@ -126,6 +121,13 @@ export default function SppPage() {
         } catch (error) {
             toast({ variant: "destructive", title: "Gagal Menyimpan", description: "Terjadi kesalahan saat mencatat pembayaran." });
         }
+    };
+
+    const handleUpdateDefaultBill = (value: string) => {
+        if (!firestore) return;
+        const amount = Number(value);
+        if (isNaN(amount)) return;
+        updateSchoolProfile(firestore, { defaultSppAmount: amount });
     };
 
     const handleExportExcel = () => {
@@ -185,7 +187,7 @@ export default function SppPage() {
                     <CardDescription className="text-xs">Kelola iuran bulanan siswa untuk tahun ajaran {activeYear}.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div className="space-y-1.5">
                             <label className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1.5 ml-1">
                                 <Users className="h-3 w-3" /> Pilih Kelas
@@ -220,6 +222,19 @@ export default function SppPage() {
                                     ))}
                                 </SelectContent>
                             </Select>
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1.5 ml-1">
+                                <Settings2 className="h-3 w-3" /> Tagihan Bulanan (Rp)
+                            </label>
+                            <Input 
+                                type="number" 
+                                placeholder="Contoh: 50000"
+                                defaultValue={profile?.defaultSppAmount || 50000}
+                                onBlur={(e) => handleUpdateDefaultBill(e.target.value)}
+                                className="h-9 font-normal"
+                            />
                         </div>
                     </div>
                 </CardContent>
@@ -323,6 +338,7 @@ export default function SppPage() {
                     month={activeMonth}
                     studentName={selectedStudent?.name || ""}
                     existingData={paymentStatusMap.get(activeMonth.id)}
+                    defaultAmount={profile?.defaultSppAmount || 50000}
                     onSave={handleSavePayment}
                 />
             )}

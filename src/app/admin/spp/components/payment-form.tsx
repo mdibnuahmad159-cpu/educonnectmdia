@@ -41,17 +41,18 @@ type PaymentFormProps = {
   month: { id: number; name: string };
   studentName: string;
   existingData: SPPPayment | undefined;
+  defaultAmount: number;
   onSave: (data: PaymentFormData) => void;
 };
 
-export function PaymentForm({ isOpen, setIsOpen, month, studentName, existingData, onSave }: PaymentFormProps) {
+export function PaymentForm({ isOpen, setIsOpen, month, studentName, existingData, defaultAmount, onSave }: PaymentFormProps) {
   const form = useForm<PaymentFormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      amountDue: 50000, // Default SPP amount
-      amountPaid: 0,
-      paymentDate: new Date().toISOString().split('T')[0],
-      notes: "",
+      amountDue: existingData?.amountDue || defaultAmount || 50000,
+      amountPaid: existingData?.amountPaid || 0,
+      paymentDate: existingData?.paymentDate || new Date().toISOString().split('T')[0],
+      notes: existingData?.notes || "",
     },
   });
   
@@ -66,14 +67,14 @@ export function PaymentForm({ isOpen, setIsOpen, month, studentName, existingDat
           });
         } else {
           form.reset({
-            amountDue: 50000,
+            amountDue: defaultAmount || 50000,
             amountPaid: 0,
             paymentDate: new Date().toISOString().split('T')[0],
             notes: "",
           });
         }
     }
-  }, [existingData, form, isOpen]);
+  }, [existingData, form, isOpen, defaultAmount]);
   
   const onSubmit = (values: PaymentFormData) => {
     onSave(values);
