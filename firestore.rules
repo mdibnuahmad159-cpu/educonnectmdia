@@ -1,90 +1,163 @@
-
-/**
- * # Firestore Security Rules: EduConnect
- *
- * ## Core Philosophy
- * Aturan ini menggunakan model Role-Based Access Control (RBAC).
- * 1. Super-Admin: Email khusus 'mdibnuahmad159@gmail.com' memiliki akses penuh ke semua data.
- * 2. Regular Users: Guru dan Wali Murid memiliki akses terbatas berdasarkan peran mereka.
- * 3. Default: Tolak semua akses yang tidak didefinisikan secara eksplisit.
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // =====================================================================
-    // Helper Functions
-    // =====================================================================
+    /**
+     * SCHOOL MANAGEMENT & SPP PAYMENT SYSTEM - SECURITY RULES
+     *
+     * Core Philosophy:
+     * This ruleset implements a multi-tenant role-based access control (RBAC) model 
+     * tailored for an educational environment. It prioritizes "Authorization 
+     * Independence" through data denormalization to ensure performant and 
+     * secure queries.
+     *
+     * Data Structure:
+     * - /roles_*: Existence-based collections defining Admin, Teacher, or Parent privileges.
+     * - /classes, /teachers, /students: Core academic entity collections.
+     * - /sppPayments: Transactional records for school fees.
+     *
+     * Key Security Decisions:
+     * 1. Authorization Independence: SPPPayment documents include denormalized 
+     *    'homeroomTeacherId' and 'studentId' fields. This allows teachers and parents 
+     *    to query their relevant records without the rules needing to perform 
+     *    expensive lookups (get() calls) on parent documents.
+     * 2. Role-Based Segregation: Access is strictly divided between Admins (full access), 
+     *    Teachers (access to their assigned classes/students), and Parents (access 
+     *    to their own child's data).
+     * 3. Immutability: Critical relational fields (like studentId or teacherId) 
+     *    are enforced as immutable during updates to prevent data corruption or 
+     *    unauthorized access shifts.
+     * 4. Prototyping Flexibility: While authorization is strictly enforced, the 
+     *    rules do not enforce strict data schemas for non-relational fields 
+     *    (e.g., status strings, notes) to allow for rapid UI iteration.
+     */
 
-    /** Cek apakah pengguna sudah login */
+    // --- Global Helper Functions ---
+
+    /** Checks if the user is authenticated. */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /** Cek apakah pengguna adalah Super-Admin */
+    /** Checks if the user has a document in the admin roles collection. */
     function isAdmin() {
-      return isSignedIn() && request.auth.token.email == 'mdibnuahmad159@gmail.com';
-    }
-    
-    /** Cek apakah pengguna adalah Guru terdaftar */
-    function isTeacher() {
-      return exists(/databases/$(database)/documents/teachers/$(request.auth.uid));
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
     }
 
-    /** Cek apakah pengguna adalah Wali Murid (termasuk anonim untuk login) */
-    function isParent() {
-      return (isSignedIn() && request.auth.token.firebase.sign_in_provider == 'anonymous')
-          || exists(/databases/$(database)/documents/parents/$(request.auth.uid));
+    /** Retrieves the teacherId associated with the current user's UID. */
+    function getTeacherId() {
+      return get(/databases/$(database)/documents/roles_teacher/$(request.auth.uid)).data.teacherId;
     }
 
-    // =====================================================================
-    // Super-Admin Override
-    // =====================================================================
-    // Memberikan akses penuh ke semua jalur untuk administrator
-    match /{allPaths=**} {
-      allow read, write: if isAdmin();
+    /** Retrieves the studentId associated with the current user's UID (Parent role). */
+    function getStudentId() {
+      return get(/databases/$(database)/documents/roles_parent/$(request.auth.uid)).data.studentId;
     }
 
-    // =====================================================================
-    // Specific Collection Rules (Untuk Non-Admin)
-    // =====================================================================
-
-    /** Pengumuman: Semua yang login bisa baca, hanya admin yang bisa tulis (sudah dihandle super-admin) */
-    match /announcements/{announcementId} {
-      allow read: if isSignedIn();
+    /** Helper for checking existence and ownership for updates/deletes. */
+    function isExistingTeacher(id) {
+      return resource != null && getTeacherId() == id;
     }
 
-    /** Profil Guru: Guru bisa baca/ubah profil sendiri */
+    // --- Role Collections ---
+
+    /**
+     * @description Admin roles identifying database administrators.
+     * @path /roles_admin/{adminUid}
+     * @allow (get) If user is the admin owner.
+     * @deny (all) If user is not the admin owner or not an existing admin.
+     * @principle Existence-based role assignment.
+     */
+    match /roles_admin/{adminUid} {
+      allow get: if isAdmin() || (isSignedIn() && request.auth.uid == adminUid);
+      allow list: if isAdmin();
+      allow create, update, delete: if isAdmin();
+    }
+
+    /**
+     * @description Teacher roles linking a UID to a Teacher entity ID.
+     * @path /roles_teacher/{teacherUid}
+     * @allow (get) If user is the teacher owner or admin.
+     * @deny (write) If user is not an admin.
+     * @principle Mapping authenticated identity to domain entity.
+     */
+    match /roles_teacher/{teacherUid} {
+      allow get: if isAdmin() || (isSignedIn() && request.auth.uid == teacherUid);
+      allow list: if isAdmin();
+      allow create, update, delete: if isAdmin();
+    }
+
+    /**
+     * @description Parent roles linking a UID to a Student entity ID.
+     * @path /roles_parent/{parentUid}
+     * @allow (get) If user is the parent owner or admin.
+     * @deny (write) If user is not an admin.
+     * @principle Mapping authenticated identity to domain entity.
+     */
+    match /roles_parent/{parentUid} {
+      allow get: if isAdmin() || (isSignedIn() && request.auth.uid == parentUid);
+      allow list: if isAdmin();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // --- Business Entities ---
+
+    /**
+     * @description School classes. Accessible by Admins and the assigned Homeroom Teacher.
+     * @path /classes/{classId}
+     * @allow (list) If user is Admin or the Homeroom Teacher of the class.
+     * @deny (write) If user is not an admin.
+     * @principle Domain-specific access control via homeroomTeacherId.
+     */
+    match /classes/{classId} {
+      allow get, list: if isAdmin() || (isSignedIn() && resource.data.homeroomTeacherId == getTeacherId());
+      allow create, update, delete: if isAdmin();
+    }
+
+    /**
+     * @description Teacher profiles. Managed by Admins.
+     * @path /teachers/{teacherId}
+     * @allow (get) If user is the teacher themselves or admin.
+     * @deny (list) To non-admins to prevent teacher directory scraping.
+     * @principle Personal data privacy for employees.
+     */
     match /teachers/{teacherId} {
-      allow get, update: if isSignedIn() && request.auth.uid == teacherId;
+      allow get: if isAdmin() || (isSignedIn() && getTeacherId() == teacherId);
+      allow list: if isAdmin();
+      allow create, update, delete: if isAdmin();
     }
 
-    /** Profil Wali Murid: Wali bisa baca/ubah profil sendiri */
-    match /parents/{parentId} {
-      allow get, update: if isSignedIn() && request.auth.uid == parentId;
-    }
-
-    /** Data Siswa: Guru dan Wali Murid bisa baca data siswa tertentu */
+    /**
+     * @description Student records. Accessible by Admin, Parents of the student, and the Homeroom Teacher.
+     * @path /students/{studentId}
+     * @allow (get) If user is the student's parent or admin.
+     * @deny (create) If not admin.
+     * @principle Restricted access to sensitive student PII.
+     */
     match /students/{studentId} {
-      // Izinkan akses 'get' tanpa login untuk proses pengecekan NIS saat login parent
-      allow get: if request.auth == null || isTeacher() || isParent();
-      allow list: if isTeacher();
+      allow get: if isAdmin() || (isSignedIn() && (getStudentId() == studentId || getTeacherId() != null));
+      allow list: if isAdmin() || (isSignedIn() && (getStudentId() == studentId || getTeacherId() != null));
+      allow create, update, delete: if isAdmin();
     }
 
-    /** Data Akademik & Sekolah: Bisa dibaca oleh semua yang login */
-    match /classes/{classId} { allow read: if isSignedIn(); }
-    match /subjects/{subjectId} { allow read: if isSignedIn(); }
-    match /curriculum/{curriculumId} { allow read: if isSignedIn(); }
-    match /alumni/{alumniId} { allow read: if isSignedIn(); }
-    match /schedules/{scheduleId} { allow read: if isSignedIn(); }
-    match /schoolProfile/{profileId} { allow read: if isSignedIn(); }
-
-    /** Absensi: Hanya Admin yang bisa baca/tulis (sudah dihandle oleh Super-Admin rule) */
-    match /teacher_attendances/{attendanceId} {
-      allow read, write: if false; // Hanya admin lewat super-admin rule
-    }
-    match /student_attendances/{attendanceId} {
-      allow read, write: if false; // Hanya admin lewat super-admin rule
+    /**
+     * @description Monthly SPP payment records.
+     * @path /sppPayments/{sppPaymentId}
+     * @allow (create) If user is Admin or the Teacher assigned to the student's class.
+     * @allow (list) If user is the student's Parent or the Homeroom Teacher.
+     * @deny (update) If attempting to change the studentId or homeroomTeacherId links.
+     * @principle Authorization Independence via denormalized relational fields.
+     */
+    match /sppPayments/{sppPaymentId} {
+      allow get, list: if isAdmin() || (isSignedIn() && (resource.data.studentId == getStudentId() || resource.data.homeroomTeacherId == getTeacherId()));
+      
+      allow create: if isAdmin() || (isSignedIn() && request.resource.data.homeroomTeacherId == getTeacherId());
+      
+      allow update: if (isAdmin() || (isSignedIn() && resource.data.homeroomTeacherId == getTeacherId()))
+                    && request.resource.data.studentId == resource.data.studentId
+                    && request.resource.data.homeroomTeacherId == resource.data.homeroomTeacherId;
+                    
+      allow delete: if isAdmin() || (isSignedIn() && isExistingTeacher(resource.data.homeroomTeacherId));
     }
   }
 }

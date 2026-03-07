@@ -3,7 +3,7 @@
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, initializeFirestore } from 'firebase/firestore';
+import { getFirestore } from 'firebase/firestore'
 
 // IMPORTANT: DO NOT MODIFY THIS FUNCTION
 export function initializeFirebase() {
@@ -33,23 +33,10 @@ export function initializeFirebase() {
 }
 
 export function getSdks(firebaseApp: FirebaseApp) {
-  // Menggunakan initializeFirestore dengan pengaturan tambahan untuk stabilitas koneksi.
-  // 'experimentalForceLongPolling' sangat membantu dalam lingkungan pengembangan cloud
-  // di mana koneksi WebSocket sering mengalami gangguan atau diblokir.
-  let firestore;
-  try {
-    firestore = initializeFirestore(firebaseApp, {
-      experimentalForceLongPolling: true,
-    });
-  } catch (e) {
-    // Jika Firestore sudah diinisialisasi sebelumnya, kita ambil instance yang sudah ada.
-    firestore = getFirestore(firebaseApp);
-  }
-
   return {
     firebaseApp,
     auth: getAuth(firebaseApp),
-    firestore: firestore,
+    firestore: getFirestore(firebaseApp)
   };
 }
 
