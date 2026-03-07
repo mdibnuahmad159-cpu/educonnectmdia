@@ -13,19 +13,6 @@ service cloud.firestore {
       );
     }
 
-    function isTeacher() {
-      let path = /databases/$(database)/documents/roles_teacher/$(request.auth.uid);
-      return isSignedIn() && exists(path);
-    }
-
-    function isParent() {
-      let path = /databases/$(database)/documents/roles_parent/$(request.auth.uid);
-      return isSignedIn() && (
-        request.auth.token.firebase.sign_in_provider == 'anonymous' ||
-        exists(path)
-      );
-    }
-
     // Super-Admin Override
     match /{allPaths=**} {
       allow read, write: if isAdmin();
@@ -41,11 +28,11 @@ service cloud.firestore {
 
     match /teachers/{teacherId} {
       allow get, update: if isSignedIn() && request.auth.uid == teacherId;
+      allow list: if isSignedIn();
     }
 
     match /students/{studentId} {
-      allow get: if isAdmin() || isTeacher() || isParent();
-      allow list: if isAdmin() || isTeacher();
+      allow read: if isSignedIn();
     }
 
     match /classes/{id} { allow read: if isSignedIn(); }

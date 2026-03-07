@@ -26,12 +26,6 @@ service cloud.firestore {
       return exists(path) ? get(path).data.teacherId : null;
     }
 
-    /** Retrieves the studentId associated with the current user's UID (Parent role). */
-    function getStudentId() {
-      let path = /databases/$(database)/documents/roles_parent/$(request.auth.uid);
-      return exists(path) ? get(path).data.studentId : null;
-    }
-
     // --- Role Collections ---
 
     match /roles_admin/{adminUid} {
@@ -51,48 +45,49 @@ service cloud.firestore {
 
     // --- Business Entities ---
 
-    /** Publicly readable for login branding. */
     match /schoolProfile/{profileId} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
     match /classes/{classId} {
-      allow get, list: if isAdmin() || (isSignedIn() && resource.data.homeroomTeacherId == getTeacherId());
-      allow create, update, delete: if isAdmin();
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
     }
 
     match /teachers/{teacherId} {
-      allow get: if isAdmin() || (isSignedIn() && (getTeacherId() == teacherId || request.auth.uid == teacherId));
-      allow list: if isAdmin();
-      allow create, update, delete: if isAdmin();
+      allow get: if isSignedIn();
+      allow list: if isAdmin() || isSignedIn();
+      allow write: if isAdmin();
     }
 
     match /students/{studentId} {
-      allow get: if isAdmin() || isSignedIn();
-      allow list: if isAdmin() || isSignedIn();
-      allow create, update, delete: if isAdmin();
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
     }
 
     match /sppPayments/{sppPaymentId} {
-      allow get, list: if isAdmin() || isSignedIn();
-      allow create: if isAdmin() || (isSignedIn() && request.resource.data.homeroomTeacherId == getTeacherId());
-      allow update: if (isAdmin() || (isSignedIn() && resource.data.homeroomTeacherId == getTeacherId()))
-                    && request.resource.data.studentId == resource.data.studentId;
-      allow delete: if isAdmin();
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
     }
 
-    // --- Additional Collections ---
+    match /teacher_attendances/{id} { 
+      allow read: if isSignedIn(); 
+      allow write: if isAdmin(); 
+    }
+    
+    match /student_attendances/{id} { 
+      allow read: if isSignedIn(); 
+      allow write: if isAdmin(); 
+    }
 
     match /announcements/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
     match /curriculum/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
     match /alumni/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
     match /schedules/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
-    match /teacher_attendances/{id} { allow read: if isAdmin() || isSignedIn(); allow write: if isAdmin(); }
-    match /student_attendances/{id} { allow read: if isAdmin() || isSignedIn(); allow write: if isAdmin(); }
-    match /grades/{id} { allow read: if isAdmin() || isSignedIn(); allow write: if isAdmin(); }
-    match /report_summaries/{id} { allow read: if isAdmin() || isSignedIn(); allow write: if isAdmin(); }
-    match /certificates/{id} { allow read: if isAdmin() || isSignedIn(); allow write: if isAdmin(); }
+    match /grades/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
+    match /report_summaries/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
+    match /certificates/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
     match /certificate_templates/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
   }
 }
