@@ -105,13 +105,13 @@ export default function SppPage() {
     const stats = useMemo(() => {
         const defaultAmount = profile?.defaultSppAmount || 50000;
         const paidPayments = payments?.filter(p => p.status === 'Paid') || [];
-        const totalPaid = paidPayments.reduce((sum, p) => sum + p.amountPaid, 0);
         const monthsPaidCount = paidPayments.length;
+        const totalPaid = paidPayments.reduce((sum, p) => sum + p.amountPaid, 0);
         
-        // Aturan: Lunas jika sudah membayar 10 bulan
+        // Aturan: Lunas jika sudah membayar minimal 10 bulan
         const targetMonths = 10;
-        const totalTarget = targetMonths * defaultAmount;
-        const arrears = Math.max(0, totalTarget - totalPaid);
+        const remainingMonths = Math.max(0, targetMonths - monthsPaidCount);
+        const arrears = remainingMonths * defaultAmount;
         const isYearlyPaid = monthsPaidCount >= targetMonths;
 
         return {
@@ -119,7 +119,8 @@ export default function SppPage() {
             monthsPaidCount,
             arrears,
             isYearlyPaid,
-            targetMonths
+            targetMonths,
+            remainingMonths
         };
     }, [payments, profile]);
 
