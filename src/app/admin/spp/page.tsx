@@ -27,7 +27,10 @@ import {
     CalendarDays,
     Settings2,
     FileSpreadsheet,
-    FileText
+    FileText,
+    TrendingUp,
+    AlertCircle,
+    BadgeCheck
 } from "lucide-react";
 import { useAcademicYear } from "@/context/academic-year-provider";
 import { useSchoolProfile } from "@/context/school-profile-provider";
@@ -98,6 +101,27 @@ export default function SppPage() {
         }
         return map;
     }, [payments]);
+
+    const stats = useMemo(() => {
+        const defaultAmount = profile?.defaultSppAmount || 50000;
+        const paidPayments = payments?.filter(p => p.status === 'Paid') || [];
+        const totalPaid = paidPayments.reduce((sum, p) => sum + p.amountPaid, 0);
+        const monthsPaidCount = paidPayments.length;
+        
+        // Aturan: Lunas jika sudah membayar 10 bulan
+        const targetMonths = 10;
+        const totalTarget = targetMonths * defaultAmount;
+        const arrears = Math.max(0, totalTarget - totalPaid);
+        const isYearlyPaid = monthsPaidCount >= targetMonths;
+
+        return {
+            totalPaid,
+            monthsPaidCount,
+            arrears,
+            isYearlyPaid,
+            targetMonths
+        };
+    }, [payments, profile]);
 
     const handleMonthClick = (month: {id: number, name: string}) => {
         setActiveMonth(month);
@@ -342,7 +366,63 @@ export default function SppPage() {
                 </div>
             ) : (
                 <div className="grid gap-4 animate-in fade-in duration-500">
-                    <Card className="border-none shadow-sm bg-primary/5">
+                    {/* Ringkasan Statistik */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <Card className="border-none shadow-sm bg-primary/5">
+                            <CardContent className="p-4 flex items-center justify-between">
+                                <div className="space-y-1">
+                                    <p className="text-[10px] uppercase font-bold text-muted-foreground">Total Terbayar</p>
+                                    <p className="text-lg font-bold text-primary">Rp {stats.totalPaid.toLocaleString()}</p>
+                                    <p className="text-[9px] text-muted-foreground">Sudah membayar {stats.monthsPaidCount} bulan</p>
+                                </div>
+                                <div className="p-3 bg-primary/10 rounded-full">
+                                    <TrendingUp className="h-5 w-5 text-primary" />
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="border-none shadow-sm bg-orange-50">
+                            <CardContent className="p-4 flex items-center justify-between">
+                                <div className="space-y-1">
+                                    <p className="text-[10px] uppercase font-bold text-orange-600">Total Tunggakan</p>
+                                    <p className="text-lg font-bold text-orange-700">Rp {stats.arrears.toLocaleString()}</p>
+                                    <p className="text-[9px] text-orange-600">Hingga target {stats.targetMonths} bulan</p>
+                                </div>
+                                <div className="p-3 bg-orange-100 rounded-full">
+                                    <AlertCircle className="h-5 w-5 text-orange-600" />
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card className={cn(
+                            "border-none shadow-sm transition-colors",
+                            stats.isYearlyPaid ? "bg-green-100" : "bg-muted/30"
+                        )}>
+                            <CardContent className="p-4 flex items-center justify-between">
+                                <div className="space-y-1">
+                                    <p className="text-[10px] uppercase font-bold text-muted-foreground">Status Tahunan</p>
+                                    <p className={cn(
+                                        "text-lg font-bold",
+                                        stats.isYearlyPaid ? "text-green-700" : "text-muted-foreground"
+                                    )}>
+                                        {stats.isYearlyPaid ? "LUNAS TAHUNAN" : "BELUM LUNAS"}
+                                    </p>
+                                    <p className="text-[9px] text-muted-foreground">Syarat lunas: {stats.targetMonths} bulan</p>
+                                </div>
+                                <div className={cn(
+                                    "p-3 rounded-full",
+                                    stats.isYearlyPaid ? "bg-green-200" : "bg-muted"
+                                )}>
+                                    <BadgeCheck className={cn(
+                                        "h-5 w-5",
+                                        stats.isYearlyPaid ? "text-green-700" : "text-muted-foreground"
+                                    )} />
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    <Card className="border-none shadow-sm">
                         <CardHeader className="py-3 px-4 flex flex-row items-center justify-between space-y-0">
                             <div className="flex items-center gap-3">
                                 <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
@@ -427,8 +507,8 @@ export default function SppPage() {
                                 <CalendarDays className="h-5 w-5 text-primary" />
                             </div>
                             <div className="text-xs text-muted-foreground">
-                                <p className="font-semibold text-foreground">Pencatatan Cepat</p>
-                                <p>Klik pada bulan untuk menandai pelunasan SPP. Nominal pelunasan akan otomatis mengikuti tagihan standar yang Anda tetapkan.</p>
+                                <p className="font-semibold text-foreground">Kebijakan Kelunasan</p>
+                                <p>Siswa dianggap memiliki status <strong>Lunas Tahunan</strong> setelah melunasi pembayaran untuk minimal 10 bulan dalam satu tahun ajaran aktif.</p>
                             </div>
                         </CardContent>
                     </Card>
