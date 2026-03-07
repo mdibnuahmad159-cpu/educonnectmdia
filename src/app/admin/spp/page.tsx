@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
@@ -152,7 +151,7 @@ export default function SppPage() {
     };
 
     const handleSavePayment = async (data: { paymentDate: string, notes?: string }) => {
-        if (!firestore || !selectedStudent || !activeMonth) return;
+        if (!firestore || !selectedStudent || !activeMonth || !academicYears.start) return;
 
         const actualYear = activeMonth.id >= 7 ? academicYears.start : academicYears.end;
         const defaultAmount = profile?.defaultSppAmount || 50000;
@@ -178,12 +177,17 @@ export default function SppPage() {
     };
 
     const handleDeletePayment = async (paymentId: string) => {
-        if (!firestore) return;
+        if (!firestore || !paymentId) return;
         try {
             await deleteSPPPayment(firestore, paymentId);
-            toast({ title: "Data Dihapus", description: "Catatan pembayaran berhasil dihapus." });
-        } catch (error) {
-            console.error(error);
+            toast({ title: "Data Dihapus", description: "Catatan pembayaran telah dihapus dari sistem." });
+        } catch (error: any) {
+            console.error("Delete SPP Error:", error);
+            toast({ 
+                variant: "destructive", 
+                title: "Gagal Menghapus", 
+                description: error.message || "Terjadi kesalahan saat menghapus data." 
+            });
         }
     };
 
