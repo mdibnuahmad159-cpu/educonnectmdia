@@ -122,8 +122,8 @@ export function deleteTeacher(db: Firestore, teacherId: string) {
     const teacherRef = doc(db, 'teachers', teacherId);
     deleteDoc(teacherRef).catch(error => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
-          path: teacherRef.path,
-          operation: 'delete'
+            path: teacherRef.path,
+            operation: 'delete'
         }));
     });
 }
@@ -451,10 +451,11 @@ export function saveSPPPayment(db: Firestore, payment: Omit<SPPPayment, 'id'>) {
 }
 
 /**
- * Deletes SPP payment using deterministic ID logic.
+ * Deletes SPP payment using deterministic ID logic as a fallback,
+ * but prefers an explicit ID if provided.
  */
-export function deleteSPPPayment(db: Firestore, studentId: string, month: number, year: number) {
-    const paymentId = `${studentId}_${month}_${year}`;
+export function deleteSPPPayment(db: Firestore, studentId: string, month: number, year: number, explicitId?: string) {
+    const paymentId = explicitId || `${studentId}_${month}_${year}`;
     const paymentRef = doc(db, 'sppPayments', paymentId);
     
     return deleteDoc(paymentRef).catch(error => {

@@ -99,14 +99,12 @@ export default function SppPage() {
         return students?.find(s => s.id === selectedStudentId);
     }, [students, selectedStudentId]);
 
-    // Split activeYear "2023/2024" into start and end years
     const academicYears = useMemo(() => {
         if (!activeYear) return { start: 0, end: 0 };
         const [start, end] = activeYear.split('/').map(Number);
         return { start, end };
     }, [activeYear]);
 
-    // Filter payments specifically for the current active academic year
     const currentYearPayments = useMemo(() => {
         if (!allPayments || !academicYears.start) return [];
         return allPayments.filter(p => {
@@ -176,23 +174,21 @@ export default function SppPage() {
         }
     };
 
-    /**
-     * More robust deletion logic using deterministic IDs
-     */
-    const handleDeletePayment = async (monthId: number) => {
+    const handleDeletePayment = async (monthId: number, paymentId?: string) => {
         if (!firestore || !selectedStudentId || !academicYears.start) return;
         
         const year = monthId >= 7 ? academicYears.start : academicYears.end;
         
         try {
-            await deleteSPPPayment(firestore, selectedStudentId, monthId, year);
-            toast({ title: "Data Dihapus", description: "Catatan pembayaran telah dihapus dari sistem." });
+            // Memberikan prioritas pada paymentId eksplisit untuk keandalan maksimal
+            await deleteSPPPayment(firestore, selectedStudentId, monthId, year, paymentId);
+            toast({ title: "Data Dihapus", description: "Catatan pembayaran telah berhasil dihapus." });
         } catch (error: any) {
             console.error("Delete SPP Error:", error);
             toast({ 
                 variant: "destructive", 
                 title: "Gagal Menghapus", 
-                description: "Terjadi kesalahan saat menghapus data. Periksa koneksi atau izin admin Anda." 
+                description: "Terjadi kesalahan saat menghapus data. Pastikan koneksi internet stabil." 
             });
         }
     };
@@ -418,7 +414,6 @@ export default function SppPage() {
                 </div>
             ) : (
                 <div className="grid gap-4 animate-in fade-in duration-500">
-                    {/* Ringkasan Statistik */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <Card className="border-none shadow-sm bg-primary/5">
                             <CardContent className="p-4 flex items-center justify-between">

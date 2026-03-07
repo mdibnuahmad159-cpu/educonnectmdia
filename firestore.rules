@@ -25,7 +25,10 @@ service cloud.firestore {
 
     // Generic read for authenticated users
     match /announcements/{announcementId} { allow read: if isSignedIn(); }
-    match /teachers/{teacherId} { allow read: if isSignedIn(); }
+    match /teachers/{teacherId} { 
+      allow get, update: if isSignedIn() && request.auth.uid == teacherId;
+      allow list: if isSignedIn();
+    }
     match /students/{studentId} { allow read: if isSignedIn(); }
     match /classes/{id} { allow read: if isSignedIn(); }
     match /curriculum/{id} { allow read: if isSignedIn(); }
@@ -36,10 +39,10 @@ service cloud.firestore {
     match /certificates/{id} { allow read: if isSignedIn(); }
     match /certificate_templates/{id} { allow read: if isSignedIn(); }
     
-    // Explicit rule for SPP Payments - ensure admin can delete
+    // Explicit rule for SPP Payments - ensure admin has full CRUD rights
     match /sppPayments/{paymentId} {
       allow read: if isSignedIn();
-      allow write: if isAdmin();
+      allow write, delete: if isAdmin();
     }
 
     match /teacher_attendances/{id} { allow read: if isSignedIn(); }

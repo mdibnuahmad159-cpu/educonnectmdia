@@ -41,7 +41,7 @@ type PaymentFormProps = {
   existingData: SPPPayment | undefined;
   defaultAmount: number;
   onSave: (data: PaymentFormData) => void;
-  onDelete: (month: number) => void;
+  onDelete: (monthId: number, paymentId?: string) => void;
 };
 
 export function PaymentForm({ 
@@ -148,7 +148,7 @@ export function PaymentForm({
                         className="gap-1.5 font-normal"
                         onClick={() => {
                             if (window.confirm(`Hapus catatan pembayaran bulan ${month.name}?`)) {
-                                onDelete(month.id);
+                                onDelete(month.id, existingData.id);
                                 setIsOpen(false);
                             }
                         }}
