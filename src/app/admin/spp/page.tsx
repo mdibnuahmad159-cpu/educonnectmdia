@@ -91,32 +91,46 @@ export default function SppPage() {
     const { data: students, loading: loadingStudents } = useCollection<Student>(studentsQuery);
 
     const paymentsQuery = useMemoFirebase(() => {
-        if (!firestore || !selectedStudentId || !activeYear) return null;
+        if (!firestore || !selectedStudentId) return null;
         return query(collection(firestore, "sppPayments"), where("studentId", "==", selectedStudentId));
-    }, [firestore, selectedStudentId, activeYear]);
-    const { data: payments, loading: loadingPayments } = useCollection<SPPPayment>(paymentsQuery);
+    }, [firestore, selectedStudentId]);
+    const { data: allPayments, loading: loadingPayments } = useCollection<SPPPayment>(paymentsQuery);
 
     const selectedStudent = useMemo(() => {
         return students?.find(s => s.id === selectedStudentId);
     }, [students, selectedStudentId]);
 
+    // Split activeYear "2023/2024" into start and end years
+    const academicYears = useMemo(() => {
+        if (!activeYear) return { start: 0, end: 0 };
+        const [start, end] = activeYear.split('/').map(Number);
+        return { start, end };
+    }, [activeYear]);
+
+    // Filter payments specifically for the current active academic year
+    const currentYearPayments = useMemo(() => {
+        if (!allPayments || !academicYears.start) return [];
+        return allPayments.filter(p => {
+            if (p.month >= 7) return p.year === academicYears.start;
+            if (p.month <= 6) return p.year === academicYears.end;
+            return false;
+        });
+    }, [allPayments, academicYears]);
+
     const paymentStatusMap = useMemo(() => {
         const map = new Map<number, SPPPayment>();
-        if (payments) {
-            payments.forEach(p => {
-                map.set(p.month, p);
-            });
-        }
+        currentYearPayments.forEach(p => {
+            map.set(p.month, p);
+        });
         return map;
-    }, [payments]);
+    }, [currentYearPayments]);
 
     const stats = useMemo(() => {
         const defaultAmount = profile?.defaultSppAmount || 50000;
-        const paidPayments = payments?.filter(p => p.status === 'Paid') || [];
+        const paidPayments = currentYearPayments.filter(p => p.status === 'Paid');
         const monthsPaidCount = paidPayments.length;
         const totalPaid = paidPayments.reduce((sum, p) => sum + p.amountPaid, 0);
         
-        // Aturan: Lunas jika sudah membayar minimal 10 bulan
         const targetMonths = 10;
         const remainingMonths = Math.max(0, targetMonths - monthsPaidCount);
         const arrears = remainingMonths * defaultAmount;
@@ -130,7 +144,7 @@ export default function SppPage() {
             targetMonths,
             remainingMonths
         };
-    }, [payments, profile]);
+    }, [currentYearPayments, profile]);
 
     const handleMonthClick = (month: {id: number, name: string}) => {
         setActiveMonth(month);
@@ -140,8 +154,7 @@ export default function SppPage() {
     const handleSavePayment = async (data: { paymentDate: string, notes?: string }) => {
         if (!firestore || !selectedStudent || !activeMonth) return;
 
-        const [startYear, endYear] = activeYear.split('/').map(Number);
-        const actualYear = activeMonth.id >= 7 ? startYear : endYear;
+        const actualYear = activeMonth.id >= 7 ? academicYears.start : academicYears.end;
         const defaultAmount = profile?.defaultSppAmount || 50000;
 
         const paymentData: Omit<SPPPayment, 'id'> = {
@@ -158,9 +171,9 @@ export default function SppPage() {
 
         try {
             await saveSPPPayment(firestore, paymentData);
-            toast({ title: "Pembayaran Tersimpan", description: `Pembayaran bulan ${activeMonth.name} berhasil diperbarui sebagai LUNAS.` });
+            toast({ title: "Pembayaran Tersimpan", description: `Pembayaran bulan ${activeMonth.name} berhasil diperbarui.` });
         } catch (error) {
-            toast({ variant: "destructive", title: "Gagal Menyimpan", description: "Terjadi kesalahan saat mencatat pembayaran." });
+            console.error(error);
         }
     };
 
@@ -170,7 +183,7 @@ export default function SppPage() {
             await deleteSPPPayment(firestore, paymentId);
             toast({ title: "Data Dihapus", description: "Catatan pembayaran berhasil dihapus." });
         } catch (error) {
-            toast({ variant: "destructive", title: "Gagal Menghapus", description: "Terjadi kesalahan saat menghapus data." });
+            console.error(error);
         }
     };
 

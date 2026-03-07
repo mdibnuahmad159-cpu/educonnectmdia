@@ -277,6 +277,7 @@ export function saveTeacherAttendanceBatch(db: Firestore, attendances: Omit<Teac
             operation: 'write',
             requestResourceData: { note: "Batch write failed for teacher attendance" }
         }));
+        throw error;
     });
 }
 
@@ -296,6 +297,7 @@ export function saveStudentAttendanceBatch(db: Firestore, attendances: Omit<Stud
             operation: 'write',
             requestResourceData: { note: "Batch write failed for student attendance" }
         }));
+        throw error;
     });
 }
 
@@ -440,6 +442,7 @@ export function saveSPPPayment(db: Firestore, payment: Omit<SPPPayment, 'id'>) {
             operation: 'write',
             requestResourceData: payment
         }));
+        throw error;
     });
 }
 
@@ -450,5 +453,6 @@ export function deleteSPPPayment(db: Firestore, paymentId: string) {
             path: paymentRef.path,
             operation: 'delete',
         }));
+        throw error;
     });
 }
