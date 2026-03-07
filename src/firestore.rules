@@ -1,9 +1,3 @@
-
-/**
- * # Firestore Security Rules: EduConnect
- *
- * Sinkronisasi dengan file aturan utama.
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -13,12 +7,10 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn() && request.auth.token.email == 'mdibnuahmad159@gmail.com';
-    }
-
-    // Super-Admin Override
-    match /{allPaths=**} {
-      allow read, write: if isAdmin();
+      return isSignedIn() && (
+        request.auth.token.email == 'mdibnuahmad159@gmail.com' ||
+        exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid))
+      );
     }
 
     function isTeacher() {
@@ -26,37 +18,44 @@ service cloud.firestore {
     }
 
     function isParent() {
-      return (isSignedIn() && request.auth.token.firebase.sign_in_provider == 'anonymous')
-          || (isSignedIn() && exists(/databases/$(database)/documents/parents/$(request.auth.uid)));
+      return isSignedIn() && (
+        request.auth.token.firebase.sign_in_provider == 'anonymous' ||
+        exists(/databases/$(database)/documents/roles_parent/$(request.auth.uid))
+      );
     }
 
-    // Announcements
+    // Super-Admin Override
+    match /{allPaths=**} {
+      allow read, write: if isAdmin();
+    }
+
+    match /schoolProfile/{profileId} {
+      allow read: if true;
+    }
+
     match /announcements/{announcementId} {
       allow read: if isSignedIn();
     }
 
-    // Teachers
     match /teachers/{teacherId} {
       allow get, update: if isSignedIn() && request.auth.uid == teacherId;
     }
 
-    // Students
     match /students/{studentId} {
-      allow get: if request.auth == null || isTeacher() || isParent();
-      allow list: if isTeacher();
+      allow get: if isAdmin() || isTeacher() || isParent();
+      allow list: if isAdmin() || isTeacher();
     }
 
-    // Academic Data
-    match /classes/{classId} { allow read: if isSignedIn(); }
-    match /subjects/{subjectId} { allow read: if isSignedIn(); }
-    match /curriculum/{curriculumId} { allow read: if isSignedIn(); }
-    match /alumni/{alumniId} { allow read: if isSignedIn(); }
-    match /schedules/{scheduleId} { allow read: if isSignedIn(); }
-    match /schoolProfile/{profileId} { allow read: if true; } // Allow public read for school branding on login page
-    match /grades/{gradeId} { allow read: if isSignedIn(); }
-    match /report_summaries/{summaryId} { allow read: if isSignedIn(); }
-    match /certificates/{certificateId} { allow read: if isSignedIn(); }
-    match /certificate_templates/{templateId} { allow read: if isSignedIn(); }
-    match /sppPayments/{paymentId} { allow read: if isSignedIn(); }
+    match /classes/{id} { allow read: if isSignedIn(); }
+    match /curriculum/{id} { allow read: if isSignedIn(); }
+    match /alumni/{id} { allow read: if isSignedIn(); }
+    match /schedules/{id} { allow read: if isSignedIn(); }
+    match /grades/{id} { allow read: if isSignedIn(); }
+    match /report_summaries/{id} { allow read: if isSignedIn(); }
+    match /certificates/{id} { allow read: if isSignedIn(); }
+    match /certificate_templates/{id} { allow read: if isSignedIn(); }
+    match /sppPayments/{id} { allow read: if isSignedIn(); }
+    match /teacher_attendances/{id} { allow read: if isSignedIn(); }
+    match /student_attendances/{id} { allow read: if isSignedIn(); }
   }
 }

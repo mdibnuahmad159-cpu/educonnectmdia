@@ -4,44 +4,20 @@ service cloud.firestore {
 
     /**
      * SCHOOL MANAGEMENT & SPP PAYMENT SYSTEM - SECURITY RULES
-     *
-     * Core Philosophy:
-     * This ruleset implements a multi-tenant role-based access control (RBAC) model 
-     * tailored for an educational environment. It prioritizes "Authorization 
-     * Independence" through data denormalization to ensure performant and 
-     * secure queries.
-     *
-     * Data Structure:
-     * - /roles_*: Existence-based collections defining Admin, Teacher, or Parent privileges.
-     * - /classes, /teachers, /students: Core academic entity collections.
-     * - /sppPayments: Transactional records for school fees.
-     *
-     * Key Security Decisions:
-     * 1. Authorization Independence: SPPPayment documents include denormalized 
-     *    'homeroomTeacherId' and 'studentId' fields. This allows teachers and parents 
-     *    to query their relevant records without the rules needing to perform 
-     *    expensive lookups (get() calls) on parent documents.
-     * 2. Role-Based Segregation: Access is strictly divided between Admins (full access), 
-     *    Teachers (access to their assigned classes/students), and Parents (access 
-     *    to their own child's data).
-     * 3. Immutability: Critical relational fields (like studentId or teacherId) 
-     *    are enforced as immutable during updates to prevent data corruption or 
-     *    unauthorized access shifts.
-     * 4. Prototyping Flexibility: While authorization is strictly enforced, the 
-     *    rules do not enforce strict data schemas for non-relational fields 
-     *    (e.g., status strings, notes) to allow for rapid UI iteration.
      */
 
     // --- Global Helper Functions ---
 
-    /** Checks if the user is authenticated. */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /** Checks if the user has a document in the admin roles collection. */
+    /** Checks if the user is an admin by role document OR by primary admin email. */
     function isAdmin() {
-      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid)) ||
+        request.auth.token.email == 'mdibnuahmad159@gmail.com'
+      );
     }
 
     /** Retrieves the teacherId associated with the current user's UID. */
@@ -54,110 +30,68 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/roles_parent/$(request.auth.uid)).data.studentId;
     }
 
-    /** Helper for checking existence and ownership for updates/deletes. */
-    function isExistingTeacher(id) {
-      return resource != null && getTeacherId() == id;
-    }
-
     // --- Role Collections ---
 
-    /**
-     * @description Admin roles identifying database administrators.
-     * @path /roles_admin/{adminUid}
-     * @allow (get) If user is the admin owner.
-     * @deny (all) If user is not the admin owner or not an existing admin.
-     * @principle Existence-based role assignment.
-     */
     match /roles_admin/{adminUid} {
       allow get: if isAdmin() || (isSignedIn() && request.auth.uid == adminUid);
-      allow list: if isAdmin();
-      allow create, update, delete: if isAdmin();
+      allow list, write: if isAdmin();
     }
 
-    /**
-     * @description Teacher roles linking a UID to a Teacher entity ID.
-     * @path /roles_teacher/{teacherUid}
-     * @allow (get) If user is the teacher owner or admin.
-     * @deny (write) If user is not an admin.
-     * @principle Mapping authenticated identity to domain entity.
-     */
     match /roles_teacher/{teacherUid} {
       allow get: if isAdmin() || (isSignedIn() && request.auth.uid == teacherUid);
-      allow list: if isAdmin();
-      allow create, update, delete: if isAdmin();
+      allow list, write: if isAdmin();
     }
 
-    /**
-     * @description Parent roles linking a UID to a Student entity ID.
-     * @path /roles_parent/{parentUid}
-     * @allow (get) If user is the parent owner or admin.
-     * @deny (write) If user is not an admin.
-     * @principle Mapping authenticated identity to domain entity.
-     */
     match /roles_parent/{parentUid} {
       allow get: if isAdmin() || (isSignedIn() && request.auth.uid == parentUid);
-      allow list: if isAdmin();
-      allow create, update, delete: if isAdmin();
+      allow list, write: if isAdmin();
     }
 
     // --- Business Entities ---
 
-    /**
-     * @description School classes. Accessible by Admins and the assigned Homeroom Teacher.
-     * @path /classes/{classId}
-     * @allow (list) If user is Admin or the Homeroom Teacher of the class.
-     * @deny (write) If user is not an admin.
-     * @principle Domain-specific access control via homeroomTeacherId.
-     */
+    /** Publicly readable for login branding. */
+    match /schoolProfile/{profileId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     match /classes/{classId} {
       allow get, list: if isAdmin() || (isSignedIn() && resource.data.homeroomTeacherId == getTeacherId());
       allow create, update, delete: if isAdmin();
     }
 
-    /**
-     * @description Teacher profiles. Managed by Admins.
-     * @path /teachers/{teacherId}
-     * @allow (get) If user is the teacher themselves or admin.
-     * @deny (list) To non-admins to prevent teacher directory scraping.
-     * @principle Personal data privacy for employees.
-     */
     match /teachers/{teacherId} {
       allow get: if isAdmin() || (isSignedIn() && getTeacherId() == teacherId);
       allow list: if isAdmin();
       allow create, update, delete: if isAdmin();
     }
 
-    /**
-     * @description Student records. Accessible by Admin, Parents of the student, and the Homeroom Teacher.
-     * @path /students/{studentId}
-     * @allow (get) If user is the student's parent or admin.
-     * @deny (create) If not admin.
-     * @principle Restricted access to sensitive student PII.
-     */
     match /students/{studentId} {
       allow get: if isAdmin() || (isSignedIn() && (getStudentId() == studentId || getTeacherId() != null));
       allow list: if isAdmin() || (isSignedIn() && (getStudentId() == studentId || getTeacherId() != null));
       allow create, update, delete: if isAdmin();
     }
 
-    /**
-     * @description Monthly SPP payment records.
-     * @path /sppPayments/{sppPaymentId}
-     * @allow (create) If user is Admin or the Teacher assigned to the student's class.
-     * @allow (list) If user is the student's Parent or the Homeroom Teacher.
-     * @deny (update) If attempting to change the studentId or homeroomTeacherId links.
-     * @principle Authorization Independence via denormalized relational fields.
-     */
     match /sppPayments/{sppPaymentId} {
       allow get, list: if isAdmin() || (isSignedIn() && (resource.data.studentId == getStudentId() || resource.data.homeroomTeacherId == getTeacherId()));
-      
       allow create: if isAdmin() || (isSignedIn() && request.resource.data.homeroomTeacherId == getTeacherId());
-      
       allow update: if (isAdmin() || (isSignedIn() && resource.data.homeroomTeacherId == getTeacherId()))
                     && request.resource.data.studentId == resource.data.studentId
                     && request.resource.data.homeroomTeacherId == resource.data.homeroomTeacherId;
-                    
-      allow delete: if isAdmin() || (isSignedIn() && isExistingTeacher(resource.data.homeroomTeacherId));
+      allow delete: if isAdmin();
     }
+
+    // --- Additional Collections ---
+
+    match /announcements/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
+    match /curriculum/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
+    match /alumni/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
+    match /schedules/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
+    match /teacher_attendances/{id} { allow read: if isAdmin() || isSignedIn(); allow write: if isAdmin(); }
+    match /student_attendances/{id} { allow read: if isAdmin() || isSignedIn(); allow write: if isAdmin(); }
+    match /grades/{id} { allow read: if isAdmin() || isSignedIn(); allow write: if isAdmin(); }
+    match /report_summaries/{id} { allow read: if isAdmin() || isSignedIn(); allow write: if isAdmin(); }
+    match /certificates/{id} { allow read: if isAdmin() || isSignedIn(); allow write: if isAdmin(); }
+    match /certificate_templates/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
   }
 }
