@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
@@ -180,7 +181,6 @@ export default function SppPage() {
         const year = monthId >= 7 ? academicYears.start : academicYears.end;
         
         try {
-            // Memberikan prioritas pada paymentId eksplisit untuk keandalan maksimal
             await deleteSPPPayment(firestore, selectedStudentId, monthId, year, paymentId);
             toast({ title: "Data Dihapus", description: "Catatan pembayaran telah berhasil dihapus." });
         } catch (error: any) {
@@ -190,6 +190,7 @@ export default function SppPage() {
                 title: "Gagal Menghapus", 
                 description: "Terjadi kesalahan saat menghapus data. Pastikan koneksi internet stabil." 
             });
+            throw error; // Re-throw to allow component to handle failure
         }
     };
 

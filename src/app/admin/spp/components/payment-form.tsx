@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -101,8 +102,15 @@ export function PaymentForm({
     setIsDeleting(true);
     try {
         await onDelete(month.id, existingData.id);
+        // Stagger the closures: Close confirm alert first, then wait a bit before closing parent dialog
+        // This prevents the body "pointer-events: none" bug from Radix UI overlay conflicts.
         setShowConfirmDelete(false);
-        setIsOpen(false);
+        setTimeout(() => {
+            setIsOpen(false);
+        }, 100);
+    } catch (e) {
+        // If deletion fails, keep dialogs open so user sees the error toast
+        console.error("Deletion failed, staying in dialog.");
     } finally {
         setIsDeleting(false);
     }
