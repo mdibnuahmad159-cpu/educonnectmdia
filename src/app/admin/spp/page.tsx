@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection, query, where, Firestore } from "firebase/firestore";
 import type { Student, SPPPayment } from "@/types";
@@ -30,7 +30,8 @@ import {
     FileText,
     TrendingUp,
     AlertCircle,
-    BadgeCheck
+    BadgeCheck,
+    Save
 } from "lucide-react";
 import { useAcademicYear } from "@/context/academic-year-provider";
 import { useSchoolProfile } from "@/context/school-profile-provider";
@@ -75,6 +76,13 @@ export default function SppPage() {
     const [selectedStudentId, setSelectedStudentId] = useState<string>("");
     const [isPaymentFormOpen, setIsPaymentFormOpen] = useState(false);
     const [activeMonth, setActiveMonth] = useState<{id: number, name: string} | null>(null);
+    const [localDefaultAmount, setLocalDefaultAmount] = useState<string>("");
+
+    useEffect(() => {
+        if (profile?.defaultSppAmount !== undefined) {
+            setLocalDefaultAmount(String(profile.defaultSppAmount));
+        }
+    }, [profile]);
 
     const studentsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -156,11 +164,15 @@ export default function SppPage() {
         }
     };
 
-    const handleUpdateDefaultBill = (value: string) => {
+    const handleUpdateDefaultBill = () => {
         if (!firestore) return;
-        const amount = Number(value);
-        if (isNaN(amount)) return;
+        const amount = Number(localDefaultAmount);
+        if (isNaN(amount)) {
+            toast({ variant: "destructive", title: "Nominal Tidak Valid", description: "Harap masukkan angka yang benar." });
+            return;
+        }
         updateSchoolProfile(firestore, { defaultSppAmount: amount });
+        toast({ title: "Pengaturan Disimpan", description: "Nominal tagihan bulanan standar telah diperbarui." });
     };
 
     const handleExportExcel = () => {
@@ -348,13 +360,19 @@ export default function SppPage() {
                             <label className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1.5 ml-1">
                                 <Settings2 className="h-3 w-3" /> Tagihan Bulanan (Rp)
                             </label>
-                            <Input 
-                                type="number" 
-                                placeholder="Contoh: 50000"
-                                defaultValue={profile?.defaultSppAmount || 50000}
-                                onBlur={(e) => handleUpdateDefaultBill(e.target.value)}
-                                className="h-9 font-normal"
-                            />
+                            <div className="flex gap-2">
+                                <Input 
+                                    type="number" 
+                                    placeholder="Contoh: 50000"
+                                    value={localDefaultAmount}
+                                    onChange={(e) => setLocalDefaultAmount(e.target.value)}
+                                    className="h-9 font-normal"
+                                />
+                                <Button size="xs" variant="outline" className="h-9 gap-1.5" onClick={handleUpdateDefaultBill}>
+                                    <Save className="h-3 w-3" />
+                                    Simpan
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 </CardContent>
