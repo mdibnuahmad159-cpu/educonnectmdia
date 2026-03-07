@@ -25,8 +25,9 @@ import {
     Users, 
     User,
     CalendarDays,
-    AlertCircle,
-    Settings2
+    Settings2,
+    FileSpreadsheet,
+    FileText
 } from "lucide-react";
 import { useAcademicYear } from "@/context/academic-year-provider";
 import { useSchoolProfile } from "@/context/school-profile-provider";
@@ -39,6 +40,12 @@ import { PaymentForm } from "./components/payment-form";
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const MONTHS = [
     { id: 7, name: "Juli" },
@@ -146,10 +153,10 @@ export default function SppPage() {
         const worksheet = XLSX.utils.json_to_sheet(data);
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Kartu SPP");
-        XLSX.writeFile(workbook, `Kartu_SPP_${selectedStudent.name}_${activeYear.replace('/', '-')}.xlsx`);
+        XLSX.writeFile(workbook, `Kartu_SPP_${selectedStudent.name.replace(/\s+/g, '_')}_${activeYear.replace('/', '-')}.xlsx`);
     };
 
-    const handlePrint = () => {
+    const handleExportPdf = () => {
         if (!selectedStudent) return;
         const doc = new jsPDF();
         doc.setFontSize(16);
@@ -167,7 +174,7 @@ export default function SppPage() {
                 return [
                     m.name,
                     p?.status === 'Paid' ? 'LUNAS' : 'BELUM BAYAR',
-                    p?.paymentDate ? format(parseISO(p.paymentDate), "d/MM/yy") : '-',
+                    p?.paymentDate ? format(parseISO(p.paymentDate), "dd/MM/yyyy") : '-',
                     p?.amountPaid ? `Rp ${p.amountPaid.toLocaleString()}` : '0',
                     p?.notes || '-'
                 ];
@@ -177,7 +184,94 @@ export default function SppPage() {
             headStyles: { fillColor: [46, 125, 50] }
         });
 
-        window.open(doc.output('bloburl'), '_blank');
+        doc.save(`Kartu_SPP_${selectedStudent.name.replace(/\s+/g, '_')}_${activeYear.replace('/', '-')}.pdf`);
+    };
+
+    const handlePrint = () => {
+        if (!selectedStudent) return;
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) {
+            toast({ variant: "destructive", title: "Gagal membuka jendela cetak" });
+            return;
+        }
+
+        const tableRows = MONTHS.map(m => {
+            const p = paymentStatusMap.get(m.id);
+            return `
+                <tr>
+                    <td>${m.name}</td>
+                    <td style="color: ${p?.status === 'Paid' ? 'green' : 'red'}; font-weight: bold;">
+                        ${p?.status === 'Paid' ? 'LUNAS' : 'BELUM BAYAR'}
+                    </td>
+                    <td>${p?.paymentDate ? format(parseISO(p.paymentDate), "dd/MM/yyyy") : '-'}</td>
+                    <td>Rp ${p?.amountPaid ? p.amountPaid.toLocaleString() : '0'}</td>
+                    <td>${p?.notes || '-'}</td>
+                </tr>
+            `;
+        }).join('');
+
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Cetak Kartu SPP - ${selectedStudent.name}</title>
+                    <style>
+                        body { font-family: sans-serif; padding: 40px; font-size: 12px; line-height: 1.6; }
+                        .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
+                        .school-name { font-size: 18px; font-weight: bold; text-transform: uppercase; }
+                        .title { font-size: 16px; font-weight: bold; margin-top: 10px; }
+                        .info-grid { display: grid; grid-template-cols: 120px auto; margin-bottom: 20px; }
+                        .info-label { font-weight: bold; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+                        th { background-color: #f2f2f2; text-transform: uppercase; font-size: 10px; }
+                        .footer { margin-top: 40px; display: flex; justify-content: flex-end; }
+                        .signature { text-align: center; width: 200px; }
+                        @media print {
+                            body { padding: 0; }
+                            @page { size: A4; margin: 1.5cm; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <div class="school-name">${profile?.namaMadrasah || 'MADRASAH DINIYAH IBNU AHMAD'}</div>
+                        <div class="title">KARTU KENDALI PEMBAYARAN SPP</div>
+                    </div>
+                    
+                    <div class="info-grid">
+                        <div class="info-label">Nama Siswa</div><div>: ${selectedStudent.name}</div>
+                        <div class="info-label">NIS</div><div>: ${selectedStudent.nis}</div>
+                        <div class="info-label">Kelas</div><div>: ${selectedStudent.kelas}</div>
+                        <div class="info-label">Tahun Ajaran</div><div>: ${activeYear}</div>
+                    </div>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Bulan</th>
+                                <th>Status</th>
+                                <th>Tgl Bayar</th>
+                                <th>Jumlah Bayar</th>
+                                <th>Keterangan</th>
+                            </tr>
+                        </thead>
+                        <tbody>${tableRows}</tbody>
+                    </table>
+
+                    <div class="footer">
+                        <div class="signature">
+                            <p>Sampang, ${format(new Date(), "dd MMMM yyyy", { locale: dfnsId })}</p>
+                            <p style="margin-top: 60px;"><strong>Bendahara Madrasah</strong></p>
+                        </div>
+                    </div>
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
+        printWindow.onload = () => {
+            printWindow.focus();
+            printWindow.print();
+        };
     };
 
     return (
@@ -260,10 +354,22 @@ export default function SppPage() {
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
-                                <Button variant="outline" size="xs" onClick={handleExportExcel} className="h-8 px-3 gap-1.5 font-normal">
-                                    <FileDown className="h-3.5 w-3.5" /> Ekspor
-                                </Button>
-                                <Button variant="outline" size="xs" onClick={handlePrint} className="h-8 px-3 gap-1.5 font-normal">
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="outline" size="xs" className="h-8 px-3 gap-1.5 font-normal border-primary/20">
+                                            <FileDown className="h-3.5 w-3.5" /> Ekspor
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuItem onClick={handleExportExcel}>
+                                            <FileSpreadsheet className="mr-2 h-3.5 w-3.5" /> Excel (.xlsx)
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={handleExportPdf}>
+                                            <FileText className="mr-2 h-3.5 w-3.5" /> PDF (.pdf)
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                                <Button variant="outline" size="xs" onClick={handlePrint} className="h-8 px-3 gap-1.5 font-normal border-primary/20">
                                     <Printer className="h-3.5 w-3.5" /> Cetak
                                 </Button>
                             </div>
