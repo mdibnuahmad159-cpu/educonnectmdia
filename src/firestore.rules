@@ -43,7 +43,12 @@ service cloud.firestore {
     match /report_summaries/{id} { allow read: if isSignedIn(); }
     match /certificates/{id} { allow read: if isSignedIn(); }
     match /certificate_templates/{id} { allow read: if isSignedIn(); }
-    match /sppPayments/{id} { allow read: if isSignedIn(); }
+    
+    match /sppPayments/{id} { 
+      allow read: if isSignedIn();
+      allow write, delete: if isAdmin();
+    }
+    
     match /teacher_attendances/{id} { allow read: if isSignedIn(); }
     match /student_attendances/{id} { allow read: if isSignedIn(); }
   }
