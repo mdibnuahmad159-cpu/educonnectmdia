@@ -16,7 +16,7 @@ import {
   query,
   where,
 } from 'firebase/firestore';
-import type { Teacher, Student, SchoolProfile, Curriculum, Alumni, Schedule, TeacherAttendance, StudentAttendance, Announcement, Grade, ReportSummary, Certificate, CertificateTemplate } from '@/types';
+import type { Teacher, Student, SchoolProfile, Curriculum, Alumni, Schedule, TeacherAttendance, StudentAttendance, Announcement, Grade, ReportSummary, Certificate, CertificateTemplate, SPPPayment } from '@/types';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { firebaseConfig } from '@/firebase/config';
@@ -423,4 +423,22 @@ export function upsertCertificateTemplate(db: Firestore, template: CertificateTe
       requestResourceData: template,
     }));
   });
+}
+
+export function saveSPPPayment(db: Firestore, payment: Omit<SPPPayment, 'id'>) {
+    // Generate a consistent ID: studentId_month_year
+    const paymentId = `${payment.studentId}_${payment.month}_${payment.year}`;
+    const paymentRef = doc(db, 'sppPayments', paymentId);
+    
+    return setDoc(paymentRef, {
+        ...payment,
+        id: paymentId,
+        updatedAt: serverTimestamp()
+    }, { merge: true }).catch(error => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: paymentRef.path,
+            operation: 'write',
+            requestResourceData: payment
+        }));
+    });
 }
