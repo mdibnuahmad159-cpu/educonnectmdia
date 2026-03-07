@@ -14,13 +14,15 @@ service cloud.firestore {
     }
 
     function isTeacher() {
-      return isSignedIn() && exists(/databases/$(database)/documents/teachers/$(request.auth.uid));
+      let path = /databases/$(database)/documents/roles_teacher/$(request.auth.uid);
+      return isSignedIn() && exists(path);
     }
 
     function isParent() {
+      let path = /databases/$(database)/documents/roles_parent/$(request.auth.uid);
       return isSignedIn() && (
         request.auth.token.firebase.sign_in_provider == 'anonymous' ||
-        exists(/databases/$(database)/documents/roles_parent/$(request.auth.uid))
+        exists(path)
       );
     }
 
