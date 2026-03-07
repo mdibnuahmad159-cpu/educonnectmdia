@@ -102,16 +102,18 @@ export function PaymentForm({
     setIsDeleting(true);
     try {
         await onDelete(month.id, existingData.id);
-        // Stagger the closures: Close confirm alert first, then wait a bit before closing parent dialog
-        // This prevents the body "pointer-events: none" bug from Radix UI overlay conflicts.
+        
+        // Fix for Radix/Shadcn UI lock: Close the alert first, then close the main dialog
         setShowConfirmDelete(false);
+        
+        // Small delay to ensure Radix handles the first closure state before the second one
         setTimeout(() => {
             setIsOpen(false);
-        }, 100);
+            // Force restore pointer events if they get stuck (common Radix bug with nested dialogs)
+            document.body.style.pointerEvents = 'auto';
+        }, 150);
     } catch (e) {
-        // If deletion fails, keep dialogs open so user sees the error toast
-        console.error("Deletion failed, staying in dialog.");
-    } finally {
+        console.error("Deletion failed:", e);
         setIsDeleting(false);
     }
   };
