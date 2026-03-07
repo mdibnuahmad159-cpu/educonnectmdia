@@ -426,27 +426,37 @@ export function upsertCertificateTemplate(db: Firestore, template: CertificateTe
   });
 }
 
+/**
+ * Saves SPP payment using a deterministic ID: studentId_month_year
+ * This ensures reliability and prevents duplicates.
+ */
 export function saveSPPPayment(db: Firestore, payment: Omit<SPPPayment, 'id'>) {
-    // Generate a consistent ID: studentId_month_year
     const paymentId = `${payment.studentId}_${payment.month}_${payment.year}`;
     const paymentRef = doc(db, 'sppPayments', paymentId);
     
-    return setDoc(paymentRef, {
+    const data = {
         ...payment,
         id: paymentId,
         updatedAt: serverTimestamp()
-    }, { merge: true }).catch(error => {
+    };
+
+    return setDoc(paymentRef, data, { merge: true }).catch(error => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
             path: paymentRef.path,
             operation: 'write',
-            requestResourceData: payment
+            requestResourceData: data
         }));
         throw error;
     });
 }
 
-export function deleteSPPPayment(db: Firestore, paymentId: string) {
+/**
+ * Deletes SPP payment using deterministic ID logic.
+ */
+export function deleteSPPPayment(db: Firestore, studentId: string, month: number, year: number) {
+    const paymentId = `${studentId}_${month}_${year}`;
     const paymentRef = doc(db, 'sppPayments', paymentId);
+    
     return deleteDoc(paymentRef).catch(error => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
             path: paymentRef.path,

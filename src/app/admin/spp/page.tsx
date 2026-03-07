@@ -176,17 +176,23 @@ export default function SppPage() {
         }
     };
 
-    const handleDeletePayment = async (paymentId: string) => {
-        if (!firestore || !paymentId) return;
+    /**
+     * More robust deletion logic using deterministic IDs
+     */
+    const handleDeletePayment = async (monthId: number) => {
+        if (!firestore || !selectedStudentId || !academicYears.start) return;
+        
+        const year = monthId >= 7 ? academicYears.start : academicYears.end;
+        
         try {
-            await deleteSPPPayment(firestore, paymentId);
+            await deleteSPPPayment(firestore, selectedStudentId, monthId, year);
             toast({ title: "Data Dihapus", description: "Catatan pembayaran telah dihapus dari sistem." });
         } catch (error: any) {
             console.error("Delete SPP Error:", error);
             toast({ 
                 variant: "destructive", 
                 title: "Gagal Menghapus", 
-                description: error.message || "Terjadi kesalahan saat menghapus data." 
+                description: "Terjadi kesalahan saat menghapus data. Periksa koneksi atau izin admin Anda." 
             });
         }
     };

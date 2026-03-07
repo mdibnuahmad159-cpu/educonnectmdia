@@ -2,17 +2,10 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    /**
-     * SCHOOL MANAGEMENT & SPP PAYMENT SYSTEM - SECURITY RULES
-     */
-
-    // --- Global Helper Functions ---
-
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /** Checks if the user is an admin by primary admin email OR role document. */
     function isAdmin() {
       return isSignedIn() && (
         request.auth.token.email == 'mdibnuahmad159@gmail.com' ||
@@ -20,74 +13,36 @@ service cloud.firestore {
       );
     }
 
-    /** Retrieves the teacherId associated with the current user's UID. */
-    function getTeacherId() {
-      let path = /databases/$(database)/documents/roles_teacher/$(request.auth.uid);
-      return exists(path) ? get(path).data.teacherId : null;
+    // Super-Admin Override: Full access to everything
+    match /{allPaths=**} {
+      allow read, write: if isAdmin();
     }
 
-    // --- Role Collections ---
-
-    match /roles_admin/{adminUid} {
-      allow get: if isAdmin() || (isSignedIn() && request.auth.uid == adminUid);
-      allow list, write: if isAdmin();
-    }
-
-    match /roles_teacher/{teacherUid} {
-      allow get: if isAdmin() || (isSignedIn() && request.auth.uid == teacherUid);
-      allow list, write: if isAdmin();
-    }
-
-    match /roles_parent/{parentUid} {
-      allow get: if isAdmin() || (isSignedIn() && request.auth.uid == parentUid);
-      allow list, write: if isAdmin();
-    }
-
-    // --- Business Entities ---
-
+    // Public school profile read access
     match /schoolProfile/{profileId} {
       allow read: if true;
-      allow write: if isAdmin();
     }
 
-    match /classes/{classId} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
-    }
-
-    match /teachers/{teacherId} {
-      allow get: if isSignedIn();
-      allow list: if isAdmin() || isSignedIn();
-      allow write: if isAdmin();
-    }
-
-    match /students/{studentId} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
-    }
-
-    match /sppPayments/{sppPaymentId} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
-    }
-
-    match /teacher_attendances/{id} { 
-      allow read: if isSignedIn(); 
-      allow write: if isAdmin(); 
-    }
+    // Generic read for authenticated users
+    match /announcements/{announcementId} { allow read: if isSignedIn(); }
+    match /teachers/{teacherId} { allow read: if isSignedIn(); }
+    match /students/{studentId} { allow read: if isSignedIn(); }
+    match /classes/{id} { allow read: if isSignedIn(); }
+    match /curriculum/{id} { allow read: if isSignedIn(); }
+    match /alumni/{id} { allow read: if isSignedIn(); }
+    match /schedules/{id} { allow read: if isSignedIn(); }
+    match /grades/{id} { allow read: if isSignedIn(); }
+    match /report_summaries/{id} { allow read: if isSignedIn(); }
+    match /certificates/{id} { allow read: if isSignedIn(); }
+    match /certificate_templates/{id} { allow read: if isSignedIn(); }
     
-    match /student_attendances/{id} { 
-      allow read: if isSignedIn(); 
-      allow write: if isAdmin(); 
+    // Explicit rule for SPP Payments - ensure admin can delete
+    match /sppPayments/{paymentId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
     }
 
-    match /announcements/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
-    match /curriculum/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
-    match /alumni/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
-    match /schedules/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
-    match /grades/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
-    match /report_summaries/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
-    match /certificates/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
-    match /certificate_templates/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
+    match /teacher_attendances/{id} { allow read: if isSignedIn(); }
+    match /student_attendances/{id} { allow read: if isSignedIn(); }
   }
 }
