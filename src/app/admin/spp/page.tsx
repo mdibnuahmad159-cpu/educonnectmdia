@@ -97,27 +97,28 @@ export default function SppPage() {
         setIsPaymentFormOpen(true);
     };
 
-    const handleSavePayment = async (data: any) => {
+    const handleSavePayment = async (data: { paymentDate: string, notes?: string }) => {
         if (!firestore || !selectedStudent || !activeMonth) return;
 
         const [startYear, endYear] = activeYear.split('/').map(Number);
         const actualYear = activeMonth.id >= 7 ? startYear : endYear;
+        const defaultAmount = profile?.defaultSppAmount || 50000;
 
         const paymentData: Omit<SPPPayment, 'id'> = {
             studentId: selectedStudent.id,
             classId: String(selectedStudent.kelas),
             month: activeMonth.id,
             year: actualYear,
-            amountDue: data.amountDue,
-            amountPaid: data.amountPaid,
+            amountDue: defaultAmount,
+            amountPaid: defaultAmount,
             paymentDate: data.paymentDate,
-            status: data.amountPaid >= data.amountDue ? 'Paid' : (data.amountPaid > 0 ? 'Partial' : 'Unpaid'),
+            status: 'Paid',
             notes: data.notes || ""
         };
 
         try {
             await saveSPPPayment(firestore, paymentData);
-            toast({ title: "Pembayaran Tersimpan", description: `Pembayaran bulan ${activeMonth.name} berhasil diperbarui.` });
+            toast({ title: "Pembayaran Tersimpan", description: `Pembayaran bulan ${activeMonth.name} berhasil diperbarui sebagai LUNAS.` });
         } catch (error) {
             toast({ variant: "destructive", title: "Gagal Menyimpan", description: "Terjadi kesalahan saat mencatat pembayaran." });
         }
@@ -136,7 +137,7 @@ export default function SppPage() {
             const p = paymentStatusMap.get(m.id);
             return {
                 'Bulan': m.name,
-                'Status': p?.status === 'Paid' ? 'LUNAS' : (p?.status === 'Partial' ? 'CICIL' : 'BELUM BAYAR'),
+                'Status': p?.status === 'Paid' ? 'LUNAS' : 'BELUM BAYAR',
                 'Tanggal Bayar': p?.paymentDate ? format(parseISO(p.paymentDate), "d MMM yyyy", { locale: dfnsId }) : '-',
                 'Jumlah Bayar': p?.amountPaid || 0,
                 'Catatan': p?.notes || '-'
@@ -165,7 +166,7 @@ export default function SppPage() {
                 const p = paymentStatusMap.get(m.id);
                 return [
                     m.name,
-                    p?.status === 'Paid' ? 'LUNAS' : (p?.status === 'Partial' ? 'CICIL' : 'BELUM BAYAR'),
+                    p?.status === 'Paid' ? 'LUNAS' : 'BELUM BAYAR',
                     p?.paymentDate ? format(parseISO(p.paymentDate), "d/MM/yy") : '-',
                     p?.amountPaid ? `Rp ${p.amountPaid.toLocaleString()}` : '0',
                     p?.notes || '-'
@@ -184,7 +185,7 @@ export default function SppPage() {
             <Card className="border-none shadow-sm">
                 <CardHeader className="pb-4">
                     <CardTitle className="text-xl font-headline text-primary">Pembayaran SPP</CardTitle>
-                    <CardDescription className="text-xs">Kelola iuran bulanan siswa untuk tahun ajaran {activeYear}.</CardDescription>
+                    <CardDescription className="text-xs">Kelola pelunasan iuran bulanan siswa untuk tahun ajaran {activeYear}.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -243,7 +244,7 @@ export default function SppPage() {
             {!selectedStudentId ? (
                 <div className="flex flex-col items-center justify-center h-64 border-2 border-dashed rounded-lg bg-muted/10 text-muted-foreground">
                     <CreditCard className="h-12 w-12 mb-3 opacity-10" />
-                    <p className="text-sm">Silakan pilih kelas dan siswa terlebih dahulu.</p>
+                    <p className="text-sm">Silakan pilih kelas dan siswa untuk mencatat pelunasan.</p>
                 </div>
             ) : (
                 <div className="grid gap-4 animate-in fade-in duration-500">
@@ -278,7 +279,6 @@ export default function SppPage() {
                             MONTHS.map((month) => {
                                 const p = paymentStatusMap.get(month.id);
                                 const isPaid = p?.status === 'Paid';
-                                const isPartial = p?.status === 'Partial';
                                 
                                 return (
                                     <button 
@@ -286,15 +286,13 @@ export default function SppPage() {
                                         onClick={() => handleMonthClick(month)}
                                         className={cn(
                                             "group relative flex flex-col p-3 rounded-lg border transition-all hover:shadow-md text-left",
-                                            isPaid ? "bg-green-50/50 border-green-200" : (isPartial ? "bg-amber-50/50 border-amber-200" : "bg-card border-border hover:border-primary/30")
+                                            isPaid ? "bg-green-50/50 border-green-200" : "bg-card border-border hover:border-primary/30"
                                         )}
                                     >
                                         <div className="flex items-center justify-between mb-2">
                                             <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{month.name}</span>
                                             {isPaid ? (
                                                 <CheckCircle2 className="h-4 w-4 text-green-600" />
-                                            ) : isPartial ? (
-                                                <AlertCircle className="h-4 w-4 text-amber-600" />
                                             ) : (
                                                 <XCircle className="h-4 w-4 text-destructive/30 group-hover:text-destructive/60 transition-colors" />
                                             )}
@@ -302,12 +300,12 @@ export default function SppPage() {
                                         <div className="mt-auto">
                                             <p className={cn(
                                                 "text-xs font-bold",
-                                                isPaid ? "text-green-700" : (isPartial ? "text-amber-700" : "text-muted-foreground")
+                                                isPaid ? "text-green-700" : "text-muted-foreground"
                                             )}>
-                                                {p ? `Rp ${p.amountPaid.toLocaleString()}` : "Rp 0"}
+                                                {isPaid ? `LUNAS` : "BELUM BAYAR"}
                                             </p>
                                             <p className="text-[9px] text-muted-foreground truncate">
-                                                {p?.paymentDate ? format(parseISO(p.paymentDate), "d MMM yyyy", { locale: dfnsId }) : "Belum bayar"}
+                                                {p?.paymentDate ? format(parseISO(p.paymentDate), "d MMM yyyy", { locale: dfnsId }) : "-"}
                                             </p>
                                         </div>
                                         <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 rounded-lg pointer-events-none transition-opacity" />
@@ -323,8 +321,8 @@ export default function SppPage() {
                                 <CalendarDays className="h-5 w-5 text-primary" />
                             </div>
                             <div className="text-xs text-muted-foreground">
-                                <p className="font-semibold text-foreground">Informasi Pembayaran</p>
-                                <p>Silakan klik pada kotak bulan untuk mencatat atau mengubah data pembayaran SPP siswa.</p>
+                                <p className="font-semibold text-foreground">Pencatatan Cepat</p>
+                                <p>Klik pada bulan untuk menandai pelunasan SPP. Nominal pelunasan akan otomatis mengikuti tagihan standar yang Anda tetapkan.</p>
                             </div>
                         </CardContent>
                     </Card>

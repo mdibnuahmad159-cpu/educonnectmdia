@@ -25,10 +25,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { SPPPayment } from "@/types";
+import { CreditCard } from "lucide-react";
 
 const formSchema = z.object({
-  amountDue: z.coerce.number().min(0, "Wajib diisi"),
-  amountPaid: z.coerce.number().min(0, "Wajib diisi"),
   paymentDate: z.string().min(1, "Wajib diisi"),
   notes: z.string().optional(),
 });
@@ -49,8 +48,6 @@ export function PaymentForm({ isOpen, setIsOpen, month, studentName, existingDat
   const form = useForm<PaymentFormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      amountDue: existingData?.amountDue || defaultAmount || 50000,
-      amountPaid: existingData?.amountPaid || 0,
       paymentDate: existingData?.paymentDate || new Date().toISOString().split('T')[0],
       notes: existingData?.notes || "",
     },
@@ -60,21 +57,17 @@ export function PaymentForm({ isOpen, setIsOpen, month, studentName, existingDat
     if (isOpen) {
         if (existingData) {
           form.reset({
-            amountDue: existingData.amountDue,
-            amountPaid: existingData.amountPaid,
             paymentDate: existingData.paymentDate,
             notes: existingData.notes || "",
           });
         } else {
           form.reset({
-            amountDue: defaultAmount || 50000,
-            amountPaid: 0,
             paymentDate: new Date().toISOString().split('T')[0],
             notes: "",
           });
         }
     }
-  }, [existingData, form, isOpen, defaultAmount]);
+  }, [existingData, form, isOpen]);
   
   const onSubmit = (values: PaymentFormData) => {
     onSave(values);
@@ -85,42 +78,30 @@ export function PaymentForm({ isOpen, setIsOpen, month, studentName, existingDat
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Input Pembayaran SPP</DialogTitle>
+          <DialogTitle>Konfirmasi Pembayaran SPP</DialogTitle>
           <DialogDescription>
-            Bulan {month.name} untuk {studentName}.
+            Input pelunasan bulan {month.name} untuk {studentName}.
           </DialogDescription>
         </DialogHeader>
+        
+        <div className="bg-primary/5 border border-primary/10 rounded-lg p-4 flex items-center justify-between mt-2">
+            <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary/10 rounded-full">
+                    <CreditCard className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                    <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Nominal Pelunasan</p>
+                    <p className="text-sm font-bold text-primary">Rp {defaultAmount.toLocaleString()}</p>
+                </div>
+            </div>
+            <div className="text-[10px] px-2 py-0.5 bg-green-100 text-green-700 rounded font-bold uppercase">
+                Lunas
+            </div>
+        </div>
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <div className="space-y-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                    control={form.control}
-                    name="amountDue"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Tagihan (Rp)</FormLabel>
-                        <FormControl>
-                            <Input type="number" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                    <FormField
-                    control={form.control}
-                    name="amountPaid"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Bayar (Rp)</FormLabel>
-                        <FormControl>
-                            <Input type="number" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                </div>
                 <FormField
                   control={form.control}
                   name="paymentDate"
@@ -128,7 +109,7 @@ export function PaymentForm({ isOpen, setIsOpen, month, studentName, existingDat
                     <FormItem>
                       <FormLabel>Tanggal Pembayaran</FormLabel>
                       <FormControl>
-                        <Input type="date" {...field} />
+                        <Input type="date" {...field} className="h-9 font-normal" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -139,17 +120,17 @@ export function PaymentForm({ isOpen, setIsOpen, month, studentName, existingDat
                   name="notes"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Catatan (Opsional)</FormLabel>
+                      <FormLabel>Catatan / Keterangan (Opsional)</FormLabel>
                       <FormControl>
-                        <Textarea placeholder="Misal: Bayar via transfer" {...field} value={field.value ?? ""} />
+                        <Textarea placeholder="Misal: Bayar lunas" {...field} value={field.value ?? ""} className="font-normal min-h-[80px]" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
             </div>
-            <DialogFooter className="pt-4">
-              <Button type="submit" className="w-full sm:w-auto">Simpan Pembayaran</Button>
+            <DialogFooter className="pt-2">
+              <Button type="submit" className="w-full sm:w-auto font-normal">Simpan Sebagai Lunas</Button>
             </DialogFooter>
           </form>
         </Form>
