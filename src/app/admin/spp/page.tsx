@@ -36,7 +36,7 @@ import {
 import { useAcademicYear } from "@/context/academic-year-provider";
 import { useSchoolProfile } from "@/context/school-profile-provider";
 import { useToast } from "@/hooks/use-toast";
-import { saveSPPPayment, updateSchoolProfile } from "@/lib/firebase-helpers";
+import { saveSPPPayment, updateSchoolProfile, deleteSPPPayment } from "@/lib/firebase-helpers";
 import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
 import { id as dfnsId } from "date-fns/locale";
@@ -161,6 +161,16 @@ export default function SppPage() {
             toast({ title: "Pembayaran Tersimpan", description: `Pembayaran bulan ${activeMonth.name} berhasil diperbarui sebagai LUNAS.` });
         } catch (error) {
             toast({ variant: "destructive", title: "Gagal Menyimpan", description: "Terjadi kesalahan saat mencatat pembayaran." });
+        }
+    };
+
+    const handleDeletePayment = async (paymentId: string) => {
+        if (!firestore) return;
+        try {
+            await deleteSPPPayment(firestore, paymentId);
+            toast({ title: "Data Dihapus", description: "Catatan pembayaran berhasil dihapus." });
+        } catch (error) {
+            toast({ variant: "destructive", title: "Gagal Menghapus", description: "Terjadi kesalahan saat menghapus data." });
         }
     };
 
@@ -543,6 +553,7 @@ export default function SppPage() {
                     existingData={paymentStatusMap.get(activeMonth.id)}
                     defaultAmount={profile?.defaultSppAmount || 50000}
                     onSave={handleSavePayment}
+                    onDelete={handleDeletePayment}
                 />
             )}
         </div>

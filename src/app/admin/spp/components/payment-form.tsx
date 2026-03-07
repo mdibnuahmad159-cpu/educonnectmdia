@@ -25,7 +25,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { SPPPayment } from "@/types";
-import { CreditCard } from "lucide-react";
+import { CreditCard, Trash2 } from "lucide-react";
 
 const formSchema = z.object({
   paymentDate: z.string().min(1, "Wajib diisi"),
@@ -42,9 +42,10 @@ type PaymentFormProps = {
   existingData: SPPPayment | undefined;
   defaultAmount: number;
   onSave: (data: PaymentFormData) => void;
+  onDelete: (id: string) => void;
 };
 
-export function PaymentForm({ isOpen, setIsOpen, month, studentName, existingData, defaultAmount, onSave }: PaymentFormProps) {
+export function PaymentForm({ isOpen, setIsOpen, month, studentName, existingData, defaultAmount, onSave, onDelete }: PaymentFormProps) {
   const form = useForm<PaymentFormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -129,8 +130,27 @@ export function PaymentForm({ isOpen, setIsOpen, month, studentName, existingDat
                   )}
                 />
             </div>
-            <DialogFooter className="pt-2">
-              <Button type="submit" className="w-full sm:w-auto font-normal">Simpan Sebagai Lunas</Button>
+            <DialogFooter className="pt-2 flex flex-row justify-between sm:justify-between items-center">
+              <div>
+                {existingData && (
+                    <Button 
+                        type="button" 
+                        variant="destructive" 
+                        size="xs" 
+                        className="gap-1.5 font-normal"
+                        onClick={() => {
+                            if (window.confirm(`Hapus catatan pembayaran bulan ${month.name}?`)) {
+                                onDelete(existingData.id);
+                                setIsOpen(false);
+                            }
+                        }}
+                    >
+                        <Trash2 className="h-3 w-3" />
+                        Hapus Data
+                    </Button>
+                )}
+              </div>
+              <Button type="submit" className="font-normal">Simpan Sebagai Lunas</Button>
             </DialogFooter>
           </form>
         </Form>

@@ -442,3 +442,13 @@ export function saveSPPPayment(db: Firestore, payment: Omit<SPPPayment, 'id'>) {
         }));
     });
 }
+
+export function deleteSPPPayment(db: Firestore, paymentId: string) {
+    const paymentRef = doc(db, 'sppPayments', paymentId);
+    return deleteDoc(paymentRef).catch(error => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: paymentRef.path,
+            operation: 'delete',
+        }));
+    });
+}
