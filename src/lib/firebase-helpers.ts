@@ -1,3 +1,4 @@
+
 import {
   createUserWithEmailAndPassword,
   getAuth,
@@ -15,7 +16,7 @@ import {
   query,
   where,
 } from 'firebase/firestore';
-import type { Teacher, Student, SchoolProfile, Curriculum, Alumni, Schedule, TeacherAttendance, StudentAttendance, Announcement, Grade, ReportSummary, Certificate, CertificateTemplate, SPPPayment } from '@/types';
+import type { Teacher, Student, SchoolProfile, Curriculum, Alumni, Schedule, TeacherAttendance, StudentAttendance, Announcement, Grade, ReportSummary, Certificate, CertificateTemplate, SPPPayment, ExternalSaver } from '@/types';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { firebaseConfig } from '@/firebase/config';
@@ -465,4 +466,42 @@ export function deleteSPPPayment(db: Firestore, studentId: string, month: number
         }));
         throw error;
     });
+}
+
+// External Saver Helpers
+export function addExternalSaver(db: Firestore, saver: Omit<ExternalSaver, 'id'>) {
+  const newRef = doc(collection(db, 'externalSavers'));
+  const data = {
+    ...saver,
+    id: newRef.id,
+    createdAt: new Date().toISOString()
+  };
+  setDoc(newRef, data).catch(error => {
+    errorEmitter.emit('permission-error', new FirestorePermissionError({
+      path: newRef.path,
+      operation: 'create',
+      requestResourceData: data,
+    }));
+  });
+}
+
+export function updateExternalSaver(db: Firestore, id: string, saver: Partial<ExternalSaver>) {
+  const ref = doc(db, 'externalSavers', id);
+  setDoc(ref, saver, { merge: true }).catch(error => {
+    errorEmitter.emit('permission-error', new FirestorePermissionError({
+      path: ref.path,
+      operation: 'update',
+      requestResourceData: saver,
+    }));
+  });
+}
+
+export function deleteExternalSaver(db: Firestore, id: string) {
+  const ref = doc(db, 'externalSavers', id);
+  deleteDoc(ref).catch(error => {
+    errorEmitter.emit('permission-error', new FirestorePermissionError({
+      path: ref.path,
+      operation: 'delete',
+    }));
+  });
 }

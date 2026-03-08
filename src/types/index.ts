@@ -174,3 +174,12 @@ export type SPPPayment = {
   notes?: string;
   updatedAt?: any;
 };
+
+export type ExternalSaver = {
+  id: string;
+  name: string;
+  address?: string;
+  phoneNumber?: string;
+  notes?: string;
+  createdAt?: string;
+};

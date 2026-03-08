@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Class": {
@@ -168,6 +169,21 @@
         "paymentDate",
         "status"
       ]
+    },
+    "ExternalSaver": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ExternalSaver",
+      "type": "object",
+      "description": "Represents an external individual (not student or teacher) who has a savings account at the school.",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "address": { "type": "string" },
+        "phoneNumber": { "type": "string" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "name"]
     }
   },
   "auth": {
@@ -185,7 +201,7 @@
           "schema": {
             "$ref": "#/backend/entities/Class"
           },
-          "description": "Collection of all classes. Each class document identifies its homeroom teacher via `homeroomTeacherId`.",
+          "description": "Collection of all classes.",
           "params": [
             {
               "name": "classId",
@@ -201,7 +217,7 @@
           "schema": {
             "$ref": "#/backend/entities/Teacher"
           },
-          "description": "Collection of all teacher profiles. The `teacherId` in the path matches the `id` field within the document. Admin manages these records.",
+          "description": "Collection of all teacher profiles.",
           "params": [
             {
               "name": "teacherId",
@@ -217,7 +233,7 @@
           "schema": {
             "$ref": "#/backend/entities/Student"
           },
-          "description": "Collection of all student records. The `studentId` in the path matches the `id` field within the document. Includes `classId` for enrollment. Admin manages these records.",
+          "description": "Collection of all student records.",
           "params": [
             {
               "name": "studentId",
@@ -233,7 +249,7 @@
           "schema": {
             "$ref": "#/backend/entities/SPPPayment"
           },
-          "description": "Records of SPP payments. Each document includes `studentId`, `classId`, and a denormalized `homeroomTeacherId` (copied from the associated Class document at creation/update) to enable Authorization Independence and QAPs for teachers and parents. The `SPPPayment` entity schema should implicitly include `homeroomTeacherId` for this denormalization.",
+          "description": "Records of SPP payments.",
           "params": [
             {
               "name": "sppPaymentId",
@@ -243,54 +259,15 @@
         }
       },
       {
-        "path": "/roles_admin/{adminUid}",
+        "path": "/externalSavers/{id}",
         "definition": {
-          "entityName": "AdminRole",
-          "schema": {
-            "$ref": "#/backend/entities/AdminRole"
-          },
-          "description": "Collection for admin role assignments. The existence of a document at this path signifies the associated `uid` has admin privileges. `adminUid` maps directly to `request.auth.uid`. The document content could be minimal, e.g., `{\"uid\": \"string\"}`.",
-          "params": [
-            {
-              "name": "adminUid",
-              "description": "The Firebase Authentication UID of the user with admin privileges."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/roles_teacher/{teacherUid}",
-        "definition": {
-          "entityName": "TeacherRole",
-          "schema": {
-            "$ref": "#/backend/entities/TeacherRole"
-          },
-          "description": "Collection for teacher role assignments. Links an authenticated `uid` (`teacherUid`) to a specific `Teacher` entity via a `teacherId` field within the document. Used for teacher-specific authorization. The document content should be `{\"uid\": \"string\", \"teacherId\": \"string\"}`.",
-          "params": [
-            {
-              "name": "teacherUid",
-              "description": "The Firebase Authentication UID of the user with teacher privileges."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/roles_parent/{parentUid}",
-        "definition": {
-          "entityName": "ParentRole",
-          "schema": {
-            "$ref": "#/backend/entities/ParentRole"
-          },
-          "description": "Collection for parent role assignments. Links an authenticated `uid` (`parentUid`) to a specific `Student` entity via a `studentId` field within the document. Used for parent-specific authorization. The document content should be `{\"uid\": \"string\", \"studentId\": \"string\"}` (where `studentId` is the Student's `id` or `nis`).",
-          "params": [
-            {
-              "name": "parentUid",
-              "description": "The Firebase Authentication UID of the user with parent privileges."
-            }
-          ]
+          "entityName": "ExternalSaver",
+          "schema": { "$ref": "#/backend/entities/ExternalSaver" },
+          "description": "Collection of external savers (non-students/teachers).",
+          "params": [{ "name": "id", "description": "Unique identifier" }]
         }
       }
     ],
-    "reasoning": "The recommended Firestore structure is designed to be secure, scalable, and highly debuggable, strictly adhering to the core design principles. \n\n**Authorization Independence via Denormalization (CRITICAL):**\n\nThe most critical aspect of this design is how `SPPPayment` documents are structured to enable authorization independence. Each `SPPPayment` document will contain `studentId`, `classId`, and crucially, a denormalized `homeroomTeacherId`. This `homeroomTeacherId` is copied from the `Class` document associated with the student at the time the payment record is created. This denormalization eliminates the need for security rules to perform `get()` operations on the parent `Class` document to determine a teacher's authorization to manage or view payments. For example, a teacher's rule for `SPPPayment` can simply check `request.auth.teacherId == resource.data.homeroomTeacherId`, without additional database reads. Similarly, parents can access their own child's payments via `request.auth.studentId == resource.data.studentId`.\n\nUser roles (Admin, Teacher, Parent) are managed through dedicated top-level collections: `/roles_admin/{adminUid}`, `/roles_teacher/{teacherUid}`, and `/roles_parent/{parentUid}`. These collections adhere to the 'Existence over Content' principle for basic role checks, simplifying security rules significantly. For Teachers and Parents, these role documents also contain a direct reference to their associated `teacherId` or `studentId` respectively (e.g., `/roles_teacher/{uid}` contains `teacherId`). This allows rules to retrieve the user's specific entity ID once at the beginning of a rule evaluation, without requiring further `get()` calls for most data access checks.\n\n**Support for Querying and Authorization Predicates (QAPs):**\n\n1.  **Admin:** Admin users, identified by their `uid` existing in `/roles_admin/{adminUid}`, will have full read/write access across all collections. This enables them to `list` all `Class`, `Teacher`, `Student`, and `SPPPayment` documents without filtering limitations.\n\n2.  **Teacher:** Teachers, identified by their `uid` in `/roles_teacher/{teacherUid}` and associated `teacherId` (which matches `Teacher.id`), can perform the following secure `list` operations:\n    *   **Classes:** Teachers can list classes where their `teacherId` matches `homeroomTeacherId` in the `Class` document. This allows filtering for their assigned classes.\n    *   **Students:** Teachers can list `Student` documents where `classId` matches the `id` of a class they homeroom. Rules would resolve the teacher's `teacherId` from their role document, then query `Class` documents for `homeroomTeacherId == teacherId`, and finally query `Student` documents for `classId` within that set. While this requires intermediate steps, the `SPPPayment` structure directly supports QAPs.\n    *   **SPP Payments:** Teachers can list `SPPPayment` documents by querying `homeroomTeacherId == request.auth.teacherId`. This is a direct, efficient query, completely independent of `get()` operations on other documents for payment records, thus fulfilling the QAP requirement for teachers.\n\n3.  **Parent:** Parents, identified by their `uid` in `/roles_parent/{parentUid}` and associated `studentId` (which matches `Student.id` or `Student.nis`), can securely `list` and view data pertinent to their child:\n    *   **Student Data:** Parents can read their specific `Student` document by checking `request.auth.studentId == resource.data.id`.\n    *   **SPP Payments:** Parents can list `SPPPayment` documents by querying `studentId == request.auth.studentId`. This is also a direct and efficient query, independent of additional `get()` calls, fulfilling the QAP requirement for parents.\n\n**Structural Segregation and Consistency:**\n\nEach collection (e.g., `/classes`, `/teachers`, `/students`, `/sppPayments`, `/roles_admin`, `/roles_teacher`, `/roles_parent`) maintains a homogeneous security posture. For instance, all documents within `/sppPayments` have the same access requirements based on `studentId` and `homeroomTeacherId`. This significantly simplifies security rules, making them clearer and less prone to errors. Wildcards are descriptive (e.g., `{classId}`, `{studentId}`), and authorization fields are consistently named (`homeroomTeacherId`, `studentId`). This design prioritizes explicit structure over complex rule logic, leading to a more robust and maintainable system."
+    "reasoning": "Standard Firestore structure mapping entities to collections."
   }
 }

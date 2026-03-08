@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -47,6 +48,11 @@ service cloud.firestore {
     match /sppPayments/{id} { 
       allow read: if isSignedIn();
       allow write, delete: if isAdmin();
+    }
+    
+    match /externalSavers/{id} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
     }
     
     match /teacher_attendances/{id} { allow read: if isSignedIn(); }
