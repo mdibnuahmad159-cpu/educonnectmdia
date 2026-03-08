@@ -52,13 +52,13 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
     
-    // Transaksi Tabungan - Izinkan list untuk kueri riwayat
+    // Transaksi Tabungan
     match /savingsTransactions/{id} {
       allow read: if isSignedIn();
       allow write: if isAdmin();
     }
     
-    // Izin eksplisit untuk listing koleksi (dibutuhkan oleh beberapa kueri)
+    // Izin eksplisit untuk listing koleksi (dibutuhkan untuk kueri riwayat)
     match /savingsTransactions {
       allow list: if isSignedIn();
     }
