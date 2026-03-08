@@ -183,3 +183,16 @@ export type ExternalSaver = {
   notes?: string;
   createdAt?: string;
 };
+
+export type SavingsTransactionType = 'deposit' | 'withdraw';
+export type SaverType = 'student' | 'teacher' | 'external';
+
+export type SavingsTransaction = {
+  id: string;
+  saverId: string;
+  saverType: SaverType;
+  type: SavingsTransactionType;
+  amount: number;
+  date: string;
+  notes?: string;
+};

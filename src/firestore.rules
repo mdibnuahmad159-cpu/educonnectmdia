@@ -54,6 +54,11 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow write: if isAdmin();
     }
+
+    match /savingsTransactions/{id} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
     
     match /teacher_attendances/{id} { allow read: if isSignedIn(); }
     match /student_attendances/{id} { allow read: if isSignedIn(); }

@@ -16,7 +16,7 @@ import {
   query,
   where,
 } from 'firebase/firestore';
-import type { Teacher, Student, SchoolProfile, Curriculum, Alumni, Schedule, TeacherAttendance, StudentAttendance, Announcement, Grade, ReportSummary, Certificate, CertificateTemplate, SPPPayment, ExternalSaver } from '@/types';
+import type { Teacher, Student, SchoolProfile, Curriculum, Alumni, Schedule, TeacherAttendance, StudentAttendance, Announcement, Grade, ReportSummary, Certificate, CertificateTemplate, SPPPayment, ExternalSaver, SavingsTransaction } from '@/types';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { firebaseConfig } from '@/firebase/config';
@@ -503,5 +503,23 @@ export function deleteExternalSaver(db: Firestore, id: string) {
       path: ref.path,
       operation: 'delete',
     }));
+  });
+}
+
+// Savings Transaction Helpers
+export function addSavingsTransaction(db: Firestore, transaction: Omit<SavingsTransaction, 'id'>) {
+  const newRef = doc(collection(db, 'savingsTransactions'));
+  const data = {
+    ...transaction,
+    id: newRef.id,
+    date: new Date().toISOString()
+  };
+  return setDoc(newRef, data).catch(error => {
+    errorEmitter.emit('permission-error', new FirestorePermissionError({
+      path: newRef.path,
+      operation: 'create',
+      requestResourceData: data,
+    }));
+    throw error;
   });
 }

@@ -184,6 +184,21 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["id", "name"]
+    },
+    "SavingsTransaction": {
+      "title": "SavingsTransaction",
+      "type": "object",
+      "description": "Records of deposits and withdrawals from savings accounts.",
+      "properties": {
+        "id": { "type": "string" },
+        "saverId": { "type": "string" },
+        "saverType": { "type": "string", "enum": ["student", "teacher", "external"] },
+        "type": { "type": "string", "enum": ["deposit", "withdraw"] },
+        "amount": { "type": "number" },
+        "date": { "type": "string", "format": "date-time" },
+        "notes": { "type": "string" }
+      },
+      "required": ["id", "saverId", "saverType", "type", "amount", "date"]
     }
   },
   "auth": {
@@ -264,6 +279,15 @@
           "entityName": "ExternalSaver",
           "schema": { "$ref": "#/backend/entities/ExternalSaver" },
           "description": "Collection of external savers (non-students/teachers).",
+          "params": [{ "name": "id", "description": "Unique identifier" }]
+        }
+      },
+      {
+        "path": "/savingsTransactions/{id}",
+        "definition": {
+          "entityName": "SavingsTransaction",
+          "schema": { "$ref": "#/backend/entities/SavingsTransaction" },
+          "description": "Collection of all savings transactions.",
           "params": [{ "name": "id", "description": "Unique identifier" }]
         }
       }
