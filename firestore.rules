@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -13,17 +14,17 @@ service cloud.firestore {
       );
     }
 
-    // Super-Admin Override: Full access to everything
+    // Super-Admin Override: Akses penuh untuk administrator
     match /{allPaths=**} {
       allow read, write: if isAdmin();
     }
 
-    // Public school profile read access
+    // Akses profil sekolah publik
     match /schoolProfile/{profileId} {
       allow read: if true;
     }
 
-    // Generic read for authenticated users
+    // Aturan akses umum untuk pengguna terautentikasi
     match /announcements/{announcementId} { allow read: if isSignedIn(); }
     match /teachers/{teacherId} { 
       allow get, update: if isSignedIn() && request.auth.uid == teacherId;
@@ -39,10 +40,30 @@ service cloud.firestore {
     match /certificates/{id} { allow read: if isSignedIn(); }
     match /certificate_templates/{id} { allow read: if isSignedIn(); }
     
-    // Explicit rule for SPP Payments - ensure admin has full CRUD rights
+    // Pembayaran SPP
     match /sppPayments/{paymentId} {
       allow read: if isSignedIn();
       allow write, delete: if isAdmin();
+    }
+
+    // Penabung Luar
+    match /externalSavers/{id} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+    
+    // Transaksi Tabungan - Izinkan list untuk kueri riwayat
+    match /savingsTransactions/{id} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+    
+    // Izin eksplisit untuk listing koleksi (dibutuhkan oleh beberapa kueri)
+    match /savingsTransactions {
+      allow list: if isSignedIn();
+    }
+    match /externalSavers {
+      allow list: if isSignedIn();
     }
 
     match /teacher_attendances/{id} { allow read: if isSignedIn(); }
