@@ -523,3 +523,14 @@ export function addSavingsTransaction(db: Firestore, transaction: Omit<SavingsTr
     throw error;
   });
 }
+
+export function deleteSavingsTransaction(db: Firestore, id: string) {
+  const ref = doc(db, 'savingsTransactions', id);
+  return deleteDoc(ref).catch(error => {
+    errorEmitter.emit('permission-error', new FirestorePermissionError({
+      path: ref.path,
+      operation: 'delete',
+    }));
+    throw error;
+  });
+}

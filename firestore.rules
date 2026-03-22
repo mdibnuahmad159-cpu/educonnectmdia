@@ -21,7 +21,7 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // Collections accessible to any signed-in user
+    // Standard collections: Read if signed in, Write if admin
     match /announcements/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
     match /teachers/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
     match /students/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
@@ -33,11 +33,20 @@ service cloud.firestore {
     match /report_summaries/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
     match /certificates/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
     match /certificate_templates/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
-    match /sppPayments/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
     match /externalSavers/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
-    match /savingsTransactions/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
     match /teacher_attendances/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
     match /student_attendances/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
+
+    // Explicit rules for Finance Collections
+    match /sppPayments/{id} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /savingsTransactions/{id} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
 
     // Global admin fallback
     match /{allPaths=**} {
