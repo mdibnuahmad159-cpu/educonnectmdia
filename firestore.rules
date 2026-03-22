@@ -57,14 +57,6 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow write: if isAdmin();
     }
-    
-    // Izin eksplisit untuk listing koleksi (dibutuhkan untuk kueri riwayat)
-    match /savingsTransactions {
-      allow list: if isSignedIn();
-    }
-    match /externalSavers {
-      allow list: if isSignedIn();
-    }
 
     match /teacher_attendances/{id} { allow read: if isSignedIn(); }
     match /student_attendances/{id} { allow read: if isSignedIn(); }
