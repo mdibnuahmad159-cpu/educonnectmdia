@@ -1,371 +1,80 @@
+
 {
   "entities": {
     "Admin": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Admin",
       "type": "object",
-      "description": "Represents an administrative user with privileges to manage the EduConnect application, including user accounts and core data.",
+      "description": "Represents an administrative user.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Admin entity."
-        },
-        "username": {
-          "type": "string",
-          "description": "The username used by the admin for login."
-        },
-        "email": {
-          "type": "string",
-          "description": "The email address of the admin.",
-          "format": "email"
-        },
-        "firstName": {
-          "type": "string",
-          "description": "The first name of the admin."
-        },
-        "lastName": {
-          "type": "string",
-          "description": "The last name of the admin."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the admin record was created.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the admin record was last updated.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "username",
-        "email",
-        "firstName",
-        "lastName",
-        "createdAt",
-        "updatedAt"
-      ]
+        "id": { "type": "string" },
+        "email": { "type": "string", "format": "email" }
+      }
+    },
+    "ExternalSaver": {
+      "title": "ExternalSaver",
+      "type": "object",
+      "description": "Represents a non-student/non-teacher saver.",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "phoneNumber": { "type": "string" },
+        "address": { "type": "string" },
+        "notes": { "type": "string" }
+      }
+    },
+    "SavingsTransaction": {
+      "title": "SavingsTransaction",
+      "type": "object",
+      "description": "Represents a deposit or withdrawal in the savings system.",
+      "properties": {
+        "id": { "type": "string" },
+        "saverId": { "type": "string" },
+        "saverType": { "type": "string", "enum": ["student", "teacher", "external"] },
+        "type": { "type": "string", "enum": ["deposit", "withdraw"] },
+        "amount": { "type": "number" },
+        "date": { "type": "string", "format": "date-time" },
+        "notes": { "type": "string" }
+      }
     },
     "Teacher": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Teacher",
       "type": "object",
-      "description": "Represents a teacher in the school, responsible for instruction and potentially managing student records within their purview.",
+      "description": "Represents a teacher.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Teacher entity."
-        },
-        "email": {
-          "type": "string",
-          "description": "The email address of the teacher, used for login and communication.",
-          "format": "email"
-        },
-        "firstName": {
-          "type": "string",
-          "description": "The first name of the teacher."
-        },
-        "lastName": {
-          "type": "string",
-          "description": "The last name of the teacher."
-        },
-        "phoneNumber": {
-          "type": "string",
-          "description": "The contact phone number of the teacher."
-        },
-        "address": {
-          "type": "string",
-          "description": "The residential address of the teacher."
-        },
-        "dateOfBirth": {
-          "type": "string",
-          "description": "The birth date of the teacher.",
-          "format": "date"
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the teacher record was created.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the teacher record was last updated.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "email",
-        "firstName",
-        "lastName",
-        "createdAt",
-        "updatedAt"
-      ]
+        "id": { "type": "string" },
+        "email": { "type": "string" },
+        "name": { "type": "string" }
+      }
     },
     "Student": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Student",
       "type": "object",
-      "description": "Represents a student enrolled in the school, including personal and enrollment details.",
+      "description": "Represents a student.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Student entity."
-        },
-        "nis": {
-          "type": "string",
-          "description": "The National Student ID (Nomor Induk Siswa), a unique identifier for the student. This ID is used by parents for login.",
-          "format": "uuid"
-        },
-        "firstName": {
-          "type": "string",
-          "description": "The first name of the student."
-        },
-        "lastName": {
-          "type": "string",
-          "description": "The last name of the student."
-        },
-        "dateOfBirth": {
-          "type": "string",
-          "description": "The birth date of the student.",
-          "format": "date"
-        },
-        "gender": {
-          "type": "string",
-          "description": "The gender of the student (e.g., 'Male', 'Female', 'Other')."
-        },
-        "address": {
-          "type": "string",
-          "description": "The residential address of the student."
-        },
-        "classId": {
-          "type": "string",
-          "description": "Reference to the Class this student belongs to. (Relationship: Class 1:N Student)"
-        },
-        "parentIds": {
-          "type": "array",
-          "description": "References to the parents associated with this student. (Relationship: Student N:N Parent)",
-          "items": {
-            "type": "string"
-          }
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the student record was created.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the student record was last updated.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "nis",
-        "firstName",
-        "lastName",
-        "dateOfBirth",
-        "gender",
-        "address",
-        "classId",
-        "parentIds",
-        "createdAt",
-        "updatedAt"
-      ]
-    },
-    "Parent": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Parent",
-      "type": "object",
-      "description": "Represents a parent or guardian of a student, who can log in using the student's NIS and password.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Parent entity."
-        },
-        "firstName": {
-          "type": "string",
-          "description": "The first name of the parent."
-        },
-        "lastName": {
-          "type": "string",
-          "description": "The last name of the parent."
-        },
-        "email": {
-          "type": "string",
-          "description": "The email address of the parent for communication.",
-          "format": "email"
-        },
-        "phoneNumber": {
-          "type": "string",
-          "description": "The contact phone number of the parent."
-        },
-        "address": {
-          "type": "string",
-          "description": "The residential address of the parent."
-        },
-        "studentIds": {
-          "type": "array",
-          "description": "References to the students associated with this parent. (Relationship: Parent N:N Student)",
-          "items": {
-            "type": "string"
-          }
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the parent record was created.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the parent record was last updated.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "firstName",
-        "lastName",
-        "studentIds",
-        "createdAt",
-        "updatedAt"
-      ]
-    },
-    "Class": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Class",
-      "type": "object",
-      "description": "Represents a specific class or grade level within the school, potentially linked to a homeroom teacher.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Class entity."
-        },
-        "name": {
-          "type": "string",
-          "description": "The name of the class (e.g., 'Kelas 1A', 'Grade 7')."
-        },
-        "year": {
-          "type": "number",
-          "description": "The academic year for which this class is active (e.g., 2023 for 2023-2024 academic year)."
-        },
-        "homeroomTeacherId": {
-          "type": "string",
-          "description": "Reference to the Teacher who is the homeroom teacher for this class. (Relationship: Teacher 1:N Class)"
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the class record was created.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the class record was last updated.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "name",
-        "year",
-        "homeroomTeacherId",
-        "createdAt",
-        "updatedAt"
-      ]
+        "id": { "type": "string" },
+        "nis": { "type": "string" },
+        "name": { "type": "string" },
+        "kelas": { "type": "number" }
+      }
     }
   },
   "auth": {
-    "providers": [
-      "password",
-      "anonymous"
-    ]
+    "providers": ["password", "anonymous"]
   },
   "firestore": {
-    "structure": [
-      {
-        "path": "/admins/{adminId}",
-        "definition": {
-          "entityName": "Admin",
-          "schema": {
-            "$ref": "#/backend/entities/Admin"
-          },
-          "description": "Collection for administrative users. The document ID (`adminId`) corresponds to the Firebase Authentication UID of the admin. Existence of a document here grants administrative privileges. Admin users can manage all data within the application. Includes an 'id' field matching 'adminId'.",
-          "params": [
-            {
-              "name": "adminId",
-              "description": "The unique Firebase Authentication UID of the administrator."
-            }
-          ]
-        }
+    "structure": {
+      "/admins/{adminId}": {
+        "schema": "#/entities/Admin",
+        "description": "Admin users collection."
       },
-      {
-        "path": "/teachers/{teacherId}",
-        "definition": {
-          "entityName": "Teacher",
-          "schema": {
-            "$ref": "#/backend/entities/Teacher"
-          },
-          "description": "Collection for teacher profiles. The document ID (`teacherId`) corresponds to the Firebase Authentication UID of the teacher. Existence of a document here grants teacher privileges. Teachers can manage data related to their assigned classes and students. Includes an 'id' field matching 'teacherId'.",
-          "params": [
-            {
-              "name": "teacherId",
-              "description": "The unique Firebase Authentication UID of the teacher."
-            }
-          ]
-        }
+      "/externalSavers/{saverId}": {
+        "schema": "#/entities/ExternalSaver",
+        "description": "Non-internal savers."
       },
-      {
-        "path": "/parents/{parentId}",
-        "definition": {
-          "entityName": "Parent",
-          "schema": {
-            "$ref": "#/backend/entities/Parent"
-          },
-          "description": "Collection for parent/guardian profiles. The document ID (`parentId`) corresponds to the Firebase Authentication UID of the parent. Existence of a document here grants parent privileges. Parents can view data for their associated students (linked via 'studentIds' field). Includes an 'id' field matching 'parentId'.",
-          "params": [
-            {
-              "name": "parentId",
-              "description": "The unique Firebase Authentication UID of the parent/guardian."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/classes/{classId}",
-        "definition": {
-          "entityName": "Class",
-          "schema": {
-            "$ref": "#/backend/entities/Class"
-          },
-          "description": "Collection for school classes. Admin users can create, read, update, and delete class records. Teachers can read their assigned classes via the 'homeroomTeacherId' field. Includes 'homeroomTeacherId' for authorization independence.",
-          "params": [
-            {
-              "name": "classId",
-              "description": "The unique identifier for the class."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/students/{studentId}",
-        "definition": {
-          "entityName": "Student",
-          "schema": {
-            "$ref": "#/backend/entities/Student"
-          },
-          "description": "Collection for student records. Admin users can perform full CRUD operations. Teachers can read students in their assigned classes, and parents can read their children's records. Includes denormalized 'homeroomTeacherId' for teacher authorization independence, and 'parentIds' for parent authorization independence.",
-          "params": [
-            {
-              "name": "studentId",
-              "description": "The unique identifier for the student."
-            }
-          ]
-        }
+      "/savingsTransactions/{transactionId}": {
+        "schema": "#/entities/SavingsTransaction",
+        "description": "History of all savings movements."
       }
-    ],
-    "reasoning": "The recommended Firestore structure for EduConnect prioritizes **Authorization Independence** and **Clarity of Intent** to ensure robust and debuggable security rules. The core strategy is denormalization of authorization contexts, and structural segregation based on security posture.\n\n**Authorization Independence (CRITICAL) & Denormalization:**\nTo eliminate the need for `get()` calls in security rules, crucial authorization fields are denormalized:\n*   **Teacher Access to Students:** Each `Student` document will contain a `homeroomTeacherId` field. This field will directly store the ID of the teacher assigned to the student's class (copied from the `Class` entity's `homeroomTeacherId`). This allows a teacher to query and access students belonging to their class by simply checking `request.auth.uid == resource.data.homeroomTeacherId` on the `Student` document, without needing to `get()` the associated `Class` document.\n*   **Parent Access to Students:** The `Student` entity already includes a `parentIds` array. This is perfect for authorization independence, allowing a parent to check if their `request.auth.uid` is present in the `resource.data.parentIds` array to access their child's data. Similarly, the `Parent` entity has `studentIds` for direct linking.\n*   **Role-Based Access (DBAC):** Admin, Teacher, and Parent roles are established by the mere existence of a document in their respective top-level collections (`/admins`, `/teachers`, `/parents`), where the document ID matches `request.auth.uid`. This provides a clear, single source of truth for user roles without relying on custom claims.\n\n**QAPs (Rules are not Filters) & Structural Segregation:**\n*   Each top-level collection (`/admins`, `/teachers`, `/parents`, `/classes`, `/students`) maintains a homogeneous security posture. For instance, all documents in `/students` require the same logic for read/write based on roles and relationships.\n*   The denormalized fields (`homeroomTeacherId` in `Student`, `parentIds` in `Student`, `homeroomTeacherId` in `Class`) directly support secure `list` operations. Teachers can list students they are responsible for, and parents can list their children, simply by querying on these denormalized fields. This avoids client-side filtering and ensures that the rules intrinsically enforce secure data access for `list` operations.\n\n**Authentication Model Clarification:**\nGiven the `DBAC` principle and the reliance on `request.auth.uid`, the system assumes that Admin, Teacher, and Parent users each have their own Firebase authentication accounts (`uid`). The specific requirement for 'Parent login with NIS and password siswa' is interpreted as an administrative process where an Admin associates a Firebase `Parent` account with specific `Student` records. The `Parent` user will authenticate with their own Firebase credentials (e.g., email/password) and their `request.auth.uid` will correspond to their `Parent.id`. This ensures that authorization can consistently rely on `request.auth.uid` mapping to the `id` field of `Admin`, `Teacher`, or `Parent` entities."
+    }
   }
 }
