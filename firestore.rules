@@ -37,15 +37,15 @@ service cloud.firestore {
     match /teacher_attendances/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
     match /student_attendances/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
 
-    // Explicit rules for Finance Collections
+    // Finance Collections
     match /sppPayments/{id} {
       allow read: if isSignedIn();
-      allow create, update, delete: if isAdmin();
+      allow write: if isAdmin();
     }
 
     match /savingsTransactions/{id} {
       allow read: if isSignedIn();
-      allow create, update, delete: if isAdmin();
+      allow write: if isAdmin();
     }
 
     // Global admin fallback
