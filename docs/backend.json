@@ -85,31 +85,29 @@
     "providers": ["password", "anonymous"]
   },
   "firestore": {
-    "structure": {
-      "/admins/{adminId}": {
-        "schema": "#/entities/Admin",
-        "description": "Admin users collection."
-      },
-      "/externalSavers/{saverId}": {
-        "schema": "#/entities/ExternalSaver",
-        "description": "Non-internal savers."
-      },
-      "/savingsTransactions/{transactionId}": {
-        "schema": "#/entities/SavingsTransaction",
-        "description": "History of all savings movements."
-      },
-      "/schoolProfile/{id}": {
-        "schema": "#/entities/SchoolProfile",
-        "description": "School settings."
-      },
-      "/teachers/{id}": {
-        "schema": "#/entities/Teacher",
-        "description": "Teacher data."
-      },
-      "/students/{id}": {
-        "schema": "#/entities/Student",
-        "description": "Student data."
-      }
+    "/admins/{adminId}": {
+      "schema": { "$ref": "#/entities/Admin" },
+      "description": "Admin users collection."
+    },
+    "/externalSavers/{saverId}": {
+      "schema": { "$ref": "#/entities/ExternalSaver" },
+      "description": "Non-internal savers."
+    },
+    "/savingsTransactions/{transactionId}": {
+      "schema": { "$ref": "#/entities/SavingsTransaction" },
+      "description": "History of all savings movements."
+    },
+    "/schoolProfile/{id}": {
+      "schema": { "$ref": "#/entities/SchoolProfile" },
+      "description": "School settings."
+    },
+    "/teachers/{id}": {
+      "schema": { "$ref": "#/entities/Teacher" },
+      "description": "Teacher data."
+    },
+    "/students/{id}": {
+      "schema": { "$ref": "#/entities/Student" },
+      "description": "Student data."
     }
   }
 }

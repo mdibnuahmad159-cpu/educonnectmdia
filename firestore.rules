@@ -16,7 +16,7 @@ service cloud.firestore {
     }
 
     // Explicitly allow reading for all authenticated users on major collections
-    // to prevent listing errors for queries.
+    // This covers 'get' (single doc) and 'list' (queries/collections)
     
     match /savingsTransactions/{id} {
       allow read: if isSignedIn();
@@ -44,7 +44,7 @@ service cloud.firestore {
     match /student_attendances/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
     match /sppPayments/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
 
-    // Global admin fallback
+    // Global fallback
     match /{allPaths=**} {
       allow read, write: if isAdmin();
     }
