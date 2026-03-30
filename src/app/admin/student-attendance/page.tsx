@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
@@ -44,6 +45,7 @@ export default function StudentAttendancePage() {
     const firestore = useFirestore() as Firestore;
     const { toast } = useToast();
 
+    // Hydration fix
     const [fromDate, setFromDate] = useState<string>("");
     const [toDate, setToDate] = useState<string>("");
     const [selectedClass, setSelectedClass] = useState<string>("0");
@@ -417,14 +419,7 @@ export default function StudentAttendancePage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {isLoading ? (
-                                <TableRow>
-                                    <TableCell colSpan={5} className="text-center h-24">
-                                        <Loader2 className="h-4 w-4 animate-spin inline-block mr-2"/>
-                                        <span className="text-xs">Memuat ringkasan...</span>
-                                    </TableCell>
-                                </TableRow>
-                            ) : attendanceSummary.length > 0 ? (
+                            {!isLoading && attendanceSummary.length > 0 ? (
                                 attendanceSummary.map(item => (
                                     <TableRow key={item.studentId} className="h-8">
                                         <TableCell className="font-medium text-xs py-1">
@@ -439,8 +434,8 @@ export default function StudentAttendancePage() {
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="text-center h-24 text-xs">
-                                        Tidak ada data ringkasan untuk ditampilkan.
+                                    <TableCell colSpan={5} className="text-center h-24 text-xs italic text-muted-foreground">
+                                        {isLoading ? 'Memuat ringkasan...' : 'Tidak ada data ringkasan.'}
                                     </TableCell>
                                 </TableRow>
                             )}
