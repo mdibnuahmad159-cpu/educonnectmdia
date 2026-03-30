@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where, Firestore } from 'firebase/firestore';
 import type { Student, StudentAttendance } from '@/types';
@@ -45,9 +44,15 @@ export default function StudentAttendancePage() {
     const firestore = useFirestore() as Firestore;
     const { toast } = useToast();
 
-    const [fromDate, setFromDate] = useState<string>(format(startOfMonth(new Date()), 'yyyy-MM-dd'));
-    const [toDate, setToDate] = useState<string>(format(endOfMonth(new Date()), 'yyyy-MM-dd'));
+    // Fix hydration issues by setting empty initial state and filling in useEffect
+    const [fromDate, setFromDate] = useState<string>("");
+    const [toDate, setToDate] = useState<string>("");
     const [selectedClass, setSelectedClass] = useState<string>("0");
+
+    useEffect(() => {
+        setFromDate(format(startOfMonth(new Date()), 'yyyy-MM-dd'));
+        setToDate(format(endOfMonth(new Date()), 'yyyy-MM-dd'));
+    }, []);
     
     const daysInRange = useMemo(() => {
         if (fromDate && toDate) {
@@ -95,7 +100,7 @@ export default function StudentAttendancePage() {
         return [...students].sort((a,b) => a.name.localeCompare(b.name));
     }, [students]);
 
-    const isLoading = loadingStudents || loadingAttendance;
+    const isLoading = loadingStudents || loadingAttendance || !fromDate;
 
     const attendanceSummary = useMemo(() => {
         if (!sortedStudents || !daysInRange.length || !attendanceMap) return [];
@@ -311,7 +316,7 @@ export default function StudentAttendancePage() {
                             <AlertTriangle className="h-5 w-5" />
                             <div className="text-xs">
                                 <p className="font-bold">Gagal memuat data absensi</p>
-                                <p>Pastikan koneksi stabil atau coba klik tautan indeks yang muncul di konsol jika tersedia.</p>
+                                <p>{attendanceError.message}</p>
                             </div>
                         </div>
                     )}

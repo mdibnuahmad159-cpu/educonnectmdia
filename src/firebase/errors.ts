@@ -1,7 +1,7 @@
 'use client';
 import { getAuth, type User } from 'firebase/auth';
 
-type SecurityRuleContext = {
+export type SecurityRuleContext = {
   path: string;
   operation: 'get' | 'list' | 'create' | 'update' | 'delete' | 'write';
   requestResourceData?: any;
@@ -77,15 +77,13 @@ function buildAuthObject(currentUser: User | null): FirebaseAuthObject | null {
 function buildRequestObject(context: SecurityRuleContext): SecurityRuleRequest {
   let authObject: FirebaseAuthObject | null = null;
   try {
-    // Safely attempt to get the current user.
     const firebaseAuth = getAuth();
     const currentUser = firebaseAuth.currentUser;
     if (currentUser) {
       authObject = buildAuthObject(currentUser);
     }
   } catch {
-    // This will catch errors if the Firebase app is not yet initialized.
-    // In this case, we'll proceed without auth information.
+    // Auth not yet initialized
   }
 
   return {
@@ -99,10 +97,15 @@ function buildRequestObject(context: SecurityRuleContext): SecurityRuleRequest {
 /**
  * Builds the final, formatted error message for the LLM.
  * @param requestObject The simulated request object.
+ * @param originalMessage Optional original server error message.
  * @returns A string containing the error message and the JSON payload.
  */
-function buildErrorMessage(requestObject: SecurityRuleRequest): string {
-  return `Missing or insufficient permissions: The following request was denied by Firestore Security Rules:
+function buildErrorMessage(requestObject: SecurityRuleRequest, originalMessage?: string): string {
+  const baseMessage = originalMessage 
+    ? `Firestore Error: ${originalMessage}`
+    : `Missing or insufficient permissions: The following request was denied by Firestore Security Rules:`;
+    
+  return `${baseMessage}
 ${JSON.stringify(requestObject, null, 2)}`;
 }
 
@@ -114,9 +117,9 @@ ${JSON.stringify(requestObject, null, 2)}`;
 export class FirestorePermissionError extends Error {
   public readonly request: SecurityRuleRequest;
 
-  constructor(context: SecurityRuleContext) {
+  constructor(context: SecurityRuleContext, originalError?: any) {
     const requestObject = buildRequestObject(context);
-    super(buildErrorMessage(requestObject));
+    super(buildErrorMessage(requestObject, originalError?.message));
     this.name = 'FirebaseError';
     this.request = requestObject;
   }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import type { Teacher, TeacherAttendance, Schedule, ScheduleEntry } from '@/types';
@@ -49,8 +49,14 @@ export default function AttendancePage() {
     const { toast } = useToast();
     const { activeYear } = useAcademicYear();
 
-    const [fromDate, setFromDate] = useState<string>(format(startOfMonth(new Date()), 'yyyy-MM-dd'));
-    const [toDate, setToDate] = useState<string>(format(endOfMonth(new Date()), 'yyyy-MM-dd'));
+    // Fix hydration issues
+    const [fromDate, setFromDate] = useState<string>("");
+    const [toDate, setToDate] = useState<string>("");
+
+    useEffect(() => {
+        setFromDate(format(startOfMonth(new Date()), 'yyyy-MM-dd'));
+        setToDate(format(endOfMonth(new Date()), 'yyyy-MM-dd'));
+    }, []);
     
     const daysInRange = useMemo(() => {
         if (fromDate && toDate) {
@@ -67,7 +73,7 @@ export default function AttendancePage() {
     }, [fromDate, toDate]);
 
     const teachersCollection = useMemoFirebase(() => firestore ? collection(firestore, 'teachers') : null, [firestore]);
-    const { data: teachers, loading: loadingTeachers } = useCollection<Teacher>(teachersCollection);
+    const { data: teachers, isLoading: loadingTeachers } = useCollection<Teacher>(teachersCollection);
     
     const attendanceQuery = useMemoFirebase(() => {
         if (!firestore || !fromDate || !toDate) return null;
@@ -77,7 +83,7 @@ export default function AttendancePage() {
             where('date', '<=', toDate)
         );
     }, [firestore, fromDate, toDate]);
-    const { data: attendanceData, loading: loadingAttendance } = useCollection<TeacherAttendance>(attendanceQuery);
+    const { data: attendanceData, isLoading: loadingAttendance } = useCollection<TeacherAttendance>(attendanceQuery);
     
     const schedulesQuery = useMemoFirebase(() => {
         if (!firestore || !activeYear) return null;
@@ -87,7 +93,7 @@ export default function AttendancePage() {
             where('type', '==', 'pelajaran')
         );
     }, [firestore, activeYear]);
-    const { data: schedules, loading: loadingSchedules } = useCollection<Schedule>(schedulesQuery);
+    const { data: schedules, isLoading: loadingSchedules } = useCollection<Schedule>(schedulesQuery);
 
     const attendanceMap = useMemo(() => {
         const map = new Map<string, TeacherAttendance['status']>();
@@ -125,7 +131,7 @@ export default function AttendancePage() {
         return [...teachers].sort((a,b) => a.name.localeCompare(b.name));
     }, [teachers]);
 
-    const isLoading = loadingTeachers || loadingAttendance || loadingSchedules;
+    const isLoading = loadingTeachers || loadingAttendance || loadingSchedules || !fromDate;
 
     const attendanceSummary = useMemo(() => {
         if (!sortedTeachers || !daysInRange.length || !attendanceMap) return [];
@@ -156,7 +162,7 @@ export default function AttendancePage() {
     }, [sortedTeachers, daysInRange, attendanceMap]);
 
     const handleExport = (formatType: 'excel' | 'pdf') => {
-      if (!sortedTeachers || !fromDate || !toDate) {
+      if (!sortedTeachers.length || !fromDate || !toDate) {
           toast({ title: 'Tidak ada data untuk diekspor', variant: 'destructive' });
           return;
       }
@@ -195,7 +201,7 @@ export default function AttendancePage() {
     };
     
     const handlePrint = () => {
-       if (!sortedTeachers || !fromDate || !toDate) {
+       if (!sortedTeachers.length || !fromDate || !toDate) {
             toast({ title: 'Tidak ada data untuk dicetak', variant: 'destructive' });
             return;
        }
