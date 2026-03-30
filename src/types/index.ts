@@ -164,6 +164,7 @@ export type SPPPaymentStatus = 'Paid' | 'Unpaid' | 'Partial';
 export type SPPPayment = {
   id: string;
   studentId: string;
+  studentName?: string; // Denormalized for reports
   classId: string;
   month: number;
   year: number;

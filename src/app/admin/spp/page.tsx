@@ -157,6 +157,7 @@ export default function SppPage() {
 
         const paymentData: Omit<SPPPayment, 'id'> = {
             studentId: selectedStudent.id,
+            studentName: selectedStudent.name,
             classId: String(selectedStudent.kelas),
             month: activeMonth.id,
             year: actualYear,
