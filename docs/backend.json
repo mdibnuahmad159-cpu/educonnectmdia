@@ -30,6 +30,7 @@
       "properties": {
         "id": { "type": "string" },
         "saverId": { "type": "string" },
+        "saverName": { "type": "string" },
         "saverType": { "type": "string", "enum": ["student", "teacher", "external"] },
         "type": { "type": "string", "enum": ["deposit", "withdraw"] },
         "amount": { "type": "number" },

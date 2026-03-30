@@ -11,28 +11,24 @@ service cloud.firestore {
     function isAdmin() {
       return isSignedIn() && (
         request.auth.token.email == 'mdibnuahmad159@gmail.com' ||
-        exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid))
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
       );
     }
 
-    // Administrator has full access to everything
+    // Default rules for authenticated users
     match /{allPaths=**} {
       allow read: if isSignedIn();
       allow write: if isAdmin();
     }
 
-    // Explicitly allow reading for school profile without login if needed for landing page
+    // School profile is read-only for public if needed, write for admin
     match /schoolProfile/{id} {
       allow read: if true;
-    }
-    
-    // Additional granular rules if needed in the future
-    match /savingsTransactions/{id} {
-      allow read: if isSignedIn();
       allow write: if isAdmin();
     }
 
-    match /externalSavers/{id} {
+    // Specific rules for savings transactions to allow listing
+    match /savingsTransactions/{id} {
       allow read: if isSignedIn();
       allow write: if isAdmin();
     }

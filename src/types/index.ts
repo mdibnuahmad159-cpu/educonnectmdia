@@ -190,6 +190,7 @@ export type SaverType = 'student' | 'teacher' | 'external';
 export type SavingsTransaction = {
   id: string;
   saverId: string;
+  saverName: string;
   saverType: SaverType;
   type: SavingsTransactionType;
   amount: number;
