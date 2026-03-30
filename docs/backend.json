@@ -86,27 +86,27 @@
   },
   "firestore": {
     "/admins/{adminId}": {
-      "schema": { "$ref": "#/entities/Admin" },
+      "schema": { "$ref": "#/backend/entities/Admin" },
       "description": "Admin users collection."
     },
     "/externalSavers/{saverId}": {
-      "schema": { "$ref": "#/entities/ExternalSaver" },
+      "schema": { "$ref": "#/backend/entities/ExternalSaver" },
       "description": "Non-internal savers."
     },
     "/savingsTransactions/{transactionId}": {
-      "schema": { "$ref": "#/entities/SavingsTransaction" },
+      "schema": { "$ref": "#/backend/entities/SavingsTransaction" },
       "description": "History of all savings movements."
     },
     "/schoolProfile/{id}": {
-      "schema": { "$ref": "#/entities/SchoolProfile" },
+      "schema": { "$ref": "#/backend/entities/SchoolProfile" },
       "description": "School settings."
     },
     "/teachers/{id}": {
-      "schema": { "$ref": "#/entities/Teacher" },
+      "schema": { "$ref": "#/backend/entities/Teacher" },
       "description": "Teacher data."
     },
     "/students/{id}": {
-      "schema": { "$ref": "#/entities/Student" },
+      "schema": { "$ref": "#/backend/entities/Student" },
       "description": "Student data."
     }
   }
