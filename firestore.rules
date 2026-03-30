@@ -1,4 +1,3 @@
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -22,6 +21,16 @@ service cloud.firestore {
     }
 
     // Standard collections: Read if signed in, Write if admin
+    match /savingsTransactions/{id} {
+      allow get, list: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /externalSavers/{id} {
+      allow get, list: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
     match /announcements/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
     match /teachers/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
     match /students/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
@@ -33,17 +42,11 @@ service cloud.firestore {
     match /report_summaries/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
     match /certificates/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
     match /certificate_templates/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
-    match /externalSavers/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
     match /teacher_attendances/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
     match /student_attendances/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
 
     // Finance Collections
     match /sppPayments/{id} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
-    }
-
-    match /savingsTransactions/{id} {
       allow read: if isSignedIn();
       allow write: if isAdmin();
     }
