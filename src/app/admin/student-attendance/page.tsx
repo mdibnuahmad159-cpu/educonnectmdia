@@ -18,7 +18,7 @@ import {
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, parseISO } from 'date-fns';
 import { id as dfnsId } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { Loader2, Printer, FileSpreadsheet, FileText, FileDown, Users, AlertTriangle } from 'lucide-react';
+import { Loader2, Printer, FileSpreadsheet, FileText, FileDown, Users, AlertTriangle, ExternalLink } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -44,7 +44,6 @@ export default function StudentAttendancePage() {
     const firestore = useFirestore() as Firestore;
     const { toast } = useToast();
 
-    // Fix hydration issues by setting empty initial state and filling in useEffect
     const [fromDate, setFromDate] = useState<string>("");
     const [toDate, setToDate] = useState<string>("");
     const [selectedClass, setSelectedClass] = useState<string>("0");
@@ -130,6 +129,13 @@ export default function StudentAttendancePage() {
             };
         });
     }, [sortedStudents, daysInRange, attendanceMap]);
+
+    // Helper to extract index link from error message
+    const indexLink = useMemo(() => {
+        if (!attendanceError) return null;
+        const match = attendanceError.message.match(/https:\/\/console\.firebase\.google\.com[^\s]*/);
+        return match ? match[0] : null;
+    }, [attendanceError]);
 
     const handleExport = (formatType: 'excel' | 'pdf') => {
       if (!sortedStudents.length || !fromDate || !toDate) {
@@ -312,12 +318,31 @@ export default function StudentAttendancePage() {
                     </div>
 
                     {attendanceError && (
-                        <div className="mb-4 p-4 rounded-md bg-destructive/10 text-destructive flex items-center gap-3">
-                            <AlertTriangle className="h-5 w-5" />
-                            <div className="text-xs">
-                                <p className="font-bold">Gagal memuat data absensi</p>
-                                <p>{attendanceError.message}</p>
+                        <div className="mb-4 p-4 rounded-md bg-destructive/10 text-destructive flex flex-col gap-3">
+                            <div className="flex items-center gap-3">
+                                <AlertTriangle className="h-5 w-5" />
+                                <div className="text-xs">
+                                    <p className="font-bold">Gagal memuat data absensi</p>
+                                    <p>{attendanceError.message.split('\n')[0]}</p>
+                                </div>
                             </div>
+                            {indexLink && (
+                                <div className="mt-2 p-3 bg-destructive/20 rounded border border-destructive/30">
+                                    <p className="text-[10px] font-bold uppercase mb-2">Tindakan Diperlukan:</p>
+                                    <p className="text-[11px] mb-3 leading-relaxed">Kueri ini memerlukan indeks komposit. Silakan klik tombol di bawah untuk membuatnya di Konsol Firebase Anda.</p>
+                                    <Button 
+                                        variant="destructive" 
+                                        size="sm" 
+                                        className="h-8 gap-2 text-[10px] font-bold"
+                                        asChild
+                                    >
+                                        <a href={indexLink} target="_blank" rel="noopener noreferrer">
+                                            <ExternalLink className="h-3.5 w-3.5" />
+                                            BUAT INDEKS SEKARANG
+                                        </a>
+                                    </Button>
+                                </div>
+                            )}
                         </div>
                     )}
 

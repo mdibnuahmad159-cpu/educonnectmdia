@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
@@ -18,7 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, Calendar, Users } from 'lucide-react';
+import { Loader2, Calendar, Users, AlertTriangle, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { saveStudentAttendanceBatch } from '@/lib/firebase-helpers';
 
@@ -42,7 +41,7 @@ export function StudentAttendanceCard() {
         if (!firestore) return null;
         return query(collection(firestore, 'student_attendances'), where('date', '==', selectedDate), where('kelas', '==', Number(selectedClass)));
     }, [firestore, selectedDate, selectedClass]);
-    const { data: currentAttendance, loading: loadingAttendance } = useCollection<StudentAttendance>(attendanceQuery);
+    const { data: currentAttendance, loading: loadingAttendance, error: attendanceError } = useCollection<StudentAttendance>(attendanceQuery);
 
     const [attendance, setAttendance] = useState<Record<string, AttendanceStatus>>({});
     const [isSaving, setIsSaving] = useState(false);
@@ -63,6 +62,12 @@ export function StudentAttendanceCard() {
         if (!students) return [];
         return [...students].sort((a,b) => a.name.localeCompare(b.name));
     }, [students]);
+
+    const indexLink = useMemo(() => {
+        if (!attendanceError) return null;
+        const match = attendanceError.message.match(/https:\/\/console\.firebase\.google\.com[^\s]*/);
+        return match ? match[0] : null;
+    }, [attendanceError]);
 
     const handleStatusChange = (studentId: string, status: AttendanceStatus) => {
         setAttendance(prev => ({ ...prev, [studentId]: status }));
@@ -130,6 +135,27 @@ export function StudentAttendanceCard() {
                 </div>
             </CardHeader>
             <CardContent>
+                {attendanceError && (
+                    <div className="mb-4 p-3 rounded border border-destructive/20 bg-destructive/5 text-destructive text-[10px]">
+                        <div className="flex items-center gap-2 mb-2">
+                            <AlertTriangle className="h-3 w-3" />
+                            <span className="font-bold">Eror Kueri Database</span>
+                        </div>
+                        {indexLink ? (
+                            <>
+                                <p className="mb-2 leading-relaxed">Indeks komposit diperlukan untuk kueri ini. Harap buat melalui tombol di bawah.</p>
+                                <Button variant="destructive" size="xs" className="h-7 px-2 text-[9px] gap-1" asChild>
+                                    <a href={indexLink} target="_blank" rel="noopener noreferrer">
+                                        <ExternalLink className="h-3 w-3" /> BUAT INDEKS
+                                    </a>
+                                </Button>
+                            </>
+                        ) : (
+                            <p>{attendanceError.message}</p>
+                        )}
+                    </div>
+                )}
+
                 {isLoading ? (
                     <div className="flex justify-center items-center h-24">
                         <Loader2 className="h-6 w-6 animate-spin text-primary" />
