@@ -24,26 +24,28 @@ service cloud.firestore {
     
     match /savingsTransactions/{id} {
       allow read: if isSignedIn();
+      allow write: if isAdmin();
     }
 
     match /externalSavers/{id} {
       allow read: if isSignedIn();
+      allow write: if isAdmin();
     }
 
-    match /teachers/{id} { allow read: if isSignedIn(); }
-    match /students/{id} { allow read: if isSignedIn(); }
-    match /schoolProfile/{id} { allow read: if true; }
-    match /announcements/{id} { allow read: if isSignedIn(); }
-    match /classes/{id} { allow read: if isSignedIn(); }
-    match /curriculum/{id} { allow read: if isSignedIn(); }
-    match /alumni/{id} { allow read: if isSignedIn(); }
-    match /schedules/{id} { allow read: if isSignedIn(); }
-    match /grades/{id} { allow read: if isSignedIn(); }
-    match /report_summaries/{id} { allow read: if isSignedIn(); }
-    match /certificates/{id} { allow read: if isSignedIn(); }
-    match /certificate_templates/{id} { allow read: if isSignedIn(); }
-    match /teacher_attendances/{id} { allow read: if isSignedIn(); }
-    match /student_attendances/{id} { allow read: if isSignedIn(); }
-    match /sppPayments/{id} { allow read: if isSignedIn(); }
+    match /teachers/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
+    match /students/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
+    match /schoolProfile/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /announcements/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
+    match /classes/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
+    match /curriculum/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
+    match /alumni/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
+    match /schedules/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
+    match /grades/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
+    match /report_summaries/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
+    match /certificates/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
+    match /certificate_templates/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
+    match /teacher_attendances/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
+    match /student_attendances/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
+    match /sppPayments/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
   }
 }
