@@ -30,7 +30,8 @@ import {
   Megaphone,
   UserCheck,
   Award,
-  UsersRound
+  UsersRound,
+  ReceiptText
 } from "lucide-react";
 import type { Teacher, Student } from "@/types";
 import { TeacherAttendanceCard } from "./components/teacher-attendance-card";
@@ -140,11 +141,12 @@ export default function DashboardPage() {
         </TabsContent>
         <TabsContent value="keuangan">
             <Card>
-                <CardContent className="grid grid-cols-3 sm:grid-cols-4 gap-2 p-3">
-                    <NavLink href="/admin/spp" icon={CreditCard} label="SPP" />
+                <CardContent className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 p-3">
+                    <NavLink href="/admin/spp" icon={CreditCard} label="Input SPP" />
+                    <NavLink href="/admin/riwayat-spp" icon={ReceiptText} label="Riwayat SPP" />
                     <NavLink href="/admin/tabungan" icon={PiggyBank} label="Tabungan" />
+                    <NavLink href="/admin/riwayat-tabungan" icon={History} label="Riwayat Tabungan" />
                     <NavLink href="/admin/penabung-luar" icon={UsersRound} label="Penabung Luar" />
-                    <NavLink href="/admin/riwayat-transaksi" icon={History} label="Riwayat Transaksi" />
                 </CardContent>
             </Card>
         </TabsContent>
