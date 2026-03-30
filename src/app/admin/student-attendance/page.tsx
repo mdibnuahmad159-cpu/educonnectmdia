@@ -67,7 +67,7 @@ export default function StudentAttendancePage() {
         if (!firestore) return null;
         return query(collection(firestore, 'students'), where('kelas', '==', Number(selectedClass)));
     }, [firestore, selectedClass]);
-    const { data: students, loading: loadingStudents } = useCollection<Student>(studentsQuery);
+    const { data: students, isLoading: loadingStudents } = useCollection<Student>(studentsQuery);
     
     const attendanceQuery = useMemoFirebase(() => {
         if (!firestore || !fromDate || !toDate) return null;
@@ -78,7 +78,7 @@ export default function StudentAttendancePage() {
             where('date', '<=', toDate)
         );
     }, [firestore, fromDate, toDate, selectedClass]);
-    const { data: attendanceData, loading: loadingAttendance, error: attendanceError } = useCollection<StudentAttendance>(attendanceQuery);
+    const { data: attendanceData, isLoading: loadingAttendance, error: attendanceError } = useCollection<StudentAttendance>(attendanceQuery);
     
     const attendanceMap = useMemo(() => {
         const map = new Map<string, StudentAttendance['status']>();
@@ -311,7 +311,7 @@ export default function StudentAttendancePage() {
                             <AlertTriangle className="h-5 w-5" />
                             <div className="text-xs">
                                 <p className="font-bold">Gagal memuat data absensi</p>
-                                <p>Pastikan Anda memiliki izin akses atau coba muat ulang halaman.</p>
+                                <p>Pastikan koneksi stabil atau coba klik tautan indeks yang muncul di konsol jika tersedia.</p>
                             </div>
                         </div>
                     )}

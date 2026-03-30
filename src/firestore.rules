@@ -3,73 +3,27 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions
+    // Fungsi pembantu untuk mengecek status login
     function isSignedIn() {
       return request.auth != null;
     }
 
+    // Fungsi pembantu untuk mengecek apakah user adalah admin utama
     function isAdmin() {
-      return isSignedIn() && (
-        request.auth.token.email == 'mdibnuahmad159@gmail.com'
-      );
+      return isSignedIn() && request.auth.token.email == 'mdibnuahmad159@gmail.com';
     }
 
-    // Default rules for authenticated users
+    // Aturan Global: 
+    // 1. Semua pengguna yang login bisa membaca data (untuk guru dan wali murid)
+    // 2. Hanya admin utama yang bisa menambah/mengubah/menghapus data
     match /{allPaths=**} {
       allow read: if isSignedIn();
       allow write: if isAdmin();
     }
 
-    // Explicit rules for attendance collections to ensure "list" operations work
-    match /student_attendances/{id} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
-    }
-
-    match /teacher_attendances/{id} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
-    }
-
-    // School profile is read-only for public
+    // Pengecualian khusus: Profil sekolah bisa dibaca publik (untuk halaman login)
     match /schoolProfile/{id} {
       allow read: if true;
-      allow write: if isAdmin();
-    }
-    
-    match /savingsTransactions/{id} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
-    }
-
-    match /sppPayments/{id} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
-    }
-    
-    match /announcements/{id} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
-    }
-    
-    match /grades/{id} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
-    }
-    
-    match /report_summaries/{id} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
-    }
-    
-    match /certificates/{id} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
-    }
-
-    match /certificate_templates/{id} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
     }
   }
 }
