@@ -3,8 +3,8 @@
 
 import { useState, useMemo } from "react";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
-import { collection, query, Firestore, orderBy, deleteDoc, doc } from "firebase/firestore";
-import type { SavingsTransaction } from "@/types";
+import { collection, query, Firestore, orderBy, deleteDoc, doc, where } from "firebase/firestore";
+import type { SavingsTransaction, Student, Teacher, ExternalSaver, SaverType } from "@/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,7 +20,10 @@ import {
     FileText,
     ArrowUpCircle,
     ArrowDownCircle,
-    User
+    User,
+    Users,
+    Wallet,
+    X
 } from "lucide-react";
 import {
   Select,
@@ -65,51 +68,82 @@ export default function RiwayatTabunganPage() {
     const firestore = useFirestore() as Firestore;
     const { toast } = useToast();
 
+    // Filters matching the Tabungan page flow
+    const [saverType, setSaverType] = useState<SaverType | "all">("all");
+    const [selectedClass, setSelectedClass] = useState<string>("all");
+    const [selectedSaverId, setSelectedSaverId] = useState<string>("all");
+    
     const [searchTerm, setSearchTerm] = useState("");
     const [dateFilter, setDateFilter] = useState<string>("");
-    const [nameFilter, setNameFilter] = useState<string>("all");
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [transactionToDelete, setTransactionToDelete] = useState<SavingsTransaction | null>(null);
 
+    // Data fetching for filters
+    const studentsQuery = useMemoFirebase(() => {
+        if (!firestore || (saverType !== "student" && saverType !== "all")) return null;
+        if (selectedClass !== "all") {
+            return query(collection(firestore, "students"), where("kelas", "==", Number(selectedClass)));
+        }
+        return collection(firestore, "students");
+    }, [firestore, saverType, selectedClass]);
+    const { data: students } = useCollection<Student>(studentsQuery);
+
+    const teachersQuery = useMemoFirebase(() => {
+        if (!firestore || (saverType !== "teacher" && saverType !== "all")) return null;
+        return collection(firestore, "teachers");
+    }, [firestore, saverType]);
+    const { data: teachers } = useCollection<Teacher>(teachersQuery);
+
+    const externalSaversQuery = useMemoFirebase(() => {
+        if (!firestore || (saverType !== "external" && saverType !== "all")) return null;
+        return collection(firestore, "externalSavers");
+    }, [firestore, saverType]);
+    const { data: externalSavers } = useCollection<ExternalSaver>(externalSaversQuery);
+
+    // Fetch Transactions
     const savingsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
         return query(collection(firestore, "savingsTransactions"), orderBy("date", "desc"));
     }, [firestore]);
     const { data: savings, loading } = useCollection<SavingsTransaction>(savingsQuery);
 
-    const uniqueNames = useMemo(() => {
-        const names = new Set<string>();
-        if (savings) {
-            savings.forEach(t => {
-                if (t.saverName) names.add(t.saverName);
-            });
-        }
-        return Array.from(names).sort();
-    }, [savings]);
-
     const filteredTransactions = useMemo(() => {
         if (!savings) return [];
         return savings.filter(t => {
+            // Filter by Saver ID if selected
+            const matchesSaver = selectedSaverId === "all" || t.saverId === selectedSaverId;
+            
+            // Filter by Saver Type if selected
+            const matchesType = saverType === "all" || t.saverType === saverType;
+
+            // Filter by Search Term (Name or Notes)
             const matchesSearch = t.saverName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                                  (t.notes && t.notes.toLowerCase().includes(searchTerm.toLowerCase()));
             
-            const matchesName = nameFilter === "all" || t.saverName === nameFilter;
-            
+            // Filter by Date
             let matchesDate = true;
             if (dateFilter) {
                 const tDate = format(parseISO(t.date), "yyyy-MM-dd");
                 matchesDate = tDate === dateFilter;
             }
 
-            return matchesSearch && matchesName && matchesDate;
+            return matchesSaver && matchesType && matchesSearch && matchesDate;
         });
-    }, [savings, searchTerm, nameFilter, dateFilter]);
+    }, [savings, saverType, selectedSaverId, searchTerm, dateFilter]);
 
     const stats = useMemo(() => {
         const totalIn = filteredTransactions.filter(t => t.type === 'deposit').reduce((sum, t) => sum + t.amount, 0);
         const totalOut = filteredTransactions.filter(t => t.type === 'withdraw').reduce((sum, t) => sum + t.amount, 0);
         return { totalIn, totalOut };
     }, [filteredTransactions]);
+
+    const resetFilters = () => {
+        setSaverType("all");
+        setSelectedClass("all");
+        setSelectedSaverId("all");
+        setSearchTerm("");
+        setDateFilter("");
+    };
 
     const handleDeleteClick = (transaction: SavingsTransaction) => {
         setTransactionToDelete(transaction);
@@ -143,7 +177,7 @@ export default function RiwayatTabunganPage() {
         const worksheet = XLSX.utils.json_to_sheet(data);
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Riwayat Tabungan");
-        XLSX.writeFile(workbook, `Riwayat_Tabungan_${nameFilter === 'all' ? 'Semua' : nameFilter.replace(/\s+/g, '_')}_${format(new Date(), "yyyyMMdd")}.xlsx`);
+        XLSX.writeFile(workbook, `Riwayat_Tabungan_${format(new Date(), "yyyyMMdd")}.xlsx`);
     };
 
     const handleExportPdf = () => {
@@ -151,8 +185,8 @@ export default function RiwayatTabunganPage() {
         const doc = new jsPDF();
         doc.text(`Riwayat Tabungan Madrasah`, 14, 15);
         doc.setFontSize(10);
-        doc.text(`Nama: ${nameFilter === 'all' ? 'Semua' : nameFilter}`, 14, 22);
-        doc.text(`Periode: ${dateFilter ? format(parseISO(dateFilter), "dd MMMM yyyy", {locale: dfnsId}) : 'Semua Waktu'}`, 14, 27);
+        doc.text(`Total Setoran: Rp ${stats.totalIn.toLocaleString()}`, 14, 22);
+        doc.text(`Total Penarikan: Rp ${stats.totalOut.toLocaleString()}`, 14, 27);
 
         (doc as any).autoTable({
             head: [['Tgl', 'Nama Penabung', 'Jenis', 'Nominal', 'Ket']],
@@ -168,7 +202,7 @@ export default function RiwayatTabunganPage() {
             headStyles: { fillColor: [22, 101, 52] }
         });
 
-        doc.save(`Riwayat_Tabungan_${nameFilter}.pdf`);
+        doc.save(`Riwayat_Tabungan.pdf`);
     };
 
     const handlePrint = () => {
@@ -203,8 +237,8 @@ export default function RiwayatTabunganPage() {
                 </head>
                 <body>
                     <h1>Riwayat Tabungan Madrasah</h1>
-                    <p>Nama: ${nameFilter === 'all' ? 'Semua Penabung' : nameFilter}</p>
-                    <p>Periode: ${dateFilter ? format(parseISO(dateFilter), "dd MMMM yyyy", {locale: dfnsId}) : 'Semua Waktu'}</p>
+                    <p>Total Setoran: <strong>Rp ${stats.totalIn.toLocaleString()}</strong></p>
+                    <p>Total Penarikan: <strong>Rp ${stats.totalOut.toLocaleString()}</strong></p>
                     <table>
                         <thead>
                             <tr>
@@ -232,7 +266,7 @@ export default function RiwayatTabunganPage() {
                     <h1 className="text-xl font-headline text-primary flex items-center gap-2">
                         <PiggyBank className="h-6 w-6" /> Riwayat Tabungan
                     </h1>
-                    <p className="text-xs text-muted-foreground">Catatan mutasi simpanan siswa, guru, dan penabung umum.</p>
+                    <p className="text-xs text-muted-foreground">Catatan mutasi simpanan seluruh penabung.</p>
                 </div>
                 <div className="flex items-center gap-2">
                     <DropdownMenu>
@@ -279,49 +313,93 @@ export default function RiwayatTabunganPage() {
 
             <Card className="border-none shadow-sm overflow-hidden">
                 <CardHeader className="pb-3 border-b bg-muted/5">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                        {/* 1. Saver Type */}
                         <div className="relative">
-                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input 
-                                placeholder="Cari penabung atau catatan..." 
-                                className="pl-9 h-9 text-xs bg-white"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                        </div>
-                        
-                        <div className="relative">
-                            <User className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
-                            <Select value={nameFilter} onValueChange={setNameFilter}>
+                            <Wallet className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
+                            <Select value={saverType} onValueChange={(v) => { setSaverType(v as SaverType | "all"); setSelectedSaverId("all"); }}>
                                 <SelectTrigger className="pl-9 h-9 text-xs bg-white">
-                                    <SelectValue placeholder="Pilih Nama Penabung" />
+                                    <SelectValue placeholder="Kategori" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">Semua Penabung</SelectItem>
-                                    {uniqueNames.map(name => (
-                                        <SelectItem key={name} value={name}>{name}</SelectItem>
+                                    <SelectItem value="all">Semua Kategori</SelectItem>
+                                    <SelectItem value="student">Siswa</SelectItem>
+                                    <SelectItem value="teacher">Guru</SelectItem>
+                                    <SelectItem value="external">Luar</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {/* 2. Class (if Student) */}
+                        <div className={cn("relative transition-all", (saverType === 'student' || saverType === 'all') ? "opacity-100" : "opacity-30 pointer-events-none")}>
+                            <Users className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
+                            <Select value={selectedClass} onValueChange={(v) => { setSelectedClass(v); setSelectedSaverId("all"); }}>
+                                <SelectTrigger className="pl-9 h-9 text-xs bg-white">
+                                    <SelectValue placeholder="Kelas" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Semua Kelas</SelectItem>
+                                    {[...Array(7).keys()].map(i => (
+                                        <SelectItem key={i} value={String(i)}>Kelas {i}</SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
                         </div>
 
+                        {/* 3. Saver Name */}
+                        <div className="relative">
+                            <User className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
+                            <Select value={selectedSaverId} onValueChange={setSelectedSaverId}>
+                                <SelectTrigger className="pl-9 h-9 text-xs bg-white">
+                                    <SelectValue placeholder="Pilih Nama" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Semua Penabung</SelectItem>
+                                    {saverType === 'student' && students?.sort((a,b) => a.name.localeCompare(b.name)).map(s => (
+                                        <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                                    ))}
+                                    {saverType === 'teacher' && teachers?.sort((a,b) => a.name.localeCompare(b.name)).map(t => (
+                                        <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                                    ))}
+                                    {saverType === 'external' && externalSavers?.sort((a,b) => a.name.localeCompare(b.name)).map(e => (
+                                        <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>
+                                    ))}
+                                    {saverType === 'all' && (
+                                        <>
+                                            {students?.map(s => <SelectItem key={s.id} value={s.id}>{s.name} (S)</SelectItem>)}
+                                            {teachers?.map(t => <SelectItem key={t.id} value={t.id}>{t.name} (G)</SelectItem>)}
+                                            {externalSavers?.map(e => <SelectItem key={e.id} value={e.id}>{e.name} (L)</SelectItem>)}
+                                        </>
+                                    )}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {/* 4. Date Filter */}
+                        <div className="relative">
+                            <Calendar className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                            <Input 
+                                type="date" 
+                                className="pl-9 h-9 text-xs bg-white"
+                                value={dateFilter}
+                                onChange={(e) => setDateFilter(e.target.value)}
+                            />
+                        </div>
+
+                        {/* 5. Search & Reset */}
                         <div className="flex items-center gap-2">
                             <div className="relative flex-1">
-                                <Calendar className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
                                 <Input 
-                                    type="date" 
+                                    placeholder="Cari catatan..." 
                                     className="pl-9 h-9 text-xs bg-white"
-                                    value={dateFilter}
-                                    onChange={(e) => setDateFilter(e.target.value)}
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
                                 />
                             </div>
-                            {(dateFilter || nameFilter !== "all" || searchTerm) && (
-                                <Button variant="ghost" size="xs" className="h-9 px-2 text-destructive" 
-                                    onClick={() => { setDateFilter(""); setNameFilter("all"); setSearchTerm(""); }}
-                                >
-                                    Reset
-                                </Button>
-                            )}
+                            <Button variant="ghost" size="xs" className="h-9 px-2 text-destructive hover:bg-destructive/10" onClick={resetFilters}>
+                                <X className="h-4 w-4" />
+                            </Button>
                         </div>
                     </div>
                 </CardHeader>
@@ -353,6 +431,9 @@ export default function RiwayatTabunganPage() {
                                             </TableCell>
                                             <TableCell className="text-[11px] font-bold">
                                                 {t.saverName}
+                                                <span className="block text-[8px] text-muted-foreground font-normal uppercase tracking-tighter">
+                                                    {t.saverType === 'student' ? 'Siswa' : t.saverType === 'teacher' ? 'Guru' : 'Umum'}
+                                                </span>
                                             </TableCell>
                                             <TableCell className={cn(
                                                 "text-[11px] font-bold text-right",
@@ -386,7 +467,7 @@ export default function RiwayatTabunganPage() {
                                 ) : (
                                     <TableRow>
                                         <TableCell colSpan={6} className="h-32 text-center text-muted-foreground italic text-xs">
-                                            Tidak ada data transaksi tabungan.
+                                            Tidak ada data transaksi tabungan yang sesuai filter.
                                         </TableCell>
                                     </TableRow>
                                 )}
