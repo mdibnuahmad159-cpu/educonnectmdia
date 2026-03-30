@@ -128,11 +128,13 @@
         "id": { "type": "string" },
         "studentId": { "type": "string" },
         "studentName": { "type": "string" },
+        "classId": { "type": "string" },
         "month": { "type": "number" },
         "year": { "type": "number" },
         "amountPaid": { "type": "number" },
         "status": { "type": "string" },
-        "paymentDate": { "type": "string" }
+        "paymentDate": { "type": "string" },
+        "notes": { "type": "string" }
       }
     },
     "Announcement": {
@@ -143,6 +145,8 @@
         "id": { "type": "string" },
         "title": { "type": "string" },
         "content": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "linkUrl": { "type": "string" },
         "target": { "type": "string" },
         "createdAt": { "type": "string" }
       }
@@ -183,7 +187,8 @@
         "id": { "type": "string" },
         "subjectCode": { "type": "string" },
         "subjectName": { "type": "string" },
-        "classLevel": { "type": "number" }
+        "classLevel": { "type": "number" },
+        "bookName": { "type": "string" }
       }
     },
     "Schedule": {
@@ -193,7 +198,8 @@
       "properties": {
         "id": { "type": "string" },
         "classLevel": { "type": "number" },
-        "academicYear": { "type": "string" }
+        "academicYear": { "type": "string" },
+        "type": { "type": "string" }
       }
     },
     "Certificate": {
@@ -205,7 +211,10 @@
         "studentId": { "type": "string" },
         "studentName": { "type": "string" },
         "rank": { "type": "string" },
-        "category": { "type": "string" }
+        "category": { "type": "string" },
+        "competitionName": { "type": "string" },
+        "date": { "type": "string" },
+        "academicYear": { "type": "string" }
       }
     },
     "CertificateTemplate": {
@@ -225,7 +234,9 @@
         "id": { "type": "string" },
         "nis": { "type": "string" },
         "name": { "type": "string" },
-        "tahunLulus": { "type": "string" }
+        "tahunLulus": { "type": "string" },
+        "address": { "type": "string" },
+        "noWa": { "type": "string" }
       }
     }
   },
