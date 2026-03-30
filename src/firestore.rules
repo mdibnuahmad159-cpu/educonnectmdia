@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -14,26 +15,23 @@ service cloud.firestore {
       );
     }
 
-    // Publicly readable school profile
-    match /schoolProfile/{id} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    // Standard collections: Read if signed in, Write if admin
+    // Explicitly allow reading for all authenticated users on major collections
+    // to prevent listing errors for queries.
+    
     match /savingsTransactions/{id} {
-      allow get, list: if isSignedIn();
+      allow read: if isSignedIn();
       allow write: if isAdmin();
     }
 
     match /externalSavers/{id} {
-      allow get, list: if isSignedIn();
+      allow read: if isSignedIn();
       allow write: if isAdmin();
     }
 
-    match /announcements/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
     match /teachers/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
     match /students/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
+    match /schoolProfile/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /announcements/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
     match /classes/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
     match /curriculum/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
     match /alumni/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
@@ -44,12 +42,7 @@ service cloud.firestore {
     match /certificate_templates/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
     match /teacher_attendances/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
     match /student_attendances/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
-
-    // Finance Collections
-    match /sppPayments/{id} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
-    }
+    match /sppPayments/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
 
     // Global admin fallback
     match /{allPaths=**} {

@@ -19,7 +19,8 @@
         "name": { "type": "string" },
         "phoneNumber": { "type": "string" },
         "address": { "type": "string" },
-        "notes": { "type": "string" }
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
       }
     },
     "SavingsTransaction": {
@@ -43,7 +44,13 @@
       "properties": {
         "id": { "type": "string" },
         "email": { "type": "string" },
-        "name": { "type": "string" }
+        "name": { "type": "string" },
+        "jabatan": { "type": "string" },
+        "noWa": { "type": "string" },
+        "nik": { "type": "string" },
+        "pendidikan": { "type": "string" },
+        "ponpes": { "type": "string" },
+        "alamat": { "type": "string" }
       }
     },
     "Student": {
@@ -54,7 +61,23 @@
         "id": { "type": "string" },
         "nis": { "type": "string" },
         "name": { "type": "string" },
-        "kelas": { "type": "number" }
+        "kelas": { "type": "number" },
+        "password": { "type": "string" },
+        "address": { "type": "string" },
+        "noWa": { "type": "string" },
+        "reportUrl": { "type": "string" }
+      }
+    },
+    "SchoolProfile": {
+      "title": "SchoolProfile",
+      "type": "object",
+      "description": "Main school configuration.",
+      "properties": {
+        "namaMadrasah": { "type": "string" },
+        "alamat": { "type": "string" },
+        "logoMadrasahUrl": { "type": "string" },
+        "activeAcademicYear": { "type": "string" },
+        "defaultSppAmount": { "type": "number" }
       }
     }
   },
@@ -74,6 +97,18 @@
       "/savingsTransactions/{transactionId}": {
         "schema": "#/entities/SavingsTransaction",
         "description": "History of all savings movements."
+      },
+      "/schoolProfile/{id}": {
+        "schema": "#/entities/SchoolProfile",
+        "description": "School settings."
+      },
+      "/teachers/{id}": {
+        "schema": "#/entities/Teacher",
+        "description": "Teacher data."
+      },
+      "/students/{id}": {
+        "schema": "#/entities/Student",
+        "description": "Student data."
       }
     }
   }
