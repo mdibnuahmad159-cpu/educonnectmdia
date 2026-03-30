@@ -51,7 +51,9 @@
         "nik": { "type": "string" },
         "pendidikan": { "type": "string" },
         "ponpes": { "type": "string" },
-        "alamat": { "type": "string" }
+        "alamat": { "type": "string" },
+        "avatarUrl": { "type": "string" },
+        "dokumenUrl": { "type": "string" }
       }
     },
     "Student": {
@@ -66,7 +68,11 @@
         "password": { "type": "string" },
         "address": { "type": "string" },
         "noWa": { "type": "string" },
-        "reportUrl": { "type": "string" }
+        "reportUrl": { "type": "string" },
+        "avatarUrl": { "type": "string" },
+        "nik": { "type": "string" },
+        "gender": { "type": "string" },
+        "dateOfBirth": { "type": "string" }
       }
     },
     "SchoolProfile": {
@@ -75,6 +81,7 @@
       "description": "Main school configuration.",
       "properties": {
         "namaMadrasah": { "type": "string" },
+        "namaYayasan": { "type": "string" },
         "alamat": { "type": "string" },
         "logoMadrasahUrl": { "type": "string" },
         "activeAcademicYear": { "type": "string" },
@@ -118,7 +125,77 @@
         "month": { "type": "number" },
         "year": { "type": "number" },
         "amountPaid": { "type": "number" },
-        "status": { "type": "string" }
+        "status": { "type": "string" },
+        "paymentDate": { "type": "string" }
+      }
+    },
+    "Announcement": {
+      "title": "Announcement",
+      "type": "object",
+      "description": "News and announcements.",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "target": { "type": "string" },
+        "createdAt": { "type": "string" }
+      }
+    },
+    "Grade": {
+      "title": "Grade",
+      "type": "object",
+      "description": "Student subject grades.",
+      "properties": {
+        "id": { "type": "string" },
+        "studentId": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "score": { "type": "number" },
+        "type": { "type": "string" },
+        "academicYear": { "type": "string" }
+      }
+    },
+    "Curriculum": {
+      "title": "Curriculum",
+      "type": "object",
+      "description": "School subjects.",
+      "properties": {
+        "id": { "type": "string" },
+        "subjectCode": { "type": "string" },
+        "subjectName": { "type": "string" },
+        "classLevel": { "type": "number" }
+      }
+    },
+    "Schedule": {
+      "title": "Schedule",
+      "type": "object",
+      "description": "Class schedules.",
+      "properties": {
+        "id": { "type": "string" },
+        "classLevel": { "type": "number" },
+        "academicYear": { "type": "string" }
+      }
+    },
+    "Certificate": {
+      "title": "Certificate",
+      "type": "object",
+      "description": "Student achievement awards.",
+      "properties": {
+        "id": { "type": "string" },
+        "studentId": { "type": "string" },
+        "studentName": { "type": "string" },
+        "rank": { "type": "string" },
+        "category": { "type": "string" }
+      }
+    },
+    "Alumni": {
+      "title": "Alumni",
+      "type": "object",
+      "description": "Graduated students.",
+      "properties": {
+        "id": { "type": "string" },
+        "nis": { "type": "string" },
+        "name": { "type": "string" },
+        "tahunLulus": { "type": "string" }
       }
     }
   },
@@ -161,6 +238,30 @@
     "/sppPayments/{id}": {
       "schema": { "$ref": "#/backend/entities/SPPPayment" },
       "description": "SPP payments history."
+    },
+    "/announcements/{id}": {
+      "schema": { "$ref": "#/backend/entities/Announcement" },
+      "description": "Announcements collection."
+    },
+    "/grades/{id}": {
+      "schema": { "$ref": "#/backend/entities/Grade" },
+      "description": "Student grades."
+    },
+    "/curriculum/{id}": {
+      "schema": { "$ref": "#/backend/entities/Curriculum" },
+      "description": "Subjects collection."
+    },
+    "/schedules/{id}": {
+      "schema": { "$ref": "#/backend/entities/Schedule" },
+      "description": "Class schedules."
+    },
+    "/certificates/{id}": {
+      "schema": { "$ref": "#/backend/entities/Certificate" },
+      "description": "Awards records."
+    },
+    "/alumni/{id}": {
+      "schema": { "$ref": "#/backend/entities/Alumni" },
+      "description": "Alumni collection."
     }
   }
 }
