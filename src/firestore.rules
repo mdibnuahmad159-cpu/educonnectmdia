@@ -17,11 +17,16 @@ service cloud.firestore {
 
     // Administrator has full access to everything
     match /{allPaths=**} {
-      allow read, write: if isAdmin();
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
     }
 
-    // Explicitly allow reading for all authenticated users on major collections
+    // Explicitly allow reading for school profile without login if needed for landing page
+    match /schoolProfile/{id} {
+      allow read: if true;
+    }
     
+    // Additional granular rules if needed in the future
     match /savingsTransactions/{id} {
       allow read: if isSignedIn();
       allow write: if isAdmin();
@@ -31,21 +36,5 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow write: if isAdmin();
     }
-
-    match /teachers/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
-    match /students/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
-    match /schoolProfile/{id} { allow read: if true; allow write: if isAdmin(); }
-    match /announcements/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
-    match /classes/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
-    match /curriculum/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
-    match /alumni/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
-    match /schedules/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
-    match /grades/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
-    match /report_summaries/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
-    match /certificates/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
-    match /certificate_templates/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
-    match /teacher_attendances/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
-    match /student_attendances/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
-    match /sppPayments/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
   }
 }
