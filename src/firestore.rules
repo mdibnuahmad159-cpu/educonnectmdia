@@ -11,7 +11,8 @@ service cloud.firestore {
     function isAdmin() {
       return isSignedIn() && (
         request.auth.token.email == 'mdibnuahmad159@gmail.com' ||
-        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid))
       );
     }
 
@@ -21,14 +22,29 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // School profile is read-only for public if needed, write for admin
+    // School profile is read-only for public, write for admin
     match /schoolProfile/{id} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
-    // Specific rules for savings transactions to allow listing
+    // Explicit rules for attendance to ensure queries (list) are permitted
+    match /student_attendances/{id} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /teacher_attendances/{id} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+    
     match /savingsTransactions/{id} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /sppPayments/{id} {
       allow read: if isSignedIn();
       allow write: if isAdmin();
     }

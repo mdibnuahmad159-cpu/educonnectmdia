@@ -80,6 +80,46 @@
         "activeAcademicYear": { "type": "string" },
         "defaultSppAmount": { "type": "number" }
       }
+    },
+    "StudentAttendance": {
+      "title": "StudentAttendance",
+      "type": "object",
+      "description": "Daily attendance for students.",
+      "properties": {
+        "id": { "type": "string" },
+        "studentId": { "type": "string" },
+        "studentName": { "type": "string" },
+        "nis": { "type": "string" },
+        "kelas": { "type": "number" },
+        "date": { "type": "string" },
+        "status": { "type": "string", "enum": ["Hadir", "Sakit", "Izin", "Alpa"] }
+      }
+    },
+    "TeacherAttendance": {
+      "title": "TeacherAttendance",
+      "type": "object",
+      "description": "Daily attendance for teachers.",
+      "properties": {
+        "id": { "type": "string" },
+        "teacherId": { "type": "string" },
+        "teacherName": { "type": "string" },
+        "date": { "type": "string" },
+        "status": { "type": "string", "enum": ["Hadir", "Sakit", "Izin", "Alpa"] }
+      }
+    },
+    "SPPPayment": {
+      "title": "SPPPayment",
+      "type": "object",
+      "description": "Monthly SPP payment records.",
+      "properties": {
+        "id": { "type": "string" },
+        "studentId": { "type": "string" },
+        "studentName": { "type": "string" },
+        "month": { "type": "number" },
+        "year": { "type": "number" },
+        "amountPaid": { "type": "number" },
+        "status": { "type": "string" }
+      }
     }
   },
   "auth": {
@@ -109,6 +149,18 @@
     "/students/{id}": {
       "schema": { "$ref": "#/backend/entities/Student" },
       "description": "Student data."
+    },
+    "/student_attendances/{id}": {
+      "schema": { "$ref": "#/backend/entities/StudentAttendance" },
+      "description": "Student attendance history."
+    },
+    "/teacher_attendances/{id}": {
+      "schema": { "$ref": "#/backend/entities/TeacherAttendance" },
+      "description": "Teacher attendance history."
+    },
+    "/sppPayments/{id}": {
+      "schema": { "$ref": "#/backend/entities/SPPPayment" },
+      "description": "SPP payments history."
     }
   }
 }
