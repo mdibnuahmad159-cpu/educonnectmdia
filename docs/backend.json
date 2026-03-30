@@ -82,10 +82,16 @@
       "properties": {
         "namaMadrasah": { "type": "string" },
         "namaYayasan": { "type": "string" },
+        "nsdt": { "type": "string" },
         "alamat": { "type": "string" },
         "logoMadrasahUrl": { "type": "string" },
+        "logoYayasanUrl": { "type": "string" },
+        "kopSuratUrl": { "type": "string" },
         "activeAcademicYear": { "type": "string" },
-        "defaultSppAmount": { "type": "number" }
+        "defaultSppAmount": { "type": "number" },
+        "visi": { "type": "string" },
+        "misi": { "type": "string" },
+        "sejarahSingkat": { "type": "string" }
       }
     },
     "StudentAttendance": {
@@ -154,6 +160,21 @@
         "academicYear": { "type": "string" }
       }
     },
+    "ReportSummary": {
+      "title": "ReportSummary",
+      "type": "object",
+      "description": "End of semester summaries.",
+      "properties": {
+        "id": { "type": "string" },
+        "studentId": { "type": "string" },
+        "academicYear": { "type": "string" },
+        "semester": { "type": "string" },
+        "status": { "type": "string" },
+        "sakit": { "type": "number" },
+        "izin": { "type": "number" },
+        "alpa": { "type": "number" }
+      }
+    },
     "Curriculum": {
       "title": "Curriculum",
       "type": "object",
@@ -185,6 +206,15 @@
         "studentName": { "type": "string" },
         "rank": { "type": "string" },
         "category": { "type": "string" }
+      }
+    },
+    "CertificateTemplate": {
+      "title": "CertificateTemplate",
+      "type": "object",
+      "description": "Background images for certificates.",
+      "properties": {
+        "id": { "type": "string" },
+        "imageUrl": { "type": "string" }
       }
     },
     "Alumni": {
@@ -247,6 +277,10 @@
       "schema": { "$ref": "#/backend/entities/Grade" },
       "description": "Student grades."
     },
+    "/report_summaries/{id}": {
+      "schema": { "$ref": "#/backend/entities/ReportSummary" },
+      "description": "Report summaries."
+    },
     "/curriculum/{id}": {
       "schema": { "$ref": "#/backend/entities/Curriculum" },
       "description": "Subjects collection."
@@ -258,6 +292,10 @@
     "/certificates/{id}": {
       "schema": { "$ref": "#/backend/entities/Certificate" },
       "description": "Awards records."
+    },
+    "/certificate_templates/{id}": {
+      "schema": { "$ref": "#/backend/entities/CertificateTemplate" },
+      "description": "Backgrounds for certificates."
     },
     "/alumni/{id}": {
       "schema": { "$ref": "#/backend/entities/Alumni" },

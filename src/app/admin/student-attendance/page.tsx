@@ -1,8 +1,9 @@
+
 "use client";
 
 import { useState, useMemo } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, query, where, Firestore } from 'firebase/firestore';
 import type { Student, StudentAttendance } from '@/types';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -18,7 +19,7 @@ import {
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, parseISO } from 'date-fns';
 import { id as dfnsId } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { Loader2, Printer, FileSpreadsheet, FileText, FileDown, Users } from 'lucide-react';
+import { Loader2, Printer, FileSpreadsheet, FileText, FileDown, Users, AlertTriangle } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -36,12 +37,12 @@ const getStatusColor = (status: StudentAttendance['status']) => {
         case 'Sakit': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300';
         case 'Izin': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300';
         case 'Alpa': return 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300';
-        default: return 'bg-muted/50';
+        default: return 'bg-muted/30';
     }
 };
 
 export default function StudentAttendancePage() {
-    const firestore = useFirestore();
+    const firestore = useFirestore() as Firestore;
     const { toast } = useToast();
 
     const [fromDate, setFromDate] = useState<string>(format(startOfMonth(new Date()), 'yyyy-MM-dd'));
@@ -77,7 +78,7 @@ export default function StudentAttendancePage() {
             where('date', '<=', toDate)
         );
     }, [firestore, fromDate, toDate, selectedClass]);
-    const { data: attendanceData, loading: loadingAttendance } = useCollection<StudentAttendance>(attendanceQuery);
+    const { data: attendanceData, loading: loadingAttendance, error: attendanceError } = useCollection<StudentAttendance>(attendanceQuery);
     
     const attendanceMap = useMemo(() => {
         const map = new Map<string, StudentAttendance['status']>();
@@ -305,6 +306,16 @@ export default function StudentAttendancePage() {
                         </div>
                     </div>
 
+                    {attendanceError && (
+                        <div className="mb-4 p-4 rounded-md bg-destructive/10 text-destructive flex items-center gap-3">
+                            <AlertTriangle className="h-5 w-5" />
+                            <div className="text-xs">
+                                <p className="font-bold">Gagal memuat data absensi</p>
+                                <p>Pastikan Anda memiliki izin akses atau coba muat ulang halaman.</p>
+                            </div>
+                        </div>
+                    )}
+
                     {isLoading ? (
                         <div className="flex justify-center items-center h-64">
                             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -335,7 +346,7 @@ export default function StudentAttendancePage() {
                                                         key={dateStr} 
                                                         className={cn(
                                                             "text-center text-[10px] p-0 border-r h-8",
-                                                            status ? getStatusColor(status) : 'bg-muted/30'
+                                                            status ? getStatusColor(status) : 'bg-muted/10'
                                                         )}
                                                     >
                                                         {status ? status.charAt(0) : '-'}

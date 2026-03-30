@@ -15,19 +15,12 @@ service cloud.firestore {
     }
 
     // Default rules for authenticated users
-    // Allow read for anyone signed in to ensure listing/queries work across all collections
     match /{allPaths=**} {
       allow read: if isSignedIn();
       allow write: if isAdmin();
     }
 
-    // School profile is read-only for public
-    match /schoolProfile/{id} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-    
-    // Additional explicit rules for collections used in queries to ensure no "list" method issues
+    // Explicit rules for attendance collections to ensure "list" operations work
     match /student_attendances/{id} {
       allow read: if isSignedIn();
       allow write: if isAdmin();
@@ -35,6 +28,12 @@ service cloud.firestore {
 
     match /teacher_attendances/{id} {
       allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // School profile is read-only for public
+    match /schoolProfile/{id} {
+      allow read: if true;
       allow write: if isAdmin();
     }
     
@@ -58,7 +57,17 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
     
+    match /report_summaries/{id} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+    
     match /certificates/{id} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /certificate_templates/{id} {
       allow read: if isSignedIn();
       allow write: if isAdmin();
     }
