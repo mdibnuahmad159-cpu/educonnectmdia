@@ -332,8 +332,8 @@ export default function CertificatesPage() {
                             position: absolute;
                             bottom: 60px;
                             width: 85%;
-                            display: grid;
-                            grid-template-cols: 1fr 1fr 1fr;
+                            display: flex;
+                            justify-content: space-between;
                             align-items: end;
                             padding: 0 40px;
                         }
@@ -350,11 +350,6 @@ export default function CertificatesPage() {
                         .sig-title {
                             font-size: 16pt;
                             color: #333;
-                        }
-                        .medal-container {
-                            display: flex;
-                            justify-content: center;
-                            padding-bottom: 10px;
                         }
                         .date-location {
                             text-align: center;
@@ -390,16 +385,6 @@ export default function CertificatesPage() {
                             <div class="signature">
                                 <div class="sig-name">Juliana Silva</div><br>
                                 <div class="sig-title">Kepala Madrasah</div>
-                            </div>
-                            
-                            <div class="medal-container">
-                                <svg width="90" height="90" viewBox="0 0 24 24" fill="#FFB74D" stroke="#E67E22" stroke-width="0.5">
-                                    <path d="M12 15l-2 5l2 -1l2 1l-2 -5z" />
-                                    <path d="M12 15l2 5l-2 -1l-2 1l2 -5z" fill="#E67E22" />
-                                    <circle cx="12" cy="9" r="7" fill="#FFB74D" stroke="#E67E22" stroke-width="1" />
-                                    <circle cx="12" cy="9" r="5" fill="none" stroke="#E67E22" stroke-width="0.5" />
-                                    <path d="M12 6v6M9 9h6" stroke="#E67E22" stroke-width="0.5" fill="none"/>
-                                </svg>
                             </div>
 
                             <div class="date-location">
