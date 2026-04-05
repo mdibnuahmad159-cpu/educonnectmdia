@@ -48,18 +48,25 @@ export default function ParentFinancePage() {
     const studentRef = useMemoFirebase(() => nis && firestore ? doc(firestore, "students", nis) : null, [firestore, nis]);
     const { data: student } = useDoc<Student>(studentRef);
 
+    // Fetch SPP Payments
     const sppQuery = useMemoFirebase(() => {
         if (!firestore || !nis) return null;
         return query(collection(firestore, "sppPayments"), where("studentId", "==", nis));
     }, [firestore, nis]);
     const { data: payments, loading: loadingSpp } = useCollection<SPPPayment>(sppQuery);
 
+    // Fetch Savings Transactions (The "Mutation Log")
     const savingsQuery = useMemoFirebase(() => {
         if (!firestore || !nis) return null;
-        return query(collection(firestore, "savingsTransactions"), where("saverId", "==", nis), orderBy("date", "desc"));
+        return query(
+            collection(firestore, "savingsTransactions"), 
+            where("saverId", "==", nis), 
+            orderBy("date", "desc")
+        );
     }, [firestore, nis]);
     const { data: savings, loading: loadingSavings } = useCollection<SavingsTransaction>(savingsQuery);
 
+    // Calculate Balance from all transactions
     const balance = useMemo(() => {
         if (!savings) return 0;
         return savings.reduce((acc, t) => t.type === 'deposit' ? acc + t.amount : acc - t.amount, 0);
@@ -71,6 +78,7 @@ export default function ParentFinancePage() {
         return { start, end };
     }, [activeYear]);
 
+    // Map SPP status for current academic year
     const sppMap = useMemo(() => {
         const map = new Map<number, SPPPayment>();
         if (payments && academicYears.start) {
@@ -83,9 +91,10 @@ export default function ParentFinancePage() {
         return map;
     }, [payments, academicYears]);
 
+    // Calculate SPP stats with 10-month policy
     const sppStats = useMemo(() => {
         const defaultAmount = profile?.defaultSppAmount || 50000;
-        const targetMonths = 10; // Kebijakan Admin: 10 bulan lunas setahun
+        const targetMonths = 10; // Kebijakan Lunas Tahunan
         let totalPaid = 0;
         let paidCount = 0;
 
@@ -126,12 +135,13 @@ export default function ParentFinancePage() {
                 <h1 className="text-xl font-headline font-bold text-primary">Keuangan Santri</h1>
             </div>
 
-            {/* Savings Overview */}
+            {/* Savings Overview Card */}
             <Card className="border-none shadow-sm bg-primary text-primary-foreground overflow-hidden relative">
                 <CardContent className="p-5 flex items-center justify-between relative z-10">
                     <div className="space-y-1">
-                        <p className="text-[10px] uppercase font-bold opacity-80 tracking-widest">Saldo Tabungan</p>
+                        <p className="text-[10px] uppercase font-bold opacity-80 tracking-widest">Saldo Tabungan Saat Ini</p>
                         <p className="text-2xl font-bold">Rp {balance.toLocaleString()}</p>
+                        <p className="text-[9px] opacity-70">Data sinkron dengan catatan Admin</p>
                     </div>
                     <div className="p-3 bg-white/10 rounded-full">
                         <PiggyBank className="h-6 w-6" />
@@ -180,14 +190,14 @@ export default function ParentFinancePage() {
                 </Card>
             </div>
 
-            {/* SPP Grid */}
+            {/* SPP Grid Status */}
             <Card className="border-none shadow-sm overflow-hidden">
                 <CardHeader className="p-4 pb-2 border-b bg-muted/5 flex flex-row items-center justify-between space-y-0">
                     <div>
                         <CardTitle className="text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                             <CreditCard className="h-3.5 w-3.5" /> Kontrol Pembayaran SPP
                         </CardTitle>
-                        <CardDescription className="text-[10px]">Riwayat pelunasan bulanan</CardDescription>
+                        <CardDescription className="text-[10px]">Status pelunasan iuran per bulan</CardDescription>
                     </div>
                     {sppStats.isFullPaid && (
                         <div className="flex items-center gap-1 text-[9px] font-bold text-green-600 bg-green-100 px-2 py-0.5 rounded-full uppercase">
@@ -220,46 +230,64 @@ export default function ParentFinancePage() {
                 </CardContent>
             </Card>
 
-            {/* Savings History */}
+            {/* Savings Transaction History (Mutasi) */}
             <Card className="border-none shadow-sm overflow-hidden">
-                <CardHeader className="p-4 pb-2">
+                <CardHeader className="p-4 pb-2 border-b bg-muted/5">
                     <CardTitle className="text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                         <History className="h-3.5 w-3.5" /> Riwayat Mutasi Tabungan
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 pt-0 space-y-3">
                     {savings && savings.length > 0 ? (
-                        savings.map((t) => (
-                            <div key={t.id} className="flex items-center justify-between p-2 rounded-lg bg-muted/20">
-                                <div className="flex items-center gap-3">
-                                    <div className={cn(
-                                        "p-1.5 rounded-full",
-                                        t.type === 'deposit' ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"
-                                    )}>
-                                        {t.type === 'deposit' ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
+                        <div className="divide-y">
+                            {savings.map((t) => (
+                                <div key={t.id} className="flex items-center justify-between py-3">
+                                    <div className="flex items-center gap-3">
+                                        <div className={cn(
+                                            "p-2 rounded-full",
+                                            t.type === 'deposit' ? "bg-green-50 text-green-600" : "bg-red-50 text-red-600"
+                                        )}>
+                                            {t.type === 'deposit' ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+                                        </div>
+                                        <div>
+                                            <p className="text-[11px] font-bold uppercase leading-tight">
+                                                {t.type === 'deposit' ? 'Setoran' : 'Penarikan'}
+                                            </p>
+                                            <p className="text-[9px] text-muted-foreground font-mono mt-0.5">
+                                                {format(parseISO(t.date), "dd MMM yyyy • HH:mm", { locale: dfnsId })}
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p className="text-[10px] font-bold uppercase">{t.type === 'deposit' ? 'Setoran' : 'Penarikan'}</p>
-                                        <p className="text-[8px] text-muted-foreground font-mono">{format(parseISO(t.date), "dd/MM/yy HH:mm")}</p>
+                                    <div className="text-right">
+                                        <p className={cn(
+                                            "text-sm font-bold",
+                                            t.type === 'deposit' ? "text-green-700" : "text-red-700"
+                                        )}>
+                                            {t.type === 'deposit' ? '+' : '-'} Rp {t.amount.toLocaleString()}
+                                        </p>
+                                        {t.notes && (
+                                            <p className="text-[9px] text-muted-foreground italic truncate max-w-[120px] ml-auto">
+                                                "{t.notes}"
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
-                                <div className="text-right">
-                                    <p className={cn(
-                                        "text-[11px] font-bold",
-                                        t.type === 'deposit' ? "text-green-700" : "text-red-700"
-                                    )}>
-                                        {t.type === 'deposit' ? '+' : '-'} Rp {t.amount.toLocaleString()}
-                                    </p>
-                                    <p className="text-[8px] text-muted-foreground truncate max-w-[100px]">{t.notes || '-'}</p>
-                                </div>
-                            </div>
-                        ))
+                            ))}
+                        </div>
                     ) : (
-                        <div className="py-10 text-center text-muted-foreground italic text-[10px]">
-                            Belum ada riwayat transaksi tabungan.
+                        <div className="py-16 text-center text-muted-foreground italic">
+                            <History className="h-8 w-8 mx-auto mb-2 opacity-10" />
+                            <p className="text-[10px]">Belum ada riwayat mutasi tabungan.</p>
                         </div>
                     )}
                 </CardContent>
+                {savings && savings.length > 0 && (
+                    <div className="p-3 bg-muted/10 border-t text-center">
+                        <p className="text-[9px] text-muted-foreground italic">
+                            * Menampilkan seluruh riwayat transaksi yang tercatat di sistem Admin.
+                        </p>
+                    </div>
+                )}
             </Card>
         </div>
     );
