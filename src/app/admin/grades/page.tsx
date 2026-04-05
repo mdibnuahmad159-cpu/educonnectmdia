@@ -67,6 +67,8 @@ import { id as dfnsId } from "date-fns/locale";
 
 type GradeType = 'Ganjil' | 'Genap';
 
+const STATUS_OPTIONS: ReportSummaryStatus[] = ['Lanjut Semester', 'Naik Kelas', 'Turun Kelas'];
+
 const MONTH_NAMES = [
     "", "Januari", "Februari", "Maret", "April", "Mei", "Juni", 
     "Juli", "Agustus", "September", "Oktober", "November", "Desember"
