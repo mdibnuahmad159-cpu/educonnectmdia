@@ -98,6 +98,17 @@ export default function LettersPage() {
         return teachers?.find(t => t.jabatan === 'Kepala Madrasah')?.name || "..........................";
     }, [teachers]);
 
+    const schoolName = profile?.namaMadrasah || "MADRASAH DINIYAH IBNU AHMAD";
+    
+    const dateFormatted = useMemo(() => {
+        if (!formData.date) return "";
+        try {
+            return format(parseISO(formData.date), "d MMMM yyyy", { locale: dfnsId });
+        } catch (e) {
+            return "";
+        }
+    }, [formData.date]);
+
     const handleSelectType = (type: LetterType) => {
         setSelectedType(type);
         setFormData({
@@ -154,9 +165,6 @@ export default function LettersPage() {
         const printWindow = window.open('', '_blank');
         if (!printWindow) return;
 
-        const dateFormatted = format(parseISO(formData.date), "d MMMM yyyy", { locale: dfnsId });
-        const schoolName = profile?.namaMadrasah || "MADRASAH DINIYAH IBNU AHMAD";
-        
         let headerHtml = `
             <div class="kop" style="text-align: center; margin-bottom: 10px;">
                 ${profile?.kopSuratUrl ? `<img src="${profile.kopSuratUrl}" style="width: 100%; max-height: 120px; object-fit: contain;" />` : `
@@ -557,26 +565,26 @@ export default function LettersPage() {
                                         <p style={{ fontWeight: 'bold', textDecoration: 'underline', fontSize: '14pt', margin: '0', textTransform: 'uppercase' }}>SURAT KETERANGAN SISWA AKTIF</p>
                                         <p style={{ margin: '0', fontWeight: 'bold', fontSize: '11pt' }}>NOMOR : {formData.number || ''}</p>
                                     </div>
-                                    <p>Yang bertanda tangan dibawah ini Kepala ${schoolName} menerangkan bahwa :</p>
+                                    <p>Yang bertanda tangan dibawah ini Kepala {schoolName} menerangkan bahwa :</p>
                                     <table style={{ margin: '15px 0 15px 80px', width: 'auto', borderCollapse: 'collapse', lineHeight: '1.8' }}>
                                         <tbody>
-                                            <tr><td style={{ width: '160px', padding: '2px 0' }}>Nama</td><td style={{ padding: '2px 0' }}>: <strong style={{ textTransform: 'uppercase' }}>${selectedStudent.name}</strong></td></tr>
-                                            <tr><td style={{ padding: '2px 0' }}>Tempat, Tgl Lahir</td><td style={{ padding: '2px 0' }}>: ${selectedStudent.tempatLahir || '-'}, ${selectedStudent.dateOfBirth}</td></tr>
-                                            <tr><td style={{ padding: '2px 0' }}>Jenis Kelamin</td><td style={{ padding: '2px 0' }}>: ${selectedStudent.gender}</td></tr>
-                                            <tr><td style={{ padding: '2px 0' }}>Kelas</td><td style={{ padding: '2px 0' }}>: ${getRomanClass(selectedStudent.kelas || 0)}</td></tr>
-                                            <tr><td style={{ padding: '2px 0' }}>NIS</td><td style={{ padding: '2px 0' }}>: ${selectedStudent.nis.replace('MDIA', '')}</td></tr>
-                                            <tr><td style={{ padding: '2px 0' }}>NIK</td><td style={{ padding: '2px 0' }}>: ${selectedStudent.nik || '-'}</td></tr>
+                                            <tr><td style={{ width: '160px', padding: '2px 0' }}>Nama</td><td style={{ padding: '2px 0' }}>: <strong style={{ textTransform: 'uppercase' }}>{selectedStudent.name}</strong></td></tr>
+                                            <tr><td style={{ padding: '2px 0' }}>Tempat, Tgl Lahir</td><td style={{ padding: '2px 0' }}>: {selectedStudent.tempatLahir || '-'}, {selectedStudent.dateOfBirth}</td></tr>
+                                            <tr><td style={{ padding: '2px 0' }}>Jenis Kelamin</td><td style={{ padding: '2px 0' }}>: {selectedStudent.gender}</td></tr>
+                                            <tr><td style={{ padding: '2px 0' }}>Kelas</td><td style={{ padding: '2px 0' }}>: {getRomanClass(selectedStudent.kelas || 0)}</td></tr>
+                                            <tr><td style={{ padding: '2px 0' }}>NIS</td><td style={{ padding: '2px 0' }}>: {selectedStudent.nis.replace('MDIA', '')}</td></tr>
+                                            <tr><td style={{ padding: '2px 0' }}>NIK</td><td style={{ padding: '2px 0' }}>: {selectedStudent.nik || '-'}</td></tr>
                                         </tbody>
                                     </table>
-                                    <p style={{ marginTop: '20px', textAlign: 'justify' }}>Adalah benar Santri ${schoolName} dan tercatat sebagai Santri Aktif pada Tahun Ajaran ${activeYear}.</p>
+                                    <p style={{ marginTop: '20px', textAlign: 'justify' }}>Adalah benar Santri {schoolName} dan tercatat sebagai Santri Aktif pada Tahun Ajaran {activeYear}.</p>
                                     <p style={{ marginTop: '15px', textAlign: 'justify' }}>Demikian surat keterangan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya, dan kepada yang berkepentingan mohon mengetahuinya.</p>
                                     
                                     <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '50px' }}>
                                         <div style={{ textAlign: 'center', width: '260px' }}>
-                                            <p>Sampang, ${dateFormatted}</p>
+                                            <p>Sampang, {dateFormatted}</p>
                                             <p style={{ fontWeight: 'bold' }}>Kepala Madrasah</p>
                                             <div style={{ height: '60px' }}></div>
-                                            <p style={{ fontWeight: 'bold', textDecoration: 'underline' }}>${kepalaMadrasah}</p>
+                                            <p style={{ fontWeight: 'bold', textDecoration: 'underline' }}>{kepalaMadrasah}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -647,7 +655,7 @@ export default function LettersPage() {
                                     <div className="mt-auto flex flex-col">
                                         {formData.type === 'undangan' ? (
                                             <div className="space-y-4">
-                                                <div className="text-right">Sampang, {formData.date ? format(new Date(formData.date), "d MMMM yyyy", { locale: dfnsId }) : '-'}</div>
+                                                <div className="text-right">Sampang, {dateFormatted}</div>
                                                 <p className="text-center font-bold text-uppercase">{formData.committeeName}</p>
                                                 <div className="flex justify-between text-center">
                                                     <div className="w-48">
@@ -671,7 +679,7 @@ export default function LettersPage() {
                                         ) : (
                                             <div className="flex justify-end">
                                                 <div className="text-center w-60">
-                                                    <p>Sampang, {formData.date ? format(new Date(formData.date), "d MMMM yyyy", { locale: dfnsId }) : '-'}</p>
+                                                    <p>Sampang, {dateFormatted}</p>
                                                     <p className="font-bold">Kepala Madrasah</p>
                                                     <div className="h-12"></div>
                                                     <p><strong><span className="underline">{kepalaMadrasah}</span></strong></p>
