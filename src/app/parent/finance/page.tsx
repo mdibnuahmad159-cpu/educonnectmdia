@@ -3,7 +3,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { useFirestore, useDoc, useCollection, useMemoFirebase } from "@/firebase";
-import { collection, query, where, orderBy, doc } from "firebase/firestore";
+import { collection, query, where, doc } from "firebase/firestore";
 import type { Student, SPPPayment, SavingsTransaction } from "@/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -55,22 +55,28 @@ export default function ParentFinancePage() {
     }, [firestore, nis]);
     const { data: payments, loading: loadingSpp } = useCollection<SPPPayment>(sppQuery);
 
-    // Fetch Savings Transactions (The "Mutation Log") - Exactly as seen by Admin
+    // Fetch Savings Transactions (The "Mutation Log")
+    // Note: We remove orderBy from query to avoid index issues, and sort in memory
     const savingsQuery = useMemoFirebase(() => {
         if (!firestore || !nis) return null;
         return query(
             collection(firestore, "savingsTransactions"), 
-            where("saverId", "==", nis), 
-            orderBy("date", "desc")
+            where("saverId", "==", nis)
         );
     }, [firestore, nis]);
-    const { data: savings, loading: loadingSavings } = useCollection<SavingsTransaction>(savingsQuery);
+    const { data: rawSavings, loading: loadingSavings, error: savingsError } = useCollection<SavingsTransaction>(savingsQuery);
 
-    // Calculate Balance from all transactions history
+    // Sort savings in memory to ensure synchronization with Admin view
+    const savings = useMemo(() => {
+        if (!rawSavings) return [];
+        return [...rawSavings].sort((a, b) => b.date.localeCompare(a.date));
+    }, [rawSavings]);
+
+    // Calculate Balance from all transactions history (Exact same logic as Admin)
     const balance = useMemo(() => {
-        if (!savings) return 0;
-        return savings.reduce((acc, t) => t.type === 'deposit' ? acc + t.amount : acc - t.amount, 0);
-    }, [savings]);
+        if (!rawSavings) return 0;
+        return rawSavings.reduce((acc, t) => t.type === 'deposit' ? acc + t.amount : acc - t.amount, 0);
+    }, [rawSavings]);
 
     const academicYears = useMemo(() => {
         if (!activeYear) return { start: 0, end: 0 };
@@ -135,13 +141,22 @@ export default function ParentFinancePage() {
                 <h1 className="text-xl font-headline font-bold text-primary">Keuangan Santri</h1>
             </div>
 
-            {/* Savings Overview Card - Synchronized with Admin data */}
+            {savingsError && (
+                <Card className="border-destructive/20 bg-destructive/5">
+                    <CardContent className="p-3 text-[10px] text-destructive flex items-center gap-2">
+                        <AlertCircle className="h-3 w-3" />
+                        Gagal memuat data tabungan. Silakan hubungi Admin.
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* Savings Overview Card */}
             <Card className="border-none shadow-sm bg-primary text-primary-foreground overflow-hidden relative">
                 <CardContent className="p-5 flex items-center justify-between relative z-10">
                     <div className="space-y-1">
                         <p className="text-[10px] uppercase font-bold opacity-80 tracking-widest">Saldo Tabungan Saat Ini</p>
                         <p className="text-2xl font-bold">Rp {balance.toLocaleString()}</p>
-                        <p className="text-[9px] opacity-70 italic">Data terverifikasi oleh Admin Madrasah</p>
+                        <p className="text-[9px] opacity-70 italic">Sinkron dengan data resmi Madrasah</p>
                     </div>
                     <div className="p-3 bg-white/10 rounded-full">
                         <PiggyBank className="h-6 w-6" />
@@ -195,9 +210,9 @@ export default function ParentFinancePage() {
                 <CardHeader className="p-4 pb-2 border-b bg-muted/5 flex flex-row items-center justify-between space-y-0">
                     <div>
                         <CardTitle className="text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                            <CreditCard className="h-3.5 w-3.5" /> Kontrol Pembayaran SPP
+                            <CreditCard className="h-3.5 w-3.5" /> Status Pembayaran SPP
                         </CardTitle>
-                        <CardDescription className="text-[10px]">Status pelunasan iuran per bulan</CardDescription>
+                        <CardDescription className="text-[10px]">Pelunasan iuran bulanan TA {activeYear}</CardDescription>
                     </div>
                     {sppStats.isFullPaid && (
                         <div className="flex items-center gap-1 text-[9px] font-bold text-green-600 bg-green-100 px-2 py-0.5 rounded-full uppercase">
@@ -230,7 +245,7 @@ export default function ParentFinancePage() {
                 </CardContent>
             </Card>
 
-            {/* Savings Transaction History (Mutasi) - Mirrored from Admin History */}
+            {/* Savings Transaction History (Mutasi) */}
             <Card className="border-none shadow-sm overflow-hidden">
                 <CardHeader className="p-4 pb-2 border-b bg-muted/5">
                     <CardTitle className="text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-2">
@@ -284,7 +299,7 @@ export default function ParentFinancePage() {
                 {savings && savings.length > 0 && (
                     <div className="p-3 bg-muted/10 border-t text-center">
                         <p className="text-[9px] text-muted-foreground italic">
-                            * Riwayat di atas adalah catatan resmi dari database bendahara Madrasah.
+                            * Riwayat di atas disinkronkan secara real-time dari database Bendahara Madrasah.
                         </p>
                     </div>
                 )}
