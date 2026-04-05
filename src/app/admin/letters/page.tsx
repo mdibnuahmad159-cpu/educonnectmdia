@@ -125,10 +125,12 @@ export default function LettersPage() {
             dynamicContentHtml = `
                 <p>Menerangkan dengan sebenarnya bahwa:</p>
                 <table style="margin: 20px 40px; width: auto;">
-                    <tr><td style="width: 120px;">Nama</td><td>: <strong>${selectedStudent.name}</strong></td></tr>
-                    <tr><td>NIS</td><td>: ${selectedStudent.nis}</td></tr>
-                    <tr><td>Kelas</td><td>: ${selectedStudent.kelas}</td></tr>
-                    <tr><td>Alamat</td><td>: ${selectedStudent.address}</td></tr>
+                    <tbody>
+                        <tr><td style="width: 120px;">Nama</td><td>: <strong>${selectedStudent.name}</strong></td></tr>
+                        <tr><td>NIS</td><td>: ${selectedStudent.nis}</td></tr>
+                        <tr><td>Kelas</td><td>: ${selectedStudent.kelas}</td></tr>
+                        <tr><td>Alamat</td><td>: ${selectedStudent.address}</td></tr>
+                    </tbody>
                 </table>
                 <p style="text-indent: 40px;">${formData.content}</p>
                 <p>Demikian surat keterangan ini dibuat untuk dipergunakan sebagaimana mestinya.</p>
@@ -137,9 +139,11 @@ export default function LettersPage() {
             dynamicContentHtml = `
                 <p style="text-indent: 40px;">${formData.content}</p>
                 <table style="margin: 20px 40px; width: auto;">
-                    <tr><td style="width: 120px;">Hari, Tanggal</td><td>: ${formData.eventDate ? format(parseISO(formData.eventDate), "EEEE, dd MMMM yyyy", { locale: dfnsId }) : '-'}</td></tr>
-                    <tr><td>Waktu</td><td>: ${formData.eventTime || '-'}</td></tr>
-                    <tr><td>Tempat</td><td>: ${formData.eventPlace || '-'}</td></tr>
+                    <tbody>
+                        <tr><td style="width: 120px;">Hari, Tanggal</td><td>: ${formData.eventDate ? format(parseISO(formData.eventDate), "EEEE, dd MMMM yyyy", { locale: dfnsId }) : '-'}</td></tr>
+                        <tr><td>Waktu</td><td>: ${formData.eventTime || '-'}</td></tr>
+                        <tr><td>Tempat</td><td>: ${formData.eventPlace || '-'}</td></tr>
+                    </tbody>
                 </table>
                 <p>Demikian undangan ini kami sampaikan, atas perhatian dan kehadirannya kami ucapkan terima kasih.</p>
             `;
@@ -189,9 +193,11 @@ export default function LettersPage() {
                     <div class="meta-info">
                         <div class="meta-left">
                             <table>
-                                <tr><td>Nomor</td><td>: ${formData.number}</td></tr>
-                                <tr><td>Lampiran</td><td>: ${formData.attachment}</td></tr>
-                                <tr><td>Perihal</td><td>: <strong>${formData.subject}</strong></td></tr>
+                                <tbody>
+                                    <tr><td>Nomor</td><td>: ${formData.number}</td></tr>
+                                    <tr><td>Lampiran</td><td>: ${formData.attachment}</td></tr>
+                                    <tr><td>Perihal</td><td>: <strong>${formData.subject}</strong></td></tr>
+                                </tbody>
                             </table>
                         </div>
                         <div class="meta-right">
@@ -393,7 +399,7 @@ export default function LettersPage() {
                             {/* Kop Surat */}
                             <div className="text-center mb-6 border-b-2 border-double border-black pb-4">
                                 {profile?.kopSuratUrl ? (
-                                    <img src={profile.kopSuratUrl} className="w-full h-auto max-h-[100px] object-contain" />
+                                    <img src={profile.kopSuratUrl} className="w-full h-auto max-h-[100px] object-contain" alt="Kop Surat" />
                                 ) : (
                                     <div className="space-y-1">
                                         <h2 className="text-lg font-bold uppercase">{profile?.namaMadrasah || 'MADRASAH DINIYAH IBNU AHMAD'}</h2>
@@ -410,7 +416,7 @@ export default function LettersPage() {
                                     <p>Hal : <strong>{formData.subject}</strong></p>
                                 </div>
                                 <div>
-                                    Sampang, {formData.date ? format(parseISO(formData.date), "dd MMMM yyyy", { locale: dfnsId }) : '-'}
+                                    Sampang, {formData.date ? format(new Date(formData.date), "dd MMMM yyyy", { locale: dfnsId }) : '-'}
                                 </div>
                             </div>
 
@@ -430,9 +436,11 @@ export default function LettersPage() {
                                     <>
                                         <p>Menerangkan dengan sebenarnya bahwa:</p>
                                         <table className="ml-10">
-                                            <tr><td className="w-24">Nama</td><td>: <strong>{selectedStudent.name}</strong></td></tr>
-                                            <tr><td>NIS</td><td>: {selectedStudent.nis}</td></tr>
-                                            <tr><td>Kelas</td><td>: {selectedStudent.kelas}</td></tr>
+                                            <tbody>
+                                                <tr><td className="w-24">Nama</td><td>: <strong>{selectedStudent.name}</strong></td></tr>
+                                                <tr><td>NIS</td><td>: {selectedStudent.nis}</td></tr>
+                                                <tr><td>Kelas</td><td>: {selectedStudent.kelas}</td></tr>
+                                            </tbody>
                                         </table>
                                         <p className="text-justify indent-10">{formData.content}</p>
                                     </>
@@ -440,9 +448,11 @@ export default function LettersPage() {
                                     <>
                                         <p className="text-justify indent-10">{formData.content}</p>
                                         <table className="ml-10">
-                                            <tr><td className="w-24">Hari, Tanggal</td><td>: {formData.eventDate ? format(parseISO(formData.eventDate), "EEEE, dd MMMM yyyy", { locale: dfnsId }) : '-'}</td></tr>
-                                            <tr><td>Waktu</td><td>: {formData.eventTime || '-'}</td></tr>
-                                            <tr><td>Tempat</td><td>: {formData.eventPlace || '-'}</td></tr>
+                                            <tbody>
+                                                <tr><td className="w-24">Hari, Tanggal</td><td>: {formData.eventDate ? format(new Date(formData.eventDate), "EEEE, dd MMMM yyyy", { locale: dfnsId }) : '-'}</td></tr>
+                                                <tr><td>Waktu</td><td>: {formData.eventTime || '-'}</td></tr>
+                                                <tr><td>Tempat</td><td>: {formData.eventPlace || '-'}</td></tr>
+                                            </tbody>
                                         </table>
                                     </>
                                 ) : (
@@ -467,7 +477,7 @@ export default function LettersPage() {
                         <Button variant="outline" onClick={() => setStep('form')} className="gap-2">
                             <ArrowLeft className="h-4 w-4" /> Edit Kembali
                         </Button>
-                        <Button onClick={handlePrint} className="gap-2 bg-green-600 hover:bg-green-700">
+                        <Button onClick={handlePrint} className="gap-2 bg-green-600 hover:bg-green-700 text-white">
                             <Printer className="h-4 w-4" /> Cetak Sekarang
                         </Button>
                     </div>
