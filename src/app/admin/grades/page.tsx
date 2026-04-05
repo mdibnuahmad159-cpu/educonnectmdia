@@ -482,14 +482,15 @@ export default function GradesPage() {
         const tableRowsHtml = subjects.map((sub, idx) => {
             const score = localGrades[`${selectedStudent.id}_${sub.id}`] || 0;
             const isLow = score < 50;
-            const rowStyle = isLow ? 'style="color: #ff0000;"' : '';
+            const redStyle = isLow ? 'style="text-align: center; color: #ff0000;"' : 'style="text-align: center;"';
+            
             return `
-                <tr ${rowStyle}>
+                <tr>
                     <td style="text-align: center;">${idx + 1}</td>
                     <td>${sub.subjectName}</td>
-                    <td style="text-align: center;">${score}</td>
-                    <td style="text-align: center;">${terbilang(score)}</td>
-                    <td style="text-align: center;">${getPredikat(score)}</td>
+                    <td ${redStyle}>${score}</td>
+                    <td ${redStyle}>${terbilang(score)}</td>
+                    <td ${redStyle}>${getPredikat(score)}</td>
                 </tr>
             `;
         }).join('');
