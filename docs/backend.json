@@ -176,7 +176,10 @@
         "status": { "type": "string" },
         "sakit": { "type": "number" },
         "izin": { "type": "number" },
-        "alpa": { "type": "number" }
+        "alpa": { "type": "number" },
+        "kelakuan": { "type": "string" },
+        "kerajinan": { "type": "string" },
+        "kerapian": { "type": "string" }
       }
     },
     "Curriculum": {
