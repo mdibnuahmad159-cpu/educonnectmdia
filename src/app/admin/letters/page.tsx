@@ -46,7 +46,6 @@ interface LetterData {
     recipient: string;
     studentId?: string;
     content: string;
-    // Specific fields for Invitation
     eventDate?: string;
     eventTime?: string;
     eventPlace?: string;
@@ -72,9 +71,11 @@ export default function LettersPage() {
         committeeName: 'Panitia Pelaksana Haflatul Imtihan',
         chairmanName: '',
         committeeSecretaryName: '',
+        eventDate: '',
+        eventTime: '',
+        eventPlace: '',
     });
 
-    // Data fetching
     const studentsQuery = useMemoFirebase(() => firestore ? collection(firestore, "students") : null, [firestore]);
     const { data: students, loading: loadingStudents } = useCollection<Student>(studentsQuery);
 
@@ -132,7 +133,7 @@ export default function LettersPage() {
         if (formData.type === 'keterangan' && selectedStudent) {
             dynamicContentHtml = `
                 <p>Menerangkan dengan sebenarnya bahwa:</p>
-                <table style="margin: 20px 40px; width: auto;">
+                <table style="margin: 10px 40px; width: auto;">
                     <tbody>
                         <tr><td style="width: 120px;">Nama</td><td>: <strong>${selectedStudent.name}</strong></td></tr>
                         <tr><td>NIS</td><td>: ${selectedStudent.nis}</td></tr>
@@ -155,9 +156,9 @@ export default function LettersPage() {
         } else if (formData.type === 'undangan') {
             const paragraphs = formData.content.split('\n\n');
             dynamicContentHtml = `
-                <p style="text-indent: 40px;">${paragraphs[0] || ''}</p>
-                <p style="text-indent: 40px;">${paragraphs[1] || ''}</p>
-                <table style="margin: 15px 80px; width: auto;">
+                <p style="text-indent: 40px; margin-bottom: 8px;">${paragraphs[0] || ''}</p>
+                <p style="text-indent: 40px; margin-bottom: 8px;">${paragraphs[1] || ''}</p>
+                <table style="margin: 8px 80px; width: auto;">
                     <tbody>
                         <tr><td style="width: 100px;">Hari</td><td>: ${formData.eventDate ? format(parseISO(formData.eventDate), "EEEE", { locale: dfnsId }) : '-'}</td></tr>
                         <tr><td>Tanggal</td><td>: ${formData.eventDate ? format(parseISO(formData.eventDate), "dd MMMM yyyy", { locale: dfnsId }) : '-'}</td></tr>
@@ -169,29 +170,29 @@ export default function LettersPage() {
             `;
             footerHtml = `
                 <div class="date-row">Sampang, ${dateFormatted}</div>
-                <p style="text-align: center; margin-bottom: 30px;">${formData.committeeName || 'Panitia Pelaksana'}</p>
+                <p style="text-align: center; margin-bottom: 15px; font-weight: bold;">${formData.committeeName || 'Panitia Pelaksana'}</p>
                 <div class="sign-container">
                     <div class="sign-box">
                         <p>Ketua</p>
-                        <div class="sign-space"></div>
+                        <div class="sign-space" style="height: 50px;"></div>
                         <p class="sign-name">${formData.chairmanName || '..........................'}</p>
                     </div>
                     <div class="sign-box">
                         <p>Sekretaris</p>
-                        <div class="sign-space"></div>
+                        <div class="sign-space" style="height: 50px;"></div>
                         <p class="sign-name">${formData.committeeSecretaryName || '..........................'}</p>
                     </div>
                 </div>
-                <div style="text-align: center; margin-top: 20px;">
+                <div style="text-align: center; margin-top: 15px;">
                     <p>Mengetahui,</p>
                     <p>Kepala Madrasah</p>
-                    <div class="sign-space" style="height: 60px;"></div>
+                    <div class="sign-space" style="height: 50px;"></div>
                     <p class="sign-name">${kepalaMadrasah}</p>
                 </div>
             `;
         } else {
             dynamicContentHtml = `
-                <p style="text-indent: 40px; line-height: 1.6;">${formData.content.replace(/\n/g, '<br/>')}</p>
+                <p style="text-indent: 40px; line-height: 1.5; margin-bottom: 10px;">${formData.content.replace(/\n/g, '<br/>')}</p>
                 <p>Demikian surat ini kami sampaikan, atas perhatian dan kerjasamanya kami ucapkan terima kasih.</p>
             `;
             footerHtml = `
@@ -210,26 +211,26 @@ export default function LettersPage() {
                 <head>
                     <title>Cetak Surat - ${formData.subject}</title>
                     <style>
-                        @page { size: A4; margin: 20mm; }
-                        body { font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.3; color: #000; }
+                        @page { size: A4; margin: 5mm; }
+                        body { font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.2; color: #000; margin: 0; padding: 15mm; }
                         .kop { text-align: center; margin-bottom: 5px; }
                         .kop img { width: 100%; max-height: 120px; object-fit: contain; }
                         
-                        .meta-info { display: flex; justify-content: space-between; margin-bottom: 20px; }
+                        .meta-info { display: flex; justify-content: space-between; margin-bottom: 15px; }
                         .meta-left { width: 60%; }
                         .meta-right { text-align: right; }
                         
                         .title { text-align: center; text-decoration: underline; font-weight: bold; font-size: 14pt; margin-bottom: 5px; text-transform: uppercase; }
                         
-                        .salutation { margin-bottom: 10px; font-weight: bold; }
-                        .content { margin-bottom: 30px; text-align: justify; }
+                        .salutation { margin-bottom: 8px; font-weight: bold; }
+                        .content { margin-bottom: 20px; text-align: justify; }
                         
-                        .footer { display: flex; justify-content: flex-end; margin-top: 30px; }
+                        .footer { display: flex; justify-content: flex-end; margin-top: 20px; }
                         .sign-container { display: flex; justify-content: space-between; text-align: center; }
                         .sign-box { text-align: center; width: 220px; }
-                        .sign-space { height: 70px; }
+                        .sign-space { height: 60px; }
                         .sign-name { font-weight: bold; text-decoration: underline; }
-                        .date-row { text-align: right; margin-bottom: 10px; }
+                        .date-row { text-align: right; margin-bottom: 5px; }
                     </style>
                 </head>
                 <body>
@@ -242,17 +243,17 @@ export default function LettersPage() {
 
                     <div class="meta-info">
                         <div class="meta-left">
-                            <table>
+                            <table style="width: 100%;">
                                 <tbody>
-                                    <tr><td style="width: 80px; font-weight: bold;">Nomor</td><td>: ${formData.number}</td></tr>
-                                    <tr><td style="font-weight: bold;">Perihal</td><td>: <strong>${formData.subject}</strong></td></tr>
+                                    <tr><td style="width: 80px; font-weight: bold; vertical-align: top;">Nomor</td><td style="vertical-align: top;">: ${formData.number || ''}</td></tr>
+                                    <tr><td style="font-weight: bold; vertical-align: top;">Perihal</td><td style="vertical-align: top;">: <strong>${formData.subject || ''}</strong></td></tr>
                                 </tbody>
                             </table>
                         </div>
                         ${formData.type !== 'undangan' ? `<div class="meta-right">Sampang, ${dateFormatted}</div>` : ''}
                     </div>
 
-                    <div style="margin-bottom: 25px;">
+                    <div style="margin-bottom: 20px;">
                         Kepada Yth.<br/>
                         <strong>${formData.recipient || 'Bapak/Ibu/Saudara(i)'}</strong><br/>
                         Di_<br/>
@@ -328,28 +329,28 @@ export default function LettersPage() {
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
                                     <label className="text-[10px] font-bold uppercase text-muted-foreground">Nomor Surat</label>
-                                    <Input value={formData.number} onChange={e => setFormData({...formData, number: e.target.value})} className="h-9" />
+                                    <Input value={formData.number || ""} onChange={e => setFormData({...formData, number: e.target.value})} className="h-9" />
                                 </div>
                                 <div className="space-y-1.5">
                                     <label className="text-[10px] font-bold uppercase text-muted-foreground">Tanggal Surat</label>
-                                    <Input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="h-9" />
+                                    <Input type="date" value={formData.date || ""} onChange={e => setFormData({...formData, date: e.target.value})} className="h-9" />
                                 </div>
                             </div>
 
                             <div className="space-y-1.5">
                                 <label className="text-[10px] font-bold uppercase text-muted-foreground">Perihal</label>
-                                <Input value={formData.subject} onChange={e => setFormData({...formData, subject: e.target.value})} className="h-9" />
+                                <Input value={formData.subject || ""} onChange={e => setFormData({...formData, subject: e.target.value})} className="h-9" />
                             </div>
 
                             <div className="space-y-1.5">
                                 <label className="text-[10px] font-bold uppercase text-muted-foreground">Tujuan / Penerima</label>
-                                <Input placeholder="Contoh: Bapak/Ibu/Saudara(i)" value={formData.recipient} onChange={e => setFormData({...formData, recipient: e.target.value})} className="h-9" />
+                                <Input placeholder="Contoh: Bapak/Ibu/Saudara(i)" value={formData.recipient || ""} onChange={e => setFormData({...formData, recipient: e.target.value})} className="h-9" />
                             </div>
 
                             {formData.type === 'keterangan' && (
                                 <div className="space-y-1.5 p-4 rounded-lg bg-blue-50/50 border border-blue-100">
                                     <label className="text-[10px] font-bold uppercase text-blue-700">Pilih Santri</label>
-                                    <Select value={formData.studentId} onValueChange={id => setFormData({...formData, studentId: id})}>
+                                    <Select value={formData.studentId || ""} onValueChange={id => setFormData({...formData, studentId: id})}>
                                         <SelectTrigger className="h-10 bg-white">
                                             <SelectValue placeholder="Cari nama santri..." />
                                         </SelectTrigger>
@@ -367,29 +368,29 @@ export default function LettersPage() {
                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                         <div className="space-y-1.5">
                                             <label className="text-[10px] font-bold uppercase text-green-700">Tanggal Acara</label>
-                                            <Input type="date" value={formData.eventDate} onChange={e => setFormData({...formData, eventDate: e.target.value})} className="h-9 bg-white" />
+                                            <Input type="date" value={formData.eventDate || ""} onChange={e => setFormData({...formData, eventDate: e.target.value})} className="h-9 bg-white" />
                                         </div>
                                         <div className="space-y-1.5">
                                             <label className="text-[10px] font-bold uppercase text-green-700">Waktu</label>
-                                            <Input placeholder="18:00 WIB (Ba'da Magrib)" value={formData.eventTime} onChange={e => setFormData({...formData, eventTime: e.target.value})} className="h-9 bg-white" />
+                                            <Input placeholder="18:00 WIB (Ba'da Magrib)" value={formData.eventTime || ""} onChange={e => setFormData({...formData, eventTime: e.target.value})} className="h-9 bg-white" />
                                         </div>
                                         <div className="space-y-1.5">
                                             <label className="text-[10px] font-bold uppercase text-green-700">Tempat</label>
-                                            <Input placeholder="Aula Madrasah" value={formData.eventPlace} onChange={e => setFormData({...formData, eventPlace: e.target.value})} className="h-9 bg-white" />
+                                            <Input placeholder="Aula Madrasah" value={formData.eventPlace || ""} onChange={e => setFormData({...formData, eventPlace: e.target.value})} className="h-9 bg-white" />
                                         </div>
                                     </div>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div className="space-y-1.5">
                                             <label className="text-[10px] font-bold uppercase text-green-700">Nama Panitia</label>
-                                            <Input value={formData.committeeName} onChange={e => setFormData({...formData, committeeName: e.target.value})} className="h-9 bg-white" />
+                                            <Input value={formData.committeeName || ""} onChange={e => setFormData({...formData, committeeName: e.target.value})} className="h-9 bg-white" />
                                         </div>
                                         <div className="space-y-1.5">
                                             <label className="text-[10px] font-bold uppercase text-green-700">Nama Ketua Panitia</label>
-                                            <Input value={formData.chairmanName} onChange={e => setFormData({...formData, chairmanName: e.target.value})} className="h-9 bg-white" />
+                                            <Input value={formData.chairmanName || ""} onChange={e => setFormData({...formData, chairmanName: e.target.value})} className="h-9 bg-white" />
                                         </div>
                                         <div className="space-y-1.5">
                                             <label className="text-[10px] font-bold uppercase text-green-700">Nama Sekretaris Panitia</label>
-                                            <Input value={formData.committeeSecretaryName} onChange={e => setFormData({...formData, committeeSecretaryName: e.target.value})} className="h-9 bg-white" />
+                                            <Input value={formData.committeeSecretaryName || ""} onChange={e => setFormData({...formData, committeeSecretaryName: e.target.value})} className="h-9 bg-white" />
                                         </div>
                                     </div>
                                 </div>
@@ -399,7 +400,7 @@ export default function LettersPage() {
                                 <label className="text-[10px] font-bold uppercase text-muted-foreground">Narasi / Isi Utama</label>
                                 <Textarea 
                                     rows={8} 
-                                    value={formData.content} 
+                                    value={formData.content || ""} 
                                     onChange={e => setFormData({...formData, content: e.target.value})} 
                                     className="resize-none"
                                 />
@@ -458,7 +459,6 @@ export default function LettersPage() {
                 <div className="space-y-6">
                     <Card className="max-w-[800px] mx-auto border shadow-lg overflow-hidden bg-white">
                         <div className="p-10 text-black text-[11px] leading-tight font-serif">
-                            {/* Kop Surat */}
                             <div className="text-center mb-4">
                                 {profile?.kopSuratUrl ? (
                                     <img src={profile.kopSuratUrl} className="w-full h-auto max-h-[100px] object-contain" alt="Kop Surat" />
@@ -470,7 +470,6 @@ export default function LettersPage() {
                                 )}
                             </div>
 
-                            {/* Meta Info */}
                             <div className="flex justify-between mb-6">
                                 <div className="space-y-0.5">
                                     <p><strong>Nomor</strong> : {formData.number}</p>
@@ -483,7 +482,6 @@ export default function LettersPage() {
                                 )}
                             </div>
 
-                            {/* Recipient */}
                             <div className="mb-6">
                                 <p>Kepada Yth.</p>
                                 <p><strong>{formData.recipient || 'Bapak/Ibu/Saudara(i)'}</strong></p>
@@ -491,10 +489,8 @@ export default function LettersPage() {
                                 <p>Tempat</p>
                             </div>
 
-                            {/* Salutation */}
                             <p className="mb-4 font-bold">Assalamu'alaikum Warahmatullah Wabarakatuh.</p>
 
-                            {/* Dynamic Content */}
                             <div className="mb-8 space-y-4">
                                 {formData.type === 'keterangan' && selectedStudent ? (
                                     <>
@@ -516,10 +512,10 @@ export default function LettersPage() {
                                         ))}
                                         <table className="ml-20">
                                             <tbody>
-                                                <tr><td className="w-24">Hari</td><td>: ${formData.eventDate ? format(parseISO(formData.eventDate), "EEEE", { locale: dfnsId }) : '-'}</td></tr>
-                                                <tr><td>Tanggal</td><td>: ${formData.eventDate ? format(parseISO(formData.eventDate), "dd MMMM yyyy", { locale: dfnsId }) : '-'}</td></tr>
-                                                <tr><td>Jam</td><td>: ${formData.eventTime || '-'}</td></tr>
-                                                <tr><td>Tempat</td><td>: ${formData.eventPlace || '-'}</td></tr>
+                                                <tr><td className="w-24">Hari</td><td>: {formData.eventDate ? format(parseISO(formData.eventDate), "EEEE", { locale: dfnsId }) : '-'}</td></tr>
+                                                <tr><td>Tanggal</td><td>: {formData.eventDate ? format(parseISO(formData.eventDate), "dd MMMM yyyy", { locale: dfnsId }) : '-'}</td></tr>
+                                                <tr><td>Jam</td><td>: {formData.eventTime || '-'}</td></tr>
+                                                <tr><td>Tempat</td><td>: {formData.eventPlace || '-'}</td></tr>
                                             </tbody>
                                         </table>
                                         <p className="text-justify indent-10">Demikian undangan ini kami buat. Atas perhatian Bapak/Ibu/Saudara(i) kami sampaikan banyak terimakasih.</p>
@@ -531,11 +527,10 @@ export default function LettersPage() {
 
                             <p className="mb-6 font-bold">Wasalamu'alaikum Warahmatullah Wabarakatuh.</p>
 
-                            {/* Footer Sign */}
                             {formData.type === 'undangan' ? (
                                 <div className="space-y-4">
                                     <div className="text-right">Sampang, {formData.date ? format(new Date(formData.date), "dd MMMM yyyy", { locale: dfnsId }) : '-'}</div>
-                                    <p className="text-center">{formData.committeeName}</p>
+                                    <p className="text-center font-bold">{formData.committeeName}</p>
                                     <div className="flex justify-between text-center">
                                         <div className="w-48">
                                             <p>Ketua</p>
