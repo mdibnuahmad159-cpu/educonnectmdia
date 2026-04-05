@@ -4,7 +4,7 @@
 import { useState, useMemo, useRef } from "react";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection, Firestore, query, orderBy } from "firebase/firestore";
-import type { Certificate, Student, CertificateTemplate } from "@/types";
+import type { Certificate, Student, CertificateTemplate, Teacher } from "@/types";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -92,6 +92,9 @@ export default function CertificatesPage() {
 
     const templatesCollection = useMemoFirebase(() => firestore ? collection(firestore, "certificate_templates") : null, [firestore]);
     const { data: templates } = useCollection<CertificateTemplate>(templatesCollection);
+
+    const teachersCollection = useMemoFirebase(() => firestore ? collection(firestore, "teachers") : null, [firestore]);
+    const { data: teachers } = useCollection<Teacher>(teachersCollection);
     
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isTemplateOpen, setIsTemplateOpen] = useState(false);
@@ -245,6 +248,8 @@ export default function CertificatesPage() {
             return;
         }
 
+        const headName = teachers?.find(t => t.jabatan === 'Kepala Madrasah')?.name || "..........................";
+
         const printWindow = window.open('', '_blank');
         if (!printWindow) {
             toast({ variant: "destructive", title: "Gagal Membuka Jendela", description: "Mohon izinkan pop-up untuk mencetak sertifikat." });
@@ -252,7 +257,6 @@ export default function CertificatesPage() {
         }
 
         const dateFormatted = format(parseISO(certificate.date), "d MMMM yyyy", { locale: dfnsId });
-        const location = profile?.alamat?.split(',')[0] || "Sampang";
         const schoolName = profile?.namaMadrasah || "Madrasah Diniyah Ibnu Ahmad";
         
         const rankText = certificate.rank.toLowerCase();
@@ -290,8 +294,8 @@ export default function CertificatesPage() {
                             padding: 40px 60px;
                         }
                         .header-text {
-                            margin-top: -40px;
-                            margin-bottom: 30px;
+                            margin-top: -80px; /* Raised text as requested */
+                            margin-bottom: 20px;
                         }
                         .title-main {
                             font-family: 'Playfair Display', serif;
@@ -312,16 +316,16 @@ export default function CertificatesPage() {
                         }
                         .intro-text {
                             font-size: 16pt;
-                            margin-bottom: 20px;
+                            margin-bottom: 15px;
                             color: #000;
                         }
                         .name-container {
-                            margin-bottom: 10px;
+                            margin-bottom: 5px; /* Reduced gap */
                             width: 80%;
                         }
                         .student-name {
                             font-family: 'Dancing Script', cursive;
-                            font-size: 32pt;
+                            font-size: 32pt; /* Same as Penghargaan */
                             color: #9c27b0;
                             display: inline-block;
                             padding: 0 50px;
@@ -394,12 +398,12 @@ export default function CertificatesPage() {
 
                         <div class="footer">
                             <div class="signature">
-                                <div class="sig-name">Juliana Silva</div><br>
+                                <div class="sig-name">${headName}</div><br>
                                 <div class="sig-title">Kepala Madrasah</div>
                             </div>
 
                             <div class="date-location">
-                                ${location},<br>
+                                Sampang,<br>
                                 ${dateFormatted}
                             </div>
                         </div>
@@ -474,7 +478,7 @@ export default function CertificatesPage() {
 
             const dateFormatted = format(parseISO(certificate.date), "d MMMM yyyy", { locale: dfnsId });
             doc.setFontSize(12);
-            doc.text(dateFormatted, pageWidth - 60, pageHeight - 60, { align: "right" });
+            doc.text(`Sampang, ${dateFormatted}`, pageWidth - 60, pageHeight - 60, { align: "right" });
         });
 
         doc.save(`Sertifikat_Massal_${activeYear.replace('/', '-')}.pdf`);
