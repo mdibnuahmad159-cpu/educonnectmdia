@@ -162,6 +162,8 @@ export default function LettersPage() {
         const printWindow = window.open('', '_blank');
         if (!printWindow) return;
 
+        const printMargin = formData.type === 'keterangan' ? '25.4mm' : '10mm';
+
         let headerHtml = `
             <div class="kop" style="text-align: center; margin-bottom: 10px;">
                 ${profile?.kopSuratUrl ? `<img src="${profile.kopSuratUrl}" style="width: 100%; max-height: 110px; object-fit: contain;" />` : `
@@ -309,7 +311,7 @@ export default function LettersPage() {
                         </div>
                     </div>
                     ${formData.footerNote ? `
-                        <div class="nb-footer" style="position: absolute; bottom: 25.4mm; left: 25.4mm; right: 25.4mm; border-top: 1.2px dashed #000; padding-top: 5px;">
+                        <div class="nb-footer" style="position: absolute; bottom: ${printMargin}; left: ${printMargin}; right: ${printMargin}; border-top: 1.2px dashed #000; padding-top: 5px;">
                             <p style="font-style: italic; font-size: 11pt; margin: 0;"><strong>Nb:</strong> ${formData.footerNote}</p>
                         </div>
                     ` : ''}
@@ -331,7 +333,7 @@ export default function LettersPage() {
                 <head>
                     <title>Cetak Surat</title>
                     <style>
-                        @page { size: A4; margin: 25.4mm; }
+                        @page { size: A4; margin: ${printMargin}; }
                         body { font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.2; color: #000; margin: 0; padding: 0; position: relative; }
                         ul { margin: 0; }
                         p { margin: 0 0 8px 0; }
@@ -550,7 +552,7 @@ export default function LettersPage() {
                             style={{
                                 width: '210mm',
                                 minHeight: '297mm',
-                                padding: '25.4mm', // Normal Margin (1 inch)
+                                padding: formData.type === 'keterangan' ? '25.4mm' : '10mm',
                                 fontFamily: "'Times New Roman', serif",
                                 fontSize: '12pt',
                                 color: 'black',
