@@ -64,6 +64,7 @@ export default function LettersPage() {
     const [selectedType, setSelectedType] = useState<LetterType | null>(null);
     
     const schoolName = profile?.namaMadrasah || "Madrasah Diniyah Takmiliyah Ula Ibnu Ahmad";
+    const formalSchoolName = "Madrasah Diniyah Takmiliyah Ula Ibnu Ahmad";
     
     const [formData, setFormData] = useState<LetterData>({
         type: 'keterangan',
@@ -162,12 +163,13 @@ export default function LettersPage() {
         const printWindow = window.open('', '_blank');
         if (!printWindow) return;
 
-        const printMargin = formData.type === 'keterangan' ? '25.4mm' : '10mm';
+        // Proporsional margin: 20mm for all types to look professional
+        const printMargin = '20mm';
 
         let headerHtml = `
             <div class="kop" style="text-align: center; margin-bottom: 10px;">
                 ${profile?.kopSuratUrl ? `<img src="${profile.kopSuratUrl}" style="width: 100%; max-height: 110px; object-fit: contain;" />` : `
-                    <h1 style="margin:0; font-size: 18pt; text-transform: uppercase;">${schoolName}</h1>
+                    <h1 style="margin:0; font-size: 18pt; text-transform: uppercase;">${formalSchoolName}</h1>
                     <p style="margin:2px 0; font-size: 10pt;">${profile?.alamat || 'Sampang, Jawa Timur'}</p>
                 `}
             </div>
@@ -352,6 +354,9 @@ export default function LettersPage() {
             }, 500);
         };
     };
+
+    // Proporsional margin for all types to look official
+    const printMargin = '20mm';
 
     return (
         <div className="space-y-6 pb-10">
@@ -552,7 +557,7 @@ export default function LettersPage() {
                             style={{
                                 width: '210mm',
                                 minHeight: '297mm',
-                                padding: formData.type === 'keterangan' ? '25.4mm' : '10mm',
+                                padding: printMargin,
                                 fontFamily: "'Times New Roman', serif",
                                 fontSize: '12pt',
                                 color: 'black',
@@ -565,7 +570,7 @@ export default function LettersPage() {
                                     <img src={profile.kopSuratUrl} className="w-full h-auto max-h-[110px] object-contain" alt="Kop Surat" />
                                 ) : (
                                     <div className="space-y-1 border-b-2 border-black pb-2">
-                                        <h2 className="text-xl font-bold uppercase">{schoolName}</h2>
+                                        <h2 className="text-xl font-bold uppercase">{formalSchoolName}</h2>
                                         <p className="text-xs">{profile?.alamat || 'Sampang, Jawa Timur'}</p>
                                     </div>
                                 )}
