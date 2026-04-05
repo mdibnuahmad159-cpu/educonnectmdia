@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
-import { collection, query, where, Firestore } from "firebase/firestore";
+import { collection, query, where, Firestore, getDocs } from "firebase/firestore";
 import type { Student, Curriculum, Grade, ReportSummary, ReportSummaryStatus, Teacher } from "@/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -48,7 +48,8 @@ import {
     FileText,
     Printer,
     Sparkles,
-    PrinterCheck
+    PrinterCheck,
+    Trophy
 } from "lucide-react";
 import { useAcademicYear } from "@/context/academic-year-provider";
 import { useSchoolProfile } from "@/context/school-profile-provider";
@@ -727,6 +728,141 @@ export default function GradesPage() {
         };
     };
 
+    const handlePrintRankings = async () => {
+        if (!firestore || !activeYear) return;
+        
+        try {
+            toast({ title: "Menyiapkan Laporan", description: "Sedang mengambil data peringkat seluruh kelas..." });
+            
+            const [allStudentsSnap, allGradesSnap, allCurriculumSnap] = await Promise.all([
+                getDocs(collection(firestore, "students")),
+                getDocs(query(collection(firestore, "grades"), where("academicYear", "==", activeYear), where("type", "==", selectedGradeType))),
+                getDocs(collection(firestore, "curriculum"))
+            ]);
+
+            const allStudents = allStudentsSnap.docs.map(d => ({ ...d.data(), id: d.id })) as Student[];
+            const allGrades = allGradesSnap.docs.map(d => d.data()) as Grade[];
+            const allCurriculum = allCurriculumSnap.docs.map(d => d.data()) as Curriculum[];
+
+            const classes = [0, 1, 2, 3, 4, 5, 6];
+            const rankingResults: any[] = [];
+
+            classes.forEach(classLevel => {
+                const studentsInClass = allStudents.filter(s => s.kelas === classLevel);
+                const subjectsInClass = allCurriculum.filter(c => c.classLevel === classLevel);
+                
+                if (studentsInClass.length === 0 || subjectsInClass.length === 0) return;
+
+                const classStats = studentsInClass.map(student => {
+                    let total = 0;
+                    subjectsInClass.forEach(sub => {
+                        const grade = allGrades.find(g => g.studentId === student.id && g.subjectId === sub.id);
+                        total += grade?.score || 0;
+                    });
+                    const average = subjectsInClass.length > 0 ? total / subjectsInClass.length : 0;
+                    return { ...student, total, average };
+                });
+
+                const sorted = classStats.sort((a, b) => b.total - a.total);
+                const top3 = sorted.slice(0, 3).map((s, idx) => ({ ...s, rank: idx + 1 }));
+                
+                if (top3.length > 0) {
+                    rankingResults.push({ classLevel, students: top3 });
+                }
+            });
+
+            if (rankingResults.length === 0) {
+                toast({ variant: "destructive", title: "Data Kosong", description: "Tidak ada data nilai untuk tahun ajaran ini." });
+                return;
+            }
+
+            const printWindow = window.open('', '_blank');
+            if (!printWindow) return;
+
+            const schoolName = profile?.namaMadrasah || "MADRASAH DINIYAH IBNU AHMAD";
+            const dateNow = format(new Date(), "dd MMMM yyyy", { locale: dfnsId });
+
+            let rowsHtml = '';
+            let globalNo = 1;
+
+            rankingResults.forEach(res => {
+                res.students.forEach((s: any) => {
+                    rowsHtml += `
+                        <tr>
+                            <td style="text-align: center;">${globalNo++}</td>
+                            <td style="text-align: center;">Kelas ${res.classLevel}</td>
+                            <td style="font-weight: bold;">${s.name}</td>
+                            <td style="text-align: center; font-weight: bold;">${s.rank}</td>
+                            <td>${s.namaAyah || '-'}</td>
+                            <td>${s.namaIbu || '-'}</td>
+                            <td style="font-size: 8px;">${s.address || '-'}</td>
+                            <td style="text-align: center; font-weight: bold;">${s.total}</td>
+                            <td style="text-align: center;">${s.average.toFixed(1)}</td>
+                        </tr>
+                    `;
+                });
+            });
+
+            printWindow.document.write(`
+                <html>
+                    <head>
+                        <title>Laporan Peringkat - ${activeYear.replace('/', '-')}</title>
+                        <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&display=swap" rel="stylesheet">
+                        <style>
+                            body { font-family: 'PT Sans', sans-serif; padding: 20px; font-size: 10px; }
+                            .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; }
+                            h1 { margin: 0; font-size: 16px; text-transform: uppercase; }
+                            h2 { margin: 5px 0; font-size: 14px; color: #333; }
+                            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                            th, td { border: 1px solid #000; padding: 5px; text-align: left; }
+                            th { background-color: #f2f2f2; text-align: center; text-transform: uppercase; font-size: 9px; }
+                            .footer { margin-top: 30px; text-align: right; padding-right: 50px; }
+                            @media print { @page { size: landscape; margin: 10mm; } }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="header">
+                            <h1>${schoolName}</h1>
+                            <h2>LAPORAN PERINGKAT SANTRI (TOP 3 PER KELAS)</h2>
+                            <p>Semester ${selectedGradeType} | Tahun Ajaran ${activeYear}</p>
+                        </div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width: 30px;">No</th>
+                                    <th style="width: 60px;">Kelas</th>
+                                    <th>Nama Santri</th>
+                                    <th style="width: 40px;">Rank</th>
+                                    <th>Nama Ayah</th>
+                                    <th>Nama Ibu</th>
+                                    <th style="width: 150px;">Alamat</th>
+                                    <th style="width: 50px;">Total</th>
+                                    <th style="width: 50px;">Rata</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${rowsHtml}
+                            </tbody>
+                        </table>
+                        <div class="footer">
+                            <p>Sampang, ${dateNow}</p>
+                            <br><br><br>
+                            <p><strong>Kepala Madrasah</strong></p>
+                        </div>
+                    </body>
+                </html>
+            `);
+            printWindow.document.close();
+            setTimeout(() => {
+                printWindow.print();
+            }, 1000);
+
+        } catch (error) {
+            console.error(error);
+            toast({ variant: "destructive", title: "Gagal", description: "Terjadi kesalahan saat memproses laporan." });
+        }
+    };
+
     const getStudentProgress = (studentId: string) => {
         if (!subjects.length) return 0;
         let count = 0;
@@ -804,6 +940,17 @@ export default function GradesPage() {
                                 >
                                     <PrinterCheck className="h-3.5 w-3.5" />
                                     Cetak Massal
+                                </Button>
+
+                                <Button 
+                                    onClick={handlePrintRankings} 
+                                    variant="outline" 
+                                    size="xs" 
+                                    disabled={isLoading}
+                                    className="h-8 gap-1.5 px-3 font-normal border-primary/20 text-primary"
+                                >
+                                    <Trophy className="h-3.5 w-3.5" />
+                                    Laporan Peringkat
                                 </Button>
 
                                 <Button 
