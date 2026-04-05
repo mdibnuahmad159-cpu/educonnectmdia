@@ -30,7 +30,7 @@ import {
     FileSignature
 } from "lucide-react";
 import { useSchoolProfile } from "@/context/school-profile-provider";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { id as dfnsId } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 
@@ -161,7 +161,7 @@ export default function LettersPage() {
                     <style>
                         @page { size: A4; margin: 20mm; }
                         body { font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.5; color: #000; }
-                        .kop { text-align: center; margin-bottom: 20px; border-bottom: 3px double #000; padding-bottom: 10px; }
+                        .kop { text-align: center; margin-bottom: 20px; padding-bottom: 10px; }
                         .kop img { width: 100%; max-height: 120px; object-fit: contain; }
                         .kop h1 { margin: 0; font-size: 18pt; text-transform: uppercase; }
                         .kop p { margin: 2px 0; font-size: 10pt; }
@@ -397,7 +397,7 @@ export default function LettersPage() {
                     <Card className="max-w-[800px] mx-auto border shadow-lg overflow-hidden bg-white">
                         <div className="p-10 text-black text-xs leading-relaxed font-serif">
                             {/* Kop Surat */}
-                            <div className="text-center mb-6 border-b-2 border-double border-black pb-4">
+                            <div className="text-center mb-6 pb-4">
                                 {profile?.kopSuratUrl ? (
                                     <img src={profile.kopSuratUrl} className="w-full h-auto max-h-[100px] object-contain" alt="Kop Surat" />
                                 ) : (
@@ -485,8 +485,4 @@ export default function LettersPage() {
             )}
         </div>
     );
-}
-
-function parseISO(dateString: string): Date {
-    return new Date(dateString);
 }
