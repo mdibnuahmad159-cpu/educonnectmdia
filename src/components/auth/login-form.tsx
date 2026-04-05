@@ -7,7 +7,7 @@ import * as z from "zod";
 import { useRouter } from "next/navigation";
 import { useAuth, useFirestore } from "@/firebase";
 import { signInWithEmailAndPassword, signInAnonymously, signOut } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, collection, query, where, getDocs, DocumentSnapshot } from "firebase/firestore";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -106,24 +106,46 @@ export function LoginForm() {
   const handleParentSubmit = async (values: z.infer<typeof parentSchema>) => {
     if (!auth || !firestore) return;
     try {
-      // 0. Pastikan sesi bersih (logout jika sebelumnya ada user lain)
+      // 0. Pastikan sesi bersih
       if (auth.currentUser) {
         await signOut(auth);
       }
 
-      // 1. Normalisasi NIS: hapus spasi dan ubah ke kapital
-      const nisInput = String(values.nis).trim().toUpperCase();
-      const prefixedNis = nisInput.startsWith('MDIA') ? nisInput : `MDIA${nisInput}`;
+      // 1. Normalisasi NIS
+      const rawNis = String(values.nis).trim();
+      const upperNis = rawNis.toUpperCase();
+      const prefixedNis = upperNis.startsWith('MDIA') ? upperNis : `MDIA${upperNis}`;
 
-      // 2. Login anonim TERLEBIH DAHULU agar memiliki izin baca sesuai Security Rules
+      // 2. Login anonim untuk mendapatkan izin baca
       await signInAnonymously(auth);
 
-      // 3. Baca dokumen siswa menggunakan NIS sebagai ID
+      // 3. Cari dokumen siswa dengan beberapa metode agar lebih akurat
+      let studentDoc: any = null;
+
+      // Metode A: Cari berdasarkan ID dokumen langsung
       const studentRef = doc(firestore, "students", prefixedNis);
       const studentSnap = await getDoc(studentRef);
 
+      if (studentSnap.exists()) {
+        studentDoc = studentSnap;
+      } else {
+        // Metode B: Query field 'nis' dengan awalan MDIA
+        const q = query(collection(firestore, "students"), where("nis", "==", prefixedNis));
+        const qSnap = await getDocs(q);
+        if (!qSnap.empty) {
+          studentDoc = qSnap.docs[0];
+        } else {
+          // Metode C: Query field 'nis' tanpa awalan (kasus data lama/manual)
+          const qRaw = query(collection(firestore, "students"), where("nis", "==", rawNis));
+          const qRawSnap = await getDocs(qRaw);
+          if (!qRawSnap.empty) {
+            studentDoc = qRawSnap.docs[0];
+          }
+        }
+      }
+
       // 4. Verifikasi keberadaan data
-      if (!studentSnap.exists()) {
+      if (!studentDoc) {
         await signOut(auth);
         toast({
           variant: "destructive",
@@ -133,11 +155,12 @@ export function LoginForm() {
         return;
       }
 
-      const studentData = studentSnap.data();
+      const studentData = studentDoc.data();
       
-      // 5. Cek kecocokan password (dipaksa ke string untuk keamanan tipe data)
+      // 5. Cek kecocokan password
       if (String(studentData.password) === String(values.password)) {
-        sessionStorage.setItem('studentNis', prefixedNis);
+        // Simpan ID dokumen yang benar untuk digunakan di dashboard
+        sessionStorage.setItem('studentNis', studentDoc.id);
         
         toast({
           title: "Login Berhasil",
@@ -145,7 +168,6 @@ export function LoginForm() {
         });
         router.push("/parent/dashboard");
       } else {
-        // Jika password salah, logout sesi anonim tadi
         await signOut(auth);
         toast({
           variant: "destructive",
@@ -154,7 +176,6 @@ export function LoginForm() {
         });
       }
     } catch (error: any) {
-      // Pastikan logout jika terjadi error sistem
       if (auth.currentUser?.isAnonymous) {
         await signOut(auth);
       }
@@ -162,7 +183,7 @@ export function LoginForm() {
       toast({
         variant: "destructive",
         title: "Terjadi Kesalahan",
-        description: error.message || "Gagal melakukan verifikasi. Harap coba lagi.",
+        description: "Gagal melakukan verifikasi. Harap coba lagi.",
       });
     }
   };
