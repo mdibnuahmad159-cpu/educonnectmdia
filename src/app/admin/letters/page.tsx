@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection, query, Firestore } from "firebase/firestore";
 import type { Student, Teacher, SchoolProfile } from "@/types";
@@ -27,7 +27,8 @@ import {
     ArrowLeft,
     Send,
     Plus,
-    FileSignature
+    FileSignature,
+    Users
 } from "lucide-react";
 import { useSchoolProfile } from "@/context/school-profile-provider";
 import { format, parseISO } from "date-fns";
@@ -49,6 +50,9 @@ interface LetterData {
     eventDate?: string;
     eventTime?: string;
     eventPlace?: string;
+    committeeName?: string;
+    chairmanName?: string;
+    committeeSecretaryName?: string;
 }
 
 export default function LettersPage() {
@@ -65,6 +69,9 @@ export default function LettersPage() {
         attachment: '-',
         recipient: '',
         content: '',
+        committeeName: 'Panitia Pelaksana Haflatul Imtihan',
+        chairmanName: '',
+        committeeSecretaryName: '',
     });
 
     // Data fetching
@@ -94,7 +101,7 @@ export default function LettersPage() {
             case 'keterangan': return 'Surat Keterangan Belajar';
             case 'pemberitahuan': return 'Pemberitahuan Kegiatan Madrasah';
             case 'izin': return 'Permohonan Izin Penggunaan Tempat';
-            case 'undangan': return 'Undangan Wali Murid';
+            case 'undangan': return 'UNDANGAN';
             default: return '';
         }
     };
@@ -104,7 +111,7 @@ export default function LettersPage() {
             case 'keterangan': return 'Adalah benar-benar santri aktif di Madrasah Diniyah Takmiliyah Ula Ibnu Ahmad pada tahun ajaran aktif.';
             case 'pemberitahuan': return 'Dengan ini kami beritahukan kepada bapak/ibu wali murid bahwa sehubungan dengan datangnya bulan suci ramadhan, kegiatan belajar mengajar akan diliburkan sementara.';
             case 'izin': return 'Melalui surat ini kami bermaksud memohon izin untuk menggunakan sarana prasarana desa guna menunjang kegiatan panggung gembira santri.';
-            case 'undangan': return 'Kami mengharap kehadiran Bapak/Ibu pada acara rapat koordinasi wali murid yang akan dilaksanakan pada:';
+            case 'undangan': return 'Salam silaturrahim kami sampaikan teriring doa semoga Allah SWT. Senantiasa melimpahkan rahmat, taufik dan hidayahNya kepada kita, sehingga kita tetap diberi kenikmatan hidup dalam keadaan sehat walafiat Aamin.\n\nSehubungan akan dilaksanakannya HAFLATUL IMTIHAN Madrasah Diniyah IBNU AHMAD yang akan dilaksanakan pada :';
             default: return '';
         }
     };
@@ -120,6 +127,7 @@ export default function LettersPage() {
         const dateFormatted = format(parseISO(formData.date), "dd MMMM yyyy", { locale: dfnsId });
         
         let dynamicContentHtml = '';
+        let footerHtml = '';
         
         if (formData.type === 'keterangan' && selectedStudent) {
             dynamicContentHtml = `
@@ -132,25 +140,68 @@ export default function LettersPage() {
                         <tr><td>Alamat</td><td>: ${selectedStudent.address}</td></tr>
                     </tbody>
                 </table>
-                <p style="text-indent: 40px;">${formData.content}</p>
+                <p style="text-indent: 40px;">${formData.content.replace(/\n/g, '<br/>')}</p>
                 <p>Demikian surat keterangan ini dibuat untuk dipergunakan sebagaimana mestinya.</p>
             `;
+            footerHtml = `
+                <div class="footer">
+                    <div class="sign-box">
+                        <p>Kepala Madrasah,</p>
+                        <div class="sign-space"></div>
+                        <p class="sign-name">${kepalaMadrasah}</p>
+                    </div>
+                </div>
+            `;
         } else if (formData.type === 'undangan') {
+            const paragraphs = formData.content.split('\n\n');
             dynamicContentHtml = `
-                <p style="text-indent: 40px;">${formData.content}</p>
-                <table style="margin: 20px 40px; width: auto;">
+                <p style="text-indent: 40px;">${paragraphs[0] || ''}</p>
+                <p style="text-indent: 40px;">${paragraphs[1] || ''}</p>
+                <table style="margin: 15px 80px; width: auto;">
                     <tbody>
-                        <tr><td style="width: 120px;">Hari, Tanggal</td><td>: ${formData.eventDate ? format(parseISO(formData.eventDate), "EEEE, dd MMMM yyyy", { locale: dfnsId }) : '-'}</td></tr>
-                        <tr><td>Waktu</td><td>: ${formData.eventTime || '-'}</td></tr>
+                        <tr><td style="width: 100px;">Hari</td><td>: ${formData.eventDate ? format(parseISO(formData.eventDate), "EEEE", { locale: dfnsId }) : '-'}</td></tr>
+                        <tr><td>Tanggal</td><td>: ${formData.eventDate ? format(parseISO(formData.eventDate), "dd MMMM yyyy", { locale: dfnsId }) : '-'}</td></tr>
+                        <tr><td>Jam</td><td>: ${formData.eventTime || '-'}</td></tr>
                         <tr><td>Tempat</td><td>: ${formData.eventPlace || '-'}</td></tr>
                     </tbody>
                 </table>
-                <p>Demikian undangan ini kami sampaikan, atas perhatian dan kehadirannya kami ucapkan terima kasih.</p>
+                <p style="text-indent: 40px;">Demikian undangan ini kami buat. Atas perhatian Bapak/Ibu/Saudara(i) kami sampaikan banyak terimakasih.</p>
+            `;
+            footerHtml = `
+                <div class="date-row">Sampang, ${dateFormatted}</div>
+                <p style="text-align: center; margin-bottom: 30px;">${formData.committeeName || 'Panitia Pelaksana'}</p>
+                <div class="sign-container">
+                    <div class="sign-box">
+                        <p>Ketua</p>
+                        <div class="sign-space"></div>
+                        <p class="sign-name">${formData.chairmanName || '..........................'}</p>
+                    </div>
+                    <div class="sign-box">
+                        <p>Sekretaris</p>
+                        <div class="sign-space"></div>
+                        <p class="sign-name">${formData.committeeSecretaryName || '..........................'}</p>
+                    </div>
+                </div>
+                <div style="text-align: center; margin-top: 20px;">
+                    <p>Mengetahui,</p>
+                    <p>Kepala Madrasah</p>
+                    <div class="sign-space" style="height: 60px;"></div>
+                    <p class="sign-name">${kepalaMadrasah}</p>
+                </div>
             `;
         } else {
             dynamicContentHtml = `
-                <p style="text-indent: 40px; line-height: 1.6;">${formData.content}</p>
+                <p style="text-indent: 40px; line-height: 1.6;">${formData.content.replace(/\n/g, '<br/>')}</p>
                 <p>Demikian surat ini kami sampaikan, atas perhatian dan kerjasamanya kami ucapkan terima kasih.</p>
+            `;
+            footerHtml = `
+                <div class="footer">
+                    <div class="sign-box">
+                        <p>Kepala Madrasah,</p>
+                        <div class="sign-space"></div>
+                        <p class="sign-name">${kepalaMadrasah}</p>
+                    </div>
+                </div>
             `;
         }
 
@@ -160,33 +211,32 @@ export default function LettersPage() {
                     <title>Cetak Surat - ${formData.subject}</title>
                     <style>
                         @page { size: A4; margin: 20mm; }
-                        body { font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.5; color: #000; }
-                        .kop { text-align: center; margin-bottom: 20px; padding-bottom: 10px; }
+                        body { font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.3; color: #000; }
+                        .kop { text-align: center; margin-bottom: 5px; }
                         .kop img { width: 100%; max-height: 120px; object-fit: contain; }
-                        .kop h1 { margin: 0; font-size: 18pt; text-transform: uppercase; }
-                        .kop p { margin: 2px 0; font-size: 10pt; }
                         
-                        .meta-info { display: flex; justify-content: space-between; margin-bottom: 30px; }
+                        .meta-info { display: flex; justify-content: space-between; margin-bottom: 20px; }
                         .meta-left { width: 60%; }
                         .meta-right { text-align: right; }
                         
                         .title { text-align: center; text-decoration: underline; font-weight: bold; font-size: 14pt; margin-bottom: 5px; text-transform: uppercase; }
-                        .ref-number { text-align: center; margin-bottom: 30px; font-size: 11pt; }
                         
-                        .salutation { margin-bottom: 15px; }
-                        .content { margin-bottom: 40px; text-align: justify; }
+                        .salutation { margin-bottom: 10px; font-weight: bold; }
+                        .content { margin-bottom: 30px; text-align: justify; }
                         
-                        .footer { display: flex; justify-content: flex-end; margin-top: 50px; }
-                        .sign-box { text-align: center; width: 250px; }
-                        .sign-space { height: 80px; }
+                        .footer { display: flex; justify-content: flex-end; margin-top: 30px; }
+                        .sign-container { display: flex; justify-content: space-between; text-align: center; }
+                        .sign-box { text-align: center; width: 220px; }
+                        .sign-space { height: 70px; }
                         .sign-name { font-weight: bold; text-decoration: underline; }
+                        .date-row { text-align: right; margin-bottom: 10px; }
                     </style>
                 </head>
                 <body>
                     <div class="kop">
                         ${profile?.kopSuratUrl ? `<img src="${profile.kopSuratUrl}" />` : `
-                            <h1>${profile?.namaMadrasah || 'MADRASAH DINIYAH IBNU AHMAD'}</h1>
-                            <p>${profile?.alamat || 'Sampang, Jawa Timur'}</p>
+                            <h1 style="margin:0; font-size: 18pt; text-transform: uppercase;">${profile?.namaMadrasah || 'MADRASAH DINIYAH IBNU AHMAD'}</h1>
+                            <p style="margin:2px 0; font-size: 10pt;">${profile?.alamat || 'Sampang, Jawa Timur'}</p>
                         `}
                     </div>
 
@@ -194,34 +244,30 @@ export default function LettersPage() {
                         <div class="meta-left">
                             <table>
                                 <tbody>
-                                    <tr><td>Nomor</td><td>: ${formData.number}</td></tr>
-                                    <tr><td>Lampiran</td><td>: ${formData.attachment}</td></tr>
-                                    <tr><td>Perihal</td><td>: <strong>${formData.subject}</strong></td></tr>
+                                    <tr><td style="width: 80px; font-weight: bold;">Nomor</td><td>: ${formData.number}</td></tr>
+                                    <tr><td style="font-weight: bold;">Perihal</td><td>: <strong>${formData.subject}</strong></td></tr>
                                 </tbody>
                             </table>
                         </div>
-                        <div class="meta-right">
-                            Sampang, ${dateFormatted}
-                        </div>
+                        ${formData.type !== 'undangan' ? `<div class="meta-right">Sampang, ${dateFormatted}</div>` : ''}
                     </div>
 
-                    ${formData.recipient ? `<div style="margin-bottom: 25px;">Kepada Yth.<br/><strong>${formData.recipient}</strong><br/>di Tempat</div>` : ''}
+                    <div style="margin-bottom: 25px;">
+                        Kepada Yth.<br/>
+                        <strong>${formData.recipient || 'Bapak/Ibu/Saudara(i)'}</strong><br/>
+                        Di_<br/>
+                        Tempat
+                    </div>
 
-                    <div class="salutation">Assalamu'alaikum Wr. Wb.</div>
+                    <div class="salutation">Assalamu'alaikum Warahmatullah Wabarakatuh.</div>
 
                     <div class="content">
                         ${dynamicContentHtml}
                     </div>
 
-                    <div class="salutation">Wassalamu'alaikum Wr. Wb.</div>
+                    <div class="salutation">Wasalamu'alaikum Warahmatullah Wabarakatuh.</div>
 
-                    <div class="footer">
-                        <div class="sign-box">
-                            <p>Kepala Madrasah,</p>
-                            <div class="sign-space"></div>
-                            <p class="sign-name">${kepalaMadrasah}</p>
-                        </div>
-                    </div>
+                    ${footerHtml}
                 </body>
             </html>
         `);
@@ -297,7 +343,7 @@ export default function LettersPage() {
 
                             <div className="space-y-1.5">
                                 <label className="text-[10px] font-bold uppercase text-muted-foreground">Tujuan / Penerima</label>
-                                <Input placeholder="Contoh: Orang Tua Santri / Bapak Kepala Desa" value={formData.recipient} onChange={e => setFormData({...formData, recipient: e.target.value})} className="h-9" />
+                                <Input placeholder="Contoh: Bapak/Ibu/Saudara(i)" value={formData.recipient} onChange={e => setFormData({...formData, recipient: e.target.value})} className="h-9" />
                             </div>
 
                             {formData.type === 'keterangan' && (
@@ -317,18 +363,34 @@ export default function LettersPage() {
                             )}
 
                             {formData.type === 'undangan' && (
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 rounded-lg bg-green-50/50 border border-green-100">
-                                    <div className="space-y-1.5">
-                                        <label className="text-[10px] font-bold uppercase text-green-700">Tanggal Acara</label>
-                                        <Input type="date" value={formData.eventDate} onChange={e => setFormData({...formData, eventDate: e.target.value})} className="h-9 bg-white" />
+                                <div className="space-y-4 p-4 rounded-lg bg-green-50/50 border border-green-100">
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-bold uppercase text-green-700">Tanggal Acara</label>
+                                            <Input type="date" value={formData.eventDate} onChange={e => setFormData({...formData, eventDate: e.target.value})} className="h-9 bg-white" />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-bold uppercase text-green-700">Waktu</label>
+                                            <Input placeholder="18:00 WIB (Ba'da Magrib)" value={formData.eventTime} onChange={e => setFormData({...formData, eventTime: e.target.value})} className="h-9 bg-white" />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-bold uppercase text-green-700">Tempat</label>
+                                            <Input placeholder="Aula Madrasah" value={formData.eventPlace} onChange={e => setFormData({...formData, eventPlace: e.target.value})} className="h-9 bg-white" />
+                                        </div>
                                     </div>
-                                    <div className="space-y-1.5">
-                                        <label className="text-[10px] font-bold uppercase text-green-700">Waktu</label>
-                                        <Input placeholder="08:00 - Selesai" value={formData.eventTime} onChange={e => setFormData({...formData, eventTime: e.target.value})} className="h-9 bg-white" />
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <label className="text-[10px] font-bold uppercase text-green-700">Tempat</label>
-                                        <Input placeholder="Aula Madrasah" value={formData.eventPlace} onChange={e => setFormData({...formData, eventPlace: e.target.value})} className="h-9 bg-white" />
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-bold uppercase text-green-700">Nama Panitia</label>
+                                            <Input value={formData.committeeName} onChange={e => setFormData({...formData, committeeName: e.target.value})} className="h-9 bg-white" />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-bold uppercase text-green-700">Nama Ketua Panitia</label>
+                                            <Input value={formData.chairmanName} onChange={e => setFormData({...formData, chairmanName: e.target.value})} className="h-9 bg-white" />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-bold uppercase text-green-700">Nama Sekretaris Panitia</label>
+                                            <Input value={formData.committeeSecretaryName} onChange={e => setFormData({...formData, committeeSecretaryName: e.target.value})} className="h-9 bg-white" />
+                                        </div>
                                     </div>
                                 </div>
                             )}
@@ -336,7 +398,7 @@ export default function LettersPage() {
                             <div className="space-y-1.5">
                                 <label className="text-[10px] font-bold uppercase text-muted-foreground">Narasi / Isi Utama</label>
                                 <Textarea 
-                                    rows={6} 
+                                    rows={8} 
                                     value={formData.content} 
                                     onChange={e => setFormData({...formData, content: e.target.value})} 
                                     className="resize-none"
@@ -371,20 +433,20 @@ export default function LettersPage() {
 
                         <div className="p-4 rounded-xl border border-dashed border-primary/30 bg-primary/5 space-y-3">
                             <h4 className="text-[10px] font-bold uppercase tracking-widest text-primary flex items-center gap-2">
-                                <Plus className="h-3 w-3" /> Tips Pembuatan
+                                <Users className="h-3 w-3" /> Info Tambahan
                             </h4>
                             <ul className="text-[11px] space-y-2 text-muted-foreground">
                                 <li className="flex gap-2">
                                     <div className="h-1.5 w-1.5 rounded-full bg-primary mt-1 shrink-0" />
-                                    Pastikan nomor surat sudah sesuai dengan buku agenda surat keluar.
+                                    Format surat undangan menggunakan tata letak panitia.
                                 </li>
                                 <li className="flex gap-2">
                                     <div className="h-1.5 w-1.5 rounded-full bg-primary mt-1 shrink-0" />
-                                    Gunakan bahasa yang baku dan sopan.
+                                    Pastikan data hari dan tanggal acara sudah akurat.
                                 </li>
                                 <li className="flex gap-2">
                                     <div className="h-1.5 w-1.5 rounded-full bg-primary mt-1 shrink-0" />
-                                    Pratinjau sebelum mencetak untuk memastikan tata letak sudah pas.
+                                    Salam pembuka dan penutup otomatis dicetak tebal.
                                 </li>
                             </ul>
                         </div>
@@ -395,9 +457,9 @@ export default function LettersPage() {
             {step === 'preview' && (
                 <div className="space-y-6">
                     <Card className="max-w-[800px] mx-auto border shadow-lg overflow-hidden bg-white">
-                        <div className="p-10 text-black text-xs leading-relaxed font-serif">
+                        <div className="p-10 text-black text-[11px] leading-tight font-serif">
                             {/* Kop Surat */}
-                            <div className="text-center mb-6 pb-4">
+                            <div className="text-center mb-4">
                                 {profile?.kopSuratUrl ? (
                                     <img src={profile.kopSuratUrl} className="w-full h-auto max-h-[100px] object-contain" alt="Kop Surat" />
                                 ) : (
@@ -409,26 +471,28 @@ export default function LettersPage() {
                             </div>
 
                             {/* Meta Info */}
-                            <div className="flex justify-between mb-8">
+                            <div className="flex justify-between mb-6">
                                 <div className="space-y-0.5">
-                                    <p>Nomor : {formData.number}</p>
-                                    <p>Lamp. : {formData.attachment}</p>
-                                    <p>Hal : <strong>{formData.subject}</strong></p>
+                                    <p><strong>Nomor</strong> : {formData.number}</p>
+                                    <p><strong>Perihal</strong> : <strong>{formData.subject}</strong></p>
                                 </div>
-                                <div>
-                                    Sampang, {formData.date ? format(new Date(formData.date), "dd MMMM yyyy", { locale: dfnsId }) : '-'}
-                                </div>
+                                {formData.type !== 'undangan' && (
+                                    <div>
+                                        Sampang, {formData.date ? format(new Date(formData.date), "dd MMMM yyyy", { locale: dfnsId }) : '-'}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Recipient */}
                             <div className="mb-6">
                                 <p>Kepada Yth.</p>
-                                <p><strong>{formData.recipient || '..........................'}</strong></p>
-                                <p>di Tempat</p>
+                                <p><strong>{formData.recipient || 'Bapak/Ibu/Saudara(i)'}</strong></p>
+                                <p>Di_</p>
+                                <p>Tempat</p>
                             </div>
 
                             {/* Salutation */}
-                            <p className="mb-4">Assalamu'alaikum Wr. Wb.</p>
+                            <p className="mb-4 font-bold">Assalamu'alaikum Warahmatullah Wabarakatuh.</p>
 
                             {/* Dynamic Content */}
                             <div className="mb-8 space-y-4">
@@ -443,33 +507,62 @@ export default function LettersPage() {
                                             </tbody>
                                         </table>
                                         <p className="text-justify indent-10">{formData.content}</p>
+                                        <p>Demikian surat keterangan ini dibuat untuk dipergunakan sebagaimana mestinya.</p>
                                     </>
                                 ) : formData.type === 'undangan' ? (
                                     <>
-                                        <p className="text-justify indent-10">{formData.content}</p>
-                                        <table className="ml-10">
+                                        {formData.content.split('\n\n').map((p, i) => (
+                                            <p key={i} className="text-justify indent-10">{p}</p>
+                                        ))}
+                                        <table className="ml-20">
                                             <tbody>
-                                                <tr><td className="w-24">Hari, Tanggal</td><td>: {formData.eventDate ? format(new Date(formData.eventDate), "EEEE, dd MMMM yyyy", { locale: dfnsId }) : '-'}</td></tr>
-                                                <tr><td>Waktu</td><td>: {formData.eventTime || '-'}</td></tr>
-                                                <tr><td>Tempat</td><td>: {formData.eventPlace || '-'}</td></tr>
+                                                <tr><td className="w-24">Hari</td><td>: ${formData.eventDate ? format(parseISO(formData.eventDate), "EEEE", { locale: dfnsId }) : '-'}</td></tr>
+                                                <tr><td>Tanggal</td><td>: ${formData.eventDate ? format(parseISO(formData.eventDate), "dd MMMM yyyy", { locale: dfnsId }) : '-'}</td></tr>
+                                                <tr><td>Jam</td><td>: ${formData.eventTime || '-'}</td></tr>
+                                                <tr><td>Tempat</td><td>: ${formData.eventPlace || '-'}</td></tr>
                                             </tbody>
                                         </table>
+                                        <p className="text-justify indent-10">Demikian undangan ini kami buat. Atas perhatian Bapak/Ibu/Saudara(i) kami sampaikan banyak terimakasih.</p>
                                     </>
                                 ) : (
                                     <p className="text-justify indent-10">{formData.content}</p>
                                 )}
-                                <p>Demikian surat ini kami sampaikan, atas perhatian dan kerjasamanya kami ucapkan terima kasih.</p>
                             </div>
 
-                            <p className="mb-10">Wassalamu'alaikum Wr. Wb.</p>
+                            <p className="mb-6 font-bold">Wasalamu'alaikum Warahmatullah Wabarakatuh.</p>
 
                             {/* Footer Sign */}
-                            <div className="flex justify-end">
-                                <div className="text-center w-48 space-y-16">
-                                    <p>Kepala Madrasah,</p>
-                                    <p className="font-bold underline">{kepalaMadrasah}</p>
+                            {formData.type === 'undangan' ? (
+                                <div className="space-y-4">
+                                    <div className="text-right">Sampang, {formData.date ? format(new Date(formData.date), "dd MMMM yyyy", { locale: dfnsId }) : '-'}</div>
+                                    <p className="text-center">{formData.committeeName}</p>
+                                    <div className="flex justify-between text-center">
+                                        <div className="w-48">
+                                            <p>Ketua</p>
+                                            <div className="h-16"></div>
+                                            <p className="font-bold underline">{formData.chairmanName || '..........................'}</p>
+                                        </div>
+                                        <div className="w-48">
+                                            <p>Sekretaris</p>
+                                            <div className="h-16"></div>
+                                            <p className="font-bold underline">{formData.committeeSecretaryName || '..........................'}</p>
+                                        </div>
+                                    </div>
+                                    <div className="text-center pt-4">
+                                        <p>Mengetahui,</p>
+                                        <p>Kepala Madrasah</p>
+                                        <div className="h-16"></div>
+                                        <p className="font-bold underline">{kepalaMadrasah}</p>
+                                    </div>
                                 </div>
-                            </div>
+                            ) : (
+                                <div className="flex justify-end">
+                                    <div className="text-center w-48 space-y-16">
+                                        <p>Kepala Madrasah,</p>
+                                        <p className="font-bold underline">{kepalaMadrasah}</p>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </Card>
 
