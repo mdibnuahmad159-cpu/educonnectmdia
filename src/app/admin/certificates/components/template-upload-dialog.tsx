@@ -40,16 +40,48 @@ export function TemplateUploadDialog({ isOpen, setIsOpen, existingTemplates }: T
 
     setLoading(category);
     const reader = new FileReader();
-    reader.onload = async (event) => {
-      const imageUrl = event.target?.result as string;
-      try {
-        await upsertCertificateTemplate(firestore, { id: category, imageUrl });
-        toast({ title: "Template Berhasil Diunggah", description: `Template ${category} telah diperbarui.` });
-      } catch (error) {
-        toast({ variant: "destructive", title: "Gagal Mengunggah", description: "Terjadi kesalahan saat menyimpan template." });
-      } finally {
-        setLoading(null);
-      }
+    reader.onload = (event) => {
+      const img = new Image();
+      const rawDataUrl = event.target?.result as string;
+      img.onload = async () => {
+        const canvas = document.createElement('canvas');
+        // Resolusi A4 Landscape standar untuk cetak yang cukup tajam
+        const MAX_WIDTH = 1600; 
+        
+        let width = img.width;
+        let height = img.height;
+
+        if (width > MAX_WIDTH) {
+          height *= MAX_WIDTH / width;
+          width = MAX_WIDTH;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          // Kompres ke JPEG 70% untuk menjaga kualitas vs ukuran file (Firestore limit 1MB)
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          
+          try {
+            await upsertCertificateTemplate(firestore, { id: category, imageUrl: compressedDataUrl });
+            toast({ title: "Template Berhasil Diunggah", description: `Template ${category} telah diperbarui.` });
+          } catch (error) {
+            console.error("Upload error:", error);
+            toast({ 
+              variant: "destructive", 
+              title: "Gagal Mengunggah", 
+              description: "Terjadi kesalahan saat menyimpan ke database. Pastikan ukuran gambar tidak terlalu besar." 
+            });
+          } finally {
+            setLoading(null);
+            // Reset input file agar bisa pilih file yang sama jika gagal
+            e.target.value = '';
+          }
+        }
+      };
+      img.src = rawDataUrl;
     };
     reader.readAsDataURL(file);
   };
@@ -64,7 +96,7 @@ export function TemplateUploadDialog({ isOpen, setIsOpen, existingTemplates }: T
         <DialogHeader>
           <DialogTitle>Upload Template Sertifikat</DialogTitle>
           <DialogDescription>
-            Unggah gambar latar belakang (JPEG/PNG) untuk setiap kategori sertifikat.
+            Unggah gambar latar belakang (JPEG/PNG). Gambar akan dioptimalkan otomatis agar aman disimpan di sistem.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">

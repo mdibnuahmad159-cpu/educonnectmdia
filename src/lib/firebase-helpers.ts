@@ -418,12 +418,13 @@ export function deleteCertificate(db: Firestore, id: string) {
 
 export function upsertCertificateTemplate(db: Firestore, template: CertificateTemplate) {
   const ref = doc(db, 'certificate_templates', template.id);
-  setDoc(ref, template).catch(error => {
+  return setDoc(ref, template).catch(error => {
     errorEmitter.emit('permission-error', new FirestorePermissionError({
       path: ref.path,
       operation: 'write',
       requestResourceData: template,
     }));
+    throw error;
   });
 }
 
