@@ -1,10 +1,10 @@
 
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
-import { collection, query, Firestore } from "firebase/firestore";
-import type { Student, Teacher, SchoolProfile } from "@/types";
+import { collection, Firestore } from "firebase/firestore";
+import type { Student, Teacher } from "@/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,18 +17,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { 
-    FileText, 
     Mail, 
     Bell, 
     CalendarCheck, 
     UserCheck, 
     Printer, 
-    Loader2, 
     ArrowLeft,
-    Send,
     Plus,
     FileSignature,
-    Users,
     ListTodo,
     Info
 } from "lucide-react";
@@ -71,7 +67,7 @@ export default function LettersPage() {
     
     const [formData, setFormData] = useState<LetterData>({
         type: 'keterangan',
-        number: `/MDTU-IA/${new Date().getFullYear()}`,
+        number: `/MDT-ULA-IA/${new Date().getFullYear()}`,
         date: new Date().toISOString().split('T')[0],
         subject: '',
         attachment: '-',
@@ -98,7 +94,7 @@ export default function LettersPage() {
     }, [formData.date]);
 
     const studentsQuery = useMemoFirebase(() => firestore ? collection(firestore, "students") : null, [firestore]);
-    const { data: students, loading: loadingStudents } = useCollection<Student>(studentsQuery);
+    const { data: students } = useCollection<Student>(studentsQuery);
 
     const teachersQuery = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -114,7 +110,7 @@ export default function LettersPage() {
         setSelectedType(type);
         setFormData({
             type,
-            number: `/MDTU-IA/${new Date().getFullYear()}`,
+            number: `/MDT-ULA-IA/${new Date().getFullYear()}`,
             date: new Date().toISOString().split('T')[0],
             subject: getDefaultSubject(type),
             content: getDefaultContent(type),
@@ -201,7 +197,7 @@ export default function LettersPage() {
                     <div class="sign-box" style="text-align: center; width: 260px;">
                         <p>Sampang, ${dateFormatted}</p>
                         <p style="font-weight: bold;">Kepala Madrasah</p>
-                        <div class="sign-space" style="height: 55px;"></div>
+                        <div class="sign-space" style="height: 45px;"></div>
                         <p class="sign-name" style="font-weight: bold; text-decoration: underline;">${kepalaMadrasah}</p>
                     </div>
                 </div>
@@ -547,8 +543,21 @@ export default function LettersPage() {
 
             {step === 'preview' && (
                 <div className="space-y-6">
-                    <Card className="max-w-[800px] mx-auto border shadow-lg overflow-hidden bg-white">
-                        <div className="p-24 text-black leading-normal font-serif min-h-[1050px] flex flex-col relative" style={{ fontFamily: "'Times New Roman', serif", fontSize: '12pt' }}>
+                    {/* A4 Paper Preview Container */}
+                    <div className="bg-muted/20 p-4 sm:p-8 rounded-xl overflow-auto flex justify-center border-2 border-dashed border-muted">
+                        <div 
+                            className="bg-white shadow-2xl relative transition-all"
+                            style={{
+                                width: '210mm',
+                                minHeight: '297mm',
+                                padding: '25.4mm', // Normal Margin (1 inch)
+                                fontFamily: "'Times New Roman', serif",
+                                fontSize: '12pt',
+                                color: 'black',
+                                lineHeight: '1.2'
+                            }}
+                        >
+                            {/* Kop Surat */}
                             <div className="text-center mb-6">
                                 {profile?.kopSuratUrl ? (
                                     <img src={profile.kopSuratUrl} className="w-full h-auto max-h-[110px] object-contain" alt="Kop Surat" />
@@ -561,7 +570,7 @@ export default function LettersPage() {
                             </div>
 
                             {formData.type === 'keterangan' && selectedStudent ? (
-                                <div className="space-y-6">
+                                <div className="flex flex-col h-full">
                                     <div className="text-center mb-8">
                                         <p className="font-bold underline text-lg uppercase mb-0">SURAT KETERANGAN SISWA AKTIF</p>
                                         <p className="font-bold text-sm">NOMOR : {formData.number || ''}</p>
@@ -594,7 +603,7 @@ export default function LettersPage() {
                                     </div>
                                 </div>
                             ) : (
-                                <div className="space-y-4">
+                                <div className="flex flex-col h-full">
                                     <div className="flex justify-between mb-6">
                                         <div className="space-y-0.5">
                                             <p><strong>Nomor</strong> : {formData.number}</p>
@@ -657,11 +666,11 @@ export default function LettersPage() {
 
                                     <p className="mb-6 font-bold">Wassalamu'alaikum Wr.Wb.</p>
 
-                                    <div className="mt-auto flex flex-col">
+                                    <div className="mt-auto flex flex-col relative pb-16">
                                         {formData.type === 'undangan' ? (
                                             <div className="space-y-4">
                                                 <div className="text-right">Sampang, {dateFormatted}</div>
-                                                <p className="text-center font-bold text-uppercase">{formData.committeeName}</p>
+                                                <p className="text-center font-bold uppercase">{formData.committeeName}</p>
                                                 <div className="flex justify-between text-center">
                                                     <div className="w-48">
                                                         <p>Ketua</p>
@@ -692,23 +701,24 @@ export default function LettersPage() {
                                             </div>
                                         )}
                                         
+                                        {/* NB Footer for Pemberitahuan */}
                                         {formData.type === 'pemberitahuan' && formData.footerNote && (
-                                            <div className="absolute bottom-10 left-10 right-10 pt-2 border-t border-dashed border-black">
-                                                <p className="italic"><strong>Nb:</strong> {formData.footerNote}</p>
+                                            <div className="absolute bottom-0 left-0 right-0 pt-2 border-t border-dashed border-black">
+                                                <p className="italic text-[11pt]"><strong>Nb:</strong> {formData.footerNote}</p>
                                             </div>
                                         )}
                                     </div>
                                 </div>
                             )}
                         </div>
-                    </Card>
+                    </div>
 
                     <div className="flex justify-center gap-4">
                         <Button variant="outline" onClick={() => setStep('form')} className="gap-2">
                             <ArrowLeft className="h-4 w-4" /> Edit Kembali
                         </Button>
-                        <Button onClick={handlePrint} className="gap-2 bg-green-600 hover:bg-green-700 text-white">
-                            <Printer className="h-4 w-4" /> Cetak Sekarang
+                        <Button onClick={handlePrint} className="gap-2 bg-green-600 hover:bg-green-700 text-white shadow-lg">
+                            <Printer className="h-4 w-4" /> Cetak Sekarang (A4)
                         </Button>
                     </div>
                 </div>
