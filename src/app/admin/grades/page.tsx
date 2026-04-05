@@ -472,7 +472,7 @@ export default function GradesPage() {
         };
 
         const waliKelas = teachers?.find(t => t.jabatan === `Wali Kelas ${selectedClass}`)?.name || "...";
-        const kepalaMadrasah = "Imam Abdullah"; // Default or from school profile settings if available
+        const kepalaMadrasah = "Imam Abdullah"; 
         const location = profile?.alamat?.split(',')[0] || "Sampang";
         const dateNow = format(new Date(), "dd MMMM yyyy", { locale: dfnsId });
 
@@ -481,8 +481,10 @@ export default function GradesPage() {
 
         const tableRowsHtml = subjects.map((sub, idx) => {
             const score = localGrades[`${selectedStudent.id}_${sub.id}`] || 0;
+            const isLow = score < 50;
+            const rowStyle = isLow ? 'style="color: red;"' : '';
             return `
-                <tr>
+                <tr ${rowStyle}>
                     <td style="text-align: center;">${idx + 1}</td>
                     <td>${sub.subjectName}</td>
                     <td style="text-align: center;">${score}</td>
@@ -503,7 +505,7 @@ export default function GradesPage() {
                     <style>
                         @page { size: portrait; margin: 15mm; }
                         body { font-family: 'PT Sans', sans-serif; font-size: 11px; line-height: 1.4; color: #000; }
-                        .kop { text-align: center; margin-bottom: 5px; border-bottom: 3px solid #000; padding-bottom: 5px; }
+                        .kop { text-align: center; margin-bottom: 5px; padding-bottom: 5px; }
                         .kop h1 { margin: 0; font-size: 18px; text-transform: uppercase; }
                         .kop p { margin: 2px 0; font-size: 10px; }
                         .title { text-align: center; text-decoration: underline; font-weight: bold; font-size: 14px; margin: 15px 0; text-transform: uppercase; }
@@ -525,7 +527,7 @@ export default function GradesPage() {
                 </head>
                 <body>
                     <div class="kop">
-                        ${profile?.kopSuratUrl ? `<img src="${profile.kopSuratUrl}" style="width: 100%; max-height: 100px; object-contain: contain;" />` : `
+                        ${profile?.kopSuratUrl ? `<img src="${profile.kopSuratUrl}" style="width: 100%; max-height: 100px; object-fit: contain;" />` : `
                             <h1>${profile?.namaMadrasah || 'MADRASAH DINIYAH IBNU AHMAD'}</h1>
                             <p>${profile?.alamat || 'Sampang, Jawa Timur'}</p>
                         `}
