@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection } from "firebase/firestore";
@@ -31,9 +31,12 @@ import {
   UserCheck,
   Award,
   UsersRound,
-  ReceiptText
+  ReceiptText,
+  Wallet,
+  TrendingUp,
+  Loader2
 } from "lucide-react";
-import type { Teacher, Student } from "@/types";
+import type { Teacher, Student, SavingsTransaction, SPPPayment } from "@/types";
 import { TeacherAttendanceCard } from "./components/teacher-attendance-card";
 import { StudentAttendanceCard } from "./components/student-attendance-card";
 
@@ -53,9 +56,23 @@ export default function DashboardPage() {
 
   const teachersCollection = useMemoFirebase(() => firestore ? collection(firestore, "teachers") : null, [firestore]);
   const studentsCollection = useMemoFirebase(() => firestore ? collection(firestore, "students") : null, [firestore]);
+  const savingsCollection = useMemoFirebase(() => firestore ? collection(firestore, "savingsTransactions") : null, [firestore]);
+  const sppCollection = useMemoFirebase(() => firestore ? collection(firestore, "sppPayments") : null, [firestore]);
   
   const { data: teachers, loading: loadingTeachers, error: teachersError } = useCollection<Teacher>(teachersCollection);
   const { data: students, loading: loadingStudents, error: studentsError } = useCollection<Student>(studentsCollection);
+  const { data: savings, loading: loadingSavings } = useCollection<SavingsTransaction>(savingsCollection);
+  const { data: spp, loading: loadingSpp } = useCollection<SPPPayment>(sppCollection);
+
+  const totalSavingsBalance = useMemo(() => {
+    if (!savings) return 0;
+    return savings.reduce((acc, t) => t.type === 'deposit' ? acc + t.amount : acc - t.amount, 0);
+  }, [savings]);
+
+  const totalSppIncome = useMemo(() => {
+    if (!spp) return 0;
+    return spp.reduce((acc, p) => acc + p.amountPaid, 0);
+  }, [spp]);
 
   const hasPermissionError = teachersError || studentsError;
 
@@ -77,33 +94,53 @@ export default function DashboardPage() {
 
   return (
     <div className="grid gap-4">
-        <div className="grid gap-2 md:grid-cols-2">
+        <div className="grid gap-2 grid-cols-2 lg:grid-cols-4">
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-xs font-medium">Total Guru</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-[10px] font-bold uppercase tracking-tight text-muted-foreground">Total Guru</CardTitle>
+                <Users className="h-3.5 w-3.5 text-muted-foreground opacity-50" />
                 </CardHeader>
                 <CardContent>
                 <div className="text-lg font-bold">
-                    {loadingTeachers ? "..." : teachers?.length ?? 0}
+                    {loadingTeachers ? <Loader2 className="h-4 w-4 animate-spin" /> : teachers?.length ?? 0}
                 </div>
-                <p className="text-xs text-muted-foreground">
-                    Jumlah guru yang terdaftar
-                </p>
+                <p className="text-[9px] text-muted-foreground">Guru terdaftar</p>
                 </CardContent>
             </Card>
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-xs font-medium">Total Siswa</CardTitle>
-                <User className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-[10px] font-bold uppercase tracking-tight text-muted-foreground">Total Siswa</CardTitle>
+                <User className="h-3.5 w-3.5 text-muted-foreground opacity-50" />
                 </CardHeader>
                 <CardContent>
                 <div className="text-lg font-bold">
-                    {loadingStudents ? "..." : students?.length ?? 0}
+                    {loadingStudents ? <Loader2 className="h-4 w-4 animate-spin" /> : students?.length ?? 0}
                 </div>
-                <p className="text-xs text-muted-foreground">
-                    Jumlah siswa yang terdaftar
-                </p>
+                <p className="text-[9px] text-muted-foreground">Siswa aktif</p>
+                </CardContent>
+            </Card>
+            <Card className="bg-primary/5 border-primary/10">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-[10px] font-bold uppercase tracking-tight text-primary">Total Tabungan</CardTitle>
+                <PiggyBank className="h-3.5 w-3.5 text-primary opacity-50" />
+                </CardHeader>
+                <CardContent>
+                <div className="text-lg font-bold text-primary">
+                    {loadingSavings ? <Loader2 className="h-4 w-4 animate-spin" /> : `Rp ${totalSavingsBalance.toLocaleString()}`}
+                </div>
+                <p className="text-[9px] text-primary/60">Saldo seluruh penabung</p>
+                </CardContent>
+            </Card>
+            <Card className="bg-blue-50 border-blue-100">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-[10px] font-bold uppercase tracking-tight text-blue-700">Total SPP Masuk</CardTitle>
+                <ReceiptText className="h-3.5 w-3.5 text-blue-700 opacity-50" />
+                </CardHeader>
+                <CardContent>
+                <div className="text-lg font-bold text-blue-700">
+                    {loadingSpp ? <Loader2 className="h-4 w-4 animate-spin" /> : `Rp ${totalSppIncome.toLocaleString()}`}
+                </div>
+                <p className="text-[9px] text-blue-600/60">Akumulasi iuran bulanan</p>
                 </CardContent>
             </Card>
       </div>
