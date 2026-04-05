@@ -71,6 +71,7 @@ import jsPDF from "jspdf";
 import 'jspdf-autotable';
 import { useAcademicYear } from "@/context/academic-year-provider";
 import { useSchoolProfile } from "@/context/school-profile-provider";
+import * as XLSX from 'xlsx';
 
 export default function CertificatesPage() {
     const firestore = useFirestore() as Firestore;
@@ -315,12 +316,12 @@ export default function CertificatesPage() {
                             color: #000;
                         }
                         .name-container {
-                            margin-bottom: 30px;
+                            margin-bottom: 10px;
                             width: 80%;
                         }
                         .student-name {
                             font-family: 'Dancing Script', cursive;
-                            font-size: 42pt;
+                            font-size: 32pt;
                             color: #9c27b0;
                             display: inline-block;
                             padding: 0 50px;
@@ -336,7 +337,7 @@ export default function CertificatesPage() {
                             max-width: 85%;
                             line-height: 1.4;
                             color: #000;
-                            margin-top: 10px;
+                            margin-top: 5px;
                         }
                         .footer {
                             position: absolute;
@@ -449,7 +450,7 @@ export default function CertificatesPage() {
             const nameText = certificate.studentName.toUpperCase();
             
             // Auto scale font size for long names
-            let nameFontSize = 28;
+            let nameFontSize = 32;
             doc.setFontSize(nameFontSize);
             while (doc.getTextWidth(nameText) > (pageWidth * 0.8) && nameFontSize > 14) {
                 nameFontSize -= 2;
@@ -463,12 +464,12 @@ export default function CertificatesPage() {
             doc.setTextColor(51, 51, 51);
             
             const rankText = certificate.category === 'bintang' ? 'Sebagai Bintang Pelajar' : `sebagai juara ${certificate.rank.toLowerCase()}`;
-            doc.text(rankText, pageWidth / 2, pageHeight / 2 + 20, { align: "center" });
+            doc.text(rankText, pageWidth / 2, pageHeight / 2 + 5, { align: "center" });
 
             if (certificate.category === 'lomba' && certificate.competitionName) {
-                doc.text(`pada ${certificate.competitionName.toLowerCase()}`, pageWidth / 2, pageHeight / 2 + 45, { align: "center" });
+                doc.text(`pada ${certificate.competitionName.toLowerCase()}`, pageWidth / 2, pageHeight / 2 + 30, { align: "center" });
             } else {
-                doc.text(`Semester ${certificate.academicYear}`, pageWidth / 2, pageHeight / 2 + 45, { align: "center" });
+                doc.text(`Semester ${certificate.academicYear}`, pageWidth / 2, pageHeight / 2 + 30, { align: "center" });
             }
 
             const dateFormatted = format(parseISO(certificate.date), "d MMMM yyyy", { locale: dfnsId });
