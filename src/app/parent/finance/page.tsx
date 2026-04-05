@@ -55,7 +55,7 @@ export default function ParentFinancePage() {
     }, [firestore, nis]);
     const { data: payments, loading: loadingSpp } = useCollection<SPPPayment>(sppQuery);
 
-    // Fetch Savings Transactions (The "Mutation Log")
+    // Fetch Savings Transactions (The "Mutation Log") - Exactly as seen by Admin
     const savingsQuery = useMemoFirebase(() => {
         if (!firestore || !nis) return null;
         return query(
@@ -66,7 +66,7 @@ export default function ParentFinancePage() {
     }, [firestore, nis]);
     const { data: savings, loading: loadingSavings } = useCollection<SavingsTransaction>(savingsQuery);
 
-    // Calculate Balance from all transactions
+    // Calculate Balance from all transactions history
     const balance = useMemo(() => {
         if (!savings) return 0;
         return savings.reduce((acc, t) => t.type === 'deposit' ? acc + t.amount : acc - t.amount, 0);
@@ -135,13 +135,13 @@ export default function ParentFinancePage() {
                 <h1 className="text-xl font-headline font-bold text-primary">Keuangan Santri</h1>
             </div>
 
-            {/* Savings Overview Card */}
+            {/* Savings Overview Card - Synchronized with Admin data */}
             <Card className="border-none shadow-sm bg-primary text-primary-foreground overflow-hidden relative">
                 <CardContent className="p-5 flex items-center justify-between relative z-10">
                     <div className="space-y-1">
                         <p className="text-[10px] uppercase font-bold opacity-80 tracking-widest">Saldo Tabungan Saat Ini</p>
                         <p className="text-2xl font-bold">Rp {balance.toLocaleString()}</p>
-                        <p className="text-[9px] opacity-70">Data sinkron dengan catatan Admin</p>
+                        <p className="text-[9px] opacity-70 italic">Data terverifikasi oleh Admin Madrasah</p>
                     </div>
                     <div className="p-3 bg-white/10 rounded-full">
                         <PiggyBank className="h-6 w-6" />
@@ -230,7 +230,7 @@ export default function ParentFinancePage() {
                 </CardContent>
             </Card>
 
-            {/* Savings Transaction History (Mutasi) */}
+            {/* Savings Transaction History (Mutasi) - Mirrored from Admin History */}
             <Card className="border-none shadow-sm overflow-hidden">
                 <CardHeader className="p-4 pb-2 border-b bg-muted/5">
                     <CardTitle className="text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-2">
@@ -241,7 +241,7 @@ export default function ParentFinancePage() {
                     {savings && savings.length > 0 ? (
                         <div className="divide-y">
                             {savings.map((t) => (
-                                <div key={t.id} className="flex items-center justify-between py-3">
+                                <div key={t.id} className="flex items-center justify-between py-3 group">
                                     <div className="flex items-center gap-3">
                                         <div className={cn(
                                             "p-2 rounded-full",
@@ -266,8 +266,8 @@ export default function ParentFinancePage() {
                                             {t.type === 'deposit' ? '+' : '-'} Rp {t.amount.toLocaleString()}
                                         </p>
                                         {t.notes && (
-                                            <p className="text-[9px] text-muted-foreground italic truncate max-w-[120px] ml-auto">
-                                                "{t.notes}"
+                                            <p className="text-[9px] text-muted-foreground italic truncate max-w-[150px] ml-auto">
+                                                {t.notes}
                                             </p>
                                         )}
                                     </div>
@@ -277,14 +277,14 @@ export default function ParentFinancePage() {
                     ) : (
                         <div className="py-16 text-center text-muted-foreground italic">
                             <History className="h-8 w-8 mx-auto mb-2 opacity-10" />
-                            <p className="text-[10px]">Belum ada riwayat mutasi tabungan.</p>
+                            <p className="text-[10px]">Belum ada riwayat mutasi tabungan yang tercatat.</p>
                         </div>
                     )}
                 </CardContent>
                 {savings && savings.length > 0 && (
                     <div className="p-3 bg-muted/10 border-t text-center">
                         <p className="text-[9px] text-muted-foreground italic">
-                            * Menampilkan seluruh riwayat transaksi yang tercatat di sistem Admin.
+                            * Riwayat di atas adalah catatan resmi dari database bendahara Madrasah.
                         </p>
                     </div>
                 )}
