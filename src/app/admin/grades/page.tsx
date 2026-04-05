@@ -795,7 +795,7 @@ export default function GradesPage() {
                             <td style="text-align: center; font-weight: bold;">${s.rank}</td>
                             <td>${s.namaAyah || '-'}</td>
                             <td>${s.namaIbu || '-'}</td>
-                            <td style="font-size: 8px;">${s.address || '-'}</td>
+                            <td>${s.address || '-'}</td>
                             <td style="text-align: center; font-weight: bold;">${s.total}</td>
                             <td style="text-align: center;">${s.average.toFixed(1)}</td>
                         </tr>
@@ -809,45 +809,71 @@ export default function GradesPage() {
                         <title>Laporan Peringkat - ${activeYear.replace('/', '-')}</title>
                         <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&display=swap" rel="stylesheet">
                         <style>
-                            body { font-family: 'PT Sans', sans-serif; padding: 20px; font-size: 10px; }
-                            .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; }
-                            h1 { margin: 0; font-size: 16px; text-transform: uppercase; }
-                            h2 { margin: 5px 0; font-size: 14px; color: #333; }
-                            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-                            th, td { border: 1px solid #000; padding: 5px; text-align: left; }
-                            th { background-color: #f2f2f2; text-align: center; text-transform: uppercase; font-size: 9px; }
-                            .footer { margin-top: 30px; text-align: right; padding-right: 50px; }
-                            @media print { @page { size: landscape; margin: 10mm; } }
+                            @page { size: landscape; margin: 8mm; }
+                            body { font-family: 'PT Sans', sans-serif; padding: 0; margin: 0; color: #000; line-height: 1.1; }
+                            .container { width: 100%; max-width: 100%; margin: 0 auto; }
+                            .header { text-align: center; margin-bottom: 10px; border-bottom: 1.5px solid #000; padding-bottom: 5px; }
+                            h1 { margin: 0; font-size: 15px; text-transform: uppercase; font-weight: bold; }
+                            h2 { margin: 2px 0; font-size: 13px; font-weight: bold; color: #222; }
+                            .meta { font-size: 10px; margin-bottom: 5px; font-weight: normal; }
+                            
+                            table { width: 100%; border-collapse: collapse; border: 1px solid #000; margin-top: 5px; table-layout: fixed; }
+                            th, td { border: 1px solid #000; padding: 3px 4px; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 9px; }
+                            th { background-color: #f5f5f5; text-align: center; text-transform: uppercase; font-size: 8.5px; font-weight: bold; }
+                            
+                            /* Column Widths */
+                            th:nth-child(1), td:nth-child(1) { width: 25px; } /* No */
+                            th:nth-child(2), td:nth-child(2) { width: 45px; } /* Kelas */
+                            th:nth-child(3), td:nth-child(3) { width: 140px; white-space: normal; } /* Nama */
+                            th:nth-child(4), td:nth-child(4) { width: 35px; } /* Rank */
+                            th:nth-child(5), td:nth-child(5) { width: 100px; } /* Ayah */
+                            th:nth-child(6), td:nth-child(6) { width: 100px; } /* Ibu */
+                            th:nth-child(7), td:nth-child(7) { width: auto; white-space: normal; } /* Alamat */
+                            th:nth-child(8), td:nth-child(8) { width: 40px; } /* Total */
+                            th:nth-child(9), td:nth-child(9) { width: 40px; } /* Rerata */
+
+                            .footer { margin-top: 15px; display: flex; justify-content: flex-end; }
+                            .sign-box { text-align: center; width: 200px; font-size: 10px; }
+                            .sign-space { height: 45px; }
+                            
+                            @media print {
+                                body { -webkit-print-color-adjust: exact; }
+                            }
                         </style>
                     </head>
                     <body>
-                        <div class="header">
-                            <h1>${schoolName}</h1>
-                            <h2>LAPORAN PERINGKAT SANTRI (TOP 3 PER KELAS)</h2>
-                            <p>Semester ${selectedGradeType} | Tahun Ajaran ${activeYear}</p>
-                        </div>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th style="width: 30px;">No</th>
-                                    <th style="width: 60px;">Kelas</th>
-                                    <th>Nama Santri</th>
-                                    <th style="width: 40px;">Rank</th>
-                                    <th>Nama Ayah</th>
-                                    <th>Nama Ibu</th>
-                                    <th style="width: 150px;">Alamat</th>
-                                    <th style="width: 50px;">Total</th>
-                                    <th style="width: 50px;">Rata</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${rowsHtml}
-                            </tbody>
-                        </table>
-                        <div class="footer">
-                            <p>Sampang, ${dateNow}</p>
-                            <br><br><br>
-                            <p><strong>Kepala Madrasah</strong></p>
+                        <div class="container">
+                            <div class="header">
+                                <h1>${schoolName}</h1>
+                                <h2>LAPORAN PERINGKAT SANTRI (TOP 3 PER KELAS)</h2>
+                                <div class="meta">Semester ${selectedGradeType} | Tahun Ajaran ${activeYear}</div>
+                            </div>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>No</th>
+                                        <th>Kelas</th>
+                                        <th>Nama Santri</th>
+                                        <th>Rank</th>
+                                        <th>Nama Ayah</th>
+                                        <th>Nama Ibu</th>
+                                        <th>Alamat</th>
+                                        <th>Total</th>
+                                        <th>Rata</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${rowsHtml}
+                                </tbody>
+                            </table>
+                            <div class="footer">
+                                <div class="sign-box">
+                                    <p>Sampang, ${dateNow}</p>
+                                    <p><strong>Kepala Madrasah</strong></p>
+                                    <div class="sign-space"></div>
+                                    <p><strong>( ____________________ )</strong></p>
+                                </div>
+                            </div>
                         </div>
                     </body>
                 </html>
