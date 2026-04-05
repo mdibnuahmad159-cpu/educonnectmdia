@@ -106,40 +106,63 @@ export function LoginForm() {
   const handleParentSubmit = async (values: z.infer<typeof parentSchema>) => {
     if (!auth || !firestore) return;
     try {
-      // Normalisasi NIS: hapus spasi dan ubah ke kapital
+      // 0. Pastikan sesi bersih (logout jika sebelumnya ada user lain)
+      if (auth.currentUser) {
+        await signOut(auth);
+      }
+
+      // 1. Normalisasi NIS: hapus spasi dan ubah ke kapital
       const nisInput = String(values.nis).trim().toUpperCase();
       const prefixedNis = nisInput.startsWith('MDIA') ? nisInput : `MDIA${nisInput}`;
 
-      // 1. Login anonim TERLEBIH DAHULU agar memiliki izin baca (Rules: allow read: if isSignedIn())
+      // 2. Login anonim TERLEBIH DAHULU agar memiliki izin baca sesuai Security Rules
       await signInAnonymously(auth);
 
-      // 2. Baca dokumen siswa menggunakan NIS sebagai ID
+      // 3. Baca dokumen siswa menggunakan NIS sebagai ID
       const studentRef = doc(firestore, "students", prefixedNis);
       const studentSnap = await getDoc(studentRef);
 
-      // 3. Verifikasi keberadaan data dan kecocokan password
-      if (studentSnap.exists() && studentSnap.data().password === values.password) {
+      // 4. Verifikasi keberadaan data
+      if (!studentSnap.exists()) {
+        await signOut(auth);
+        toast({
+          variant: "destructive",
+          title: "Login Gagal",
+          description: "Data santri dengan NIS tersebut tidak ditemukan.",
+        });
+        return;
+      }
+
+      const studentData = studentSnap.data();
+      
+      // 5. Cek kecocokan password (dipaksa ke string untuk keamanan tipe data)
+      if (String(studentData.password) === String(values.password)) {
         sessionStorage.setItem('studentNis', prefixedNis);
         
         toast({
-          title: "Login Wali Murid Berhasil",
-          description: "Selamat datang di dasbor santri.",
+          title: "Login Berhasil",
+          description: `Selamat datang, Wali dari ${studentData.name}.`,
         });
         router.push("/parent/dashboard");
       } else {
-        // Jika gagal verifikasi, segera logout sesi anonim tadi
+        // Jika password salah, logout sesi anonim tadi
         await signOut(auth);
-        throw new Error("NIS atau password salah.");
+        toast({
+          variant: "destructive",
+          title: "Login Gagal",
+          description: "Password yang Anda masukkan salah.",
+        });
       }
     } catch (error: any) {
-      // Pastikan logout jika terjadi error apa pun selama proses
+      // Pastikan logout jika terjadi error sistem
       if (auth.currentUser?.isAnonymous) {
         await signOut(auth);
       }
+      console.error("Parent login error:", error);
       toast({
         variant: "destructive",
-        title: "Login Gagal",
-        description: error.message || "Pastikan NIS dan password Anda benar.",
+        title: "Terjadi Kesalahan",
+        description: error.message || "Gagal melakukan verifikasi. Harap coba lagi.",
       });
     }
   };
@@ -237,7 +260,7 @@ export function LoginForm() {
                       <FormItem>
                         <FormLabel>NIS (Nomor Induk Siswa)</FormLabel>
                         <FormControl>
-                          <Input placeholder="Masukkan NIS" {...field} />
+                          <Input placeholder="Contoh: 12345" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
