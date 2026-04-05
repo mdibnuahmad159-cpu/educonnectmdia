@@ -17,12 +17,15 @@ import {
     CheckCircle2,
     XCircle,
     TrendingUp,
-    TrendingDown
+    TrendingDown,
+    AlertCircle,
+    BadgeCheck
 } from "lucide-react";
 import Link from "next/link";
 import { format, parseISO } from "date-fns";
 import { id as dfnsId } from "date-fns/locale";
 import { useAcademicYear } from "@/context/academic-year-provider";
+import { useSchoolProfile } from "@/context/school-profile-provider";
 import { cn } from "@/lib/utils";
 
 const MONTHS = [
@@ -36,6 +39,7 @@ export default function ParentFinancePage() {
     const [nis, setNis] = useState<string | null>(null);
     const firestore = useFirestore();
     const { activeYear } = useAcademicYear();
+    const { profile } = useSchoolProfile();
 
     useEffect(() => {
         setNis(sessionStorage.getItem('studentNis'));
@@ -79,6 +83,30 @@ export default function ParentFinancePage() {
         return map;
     }, [payments, academicYears]);
 
+    const sppStats = useMemo(() => {
+        const defaultAmount = profile?.defaultSppAmount || 50000;
+        let totalPaid = 0;
+        let paidCount = 0;
+
+        MONTHS.forEach(m => {
+            const p = sppMap.get(m.id);
+            if (p?.status === 'Paid') {
+                totalPaid += p.amountPaid;
+                paidCount++;
+            }
+        });
+
+        const remainingMonths = Math.max(0, MONTHS.length - paidCount);
+        const totalArrears = remainingMonths * defaultAmount;
+
+        return {
+            totalPaid,
+            totalArrears,
+            paidCount,
+            isFullPaid: paidCount >= 10 // Berdasarkan kebijakan 10 bulan lunas tahunan
+        };
+    }, [sppMap, profile]);
+
     if (!nis || loadingSpp || loadingSavings) {
         return (
             <div className="flex h-[60vh] w-full items-center justify-center">
@@ -97,8 +125,8 @@ export default function ParentFinancePage() {
             </div>
 
             {/* Savings Overview */}
-            <Card className="border-none shadow-sm bg-primary text-primary-foreground">
-                <CardContent className="p-5 flex items-center justify-between">
+            <Card className="border-none shadow-sm bg-primary text-primary-foreground overflow-hidden relative">
+                <CardContent className="p-5 flex items-center justify-between relative z-10">
                     <div className="space-y-1">
                         <p className="text-[10px] uppercase font-bold opacity-80 tracking-widest">Saldo Tabungan</p>
                         <p className="text-2xl font-bold">Rp {balance.toLocaleString()}</p>
@@ -107,17 +135,49 @@ export default function ParentFinancePage() {
                         <PiggyBank className="h-6 w-6" />
                     </div>
                 </CardContent>
+                <div className="absolute -right-4 -bottom-4 opacity-10">
+                    <Wallet className="h-24 w-24 rotate-12" />
+                </div>
             </Card>
+
+            {/* SPP Stats Summary */}
+            <div className="grid grid-cols-2 gap-3">
+                <Card className="border-none shadow-sm bg-blue-50">
+                    <CardContent className="p-4 flex flex-col gap-1">
+                        <div className="flex items-center gap-2 text-blue-600 mb-1">
+                            <BadgeCheck className="h-3.5 w-3.5" />
+                            <span className="text-[9px] font-bold uppercase tracking-tight">Total Terbayar</span>
+                        </div>
+                        <p className="text-sm font-bold text-blue-700">Rp {sppStats.totalPaid.toLocaleString()}</p>
+                        <p className="text-[8px] text-blue-600/70 font-medium">Tahun Ajaran {activeYear}</p>
+                    </CardContent>
+                </Card>
+                <Card className="border-none shadow-sm bg-orange-50">
+                    <CardContent className="p-4 flex flex-col gap-1">
+                        <div className="flex items-center gap-2 text-orange-600 mb-1">
+                            <AlertCircle className="h-3.5 w-3.5" />
+                            <span className="text-[9px] font-bold uppercase tracking-tight">Total Tunggakan</span>
+                        </div>
+                        <p className="text-sm font-bold text-orange-700">Rp {sppStats.totalArrears.toLocaleString()}</p>
+                        <p className="text-[8px] text-orange-600/70 font-medium">Estimasi s/d Akhir Tahun</p>
+                    </CardContent>
+                </Card>
+            </div>
 
             {/* SPP Grid */}
             <Card className="border-none shadow-sm overflow-hidden">
                 <CardHeader className="p-4 pb-2 border-b bg-muted/5 flex flex-row items-center justify-between space-y-0">
                     <div>
                         <CardTitle className="text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                            <CreditCard className="h-3.5 w-3.5" /> Pembayaran SPP
+                            <CreditCard className="h-3.5 w-3.5" /> Kontrol Pembayaran SPP
                         </CardTitle>
-                        <CardDescription className="text-[10px]">Tahun Ajaran {activeYear}</CardDescription>
+                        <CardDescription className="text-[10px]">Klik bulan untuk melihat detail</CardDescription>
                     </div>
+                    {sppStats.isFullPaid && (
+                        <div className="flex items-center gap-1 text-[9px] font-bold text-green-600 bg-green-100 px-2 py-0.5 rounded-full uppercase">
+                            <CheckCircle2 className="h-2.5 w-2.5" /> Lunas Tahunan
+                        </div>
+                    )}
                 </CardHeader>
                 <CardContent className="p-4 grid grid-cols-3 gap-2">
                     {MONTHS.map(m => {
