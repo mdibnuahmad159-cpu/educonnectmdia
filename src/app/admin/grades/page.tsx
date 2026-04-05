@@ -1506,35 +1506,37 @@ export default function GradesPage() {
                             </CardTitle>
                         </div>
                         {selectedStudent && (
-                            <div className="flex items-center gap-2">
-                                <Button 
-                                    onClick={handlePrintReport} 
-                                    variant="outline" 
-                                    size="xs" 
-                                    className="h-7 gap-1.5 border-primary/30 text-primary font-normal"
-                                >
-                                    <Printer className="h-3 w-3" /> Cetak Rapor
-                                </Button>
-                                <Button 
-                                    onClick={handlePrintRankingCertificate} 
-                                    variant="outline" 
-                                    size="xs" 
-                                    className="h-7 gap-1.5 border-primary/30 text-primary font-normal"
-                                >
-                                    <Award className="h-3 w-3" /> Sertifikat Ranking
-                                </Button>
-                                {selectedStudent.rank === 1 && (
-                                    <Button 
-                                        onClick={handlePrintStarCertificate} 
-                                        variant="outline" 
-                                        size="xs" 
-                                        className="h-7 gap-1.5 border-yellow-500/30 text-yellow-600 font-normal hover:bg-yellow-50"
-                                    >
-                                        <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" /> Sertifikat Bintang
-                                    </Button>
-                                )}
+                            <div className="flex flex-col items-end gap-1.5">
                                 <div className="px-2 py-0.5 rounded-full bg-primary text-white text-[10px] uppercase shadow-sm truncate max-w-[150px] sm:max-w-none font-normal">
                                     {selectedStudent.name}
+                                </div>
+                                <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                                    <Button 
+                                        onClick={handlePrintReport} 
+                                        variant="outline" 
+                                        size="xs" 
+                                        className="h-7 gap-1.5 border-primary/30 text-primary font-normal"
+                                    >
+                                        <Printer className="h-3 w-3" /> Cetak Rapor
+                                    </Button>
+                                    <Button 
+                                        onClick={handlePrintRankingCertificate} 
+                                        variant="outline" 
+                                        size="xs" 
+                                        className="h-7 gap-1.5 border-primary/30 text-primary font-normal"
+                                    >
+                                        <Award className="h-3 w-3" /> Sertifikat Ranking
+                                    </Button>
+                                    {selectedStudent.rank === 1 && (
+                                        <Button 
+                                            onClick={handlePrintStarCertificate} 
+                                            variant="outline" 
+                                            size="xs" 
+                                            className="h-7 gap-1.5 border-yellow-500/30 text-yellow-600 font-normal hover:bg-yellow-50"
+                                        >
+                                            <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" /> Sertifikat Bintang
+                                        </Button>
+                                    )}
                                 </div>
                             </div>
                         )}
