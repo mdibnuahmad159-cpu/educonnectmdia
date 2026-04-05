@@ -12,13 +12,35 @@ service cloud.firestore {
     function isAdmin() {
       return isSignedIn() && (request.auth.token.email == 'mdibnuahmad159@gmail.com' || request.auth.uid == 'ILjpJZ1CcEhC6qlN9JpHwj0Bj773');
     }
+    
+    // Fungsi pembantu untuk mengecek apakah user adalah guru terdaftar
+    function isTeacher() {
+      return isSignedIn() && exists(/databases/$(database)/documents/teachers/$(request.auth.uid));
+    }
 
     // Aturan Global: 
     // 1. Semua pengguna yang login bisa membaca data
-    // 2. Hanya admin utama yang bisa melakukan penulisan (create, update, delete)
+    // 2. Hanya admin utama yang bisa melakukan penulisan secara umum
     match /{allPaths=**} {
       allow read: if isSignedIn();
       allow write: if isAdmin();
+    }
+
+    // Izin spesifik untuk Guru (Input Nilai, Absensi, dan Tabungan)
+    match /grades/{id} {
+      allow write: if isAdmin() || isTeacher();
+    }
+    
+    match /student_attendances/{id} {
+      allow write: if isAdmin() || isTeacher();
+    }
+    
+    match /report_summaries/{id} {
+      allow write: if isAdmin() || isTeacher();
+    }
+    
+    match /savingsTransactions/{id} {
+      allow write: if isAdmin() || isTeacher();
     }
 
     // Pengecualian khusus: Profil sekolah bisa dibaca publik (untuk halaman login)
@@ -26,7 +48,7 @@ service cloud.firestore {
       allow read: if true;
     }
     
-    // Izin spesifik untuk template sertifikat agar lebih aman
+    // Izin spesifik untuk template sertifikat
     match /certificate_templates/{id} {
       allow read: if isSignedIn();
       allow write: if isAdmin();
