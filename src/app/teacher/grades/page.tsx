@@ -30,7 +30,8 @@ import {
     ClipboardCheck, 
     AlertCircle, 
     CheckCircle2,
-    GraduationCap
+    GraduationCap,
+    Info
 } from "lucide-react";
 import { useAcademicYear } from "@/context/academic-year-provider";
 import { useToast } from "@/hooks/use-toast";
