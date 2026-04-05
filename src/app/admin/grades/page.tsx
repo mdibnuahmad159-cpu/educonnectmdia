@@ -67,7 +67,10 @@ import { id as dfnsId } from "date-fns/locale";
 
 type GradeType = 'Ganjil' | 'Genap';
 
-const STATUS_OPTIONS: ReportSummaryStatus[] = ['Naik Kelas', 'Turun Kelas', 'Lanjut Semester'];
+const MONTH_NAMES = [
+    "", "Januari", "Februari", "Maret", "April", "Mei", "Juni", 
+    "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+];
 
 // Helper for Terbilang (kata-kata angka)
 function terbilang(n: number): string {
@@ -522,15 +525,11 @@ export default function GradesPage() {
                 <div class="title">LAPORAN HASIL BELAJAR</div>
 
                 <div class="student-info">
-                    <div class="info-col">
-                        <div class="info-item"><div class="info-label">Nama Santri</div><div class="info-val"><span>:</span> ${student.name}</div></div>
-                        <div class="info-item"><div class="info-label">NIS</div><div class="info-val"><span>:</span> ${student.nis}</div></div>
-                        <div class="info-item"><div class="info-label">Tahun</div><div class="info-val"><span>:</span> ${activeYear}</div></div>
-                    </div>
-                    <div class="info-col">
-                        <div class="info-item"><div class="info-label">Kelas</div><div class="info-val"><span>:</span> ${getRoman(Number(selectedClass))}</div></div>
-                        <div class="info-item"><div class="info-label">Semester</div><div class="info-val"><span>:</span> ${selectedGradeType}</div></div>
-                    </div>
+                    <div class="info-item"><div class="info-label">Nama Santri</div><div class="info-val"><span>:</span> ${student.name}</div></div>
+                    <div class="info-item"><div class="info-label">NIS</div><div class="info-val"><span>:</span> ${student.nis}</div></div>
+                    <div class="info-item"><div class="info-label">Tahun</div><div class="info-val"><span>:</span> ${activeYear}</div></div>
+                    <div class="info-item"><div class="info-label">Kelas</div><div class="info-val"><span>:</span> ${getRoman(Number(selectedClass))}</div></div>
+                    <div class="info-item"><div class="info-label">Semester</div><div class="info-val"><span>:</span> ${selectedGradeType}</div></div>
                 </div>
 
                 <table>
@@ -632,9 +631,8 @@ export default function GradesPage() {
                         .kop p { margin: 2px 0; font-size: 10px; }
                         .title { text-align: center; text-decoration: underline; font-weight: bold; font-size: 14px; margin: 10px 0; text-transform: uppercase; }
                         
-                        .student-info { display: flex; justify-content: space-between; margin-bottom: 10px; padding: 0 5px; }
-                        .info-col { width: 48%; }
-                        .info-item { display: flex; margin-bottom: 4px; }
+                        .student-info { display: flex; flex-wrap: wrap; margin-bottom: 10px; padding: 0 5px; }
+                        .info-item { display: flex; margin-bottom: 4px; width: 50%; }
                         .info-label { width: 90px; }
                         .info-val { flex: 1; display: flex; }
                         .info-val span { margin-right: 8px; }
@@ -831,8 +829,11 @@ export default function GradesPage() {
                         </table>
 
                         <div class="description" style="font-weight: normal; margin-top: 5px;">
-                            Yang diselenggarakan di ${schoolName.toUpperCase()} pada<br>
-                            tahun ajaran ${activeYear}.
+                            Yang diselenggarakan di ${schoolName.toUpperCase()} pada tahun ajaran ${activeYear}.
+                        </div>
+
+                        <div class="description" style="font-weight: normal; margin-top: 5px;">
+                            Sampang, ${dateNow}
                         </div>
 
                         <div class="footer">
@@ -887,9 +888,8 @@ export default function GradesPage() {
                         .kop p { margin: 2px 0; font-size: 10px; }
                         .title { text-align: center; text-decoration: underline; font-weight: bold; font-size: 14px; margin: 10px 0; text-transform: uppercase; }
                         
-                        .student-info { display: flex; justify-content: space-between; margin-bottom: 10px; padding: 0 5px; }
-                        .info-col { width: 48%; }
-                        .info-item { display: flex; margin-bottom: 4px; }
+                        .student-info { display: flex; flex-wrap: wrap; margin-bottom: 10px; padding: 0 5px; }
+                        .info-item { display: flex; margin-bottom: 4px; width: 50%; }
                         .info-label { width: 90px; }
                         .info-val { flex: 1; display: flex; }
                         .info-val span { margin-right: 8px; }
