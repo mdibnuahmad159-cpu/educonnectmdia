@@ -531,6 +531,5 @@ export function deleteSavingsTransaction(db: Firestore, id: string) {
       path: ref.path,
       operation: 'delete',
     }));
-    throw error;
   });
 }

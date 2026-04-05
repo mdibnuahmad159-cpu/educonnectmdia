@@ -137,6 +137,9 @@ export type ReportSummary = {
   sakit?: number;
   izin?: number;
   alpa?: number;
+  kelakuan?: string;
+  kerajinan?: string;
+  kerapian?: string;
   updatedAt: string;
 };
 

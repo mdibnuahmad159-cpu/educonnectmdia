@@ -4,7 +4,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection, query, where, Firestore } from "firebase/firestore";
-import type { Student, Curriculum, Grade, ReportSummary, ReportSummaryStatus } from "@/types";
+import type { Student, Curriculum, Grade, ReportSummary, ReportSummaryStatus, Teacher } from "@/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -47,9 +47,11 @@ import {
     Upload,
     FileSpreadsheet,
     FileText,
-    Printer
+    Printer,
+    Sparkles
 } from "lucide-react";
 import { useAcademicYear } from "@/context/academic-year-provider";
+import { useSchoolProfile } from "@/context/school-profile-provider";
 import { useToast } from "@/hooks/use-toast";
 import { saveGradesBatch } from "@/lib/firebase-helpers";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -58,14 +60,40 @@ import { Progress } from "@/components/ui/progress";
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { format } from "date-fns";
+import { id as dfnsId } from "date-fns/locale";
 
 type GradeType = 'Ganjil' | 'Genap';
 
 const STATUS_OPTIONS: ReportSummaryStatus[] = ['Naik Kelas', 'Turun Kelas', 'Lanjut Semester'];
 
+// Helper for Terbilang (kata-kata angka)
+function terbilang(n: number): string {
+    const words = ["", "Satu", "Dua", "Tiga", "Empat", "Lima", "Enam", "Tujuh", "Delapan", "Sembilan", "Sepuluh", "Sebelas"];
+    if (n < 12) return words[n];
+    if (n < 20) return words[n - 10] + " Belas";
+    if (n < 100) return words[Math.floor(n / 10)] + " Puluh " + words[n % 10];
+    if (n < 200) return "Seratus " + terbilang(n - 100);
+    if (n < 1000) return words[Math.floor(n / 100)] + " Ratus " + terbilang(n % 100);
+    return String(n);
+}
+
+function getPredikat(score: number): string {
+    if (score >= 90) return "A";
+    if (score >= 80) return "B";
+    if (score >= 70) return "C";
+    return "D";
+}
+
+function getRoman(num: number): string {
+    const romans = ["-", "I (Satu)", "II (Dua)", "III (Tiga)", "IV (Empat)", "V (Lima)", "VI (Enam)"];
+    return romans[num] || String(num);
+}
+
 export default function GradesPage() {
     const firestore = useFirestore() as Firestore;
     const { activeYear } = useAcademicYear();
+    const { profile } = useSchoolProfile();
     const { toast } = useToast();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -75,7 +103,7 @@ export default function GradesPage() {
     const [isSaving, setIsSaving] = useState(false);
     
     const [localGrades, setLocalGrades] = useState<Record<string, number>>({});
-    const [localSummaries, setLocalSummaries] = useState<Record<string, { status: ReportSummaryStatus, sakit: number, izin: number, alpa: number }>>({});
+    const [localSummaries, setLocalSummaries] = useState<Record<string, { status: ReportSummaryStatus, sakit: number, izin: number, alpa: number, kelakuan: string, kerajinan: string, kerapian: string }>>({});
 
     const studentsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -109,6 +137,12 @@ export default function GradesPage() {
     }, [firestore, activeYear, selectedGradeType]);
     const { data: existingSummaries, loading: loadingSummaries } = useCollection<ReportSummary>(summariesQuery);
 
+    const teachersQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return collection(firestore, "teachers");
+    }, [firestore]);
+    const { data: teachers } = useCollection<Teacher>(teachersQuery);
+
     useEffect(() => {
         if (existingGrades) {
             const gradeMap: Record<string, number> = {};
@@ -121,13 +155,16 @@ export default function GradesPage() {
 
     useEffect(() => {
         if (existingSummaries) {
-            const summaryMap: Record<string, { status: ReportSummaryStatus, sakit: number, izin: number, alpa: number }> = {};
+            const summaryMap: Record<string, { status: ReportSummaryStatus, sakit: number, izin: number, alpa: number, kelakuan: string, kerajinan: string, kerapian: string }> = {};
             existingSummaries.forEach(s => {
                 summaryMap[s.studentId] = {
                     status: s.status,
                     sakit: s.sakit || 0,
                     izin: s.izin || 0,
                     alpa: s.alpa || 0,
+                    kelakuan: s.kelakuan || "Baik",
+                    kerajinan: s.kerajinan || "Baik",
+                    kerapian: s.kerapian || "Baik",
                 };
             });
             setLocalSummaries(summaryMap);
@@ -187,7 +224,7 @@ export default function GradesPage() {
         }));
     };
 
-    const handleSummaryUpdate = (studentId: string, updates: Partial<{ status: ReportSummaryStatus, sakit: number, izin: number, alpa: number }>) => {
+    const handleSummaryUpdate = (studentId: string, updates: Partial<{ status: ReportSummaryStatus, sakit: number, izin: number, alpa: number, kelakuan: string, kerajinan: string, kerapian: string }>) => {
         setLocalSummaries(prev => ({
             ...prev,
             [studentId]: {
@@ -195,6 +232,9 @@ export default function GradesPage() {
                 sakit: 0,
                 izin: 0,
                 alpa: 0,
+                kelakuan: "Baik",
+                kerajinan: "Baik",
+                kerapian: "Baik",
                 ...prev[studentId],
                 ...updates
             }
@@ -233,6 +273,9 @@ export default function GradesPage() {
                     sakit: summary.sakit,
                     izin: summary.izin,
                     alpa: summary.alpa,
+                    kelakuan: summary.kelakuan,
+                    kerajinan: summary.kerajinan,
+                    kerapian: summary.kerapian,
                 });
             }
         });
@@ -313,7 +356,6 @@ export default function GradesPage() {
     const handleExportExcel = () => {
         if (!studentsWithStats.length) return;
 
-        // Header: No, Nama, NIS, [Mata Pelajaran...], Total, Rata-rata, Ranking
         const headers = ['No', 'Nama', 'NIS', ...subjects.map(s => s.subjectName), 'Total', 'Rata-rata', 'Ranking'];
         const data = studentsWithStats.map((student, idx) => {
             const row: any = {
@@ -345,7 +387,6 @@ export default function GradesPage() {
         doc.setFontSize(10);
         doc.text(`Tahun Ajaran: ${activeYear}`, 14, 22);
 
-        // Menggunakan Nama Mata Pelajaran penuh sebagai header
         const tableHeaders = [['No', 'Nama', ...subjects.map(s => s.subjectName), 'Total', 'Rerata', 'Rank']];
         const tableBody = studentsWithStats.map((student, idx) => [
             idx + 1,
@@ -372,7 +413,6 @@ export default function GradesPage() {
         const printWindow = window.open('', '_blank');
         if (!printWindow) return;
 
-        // Menggunakan Nama Mata Pelajaran penuh sebagai header
         const subjectsHtml = subjects.map(s => `<th style="font-size: 8px;">${s.subjectName}</th>`).join('');
         const rowsHtml = studentsWithStats.map((s, idx) => `
             <tr>
@@ -420,6 +460,168 @@ export default function GradesPage() {
         `);
         printWindow.document.close();
         printWindow.print();
+    };
+
+    const handlePrintReport = () => {
+        if (!selectedStudent || !subjects.length) return;
+
+        const summary = localSummaries[selectedStudent.id] || { 
+            sakit: 0, izin: 0, alpa: 0, 
+            kelakuan: 'Baik', kerajinan: 'Baik', kerapian: 'Baik',
+            status: 'Lanjut Semester' 
+        };
+
+        const waliKelas = teachers?.find(t => t.jabatan === `Wali Kelas ${selectedClass}`)?.name || "...";
+        const kepalaMadrasah = "Imam Abdullah"; // Default or from school profile settings if available
+        const location = profile?.alamat?.split(',')[0] || "Sampang";
+        const dateNow = format(new Date(), "dd MMMM yyyy", { locale: dfnsId });
+
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) return;
+
+        const tableRowsHtml = subjects.map((sub, idx) => {
+            const score = localGrades[`${selectedStudent.id}_${sub.id}`] || 0;
+            return `
+                <tr>
+                    <td style="text-align: center;">${idx + 1}</td>
+                    <td>${sub.subjectName}</td>
+                    <td style="text-align: center;">${score}</td>
+                    <td style="text-align: center;">${terbilang(score)}</td>
+                    <td style="text-align: center;">${getPredikat(score)}</td>
+                </tr>
+            `;
+        }).join('');
+
+        const totalWord = terbilang(selectedStudent.total);
+        const avgWord = terbilang(Math.round(selectedStudent.average));
+
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Rapor - ${selectedStudent.name}</title>
+                    <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&display=swap" rel="stylesheet">
+                    <style>
+                        @page { size: portrait; margin: 15mm; }
+                        body { font-family: 'PT Sans', sans-serif; font-size: 11px; line-height: 1.4; color: #000; }
+                        .kop { text-align: center; margin-bottom: 5px; border-bottom: 3px solid #000; padding-bottom: 5px; }
+                        .kop h1 { margin: 0; font-size: 18px; text-transform: uppercase; }
+                        .kop p { margin: 2px 0; font-size: 10px; }
+                        .title { text-align: center; text-decoration: underline; font-weight: bold; font-size: 14px; margin: 15px 0; text-transform: uppercase; }
+                        .info-grid { display: grid; grid-template-cols: 1fr 1fr; gap: 20px; margin-bottom: 15px; }
+                        .info-item { display: flex; }
+                        .info-label { width: 100px; }
+                        .info-value { flex: 1; display: flex; }
+                        .info-value span { margin-right: 5px; }
+                        table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+                        th, td { border: 1px solid #000; padding: 5px; text-align: left; }
+                        th { background-color: #f2f2f2; text-align: center; }
+                        .footer-grid { display: grid; grid-template-cols: 1fr 1fr; gap: 40px; margin-top: 15px; }
+                        .sign-box { text-align: center; }
+                        .sign-space { height: 60px; }
+                        .sign-name { font-weight: bold; text-decoration: underline; }
+                        .decision-box { border: 1px solid #000; padding: 8px; margin: 10px 0; }
+                        .bottom-signs { display: flex; justify-content: space-between; margin-top: 30px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="kop">
+                        ${profile?.kopSuratUrl ? `<img src="${profile.kopSuratUrl}" style="width: 100%; max-height: 100px; object-contain: contain;" />` : `
+                            <h1>${profile?.namaMadrasah || 'MADRASAH DINIYAH IBNU AHMAD'}</h1>
+                            <p>${profile?.alamat || 'Sampang, Jawa Timur'}</p>
+                        `}
+                    </div>
+
+                    <div class="title">LAPORAN HASIL BELAJAR</div>
+
+                    <div class="info-grid">
+                        <div class="left">
+                            <div class="info-item"><div class="info-label">Nama Santri</div><div class="info-value"><span>:</span> ${selectedStudent.name}</div></div>
+                            <div class="info-item"><div class="info-label">NIS</div><div class="info-value"><span>:</span> ${selectedStudent.nis}</div></div>
+                            <div class="info-item"><div class="info-label">Tahun</div><div class="info-value"><span>:</span> ${activeYear}</div></div>
+                        </div>
+                        <div class="right">
+                            <div class="info-item"><div class="info-label">Kelas</div><div class="info-value"><span>:</span> ${getRoman(Number(selectedClass))}</div></div>
+                            <div class="info-item"><div class="info-label">Semester</div><div class="info-value"><span>:</span> ${selectedGradeType}</div></div>
+                        </div>
+                    </div>
+
+                    <table>
+                        <thead>
+                            <tr><th colspan="5">Hasil Tes</th></tr>
+                            <tr>
+                                <th style="width: 30px;">No</th>
+                                <th>Mata Pelajaran</th>
+                                <th style="width: 60px;">Angka</th>
+                                <th>Terbilang</th>
+                                <th style="width: 60px;">Predikat</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${tableRowsHtml}
+                            <tr style="font-weight: bold;">
+                                <td colspan="2" style="text-align: center;">Jumlah</td>
+                                <td style="text-align: center;">${selectedStudent.total}</td>
+                                <td colspan="2" style="text-align: center;">${totalWord}</td>
+                            </tr>
+                            <tr style="font-weight: bold;">
+                                <td colspan="2" style="text-align: center;">Rata Rata</td>
+                                <td style="text-align: center;">${Math.round(selectedStudent.average)}</td>
+                                <td colspan="2" style="text-align: center;">${avgWord}</td>
+                            </tr>
+                            <tr style="font-weight: bold;">
+                                <td colspan="2" style="text-align: center;">Peringkat</td>
+                                <td colspan="3" style="text-align: center;">${selectedStudent.rank}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div style="display: flex; gap: 15px;">
+                        <table style="flex: 1;">
+                            <thead><tr><th colspan="3">KEPRIBADIAN</th></tr></thead>
+                            <tbody>
+                                <tr><td style="text-align: center;">Kelakuan</td><td style="text-align: center;">Kerajinan</td><td style="text-align: center;">Kerapian</td></tr>
+                                <tr><td style="text-align: center;">${summary.kelakuan}</td><td style="text-align: center;">${summary.kerajinan}</td><td style="text-align: center;">${summary.kerapian}</td></tr>
+                            </tbody>
+                        </table>
+                        <table style="flex: 1;">
+                            <thead><tr><th colspan="3">ABSENSI</th></tr></thead>
+                            <tbody>
+                                <tr><td style="text-align: center;">Sakit</td><td style="text-align: center;">Izin</td><td style="text-align: center;">Alpa</td></tr>
+                                <tr><td style="text-align: center;">${summary.sakit}</td><td style="text-align: center;">${summary.izin}</td><td style="text-align: center;">${summary.alpa}</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="decision-box">
+                        <strong>Keputusan :</strong> Dengan memperhatikan hasil yang dicapai pada semester sebelumnya, maka santri tersebut di atas ditetapkan: <strong>${summary.status}</strong>
+                    </div>
+
+                    <div style="text-align: right; margin-top: 20px; padding-right: 40px;">
+                        ${location}, ${dateNow}
+                    </div>
+
+                    <div class="bottom-signs">
+                        <div class="sign-box">
+                            <p>Orang Tua/Wali</p>
+                            <div class="sign-space"></div>
+                            <p>(..............................)</p>
+                        </div>
+                        <div class="sign-box">
+                            <p>Wali Kelas</p>
+                            <div class="sign-space"></div>
+                            <p class="sign-name">${waliKelas}</p>
+                        </div>
+                        <div class="sign-box">
+                            <p>Kepala Madrasah</p>
+                            <div class="sign-space"></div>
+                            <p class="sign-name">${kepalaMadrasah}</p>
+                        </div>
+                    </div>
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
+        printWindow.onload = () => { printWindow.print(); };
     };
 
     const getStudentProgress = (studentId: string) => {
@@ -636,8 +838,18 @@ export default function GradesPage() {
                             </CardTitle>
                         </div>
                         {selectedStudent && (
-                            <div className="px-2 py-0.5 rounded-full bg-primary text-white text-[10px] uppercase shadow-sm truncate max-w-[150px] sm:max-w-none font-normal">
-                                {selectedStudent.name}
+                            <div className="flex items-center gap-2">
+                                <Button 
+                                    onClick={handlePrintReport} 
+                                    variant="outline" 
+                                    size="xs" 
+                                    className="h-7 gap-1.5 border-primary/30 text-primary font-normal"
+                                >
+                                    <Printer className="h-3 w-3" /> Cetak Rapor
+                                </Button>
+                                <div className="px-2 py-0.5 rounded-full bg-primary text-white text-[10px] uppercase shadow-sm truncate max-w-[150px] sm:max-w-none font-normal">
+                                    {selectedStudent.name}
+                                </div>
                             </div>
                         )}
                     </CardHeader>
@@ -705,6 +917,38 @@ export default function GradesPage() {
                                 </Table>
                                 
                                 <div className="mt-auto p-4 space-y-6 bg-muted/10 border-t">
+                                    <div className="space-y-3">
+                                        <label className="text-[10px] uppercase font-semibold text-muted-foreground flex items-center gap-2">
+                                            <Sparkles className="h-3.5 w-3.5" /> Kepribadian
+                                        </label>
+                                        <div className="grid grid-cols-3 gap-4">
+                                            <div className="space-y-1.5">
+                                                <label className="text-[9px] text-muted-foreground">Kelakuan</label>
+                                                <Input 
+                                                    value={localSummaries[selectedStudentId]?.kelakuan || "Baik"}
+                                                    onChange={(e) => handleSummaryUpdate(selectedStudentId, { kelakuan: e.target.value })}
+                                                    className="h-9 text-xs font-normal"
+                                                />
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <label className="text-[9px] text-muted-foreground">Kerajinan</label>
+                                                <Input 
+                                                    value={localSummaries[selectedStudentId]?.kerajinan || "Baik"}
+                                                    onChange={(e) => handleSummaryUpdate(selectedStudentId, { kerajinan: e.target.value })}
+                                                    className="h-9 text-xs font-normal"
+                                                />
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <label className="text-[9px] text-muted-foreground">Kerapian</label>
+                                                <Input 
+                                                    value={localSummaries[selectedStudentId]?.kerapian || "Baik"}
+                                                    onChange={(e) => handleSummaryUpdate(selectedStudentId, { kerapian: e.target.value })}
+                                                    className="h-9 text-xs font-normal"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <div className="space-y-3">
                                         <label className="text-[10px] uppercase font-semibold text-muted-foreground flex items-center gap-2">
                                             <ClipboardCheck className="h-3.5 w-3.5" /> Ringkasan Kehadiran
