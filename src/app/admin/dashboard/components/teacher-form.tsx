@@ -223,10 +223,10 @@ export function TeacherForm({ isOpen, setIsOpen, teacher, onSave }: TeacherFormP
                 <FormField control={form.control} name="email" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Email</FormLabel>
-                    <FormControl><Input type="email" {...field} /></FormControl>
+                    <FormControl><Input type="email" {...field} disabled={!!teacher} /></FormControl>
                     {teacher && (
-                      <FormDescription className="text-[10px] text-orange-600 font-medium">
-                        Catatan: Mengubah email di sini hanya memperbarui profil. Untuk login, tetap gunakan email lama atau buat akun baru.
+                      <FormDescription className="text-[10px]">
+                        Email tidak dapat diubah karena terhubung dengan akun login.
                       </FormDescription>
                     )}
                     <FormMessage />
