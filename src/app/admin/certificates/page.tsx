@@ -50,11 +50,12 @@ import {
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { addCertificate, updateCertificate, deleteCertificate } from "@/lib/firebase-helpers";
 import { CertificateForm } from "./components/certificate-form";
 import { TemplateUploadDialog } from "./components/template-upload-dialog";
@@ -280,31 +281,32 @@ export default function CertificatesPage() {
                             text-align: center;
                             box-sizing: border-box;
                             overflow: hidden;
+                            padding: 40px 60px;
                         }
                         .header-text {
-                            margin-top: -20px;
-                            margin-bottom: 40px;
+                            margin-top: -40px;
+                            margin-bottom: 30px;
                         }
                         .title-main {
                             font-family: 'Playfair Display', serif;
-                            font-size: 72pt;
+                            font-size: 68pt;
                             font-weight: 900;
                             color: #9c27b0;
                             margin: 0;
                             line-height: 1;
                             text-transform: uppercase;
-                            letter-spacing: 4px;
+                            letter-spacing: 2px;
                         }
                         .title-sub {
                             font-family: 'Playfair Display', serif;
-                            font-size: 36pt;
+                            font-size: 32pt;
                             font-weight: 700;
                             color: #9c27b0;
                             margin: -5px 0 0 0;
                         }
                         .intro-text {
-                            font-size: 18pt;
-                            margin-bottom: 15px;
+                            font-size: 16pt;
+                            margin-bottom: 20px;
                             color: #000;
                         }
                         .name-container {
@@ -312,15 +314,15 @@ export default function CertificatesPage() {
                         }
                         .student-name {
                             font-family: 'Dancing Script', cursive;
-                            font-size: 82pt;
+                            font-size: 78pt;
                             color: #9c27b0;
                             display: inline-block;
-                            padding: 0 60px;
-                            border-bottom: 3px solid #000;
+                            padding: 0 50px;
+                            border-bottom: 2px solid #000;
                             line-height: 1.1;
                         }
                         .description {
-                            font-size: 20pt;
+                            font-size: 18pt;
                             max-width: 85%;
                             line-height: 1.4;
                             color: #000;
@@ -328,28 +330,31 @@ export default function CertificatesPage() {
                         }
                         .footer {
                             position: absolute;
-                            bottom: 80px;
+                            bottom: 60px;
                             width: 85%;
-                            display: flex;
-                            justify-content: space-between;
-                            align-items: flex-end;
+                            display: grid;
+                            grid-template-cols: 1fr 1fr 1fr;
+                            align-items: end;
                             padding: 0 40px;
                         }
                         .signature {
                             text-align: center;
-                            min-width: 250px;
                         }
                         .sig-name {
                             font-weight: 700;
                             font-size: 18pt;
-                            border-bottom: 2px solid #000;
+                            text-decoration: underline;
                             display: inline-block;
                             margin-bottom: 5px;
-                            padding: 0 10px;
                         }
                         .sig-title {
                             font-size: 16pt;
                             color: #333;
+                        }
+                        .medal-container {
+                            display: flex;
+                            justify-content: center;
+                            padding-bottom: 10px;
                         }
                         .date-location {
                             text-align: center;
@@ -383,10 +388,20 @@ export default function CertificatesPage() {
 
                         <div class="footer">
                             <div class="signature">
-                                <div class="sig-name">Juliana Silva</div>
+                                <div class="sig-name">Juliana Silva</div><br>
                                 <div class="sig-title">Kepala Madrasah</div>
                             </div>
                             
+                            <div class="medal-container">
+                                <svg width="90" height="90" viewBox="0 0 24 24" fill="#FFB74D" stroke="#E67E22" stroke-width="0.5">
+                                    <path d="M12 15l-2 5l2 -1l2 1l-2 -5z" />
+                                    <path d="M12 15l2 5l-2 -1l-2 1l2 -5z" fill="#E67E22" />
+                                    <circle cx="12" cy="9" r="7" fill="#FFB74D" stroke="#E67E22" stroke-width="1" />
+                                    <circle cx="12" cy="9" r="5" fill="none" stroke="#E67E22" stroke-width="0.5" />
+                                    <path d="M12 6v6M9 9h6" stroke="#E67E22" stroke-width="0.5" fill="none"/>
+                                </svg>
+                            </div>
+
                             <div class="date-location">
                                 ${location},<br>
                                 ${dateFormatted}
