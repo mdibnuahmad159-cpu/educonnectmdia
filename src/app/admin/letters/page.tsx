@@ -121,7 +121,7 @@ export default function LettersPage() {
 
     const getDefaultSubject = (type: LetterType) => {
         switch(type) {
-            case 'keterangan': return 'Surat Keterangan Belajar';
+            case 'keterangan': return 'Surat Keterangan Siswa Aktif';
             case 'pemberitahuan': return 'PEMBERITAHUAN';
             case 'izin': return 'PERMOHONAN IZIN';
             case 'undangan': return 'UNDANGAN';
@@ -131,7 +131,7 @@ export default function LettersPage() {
 
     const getDefaultContent = (type: LetterType) => {
         switch(type) {
-            case 'keterangan': return 'Adalah benar-benar santri aktif di Madrasah Diniyah Takmiliyah Ula Ibnu Ahmad pada tahun ajaran aktif.';
+            case 'keterangan': return 'Adalah benar Santri Madrasah Diniyah Takmiliyah Ula Ibnu Ahmad dan tercatat sebagai Santri Aktif pada Tahun Ajaran aktif.';
             case 'pemberitahuan': return 'Salam silaturrahim kami sampaikan teriring doa semoga Allah SWT. Senantiasa melimpahkan rahmat, taufik dan hidayahNya kepada kita, sehingga kita tetap diberi kenikmatan hidup dalam keadaan sehat walafiat Aamin.\n\nBerdasarkan hasil rapat pada tanggal 3 Januari 2025 tentang pembiayaan semester akhir ( IMDA AKHIR ) dan Haflatul Imtihan, kami memberitahukan bahwa biaya tersebut sebesar Rp.150.000,00- ( seratus lima puluh rupiah )/murid.\n\nDemi kelancaran kegiatan tersebut kami mohon agar wali murid secepatnya melunasi paling lambatnya tanggal 20 Januari 2025.';
             case 'izin': return 'Sehubungan dengan adanya kegiatan Musabaqoh Antar Madrasah (MUSAMMA), dengan ini kami sampaikan bahwa siswa :';
             case 'undangan': return 'Salam silaturrahim kami sampaikan teriring doa semoga Allah SWT. Senantiasa melimpahkan rahmat, taufik dan hidayahNya kepada kita, sehingga kita tetap diberi kenikmatan hidup dalam keadaan sehat walafiat Aamin.\n\nSehubungan akan dilaksanakannya HAFLATUL IMTIHAN Madrasah Diniyah IBNU AHMAD yang akan dilaksanakan pada :';
@@ -144,8 +144,8 @@ export default function LettersPage() {
     }, [students, formData.studentId]);
 
     const getRomanClass = (num: number) => {
-        const romans = ["-", "I (Satu)", "II (Dua)", "III (Tiga)", "IV (Empat)", "V (Lima)", "VI (Enam)"];
-        return romans[num] || String(num);
+        const textNames = ["-", "Satu", "Dua", "Tiga", "Empat", "Lima", "Enam"];
+        return `${num} (${textNames[num] || String(num)})`;
     };
 
     const handlePrint = () => {
@@ -153,36 +153,37 @@ export default function LettersPage() {
         if (!printWindow) return;
 
         const dateFormatted = format(parseISO(formData.date), "d MMMM yyyy", { locale: dfnsId });
+        const schoolName = profile?.namaMadrasah || "MADRASAH DINIYAH IBNU AHMAD";
         
         let dynamicContentHtml = '';
         let footerHtml = '';
         
         if (formData.type === 'keterangan' && selectedStudent) {
             dynamicContentHtml = `
-                <div style="text-align: center; margin-bottom: 20px;">
+                <div style="text-align: center; margin-bottom: 25px;">
                     <p style="font-weight: bold; text-decoration: underline; font-size: 14pt; margin: 0; text-transform: uppercase;">SURAT KETERANGAN SISWA AKTIF</p>
                     <p style="margin: 0; font-weight: bold;">NOMOR : ${formData.number || ''}</p>
                 </div>
-                <p style="margin-bottom: 15px; line-height: 1.5;">Yang bertanda tangan dibawah ini Kepala ${profile?.namaMadrasah || 'Madrasah'} menerangkan bahwa :</p>
-                <table style="margin: 5px 40px; width: auto; border-collapse: collapse; line-height: 1.4;">
+                <p style="margin-bottom: 15px; line-height: 1.5; text-indent: 0;">Yang bertanda tangan dibawah ini Kepala ${schoolName} menerangkan bahwa :</p>
+                <table style="margin: 10px 0 10px 40px; width: auto; border-collapse: collapse; line-height: 1.6;">
                     <tbody>
-                        <tr><td style="width: 160px; padding: 2px 0;">Nama</td><td style="padding: 2px 0;">: <strong>${selectedStudent.name.toUpperCase()}</strong></td></tr>
-                        <tr><td style="padding: 2px 0;">Tempat, Tgl Lahir</td><td style="padding: 2px 0;">: ${selectedStudent.tempatLahir || '-'}, ${selectedStudent.dateOfBirth}</td></tr>
-                        <tr><td style="padding: 2px 0;">Jenis Kelamin</td><td style="padding: 2px 0;">: ${selectedStudent.gender}</td></tr>
-                        <tr><td style="padding: 2px 0;">Kelas</td><td style="padding: 2px 0;">: ${getRomanClass(selectedStudent.kelas || 0)}</td></tr>
-                        <tr><td style="padding: 2px 0;">NIS</td><td style="padding: 2px 0;">: ${selectedStudent.nis}</td></tr>
-                        <tr><td style="padding: 2px 0;">NIK</td><td style="padding: 2px 0;">: ${selectedStudent.nik || '-'}</td></tr>
+                        <tr><td style="width: 160px; padding: 2px 0; vertical-align: top;">Nama</td><td style="padding: 2px 0;">: <strong>${selectedStudent.name.toUpperCase()}</strong></td></tr>
+                        <tr><td style="padding: 2px 0; vertical-align: top;">Tempat, Tgl Lahir</td><td style="padding: 2px 0;">: ${selectedStudent.tempatLahir || '-'}, ${selectedStudent.dateOfBirth}</td></tr>
+                        <tr><td style="padding: 2px 0; vertical-align: top;">Jenis Kelamin</td><td style="padding: 2px 0;">: ${selectedStudent.gender}</td></tr>
+                        <tr><td style="padding: 2px 0; vertical-align: top;">Kelas</td><td style="padding: 2px 0;">: ${getRomanClass(selectedStudent.kelas || 0)}</td></tr>
+                        <tr><td style="padding: 2px 0; vertical-align: top;">NIS</td><td style="padding: 2px 0;">: ${selectedStudent.nis}</td></tr>
+                        <tr><td style="padding: 2px 0; vertical-align: top;">NIK</td><td style="padding: 2px 0;">: ${selectedStudent.nik || '-'}</td></tr>
                     </tbody>
                 </table>
-                <p style="margin-top: 20px; line-height: 1.5;">Adalah benar Santri ${profile?.namaMadrasah || 'Madrasah'} dan tercatat sebagai Santri Aktif pada Tahun Ajaran ${activeYear}.</p>
-                <p style="margin-top: 15px; line-height: 1.5;">Demikian surat keterangan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya, dan kepada yang berkepentingan mohon mengetahuinya.</p>
+                <p style="margin-top: 20px; margin-bottom: 15px; line-height: 1.5; text-align: justify;">Adalah benar Santri ${schoolName} dan tercatat sebagai Santri Aktif pada Tahun Ajaran ${activeYear}.</p>
+                <p style="margin-top: 15px; line-height: 1.5; text-align: justify;">Demikian surat keterangan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya, dan kepada yang berkepentingan mohon mengetahuinya.</p>
             `;
             footerHtml = `
-                <div class="footer" style="display: flex; justify-content: flex-end; margin-top: 30px;">
-                    <div class="sign-box" style="text-align: center; width: 240px;">
+                <div class="footer" style="display: flex; justify-content: flex-end; margin-top: 40px;">
+                    <div class="sign-box" style="text-align: center; width: 260px;">
                         <p>Sampang, ${dateFormatted}</p>
                         <p><strong>Kepala Madrasah</strong></p>
-                        <div class="sign-space" style="height: 45px;"></div>
+                        <div class="sign-space" style="height: 55px;"></div>
                         <p class="sign-name" style="font-weight: bold; text-decoration: underline;">${kepalaMadrasah}</p>
                     </div>
                 </div>
@@ -272,20 +273,6 @@ export default function LettersPage() {
                         <p style="font-style: italic; font-size: 11pt; margin: 0;"><strong>Nb:</strong> ${formData.footerNote}</p>
                     </div>
                 ` : ''}
-            `;
-        } else {
-            dynamicContentHtml = `
-                <p style="text-indent: 40px; line-height: 1.2; margin-bottom: 8px;">${formData.content.replace(/\n/g, '<br/>')}</p>
-                <p>Demikian surat ini kami sampaikan, atas perhatian dan kerjasamanya kami ucapkan terima kasih.</p>
-            `;
-            footerHtml = `
-                <div class="footer" style="display: flex; justify-content: flex-end; margin-top: 25px;">
-                    <div class="sign-box" style="text-align: center; width: 220px;">
-                        <p>Kepala Madrasah,</p>
-                        <div class="sign-space" style="height: 45px;"></div>
-                        <p class="sign-name" style="font-weight: bold; text-decoration: underline;">${kepalaMadrasah}</p>
-                    </div>
-                </div>
             `;
         }
 
@@ -614,9 +601,9 @@ export default function LettersPage() {
                                             <p style={{ margin: '0', fontWeight: 'bold' }}>NOMOR : {formData.number || ''}</p>
                                         </div>
                                         <p style={{ lineHeight: '1.5' }}>Yang bertanda tangan dibawah ini Kepala ${profile?.namaMadrasah || 'Madrasah'} menerangkan bahwa :</p>
-                                        <table className="ml-10" style={{ width: 'auto', borderCollapse: 'collapse', lineHeight: '1.4' }}>
+                                        <table className="ml-10" style={{ width: 'auto', borderCollapse: 'collapse', lineHeight: '1.6' }}>
                                             <tbody>
-                                                <tr><td className="w-40" style={{ padding: '2px 0' }}>Nama</td><td style={{ padding: '2px 0' }}>: <strong>{selectedStudent.name.toUpperCase()}</strong></td></tr>
+                                                <tr><td style={{ width: '160px', padding: '2px 0' }}>Nama</td><td style={{ padding: '2px 0' }}>: <strong>{selectedStudent.name.toUpperCase()}</strong></td></tr>
                                                 <tr><td style={{ padding: '2px 0' }}>Tempat, Tgl Lahir</td><td style={{ padding: '2px 0' }}>: {selectedStudent.tempatLahir || '-'}, {selectedStudent.dateOfBirth}</td></tr>
                                                 <tr><td style={{ padding: '2px 0' }}>Jenis Kelamin</td><td style={{ padding: '2px 0' }}>: {selectedStudent.gender}</td></tr>
                                                 <tr><td style={{ padding: '2px 0' }}>Kelas</td><td style={{ padding: '2px 0' }}>: {getRomanClass(selectedStudent.kelas || 0)}</td></tr>
@@ -624,8 +611,8 @@ export default function LettersPage() {
                                                 <tr><td style={{ padding: '2px 0' }}>NIK</td><td style={{ padding: '2px 0' }}>: {selectedStudent.nik || '-'}</td></tr>
                                             </tbody>
                                         </table>
-                                        <p style={{ marginTop: '20px', lineHeight: '1.5' }}>Adalah benar Santri ${profile?.namaMadrasah || 'Madrasah'} dan tercatat sebagai Santri Aktif pada Tahun Ajaran {activeYear}.</p>
-                                        <p style={{ marginTop: '15px', lineHeight: '1.5' }}>Demikian surat keterangan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya, dan kepada yang berkepentingan mohon mengetahuinya.</p>
+                                        <p style={{ marginTop: '20px', lineHeight: '1.5', textAlign: 'justify' }}>Adalah benar Santri ${profile?.namaMadrasah || 'Madrasah'} dan tercatat sebagai Santri Aktif pada Tahun Ajaran {activeYear}.</p>
+                                        <p style={{ marginTop: '15px', lineHeight: '1.5', textAlign: 'justify' }}>Demikian surat keterangan ini dibuat dengan sebenarnya untuk dipergunakan sebagaimana mestinya, dan kepada yang berkepentingan mohon mengetahuinya.</p>
                                     </div>
                                 ) : formData.type === 'undangan' ? (
                                     <div className="space-y-4">
