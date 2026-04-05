@@ -64,7 +64,7 @@ import { id as dfnsId } from "date-fns/locale";
 
 type GradeType = 'Ganjil' | 'Genap';
 
-const STATUS_OPTIONS: ReportSummaryStatus[] = ['Naik Kelas', 'Turun Kelas', 'Lanjut Semester', 'Lanjut ke Semester Berikutnya'];
+const STATUS_OPTIONS: ReportSummaryStatus[] = ['Naik Kelas', 'Turun Kelas', 'Lanjut Semester'];
 
 // Helper for Terbilang (kata-kata angka)
 function terbilang(n: number): string {
@@ -228,7 +228,7 @@ export default function GradesPage() {
         setLocalSummaries(prev => ({
             ...prev,
             [studentId]: {
-                status: 'Lanjut ke Semester Berikutnya',
+                status: 'Lanjut Semester',
                 sakit: 0,
                 izin: 0,
                 alpa: 0,
@@ -468,7 +468,7 @@ export default function GradesPage() {
         const summary = localSummaries[selectedStudent.id] || { 
             sakit: 0, izin: 0, alpa: 0, 
             kelakuan: 'Baik', kerajinan: 'Baik', kerapian: 'Baik',
-            status: 'Lanjut ke Semester Berikutnya' 
+            status: 'Lanjut Semester' 
         };
 
         const waliKelas = teachers?.find(t => t.jabatan === `Wali Kelas ${selectedClass}`)?.name || "...";
