@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -617,7 +616,7 @@ export default function GradesPage() {
 
                     <div class="footer">
                         <div class="date-row">
-                            ${dateNow}
+                            Sampang, ${dateNow}
                         </div>
                         <div class="sign-container">
                             <div class="sign-box">
