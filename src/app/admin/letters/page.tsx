@@ -46,12 +46,12 @@ interface LetterData {
     recipient: string;
     studentId?: string;
     content: string;
-    eventDate?: string;
-    eventTime?: string;
-    eventPlace?: string;
-    committeeName?: string;
-    chairmanName?: string;
-    committeeSecretaryName?: string;
+    eventDate: string;
+    eventTime: string;
+    eventPlace: string;
+    committeeName: string;
+    chairmanName: string;
+    committeeSecretaryName: string;
 }
 
 export default function LettersPage() {
@@ -133,7 +133,7 @@ export default function LettersPage() {
         if (formData.type === 'keterangan' && selectedStudent) {
             dynamicContentHtml = `
                 <p>Menerangkan dengan sebenarnya bahwa:</p>
-                <table style="margin: 10px 40px; width: auto;">
+                <table style="margin: 5px 40px; width: auto;">
                     <tbody>
                         <tr><td style="width: 120px;">Nama</td><td>: <strong>${selectedStudent.name}</strong></td></tr>
                         <tr><td>NIS</td><td>: ${selectedStudent.nis}</td></tr>
@@ -156,9 +156,9 @@ export default function LettersPage() {
         } else if (formData.type === 'undangan') {
             const paragraphs = formData.content.split('\n\n');
             dynamicContentHtml = `
-                <p style="text-indent: 40px; margin-bottom: 8px;">${paragraphs[0] || ''}</p>
-                <p style="text-indent: 40px; margin-bottom: 8px;">${paragraphs[1] || ''}</p>
-                <table style="margin: 8px 80px; width: auto;">
+                <p style="text-indent: 40px; margin-bottom: 5px;">${paragraphs[0] || ''}</p>
+                <p style="text-indent: 40px; margin-bottom: 5px;">${paragraphs[1] || ''}</p>
+                <table style="margin: 5px 80px; width: auto;">
                     <tbody>
                         <tr><td style="width: 100px;">Hari</td><td>: ${formData.eventDate ? format(parseISO(formData.eventDate), "EEEE", { locale: dfnsId }) : '-'}</td></tr>
                         <tr><td>Tanggal</td><td>: ${formData.eventDate ? format(parseISO(formData.eventDate), "dd MMMM yyyy", { locale: dfnsId }) : '-'}</td></tr>
@@ -170,29 +170,29 @@ export default function LettersPage() {
             `;
             footerHtml = `
                 <div class="date-row">Sampang, ${dateFormatted}</div>
-                <p style="text-align: center; margin-bottom: 15px; font-weight: bold;">${formData.committeeName || 'Panitia Pelaksana'}</p>
+                <p style="text-align: center; margin-bottom: 10px; font-weight: bold;">${formData.committeeName || 'Panitia Pelaksana'}</p>
                 <div class="sign-container">
                     <div class="sign-box">
                         <p>Ketua</p>
-                        <div class="sign-space" style="height: 50px;"></div>
+                        <div class="sign-space" style="height: 45px;"></div>
                         <p class="sign-name">${formData.chairmanName || '..........................'}</p>
                     </div>
                     <div class="sign-box">
                         <p>Sekretaris</p>
-                        <div class="sign-space" style="height: 50px;"></div>
+                        <div class="sign-space" style="height: 45px;"></div>
                         <p class="sign-name">${formData.committeeSecretaryName || '..........................'}</p>
                     </div>
                 </div>
-                <div style="text-align: center; margin-top: 15px;">
+                <div style="text-align: center; margin-top: 10px;">
                     <p>Mengetahui,</p>
                     <p>Kepala Madrasah</p>
-                    <div class="sign-space" style="height: 50px;"></div>
+                    <div class="sign-space" style="height: 45px;"></div>
                     <p class="sign-name">${kepalaMadrasah}</p>
                 </div>
             `;
         } else {
             dynamicContentHtml = `
-                <p style="text-indent: 40px; line-height: 1.5; margin-bottom: 10px;">${formData.content.replace(/\n/g, '<br/>')}</p>
+                <p style="text-indent: 40px; line-height: 1.2; margin-bottom: 8px;">${formData.content.replace(/\n/g, '<br/>')}</p>
                 <p>Demikian surat ini kami sampaikan, atas perhatian dan kerjasamanya kami ucapkan terima kasih.</p>
             `;
             footerHtml = `
@@ -212,25 +212,25 @@ export default function LettersPage() {
                     <title>Cetak Surat - ${formData.subject}</title>
                     <style>
                         @page { size: A4; margin: 5mm; }
-                        body { font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.2; color: #000; margin: 0; padding: 15mm; }
+                        body { font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.2; color: #000; margin: 0; padding: 10mm 15mm; }
                         .kop { text-align: center; margin-bottom: 5px; }
                         .kop img { width: 100%; max-height: 120px; object-fit: contain; }
                         
-                        .meta-info { display: flex; justify-content: space-between; margin-bottom: 15px; }
+                        .meta-info { display: flex; justify-content: space-between; margin-bottom: 10px; }
                         .meta-left { width: 60%; }
                         .meta-right { text-align: right; }
                         
-                        .title { text-align: center; text-decoration: underline; font-weight: bold; font-size: 14pt; margin-bottom: 5px; text-transform: uppercase; }
+                        .title { text-align: center; text-decoration: underline; font-weight: bold; font-size: 14pt; margin-bottom: 3px; text-transform: uppercase; }
                         
-                        .salutation { margin-bottom: 8px; font-weight: bold; }
-                        .content { margin-bottom: 20px; text-align: justify; }
+                        .salutation { margin-bottom: 5px; font-weight: bold; }
+                        .content { margin-bottom: 15px; text-align: justify; }
                         
-                        .footer { display: flex; justify-content: flex-end; margin-top: 20px; }
+                        .footer { display: flex; justify-content: flex-end; margin-top: 15px; }
                         .sign-container { display: flex; justify-content: space-between; text-align: center; }
                         .sign-box { text-align: center; width: 220px; }
-                        .sign-space { height: 60px; }
+                        .sign-space { height: 45px; }
                         .sign-name { font-weight: bold; text-decoration: underline; }
-                        .date-row { text-align: right; margin-bottom: 5px; }
+                        .date-row { text-align: right; margin-bottom: 3px; }
                     </style>
                 </head>
                 <body>
@@ -253,7 +253,7 @@ export default function LettersPage() {
                         ${formData.type !== 'undangan' ? `<div class="meta-right">Sampang, ${dateFormatted}</div>` : ''}
                     </div>
 
-                    <div style="margin-bottom: 20px;">
+                    <div style="margin-bottom: 15px;">
                         Kepada Yth.<br/>
                         <strong>${formData.recipient || 'Bapak/Ibu/Saudara(i)'}</strong><br/>
                         Di_<br/>
@@ -447,7 +447,7 @@ export default function LettersPage() {
                                 </li>
                                 <li className="flex gap-2">
                                     <div className="h-1.5 w-1.5 rounded-full bg-primary mt-1 shrink-0" />
-                                    Salam pembuka dan penutup otomatis dicetak tebal.
+                                    Ukuran font resmi adalah 12pt (Times New Roman).
                                 </li>
                             </ul>
                         </div>
@@ -534,25 +534,25 @@ export default function LettersPage() {
                                     <div className="flex justify-between text-center">
                                         <div className="w-48">
                                             <p>Ketua</p>
-                                            <div className="h-16"></div>
+                                            <div className="h-12"></div>
                                             <p className="font-bold underline">{formData.chairmanName || '..........................'}</p>
                                         </div>
                                         <div className="w-48">
                                             <p>Sekretaris</p>
-                                            <div className="h-16"></div>
+                                            <div className="h-12"></div>
                                             <p className="font-bold underline">{formData.committeeSecretaryName || '..........................'}</p>
                                         </div>
                                     </div>
                                     <div className="text-center pt-4">
                                         <p>Mengetahui,</p>
                                         <p>Kepala Madrasah</p>
-                                        <div className="h-16"></div>
+                                        <div className="h-12"></div>
                                         <p className="font-bold underline">{kepalaMadrasah}</p>
                                     </div>
                                 </div>
                             ) : (
                                 <div className="flex justify-end">
-                                    <div className="text-center w-48 space-y-16">
+                                    <div className="text-center w-48 space-y-12">
                                         <p>Kepala Madrasah,</p>
                                         <p className="font-bold underline">{kepalaMadrasah}</p>
                                     </div>
