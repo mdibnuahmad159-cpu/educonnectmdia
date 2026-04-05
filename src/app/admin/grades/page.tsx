@@ -47,7 +47,8 @@ import {
     FileSpreadsheet,
     FileText,
     Printer,
-    Sparkles
+    Sparkles,
+    PrinterCheck
 } from "lucide-react";
 import { useAcademicYear } from "@/context/academic-year-provider";
 import { useSchoolProfile } from "@/context/school-profile-provider";
@@ -462,10 +463,8 @@ export default function GradesPage() {
         printWindow.print();
     };
 
-    const handlePrintReport = () => {
-        if (!selectedStudent || !subjects.length) return;
-
-        const summary = localSummaries[selectedStudent.id] || { 
+    const getReportHtmlForStudent = (student: any) => {
+        const summary = localSummaries[student.id] || { 
             sakit: 0, izin: 0, alpa: 0, 
             kelakuan: 'Baik', kerajinan: 'Baik', kerapian: 'Baik',
             status: 'Lanjut Semester' 
@@ -476,11 +475,8 @@ export default function GradesPage() {
         const location = profile?.alamat?.split(',')[0] || "Sampang";
         const dateNow = format(new Date(), "dd MMMM yyyy", { locale: dfnsId });
 
-        const printWindow = window.open('', '_blank');
-        if (!printWindow) return;
-
         const tableRowsHtml = subjects.map((sub, idx) => {
-            const score = localGrades[`${selectedStudent.id}_${sub.id}`] || 0;
+            const score = localGrades[`${student.id}_${sub.id}`] || 0;
             const isLow = score < 50;
             const redStyle = isLow ? 'style="text-align: center; color: #ff0000;"' : 'style="text-align: center;"';
             
@@ -495,8 +491,117 @@ export default function GradesPage() {
             `;
         }).join('');
 
-        const totalWord = terbilang(selectedStudent.total);
-        const avgWord = terbilang(Math.round(selectedStudent.average));
+        const totalWord = terbilang(student.total);
+        const avgWord = terbilang(Math.round(student.average));
+
+        return `
+            <div class="report-page">
+                <div class="kop">
+                    ${profile?.kopSuratUrl ? `<img src="${profile.kopSuratUrl}" />` : `
+                        <h1>${profile?.namaMadrasah || 'MADRASAH DINIYAH IBNU AHMAD'}</h1>
+                        <p>${profile?.alamat || 'Sampang, Jawa Timur'}</p>
+                        <div style="border-bottom: 2px solid #000; margin-top: 5px;"></div>
+                    `}
+                </div>
+
+                <div class="title">LAPORAN HASIL BELAJAR</div>
+
+                <div class="student-info">
+                    <div class="info-col">
+                        <div class="info-item"><div class="info-label">Nama Santri</div><div class="info-val"><span>:</span> ${student.name}</div></div>
+                        <div class="info-item"><div class="info-label">NIS</div><div class="info-val"><span>:</span> ${student.nis}</div></div>
+                        <div class="info-item"><div class="info-label">Tahun</div><div class="info-val"><span>:</span> ${activeYear}</div></div>
+                    </div>
+                    <div class="info-col">
+                        <div class="info-item"><div class="info-label">Kelas</div><div class="info-val"><span>:</span> ${getRoman(Number(selectedClass))}</div></div>
+                        <div class="info-item"><div class="info-label">Semester</div><div class="info-val"><span>:</span> ${selectedGradeType}</div></div>
+                    </div>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr><th colspan="5">Hasil Tes</th></tr>
+                        <tr>
+                            <th style="width: 30px;">No</th>
+                            <th>Mata Pelajaran</th>
+                            <th style="width: 60px;">Angka</th>
+                            <th>Terbilang</th>
+                            <th style="width: 60px;">Predikat</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${tableRowsHtml}
+                        <tr style="font-weight: bold;">
+                            <td colspan="2" style="text-align: center;">Jumlah</td>
+                            <td style="text-align: center;">${student.total}</td>
+                            <td colspan="2" style="text-align: center;">${totalWord}</td>
+                        </tr>
+                        <tr style="font-weight: bold;">
+                            <td colspan="2" style="text-align: center;">Rata Rata</td>
+                            <td style="text-align: center;">${Math.round(student.average)}</td>
+                            <td colspan="2" style="text-align: center;">${avgWord}</td>
+                        </tr>
+                        <tr style="font-weight: bold;">
+                            <td colspan="2" style="text-align: center;">Peringkat</td>
+                            <td colspan="3" style="text-align: center;">${student.rank}</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="personality-absent-container">
+                    <table class="p-a-table">
+                        <thead><tr><th colspan="3">KEPRIBADIAN</th></tr></thead>
+                        <tbody>
+                            <tr><td style="width: 33%;">Kelakuan</td><td style="width: 33%;">Kerajinan</td><td style="width: 33%;">Kerapian</td></tr>
+                            <tr style="font-weight: bold;"><td>${summary.kelakuan}</td><td>${summary.kerajinan}</td><td>${summary.kerapian}</td></tr>
+                        </tbody>
+                    </table>
+                    <table class="p-a-table">
+                        <thead><tr><th colspan="3">ABSENSI</th></tr></thead>
+                        <tbody>
+                            <tr><td style="width: 33%;">Sakit</td><td style="width: 33%;">Izin</td><td style="width: 33%;">Alpa</td></tr>
+                            <tr style="font-weight: bold;"><td>${summary.sakit}</td><td>${summary.izin}</td><td>${summary.alpa}</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="decision-box">
+                    <strong>Keputusan :</strong> Dengan memperhatikan hasil yang dicapai pada semester sebelumnya, maka santri tersebut di atas ditetapkan: <strong>${summary.status}</strong>
+                </div>
+
+                <div class="footer">
+                    <div class="date-row">
+                        Sampang, ${dateNow}
+                    </div>
+                    <div class="sign-container">
+                        <div class="sign-box">
+                            <p>Orang Tua/Wali</p>
+                            <div class="sign-space"></div>
+                            <p>(..............................)</p>
+                        </div>
+                        <div class="sign-box">
+                            <p>Wali Kelas</p>
+                            <div class="sign-space"></div>
+                            <p class="sign-name">${waliKelas}</p>
+                        </div>
+                        <div class="sign-box">
+                            <p>Kepala Madrasah</p>
+                            <div class="sign-space"></div>
+                            <p class="sign-name">${kepalaMadrasah}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    };
+
+    const handlePrintReport = () => {
+        if (!selectedStudent || !subjects.length) return;
+        
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) return;
+
+        const reportHtml = getReportHtmlForStudent(selectedStudent);
 
         printWindow.document.write(`
             <html>
@@ -542,101 +647,7 @@ export default function GradesPage() {
                     </style>
                 </head>
                 <body>
-                    <div class="kop">
-                        ${profile?.kopSuratUrl ? `<img src="${profile.kopSuratUrl}" />` : `
-                            <h1>${profile?.namaMadrasah || 'MADRASAH DINIYAH IBNU AHMAD'}</h1>
-                            <p>${profile?.alamat || 'Sampang, Jawa Timur'}</p>
-                            <div style="border-bottom: 2px solid #000; margin-top: 5px;"></div>
-                        `}
-                    </div>
-
-                    <div class="title">LAPORAN HASIL BELAJAR</div>
-
-                    <div class="student-info">
-                        <div class="info-col">
-                            <div class="info-item"><div class="info-label">Nama Santri</div><div class="info-val"><span>:</span> ${selectedStudent.name}</div></div>
-                            <div class="info-item"><div class="info-label">NIS</div><div class="info-val"><span>:</span> ${selectedStudent.nis}</div></div>
-                            <div class="info-item"><div class="info-label">Tahun</div><div class="info-val"><span>:</span> ${activeYear}</div></div>
-                        </div>
-                        <div class="info-col">
-                            <div class="info-item"><div class="info-label">Kelas</div><div class="info-val"><span>:</span> ${getRoman(Number(selectedClass))}</div></div>
-                            <div class="info-item"><div class="info-label">Semester</div><div class="info-val"><span>:</span> ${selectedGradeType}</div></div>
-                        </div>
-                    </div>
-
-                    <table>
-                        <thead>
-                            <tr><th colspan="5">Hasil Tes</th></tr>
-                            <tr>
-                                <th style="width: 30px;">No</th>
-                                <th>Mata Pelajaran</th>
-                                <th style="width: 60px;">Angka</th>
-                                <th>Terbilang</th>
-                                <th style="width: 60px;">Predikat</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${tableRowsHtml}
-                            <tr style="font-weight: bold;">
-                                <td colspan="2" style="text-align: center;">Jumlah</td>
-                                <td style="text-align: center;">${selectedStudent.total}</td>
-                                <td colspan="2" style="text-align: center;">${totalWord}</td>
-                            </tr>
-                            <tr style="font-weight: bold;">
-                                <td colspan="2" style="text-align: center;">Rata Rata</td>
-                                <td style="text-align: center;">${Math.round(selectedStudent.average)}</td>
-                                <td colspan="2" style="text-align: center;">${avgWord}</td>
-                            </tr>
-                            <tr style="font-weight: bold;">
-                                <td colspan="2" style="text-align: center;">Peringkat</td>
-                                <td colspan="3" style="text-align: center;">${selectedStudent.rank}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-
-                    <div class="personality-absent-container">
-                        <table class="p-a-table">
-                            <thead><tr><th colspan="3">KEPRIBADIAN</th></tr></thead>
-                            <tbody>
-                                <tr><td style="width: 33%;">Kelakuan</td><td style="width: 33%;">Kerajinan</td><td style="width: 33%;">Kerapian</td></tr>
-                                <tr style="font-weight: bold;"><td>${summary.kelakuan}</td><td>${summary.kerajinan}</td><td>${summary.kerapian}</td></tr>
-                            </tbody>
-                        </table>
-                        <table class="p-a-table">
-                            <thead><tr><th colspan="3">ABSENSI</th></tr></thead>
-                            <tbody>
-                                <tr><td style="width: 33%;">Sakit</td><td style="width: 33%;">Izin</td><td style="width: 33%;">Alpa</td></tr>
-                                <tr style="font-weight: bold;"><td>${summary.sakit}</td><td>${summary.izin}</td><td>${summary.alpa}</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div class="decision-box">
-                        <strong>Keputusan :</strong> Dengan memperhatikan hasil yang dicapai pada semester sebelumnya, maka santri tersebut di atas ditetapkan: <strong>${summary.status}</strong>
-                    </div>
-
-                    <div class="footer">
-                        <div class="date-row">
-                            Sampang, ${dateNow}
-                        </div>
-                        <div class="sign-container">
-                            <div class="sign-box">
-                                <p>Orang Tua/Wali</p>
-                                <div class="sign-space"></div>
-                                <p>(..............................)</p>
-                            </div>
-                            <div class="sign-box">
-                                <p>Wali Kelas</p>
-                                <div class="sign-space"></div>
-                                <p class="sign-name">${waliKelas}</p>
-                            </div>
-                            <div class="sign-box">
-                                <p>Kepala Madrasah</p>
-                                <div class="sign-space"></div>
-                                <p class="sign-name">${kepalaMadrasah}</p>
-                            </div>
-                        </div>
-                    </div>
+                    ${reportHtml}
                 </body>
             </html>
         `);
@@ -645,6 +656,74 @@ export default function GradesPage() {
             setTimeout(() => {
                 printWindow.print();
             }, 500);
+        };
+    };
+
+    const handleBulkPrint = () => {
+        if (!studentsWithStats.length || !subjects.length) {
+            toast({ variant: "destructive", title: "Data Tidak Lengkap", description: "Pastikan data siswa dan nilai tersedia untuk dicetak." });
+            return;
+        }
+
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) return;
+
+        const allReportsHtml = studentsWithStats.map(student => getReportHtmlForStudent(student)).join('<div class="page-break"></div>');
+
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Cetak Rapor Massal - Kelas ${selectedClass}</title>
+                    <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&display=swap" rel="stylesheet">
+                    <style>
+                        @page { size: portrait; margin: 10mm; }
+                        body { font-family: 'PT Sans', sans-serif; font-size: 11.5px; line-height: 1.0; color: #000; margin: 0; padding: 0; }
+                        .report-page { position: relative; width: 100%; height: 100%; }
+                        .page-break { page-break-after: always; }
+                        
+                        .kop { text-align: center; margin-bottom: 5px; position: relative; }
+                        .kop img { width: 100%; max-height: 110px; object-fit: contain; }
+                        .kop h1 { margin: 0; font-size: 18px; text-transform: uppercase; }
+                        .kop p { margin: 2px 0; font-size: 10px; }
+                        .title { text-align: center; text-decoration: underline; font-weight: bold; font-size: 14px; margin: 10px 0; text-transform: uppercase; }
+                        
+                        .student-info { display: flex; justify-content: space-between; margin-bottom: 10px; padding: 0 5px; }
+                        .info-col { width: 48%; }
+                        .info-item { display: flex; margin-bottom: 4px; }
+                        .info-label { width: 90px; }
+                        .info-val { flex: 1; display: flex; }
+                        .info-val span { margin-right: 8px; }
+
+                        table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+                        th, td { border: 1px solid #000; padding: 4px 6px; text-align: left; }
+                        th { background-color: #f2f2f2; text-align: center; font-weight: bold; }
+                        
+                        .personality-absent-container { display: flex; gap: 15px; margin-bottom: 8px; }
+                        .p-a-table { flex: 1; }
+                        .p-a-table th { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+                        .p-a-table td { text-align: center; }
+
+                        .decision-box { border: 1px solid #000; padding: 8px; margin-bottom: 15px; }
+                        .decision-box strong { font-weight: bold; }
+
+                        .footer { margin-top: 5px; }
+                        .date-row { text-align: right; margin-bottom: 10px; padding-right: 40px; }
+                        .sign-container { display: flex; justify-content: space-between; text-align: center; }
+                        .sign-box { width: 30%; }
+                        .sign-space { height: 55px; }
+                        .sign-name { font-weight: bold; text-decoration: underline; }
+                    </style>
+                </head>
+                <body>
+                    ${allReportsHtml}
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
+        printWindow.onload = () => { 
+            setTimeout(() => {
+                printWindow.print();
+            }, 1000);
         };
     };
 
@@ -715,6 +794,17 @@ export default function GradesPage() {
                                         </DropdownMenuItem>
                                     </DropdownMenuContent>
                                 </DropdownMenu>
+
+                                <Button 
+                                    onClick={handleBulkPrint} 
+                                    variant="outline" 
+                                    size="xs" 
+                                    disabled={isLoading || !studentsWithStats.length}
+                                    className="h-8 gap-1.5 px-3 font-normal border-primary/20 text-primary"
+                                >
+                                    <PrinterCheck className="h-3.5 w-3.5" />
+                                    Cetak Massal
+                                </Button>
 
                                 <Button 
                                     onClick={handleSave} 
