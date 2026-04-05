@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
 import { useAuth, useFirestore } from "@/firebase";
-import { signInWithEmailAndPassword, signInAnonymously } from "firebase/auth";
+import { signInWithEmailAndPassword, signInAnonymously, signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 
 import { Button } from "@/components/ui/button";
@@ -106,28 +106,40 @@ export function LoginForm() {
   const handleParentSubmit = async (values: z.infer<typeof parentSchema>) => {
     if (!auth || !firestore) return;
     try {
-      const nisString = String(values.nis);
-      const prefixedNis = nisString.startsWith('MDIA') ? nisString : `MDIA${nisString}`;
+      // Normalisasi NIS: hapus spasi dan ubah ke kapital
+      const nisInput = String(values.nis).trim().toUpperCase();
+      const prefixedNis = nisInput.startsWith('MDIA') ? nisInput : `MDIA${nisInput}`;
+
+      // 1. Login anonim TERLEBIH DAHULU agar memiliki izin baca (Rules: allow read: if isSignedIn())
+      await signInAnonymously(auth);
+
+      // 2. Baca dokumen siswa menggunakan NIS sebagai ID
       const studentRef = doc(firestore, "students", prefixedNis);
       const studentSnap = await getDoc(studentRef);
 
+      // 3. Verifikasi keberadaan data dan kecocokan password
       if (studentSnap.exists() && studentSnap.data().password === values.password) {
-        await signInAnonymously(auth);
         sessionStorage.setItem('studentNis', prefixedNis);
         
         toast({
           title: "Login Wali Murid Berhasil",
-          description: "Anda akan diarahkan ke dasbor.",
+          description: "Selamat datang di dasbor santri.",
         });
         router.push("/parent/dashboard");
       } else {
+        // Jika gagal verifikasi, segera logout sesi anonim tadi
+        await signOut(auth);
         throw new Error("NIS atau password salah.");
       }
     } catch (error: any) {
+      // Pastikan logout jika terjadi error apa pun selama proses
+      if (auth.currentUser?.isAnonymous) {
+        await signOut(auth);
+      }
       toast({
         variant: "destructive",
         title: "Login Gagal",
-        description: error.message || "NIS atau password salah.",
+        description: error.message || "Pastikan NIS dan password Anda benar.",
       });
     }
   };
