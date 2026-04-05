@@ -1495,53 +1495,56 @@ export default function GradesPage() {
                     "flex-1 flex flex-col overflow-hidden shadow-sm border-primary/10 transition-all duration-300",
                     !selectedStudentId ? "hidden md:flex" : "flex"
                 )}>
-                    <CardHeader className="p-3 border-b bg-muted/20 flex flex-row items-center justify-between space-y-0">
-                        <div className="flex items-center gap-2">
-                            <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="md:hidden h-7 w-7" 
-                                onClick={() => setSelectedStudentId(null)}
-                            >
-                                <ArrowLeft className="h-4 w-4" />
-                            </Button>
-                            <CardTitle className="text-[10px] uppercase tracking-widest text-muted-foreground flex items-center gap-2 font-normal">
-                                <BookOpen className="h-3 w-3" /> Input Nilai Semester {selectedGradeType}
-                            </CardTitle>
-                        </div>
-                        {selectedStudent && (
-                            <div className="flex flex-col items-end gap-1.5">
+                    <CardHeader className="p-3 border-b bg-muted/20 space-y-3">
+                        <div className="flex flex-row items-center justify-between gap-4">
+                            <div className="flex items-center gap-2">
+                                <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="md:hidden h-7 w-7" 
+                                    onClick={() => setSelectedStudentId(null)}
+                                >
+                                    <ArrowLeft className="h-4 w-4" />
+                                </Button>
+                                <CardTitle className="text-[10px] uppercase tracking-widest text-muted-foreground flex items-center gap-2 font-normal">
+                                    <BookOpen className="h-3 w-3" /> Input Nilai Semester {selectedGradeType}
+                                </CardTitle>
+                            </div>
+                            {selectedStudent && (
                                 <div className="px-2 py-0.5 rounded-full bg-primary text-white text-[10px] uppercase shadow-sm truncate max-w-[150px] sm:max-w-none font-normal">
                                     {selectedStudent.name}
                                 </div>
-                                <div className="flex flex-col items-start gap-1.5 w-full">
+                            )}
+                        </div>
+                        
+                        {selectedStudent && (
+                            <div className="flex flex-wrap items-center gap-1.5">
+                                <Button 
+                                    onClick={handlePrintReport} 
+                                    variant="outline" 
+                                    size="xs" 
+                                    className="h-7 gap-1.5 border-primary/30 text-primary font-normal"
+                                >
+                                    <Printer className="h-3 w-3" /> Cetak Rapor
+                                </Button>
+                                <Button 
+                                    onClick={handlePrintRankingCertificate} 
+                                    variant="outline" 
+                                    size="xs" 
+                                    className="h-7 gap-1.5 border-primary/30 text-primary font-normal"
+                                >
+                                    <Award className="h-3 w-3" /> Sertifikat Ranking
+                                </Button>
+                                {selectedStudent.rank === 1 && (
                                     <Button 
-                                        onClick={handlePrintReport} 
+                                        onClick={handlePrintStarCertificate} 
                                         variant="outline" 
                                         size="xs" 
-                                        className="h-7 w-full justify-start gap-1.5 border-primary/30 text-primary font-normal"
+                                        className="h-7 gap-1.5 border-yellow-500/30 text-yellow-600 font-normal hover:bg-yellow-50"
                                     >
-                                        <Printer className="h-3 w-3" /> Cetak Rapor
+                                        <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" /> Sertifikat Bintang
                                     </Button>
-                                    <Button 
-                                        onClick={handlePrintRankingCertificate} 
-                                        variant="outline" 
-                                        size="xs" 
-                                        className="h-7 w-full justify-start gap-1.5 border-primary/30 text-primary font-normal"
-                                    >
-                                        <Award className="h-3 w-3" /> Sertifikat Ranking
-                                    </Button>
-                                    {selectedStudent.rank === 1 && (
-                                        <Button 
-                                            onClick={handlePrintStarCertificate} 
-                                            variant="outline" 
-                                            size="xs" 
-                                            className="h-7 w-full justify-start gap-1.5 border-yellow-500/30 text-yellow-600 font-normal hover:bg-yellow-50"
-                                        >
-                                            <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" /> Sertifikat Bintang
-                                        </Button>
-                                    )}
-                                </div>
+                                )}
                             </div>
                         )}
                     </CardHeader>
