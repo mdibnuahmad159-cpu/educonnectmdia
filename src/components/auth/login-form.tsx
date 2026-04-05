@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -10,9 +11,13 @@ import { doc, getDoc, collection, query, where, getDocs } from "firebase/firesto
 
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -22,13 +27,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { ShieldCheck, UserCircle2, Loader2 } from "lucide-react";
 
 const adminSchema = z.object({
   email: z.string().email("Email tidak valid"),
@@ -45,6 +45,9 @@ export function LoginForm() {
   const { toast } = useToast();
   const auth = useAuth();
   const firestore = useFirestore();
+  
+  const [isAdminLoading, setIsAdminLoading] = useState(false);
+  const [isParentLoading, setIsParentLoading] = useState(false);
 
   const adminForm = useForm<z.infer<typeof adminSchema>>({
     resolver: zodResolver(adminSchema),
@@ -58,6 +61,7 @@ export function LoginForm() {
 
   const handleAdminSubmit = async (values: z.infer<typeof adminSchema>) => {
     if (!auth) return;
+    setIsAdminLoading(true);
     try {
       await signInWithEmailAndPassword(auth, values.email, values.password);
       toast({
@@ -71,11 +75,14 @@ export function LoginForm() {
         title: "Login Gagal",
         description: "Email atau password salah.",
       });
+    } finally {
+      setIsAdminLoading(false);
     }
   };
 
   const handleParentSubmit = async (values: z.infer<typeof parentSchema>) => {
     if (!auth || !firestore) return;
+    setIsParentLoading(true);
     try {
       if (auth.currentUser) {
         await signOut(auth);
@@ -146,93 +153,120 @@ export function LoginForm() {
         title: "Terjadi Kesalahan",
         description: "Gagal melakukan verifikasi. Harap coba lagi.",
       });
+    } finally {
+      setIsParentLoading(false);
     }
   };
 
   return (
-    <Card>
-      <CardContent className="p-0">
-        <Tabs defaultValue="admin" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="admin">Admin</TabsTrigger>
-            <TabsTrigger value="parent">Wali Murid</TabsTrigger>
-          </TabsList>
-          
-          <div className="p-4">
-            <TabsContent value="admin">
-                <Form {...adminForm}>
-                  <form onSubmit={adminForm.handleSubmit(handleAdminSubmit)} className="space-y-4">
-                    <FormField
-                      control={adminForm.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email Admin</FormLabel>
-                          <FormControl>
-                            <Input type="email" placeholder="email@contoh.com" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={adminForm.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Password</FormLabel>
-                          <FormControl>
-                            <Input type="password" placeholder="••••••••" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <Button type="submit" className="w-full" size="xs">
-                      Login sebagai Admin
-                    </Button>
-                  </form>
-                </Form>
-            </TabsContent>
+    <div className="grid gap-4 w-full">
+      {/* Portal Wali Murid */}
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button variant="outline" className="h-20 flex flex-col items-center justify-center gap-2 border-primary/20 hover:border-primary/50 hover:bg-primary/5 group transition-all shadow-sm">
+            <UserCircle2 className="h-6 w-6 text-primary/60 group-hover:text-primary transition-colors" />
+            <span className="text-xs font-bold uppercase tracking-widest">Portal Wali Murid</span>
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserCircle2 className="h-5 w-5 text-primary" />
+              Portal Wali Murid
+            </DialogTitle>
+            <DialogDescription>
+              Masuk menggunakan NIS santri dan password dari madrasah.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...parentForm}>
+            <form onSubmit={parentForm.handleSubmit(handleParentSubmit)} className="space-y-4 pt-4">
+              <FormField
+                control={parentForm.control}
+                name="nis"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>NIS (Nomor Induk Siswa)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Contoh: 12345" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={parentForm.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="••••••••" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" className="w-full h-10 font-bold" disabled={isParentLoading}>
+                {isParentLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "MASUK KE DASHBOARD"}
+              </Button>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
 
-            <TabsContent value="parent">
-              <Form {...parentForm}>
-                <form onSubmit={parentForm.handleSubmit(handleParentSubmit)} className="space-y-4">
-                  <FormField
-                    control={parentForm.control}
-                    name="nis"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>NIS (Nomor Induk Siswa)</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Contoh: 12345" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={parentForm.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Password</FormLabel>
-                        <FormControl>
-                          <Input type="password" placeholder="••••••••" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button type="submit" className="w-full" size="xs">
-                    Login sebagai Wali Murid
-                  </Button>
-                </form>
-              </Form>
-            </TabsContent>
-          </div>
-        </Tabs>
-      </CardContent>
-    </Card>
+      {/* Akses Administrator */}
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button variant="ghost" className="text-muted-foreground hover:text-primary text-[10px] uppercase font-bold tracking-[0.2em] gap-1.5 h-8 mt-2">
+            <ShieldCheck className="h-3 w-3" />
+            Akses Administrator
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5 text-primary" />
+              Login Admin
+            </DialogTitle>
+            <DialogDescription>
+              Khusus untuk petugas dan staf madrasah berwenang.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...adminForm}>
+            <form onSubmit={adminForm.handleSubmit(handleAdminSubmit)} className="space-y-4 pt-4">
+              <FormField
+                control={adminForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email Admin</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="admin@madrasah.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={adminForm.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="••••••••" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" className="w-full h-10 font-bold" disabled={isAdminLoading}>
+                {isAdminLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "LOGIN SEBAGAI ADMIN"}
+              </Button>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }
