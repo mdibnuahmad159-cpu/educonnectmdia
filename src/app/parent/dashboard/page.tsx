@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
@@ -18,8 +19,17 @@ import {
     ArrowRight,
     CheckCircle2,
     XCircle,
-    Info
+    Info,
+    UserCircle
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { format, parseISO } from "date-fns";
 import { id as dfnsId } from "date-fns/locale";
@@ -35,19 +45,19 @@ const dayMapping: { [key: number]: keyof Omit<Schedule, 'id' | 'classLevel' | 'a
     6: 'saturday',
 };
 
-const dayNames: { [key: string]: string } = {
-    sunday: 'Minggu',
-    monday: 'Senin',
-    tuesday: 'Selasa',
-    wednesday: 'Rabu',
-    thursday: 'Kamis',
-    saturday: 'Sabtu',
-    friday: 'Jumat'
-};
+function DetailItem({ label, value }: { label: string; value: string | number }) {
+    return (
+        <div className="grid grid-cols-3 gap-2 py-2 border-b border-muted last:border-0">
+            <span className="text-muted-foreground font-medium">{label}</span>
+            <span className="col-span-2 font-semibold text-right">{value}</span>
+        </div>
+    );
+}
 
 export default function ParentDashboardPage() {
   const [nis, setNis] = useState<string | null>(null);
   const [todayStr, setTodayStr] = useState<string>("");
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
   const firestore = useFirestore();
   const { activeYear } = useAcademicYear();
 
@@ -64,7 +74,7 @@ export default function ParentDashboardPage() {
   }, [firestore, nis]);
   const { data: student, loading: isStudentLoading, error: studentError } = useDoc<Student>(studentRef);
 
-  // Fetch Today's Attendance
+  // Today's Attendance
   const attendanceQuery = useMemoFirebase(() => {
     if (!firestore || !nis || !todayStr) return null;
     return query(
@@ -87,14 +97,14 @@ export default function ParentDashboardPage() {
   }, [firestore, student?.kelas, activeYear]);
   const { data: scheduleData, loading: isScheduleLoading } = useCollection<Schedule>(scheduleQuery);
 
-  // Fetch Data for Schedule Mapping (Curriculum & Teachers)
+  // Fetch Data for Schedule Mapping
   const curriculumQuery = useMemoFirebase(() => firestore ? collection(firestore, "curriculum") : null, [firestore]);
   const { data: curriculum } = useCollection<Curriculum>(curriculumQuery);
 
   const teachersQuery = useMemoFirebase(() => firestore ? collection(firestore, "teachers") : null, [firestore]);
   const { data: teachers } = useCollection<Teacher>(teachersQuery);
 
-  // Fetch Announcements
+  // Announcements
   const announcementsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, "announcements"), orderBy("createdAt", "desc"), limit(5));
@@ -160,7 +170,17 @@ export default function ParentDashboardPage() {
                     <AvatarFallback className="bg-white/10 text-xl">{student.name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                    <h2 className="text-lg font-bold truncate">{student.name}</h2>
+                    <div className="flex items-start justify-between">
+                        <h2 className="text-lg font-bold truncate leading-tight pr-2">{student.name}</h2>
+                        <Button 
+                            variant="ghost" 
+                            size="xs" 
+                            className="text-white/80 hover:text-white hover:bg-white/10 h-7 px-2 gap-1 text-[9px] uppercase font-bold border border-white/20"
+                            onClick={() => setIsDetailOpen(true)}
+                        >
+                            <UserCircle className="h-3 w-3" /> Detail
+                        </Button>
+                    </div>
                     <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1">
                         <span className="text-[10px] font-medium bg-white/20 px-2 py-0.5 rounded">NIS: {student.nis}</span>
                         <span className="text-[10px] font-medium bg-white/20 px-2 py-0.5 rounded">KELAS: {student.kelas}</span>
@@ -296,6 +316,49 @@ export default function ParentDashboardPage() {
                 )}
             </CardContent>
         </Card>
+
+        {/* Detail Modal */}
+        <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
+            <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                        <UserCircle className="h-5 w-5 text-primary" /> Profil Santri
+                    </DialogTitle>
+                    <DialogDescription>Data identitas lengkap santri Madrasah.</DialogDescription>
+                </DialogHeader>
+                
+                <div className="flex flex-col items-center py-4">
+                    <Avatar className="h-24 w-24 border-4 border-primary/10 shadow-md">
+                        <AvatarImage src={student.avatarUrl} className="object-cover" />
+                        <AvatarFallback className="text-3xl font-bold bg-primary/5 text-primary">
+                            {student.name.charAt(0)}
+                        </AvatarFallback>
+                    </Avatar>
+                    <div className="text-center mt-3">
+                        <h3 className="font-bold text-lg">{student.name}</h3>
+                        <p className="text-xs text-muted-foreground font-mono">NIS: {student.nis}</p>
+                    </div>
+                </div>
+
+                <div className="space-y-1 mt-2">
+                    <DetailItem label="Nama Lengkap" value={student.name} />
+                    <DetailItem label="NIS" value={student.nis} />
+                    <DetailItem label="NIK" value={student.nik || '-'} />
+                    <DetailItem label="Jenis Kelamin" value={student.gender} />
+                    <DetailItem label="Tempat Lahir" value={student.tempatLahir || '-'} />
+                    <DetailItem label="Tanggal Lahir" value={student.dateOfBirth} />
+                    <DetailItem label="Nama Ayah" value={student.namaAyah || '-'} />
+                    <DetailItem label="Nama Ibu" value={student.namaIbu || '-'} />
+                    <DetailItem label="Alamat" value={student.address} />
+                    <DetailItem label="No. WhatsApp" value={student.noWa || '-'} />
+                    <DetailItem label="Kelas Aktif" value={student.kelas !== undefined ? `Kelas ${student.kelas}` : '-'} />
+                </div>
+
+                <DialogFooter className="mt-6">
+                    <Button onClick={() => setIsDetailOpen(false)} className="w-full">Tutup</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </div>
   );
 }
