@@ -31,20 +31,12 @@ export default function ParentLayout({ children }: { children: ReactNode }) {
     const studentNis = sessionStorage.getItem('studentNis');
 
     if (!user || !studentNis) {
-      // Not logged in or no student identified, redirect to home
       router.push('/');
       return;
     }
 
     if (user.email === 'mdibnuahmad159@gmail.com') {
-      // Is an admin, redirect to admin dashboard
       router.push('/admin/dashboard');
-      return;
-    }
-
-    if (user.isAnonymous === false) {
-       // Is a named user (teacher), redirect to teacher dashboard
-      router.push('/teacher/dashboard');
       return;
     }
 

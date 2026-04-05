@@ -24,18 +24,15 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!isUserLoading) {
-      // If not loading and no user, redirect to login
       if (!user) {
         router.push('/');
       } 
-      // If user exists but is not the admin, redirect away
       else if (user.email !== 'mdibnuahmad159@gmail.com') {
-        router.push('/teacher/dashboard');
+        router.push('/');
       }
     }
   }, [user, isUserLoading, router]);
 
-  // Show loader while checking user auth, or if the user is not the admin
   if (isUserLoading || !user || user.email !== 'mdibnuahmad159@gmail.com' || isProfileLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useForm } from "react-hook-form";
@@ -7,7 +6,7 @@ import * as z from "zod";
 import { useRouter } from "next/navigation";
 import { useAuth, useFirestore } from "@/firebase";
 import { signInWithEmailAndPassword, signInAnonymously, signOut } from "firebase/auth";
-import { doc, getDoc, collection, query, where, getDocs, DocumentSnapshot } from "firebase/firestore";
+import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -36,14 +35,9 @@ const adminSchema = z.object({
   password: z.string().min(1, "Password wajib diisi"),
 });
 
-const teacherSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(1, "Password is required"),
-});
-
 const parentSchema = z.object({
-  nis: z.string().min(1, "NIS is required"),
-  password: z.string().min(1, "Password is required"),
+  nis: z.string().min(1, "NIS wajib diisi"),
+  password: z.string().min(1, "Password wajib diisi"),
 });
 
 export function LoginForm() {
@@ -55,11 +49,6 @@ export function LoginForm() {
   const adminForm = useForm<z.infer<typeof adminSchema>>({
     resolver: zodResolver(adminSchema),
     defaultValues: { email: "mdibnuahmad159@gmail.com", password: "" },
-  });
-
-  const teacherForm = useForm<z.infer<typeof teacherSchema>>({
-    resolver: zodResolver(teacherSchema),
-    defaultValues: { email: "", password: "" },
   });
 
   const parentForm = useForm<z.infer<typeof parentSchema>>({
@@ -85,57 +74,32 @@ export function LoginForm() {
     }
   };
 
-  const handleTeacherSubmit = async (values: z.infer<typeof teacherSchema>) => {
-    if (!auth) return;
-    try {
-      await signInWithEmailAndPassword(auth, values.email, values.password);
-      toast({
-        title: "Login Berhasil",
-        description: "Selamat datang!",
-      });
-      router.push("/teacher/dashboard"); 
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Login Gagal",
-        description: "Email atau password salah.",
-      });
-    }
-  };
-
   const handleParentSubmit = async (values: z.infer<typeof parentSchema>) => {
     if (!auth || !firestore) return;
     try {
-      // 0. Pastikan sesi bersih
       if (auth.currentUser) {
         await signOut(auth);
       }
 
-      // 1. Normalisasi NIS
       const rawNis = String(values.nis).trim();
       const upperNis = rawNis.toUpperCase();
       const prefixedNis = upperNis.startsWith('MDIA') ? upperNis : `MDIA${upperNis}`;
 
-      // 2. Login anonim untuk mendapatkan izin baca
       await signInAnonymously(auth);
 
-      // 3. Cari dokumen siswa dengan beberapa metode agar lebih akurat
       let studentDoc: any = null;
 
-      // Metode A: Cari berdasarkan ID dokumen langsung
       const studentRef = doc(firestore, "students", prefixedNis);
       const studentSnap = await getDoc(studentRef);
 
       if (studentSnap.exists()) {
         studentDoc = studentSnap;
       } else {
-        // Metode B: Query field 'nis' dengan awalan MDIA
         const q = query(collection(firestore, "students"), where("nis", "==", prefixedNis));
         const qSnap = await getDocs(q);
         if (!qSnap.empty) {
           studentDoc = qSnap.docs[0];
         } else {
-          // Metode C: Query field 'nis' tanpa awalan (kasus data lama/manual)
           const qRaw = query(collection(firestore, "students"), where("nis", "==", rawNis));
           const qRawSnap = await getDocs(qRaw);
           if (!qRawSnap.empty) {
@@ -144,7 +108,6 @@ export function LoginForm() {
         }
       }
 
-      // 4. Verifikasi keberadaan data
       if (!studentDoc) {
         await signOut(auth);
         toast({
@@ -157,9 +120,7 @@ export function LoginForm() {
 
       const studentData = studentDoc.data();
       
-      // 5. Cek kecocokan password
       if (String(studentData.password) === String(values.password)) {
-        // Simpan ID dokumen yang benar untuk digunakan di dashboard
         sessionStorage.setItem('studentNis', studentDoc.id);
         
         toast({
@@ -192,9 +153,8 @@ export function LoginForm() {
     <Card>
       <CardContent className="p-0">
         <Tabs defaultValue="admin" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="admin">Admin</TabsTrigger>
-            <TabsTrigger value="teacher">Guru</TabsTrigger>
             <TabsTrigger value="parent">Wali Murid</TabsTrigger>
           </TabsList>
           
@@ -233,42 +193,6 @@ export function LoginForm() {
                     </Button>
                   </form>
                 </Form>
-            </TabsContent>
-
-            <TabsContent value="teacher">
-              <Form {...teacherForm}>
-                <form onSubmit={teacherForm.handleSubmit(handleTeacherSubmit)} className="space-y-4">
-                  <FormField
-                    control={teacherForm.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input type="email" placeholder="email@contoh.com" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={teacherForm.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Password</FormLabel>
-                        <FormControl>
-                          <Input type="password" placeholder="••••••••" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button type="submit" className="w-full" size="xs">
-                    Login sebagai Guru
-                  </Button>
-                </form>
-              </Form>
             </TabsContent>
 
             <TabsContent value="parent">
