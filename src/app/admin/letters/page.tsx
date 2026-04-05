@@ -29,7 +29,8 @@ import {
     Plus,
     FileSignature,
     Users,
-    ListTodo
+    ListTodo,
+    Info
 } from "lucide-react";
 import { useSchoolProfile } from "@/context/school-profile-provider";
 import { format, parseISO } from "date-fns";
@@ -47,7 +48,8 @@ interface LetterData {
     recipient: string;
     studentId?: string;
     content: string;
-    studentList?: string; // New for izin
+    footerNote?: string; // New for Nb
+    studentList?: string; 
     eventDate: string;
     eventTime: string;
     eventPlace: string;
@@ -70,6 +72,7 @@ export default function LettersPage() {
         attachment: '-',
         recipient: '',
         content: '',
+        footerNote: '',
         studentList: '',
         committeeName: 'Panitia Pelaksana Haflatul Imtihan',
         chairmanName: '',
@@ -82,7 +85,10 @@ export default function LettersPage() {
     const studentsQuery = useMemoFirebase(() => firestore ? collection(firestore, "students") : null, [firestore]);
     const { data: students, loading: loadingStudents } = useCollection<Student>(studentsQuery);
 
-    const teachersQuery = useMemoFirebase(() => firestore ? collection(firestore, "teachers") : null, [firestore]);
+    const teachersQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return collection(firestore, "teachers");
+    }, [firestore]);
     const { data: teachers } = useCollection<Teacher>(teachersQuery);
 
     const kepalaMadrasah = useMemo(() => {
@@ -96,6 +102,8 @@ export default function LettersPage() {
             type,
             subject: getDefaultSubject(type),
             content: getDefaultContent(type),
+            recipient: type === 'pemberitahuan' ? 'Orang Tua/Wali Murid' : '',
+            footerNote: type === 'pemberitahuan' ? 'kepada siswa siswi yang memiliki tanggungan administrasi(spp,ujian,kitab dll) dimohon untuk segera melunasi.' : '',
             studentList: type === 'izin' ? "1. Nama Siswa 1\tKelas : 5 (Lima)\n2. Nama Siswa 2\tKelas : 4 (Empat)" : "",
         }));
         setStep('form');
@@ -104,7 +112,7 @@ export default function LettersPage() {
     const getDefaultSubject = (type: LetterType) => {
         switch(type) {
             case 'keterangan': return 'Surat Keterangan Belajar';
-            case 'pemberitahuan': return 'Pemberitahuan Kegiatan Madrasah';
+            case 'pemberitahuan': return 'PEMBERITAHUAN';
             case 'izin': return 'PERMOHONAN IZIN';
             case 'undangan': return 'UNDANGAN';
             default: return '';
@@ -114,7 +122,7 @@ export default function LettersPage() {
     const getDefaultContent = (type: LetterType) => {
         switch(type) {
             case 'keterangan': return 'Adalah benar-benar santri aktif di Madrasah Diniyah Takmiliyah Ula Ibnu Ahmad pada tahun ajaran aktif.';
-            case 'pemberitahuan': return 'Dengan ini kami beritahukan kepada bapak/ibu wali murid bahwa sehubungan dengan datangnya bulan suci ramadhan, kegiatan belajar mengajar akan diliburkan sementara.';
+            case 'pemberitahuan': return 'Salam silaturrahim kami sampaikan teriring doa semoga Allah SWT. Senantiasa melimpahkan rahmat, taufik dan hidayahNya kepada kita, sehingga kita tetap diberi kenikmatan hidup dalam keadaan sehat walafiat Aamin.\n\nBerdasarkan hasil rapat pada tanggal 3 Januari 2025 tentang pembiayaan semester akhir ( IMDA AKHIR ) dan Haflatul Imtihan, kami memberitahukan bahwa biaya tersebut sebesar Rp.150.000,00- ( seratus lima puluh ribu rupiah )/murid.\n\nDemi kelancaran kegiatan tersebut kami mohon agar wali murid secepatnya melunasi paling lambatnya tanggal 20 Januari 2025.';
             case 'izin': return 'Sehubungan dengan adanya kegiatan Musabaqoh Antar Madrasah (MUSAMMA), dengan ini kami sampaikan bahwa siswa :';
             case 'undangan': return 'Salam silaturrahim kami sampaikan teriring doa semoga Allah SWT. Senantiasa melimpahkan rahmat, taufik dan hidayahNya kepada kita, sehingga kita tetap diberi kenikmatan hidup dalam keadaan sehat walafiat Aamin.\n\nSehubungan akan dilaksanakannya HAFLATUL IMTIHAN Madrasah Diniyah IBNU AHMAD yang akan dilaksanakan pada :';
             default: return '';
@@ -129,7 +137,7 @@ export default function LettersPage() {
         const printWindow = window.open('', '_blank');
         if (!printWindow) return;
 
-        const dateFormatted = format(parseISO(formData.date), "dd MMMM yyyy", { locale: dfnsId });
+        const dateFormatted = format(parseISO(formData.date), "d MMMM yyyy", { locale: dfnsId });
         
         let dynamicContentHtml = '';
         let footerHtml = '';
@@ -149,11 +157,11 @@ export default function LettersPage() {
                 <p>Demikian surat keterangan ini dibuat untuk dipergunakan sebagaimana mestinya.</p>
             `;
             footerHtml = `
-                <div class="footer">
-                    <div class="sign-box">
+                <div class="footer" style="display: flex; justify-content: flex-end; margin-top: 25px;">
+                    <div class="sign-box" style="text-align: center; width: 220px;">
                         <p>Kepala Madrasah,</p>
-                        <div class="sign-space"></div>
-                        <p class="sign-name">${kepalaMadrasah}</p>
+                        <div class="sign-space" style="height: 45px;"></div>
+                        <p class="sign-name" style="font-weight: bold; text-decoration: underline;">${kepalaMadrasah}</p>
                     </div>
                 </div>
             `;
@@ -165,7 +173,7 @@ export default function LettersPage() {
                 <table style="margin: 5px 80px; width: auto;">
                     <tbody>
                         <tr><td style="width: 100px;">Hari</td><td>: ${formData.eventDate ? format(parseISO(formData.eventDate), "EEEE", { locale: dfnsId }) : '-'}</td></tr>
-                        <tr><td>Tanggal</td><td>: ${formData.eventDate ? format(parseISO(formData.eventDate), "dd MMMM yyyy", { locale: dfnsId }) : '-'}</td></tr>
+                        <tr><td>Tanggal</td><td>: ${formData.eventDate ? format(parseISO(formData.eventDate), "d MMMM yyyy", { locale: dfnsId }) : '-'}</td></tr>
                         <tr><td>Jam</td><td>: ${formData.eventTime || '-'}</td></tr>
                         <tr><td>Tempat</td><td>: ${formData.eventPlace || '-'}</td></tr>
                     </tbody>
@@ -173,25 +181,25 @@ export default function LettersPage() {
                 <p style="text-indent: 40px;">Demikian undangan ini kami buat. Atas perhatian Bapak/Ibu/Saudara(i) kami sampaikan banyak terimakasih.</p>
             `;
             footerHtml = `
-                <div class="date-row">Sampang, ${dateFormatted}</div>
+                <div class="date-row" style="text-align: right; margin-bottom: 3px;">Sampang, ${dateFormatted}</div>
                 <p style="text-align: center; margin-bottom: 10px; font-weight: bold;">${formData.committeeName || 'Panitia Pelaksana'}</p>
-                <div class="sign-container">
-                    <div class="sign-box">
+                <div class="sign-container" style="display: flex; justify-content: space-between; text-align: center;">
+                    <div class="sign-box" style="text-align: center; width: 220px;">
                         <p>Ketua</p>
                         <div class="sign-space" style="height: 45px;"></div>
-                        <p class="sign-name">${formData.chairmanName || '..........................'}</p>
+                        <p class="sign-name" style="font-weight: bold; text-decoration: underline;">${formData.chairmanName || '..........................'}</p>
                     </div>
-                    <div class="sign-box">
+                    <div class="sign-box" style="text-align: center; width: 220px;">
                         <p>Sekretaris</p>
                         <div class="sign-space" style="height: 45px;"></div>
-                        <p class="sign-name">${formData.committeeSecretaryName || '..........................'}</p>
+                        <p class="sign-name" style="font-weight: bold; text-decoration: underline;">${formData.committeeSecretaryName || '..........................'}</p>
                     </div>
                 </div>
                 <div style="text-align: center; margin-top: 10px;">
                     <p>Mengetahui,</p>
                     <p>Kepala Madrasah</p>
                     <div class="sign-space" style="height: 45px;"></div>
-                    <p class="sign-name">${kepalaMadrasah}</p>
+                    <p class="sign-name" style="font-weight: bold; text-decoration: underline;">${kepalaMadrasah}</p>
                 </div>
             `;
         } else if (formData.type === 'izin') {
@@ -206,20 +214,42 @@ export default function LettersPage() {
                 <table style="margin: 5px 80px; width: auto; margin-bottom: 15px;">
                     <tbody>
                         <tr><td style="width: 80px;">Hari</td><td>: ${formData.eventDate ? format(parseISO(formData.eventDate), "EEEE", { locale: dfnsId }) : '-'}</td></tr>
-                        <tr><td>Tanggal</td><td>: ${formData.eventDate ? format(parseISO(formData.eventDate), "dd MMMM yyyy", { locale: dfnsId }) : '-'}</td></tr>
+                        <tr><td>Tanggal</td><td>: ${formData.eventDate ? format(parseISO(formData.eventDate), "d MMMM yyyy", { locale: dfnsId }) : '-'}</td></tr>
                     </tbody>
                 </table>
                 <p>Demikian surat permohonan izin ini kami sampaikan, atas perhatiannya kami ucapkan terima kasih.</p>
             `;
             footerHtml = `
-                <div class="footer">
-                    <div class="sign-box">
+                <div class="footer" style="display: flex; justify-content: flex-end; margin-top: 25px;">
+                    <div class="sign-box" style="text-align: center; width: 220px;">
                         <p>Sampang, ${dateFormatted}</p>
                         <p><strong>Kepala Madrasah</strong></p>
-                        <div class="sign-space"></div>
-                        <p class="sign-name">${kepalaMadrasah}</p>
+                        <div class="sign-space" style="height: 45px;"></div>
+                        <p class="sign-name" style="font-weight: bold; text-decoration: underline;">${kepalaMadrasah}</p>
                     </div>
                 </div>
+            `;
+        } else if (formData.type === 'pemberitahuan') {
+            dynamicContentHtml = formData.content.split('\n\n').map(p => 
+                `<p style="text-indent: 40px; text-align: justify; margin-bottom: 10px;">${p.replace(/\n/g, '<br/>')}</p>`
+            ).join('');
+            
+            dynamicContentHtml += `<p style="text-indent: 40px; margin-top: 10px;">Demikian surat pemberitahuan ini kami sampaikan, atas perhatiannya kami ucapkan terima kasih.</p>`;
+
+            footerHtml = `
+                <div class="footer" style="display: flex; justify-content: flex-end; margin-top: 30px;">
+                    <div class="sign-box" style="text-align: center; width: 220px;">
+                        <p>Sampang, ${dateFormatted}</p>
+                        <p><strong>Kepala Madrasah</strong></p>
+                        <div class="sign-space" style="height: 55px;"></div>
+                        <p class="sign-name" style="font-weight: bold; text-decoration: underline;">${kepalaMadrasah}</p>
+                    </div>
+                </div>
+                ${formData.footerNote ? `
+                    <div style="margin-top: 40px; font-style: italic; font-size: 10.5pt; border-top: 1px dashed #ccc; pt-2;">
+                        <strong>Nb:</strong> ${formData.footerNote}
+                    </div>
+                ` : ''}
             `;
         } else {
             dynamicContentHtml = `
@@ -227,11 +257,11 @@ export default function LettersPage() {
                 <p>Demikian surat ini kami sampaikan, atas perhatian dan kerjasamanya kami ucapkan terima kasih.</p>
             `;
             footerHtml = `
-                <div class="footer">
-                    <div class="sign-box">
+                <div class="footer" style="display: flex; justify-content: flex-end; margin-top: 25px;">
+                    <div class="sign-box" style="text-align: center; width: 220px;">
                         <p>Kepala Madrasah,</p>
-                        <div class="sign-space"></div>
-                        <p class="sign-name">${kepalaMadrasah}</p>
+                        <div class="sign-space" style="height: 45px;"></div>
+                        <p class="sign-name" style="font-weight: bold; text-decoration: underline;">${kepalaMadrasah}</p>
                     </div>
                 </div>
             `;
@@ -247,21 +277,13 @@ export default function LettersPage() {
                         .kop { text-align: center; margin-bottom: 5px; }
                         .kop img { width: 100%; max-height: 120px; object-fit: contain; }
                         
-                        .meta-info { display: flex; justify-content: space-between; margin-bottom: 10px; }
+                        .meta-info { display: flex; justify-content: space-between; margin-bottom: 15px; }
                         .meta-left { width: 60%; }
                         .meta-right { text-align: right; }
                         
-                        .title { text-align: center; text-decoration: underline; font-weight: bold; font-size: 14pt; margin-bottom: 3px; text-transform: uppercase; }
-                        
-                        .salutation { margin-bottom: 5px; font-weight: bold; }
+                        .salutation { margin-bottom: 8px; font-weight: bold; }
                         .content { margin-bottom: 15px; text-align: justify; }
                         
-                        .footer { display: flex; justify-content: flex-end; margin-top: 15px; }
-                        .sign-container { display: flex; justify-content: space-between; text-align: center; }
-                        .sign-box { text-align: center; width: 220px; }
-                        .sign-space { height: 45px; }
-                        .sign-name { font-weight: bold; text-decoration: underline; }
-                        .date-row { text-align: right; margin-bottom: 3px; }
                         ul { margin: 0; }
                     </style>
                 </head>
@@ -282,10 +304,10 @@ export default function LettersPage() {
                                 </tbody>
                             </table>
                         </div>
-                        ${(formData.type !== 'undangan' && formData.type !== 'izin') ? `<div class="meta-right">Sampang, ${dateFormatted}</div>` : ''}
+                        ${(formData.type !== 'undangan' && formData.type !== 'izin' && formData.type !== 'pemberitahuan') ? `<div class="meta-right">Sampang, ${dateFormatted}</div>` : ''}
                     </div>
 
-                    <div style="margin-bottom: 15px;">
+                    <div style="margin-bottom: 20px;">
                         Kepada Yth.<br/>
                         <strong>${formData.recipient || 'Bapak/Ibu/Saudara(i)'}</strong><br/>
                         Di_<br/>
@@ -376,7 +398,7 @@ export default function LettersPage() {
 
                             <div className="space-y-1.5">
                                 <label className="text-[10px] font-bold uppercase text-muted-foreground">Tujuan / Penerima</label>
-                                <Input placeholder="Contoh: Kepala Sekolah SDN BANYUATES 1" value={formData.recipient || ""} onChange={e => setFormData({...formData, recipient: e.target.value})} className="h-9" />
+                                <Input placeholder="Contoh: Orang Tua/Wali Murid" value={formData.recipient || ""} onChange={e => setFormData({...formData, recipient: e.target.value})} className="h-9 font-bold" />
                             </div>
 
                             {formData.type === 'keterangan' && (
@@ -461,6 +483,21 @@ export default function LettersPage() {
                                     className="resize-none"
                                 />
                             </div>
+
+                            {formData.type === 'pemberitahuan' && (
+                                <div className="space-y-1.5 p-4 rounded-lg bg-orange-50/50 border border-orange-100">
+                                    <label className="text-[10px] font-bold uppercase text-orange-700 flex items-center gap-2">
+                                        <Info className="h-3 w-3" /> Nb: (Catatan Bawah)
+                                    </label>
+                                    <Textarea 
+                                        placeholder="Catatan tambahan di bagian bawah surat..."
+                                        rows={2} 
+                                        value={formData.footerNote || ""} 
+                                        onChange={e => setFormData({...formData, footerNote: e.target.value})} 
+                                        className="resize-none bg-white text-xs italic"
+                                    />
+                                </div>
+                            )}
                         </CardContent>
                         <CardFooter className="border-t pt-4 bg-muted/5 flex justify-end gap-3">
                             <Button variant="ghost" onClick={() => setStep('selection')} className="text-xs">Batal</Button>
@@ -495,7 +532,7 @@ export default function LettersPage() {
                             <ul className="text-[11px] space-y-2 text-muted-foreground">
                                 <li className="flex gap-2">
                                     <div className="h-1.5 w-1.5 rounded-full bg-primary mt-1 shrink-0" />
-                                    Format surat izin menggunakan layout daftar siswa.
+                                    Format surat menggunakan font standar 12pt.
                                 </li>
                                 <li className="flex gap-2">
                                     <div className="h-1.5 w-1.5 rounded-full bg-primary mt-1 shrink-0" />
@@ -503,7 +540,7 @@ export default function LettersPage() {
                                 </li>
                                 <li className="flex gap-2">
                                     <div className="h-1.5 w-1.5 rounded-full bg-primary mt-1 shrink-0" />
-                                    Ukuran font resmi adalah 12pt (Times New Roman).
+                                    Dokumen didesain pas untuk 1 lembar kertas A4.
                                 </li>
                             </ul>
                         </div>
@@ -531,9 +568,9 @@ export default function LettersPage() {
                                     <p><strong>Nomor</strong> : {formData.number}</p>
                                     <p><strong>Perihal</strong> : <strong>{formData.subject}</strong></p>
                                 </div>
-                                {(formData.type !== 'undangan' && formData.type !== 'izin') && (
+                                {(formData.type !== 'undangan' && formData.type !== 'izin' && formData.type !== 'pemberitahuan') && (
                                     <div>
-                                        Sampang, {formData.date ? format(new Date(formData.date), "dd MMMM yyyy", { locale: dfnsId }) : '-'}
+                                        Sampang, {formData.date ? format(new Date(formData.date), "d MMMM yyyy", { locale: dfnsId }) : '-'}
                                     </div>
                                 )}
                             </div>
@@ -569,7 +606,7 @@ export default function LettersPage() {
                                         <table className="ml-20">
                                             <tbody>
                                                 <tr><td className="w-24">Hari</td><td>: {formData.eventDate ? format(parseISO(formData.eventDate), "EEEE", { locale: dfnsId }) : '-'}</td></tr>
-                                                <tr><td>Tanggal</td><td>: {formData.eventDate ? format(parseISO(formData.eventDate), "dd MMMM yyyy", { locale: dfnsId }) : '-'}</td></tr>
+                                                <tr><td>Tanggal</td><td>: {formData.eventDate ? format(parseISO(formData.eventDate), "d MMMM yyyy", { locale: dfnsId }) : '-'}</td></tr>
                                                 <tr><td>Jam</td><td>: {formData.eventTime || '-'}</td></tr>
                                                 <tr><td>Tempat</td><td>: {formData.eventPlace || '-'}</td></tr>
                                             </tbody>
@@ -587,10 +624,17 @@ export default function LettersPage() {
                                         <table className="ml-20">
                                             <tbody>
                                                 <tr><td className="w-24">Hari</td><td>: {formData.eventDate ? format(parseISO(formData.eventDate), "EEEE", { locale: dfnsId }) : '-'}</td></tr>
-                                                <tr><td>Tanggal</td><td>: {formData.eventDate ? format(parseISO(formData.eventDate), "dd MMMM yyyy", { locale: dfnsId }) : '-'}</td></tr>
+                                                <tr><td>Tanggal</td><td>: {formData.eventDate ? format(parseISO(formData.eventDate), "d MMMM yyyy", { locale: dfnsId }) : '-'}</td></tr>
                                             </tbody>
                                         </table>
                                         <p>Demikian surat permohonan izin ini kami sampaikan, atas perhatiannya kami ucapkan terima kasih.</p>
+                                    </>
+                                ) : formData.type === 'pemberitahuan' ? (
+                                    <>
+                                        {formData.content.split('\n\n').map((p, i) => (
+                                            <p key={i} className="text-justify indent-10">{p}</p>
+                                        ))}
+                                        <p className="text-justify indent-10">Demikian surat pemberitahuan ini kami sampaikan, atas perhatiannya kami ucapkan terima kasih.</p>
                                     </>
                                 ) : (
                                     <p className="text-justify indent-10">{formData.content}</p>
@@ -601,7 +645,7 @@ export default function LettersPage() {
 
                             {formData.type === 'undangan' ? (
                                 <div className="space-y-4">
-                                    <div className="text-right">Sampang, {formData.date ? format(new Date(formData.date), "dd MMMM yyyy", { locale: dfnsId }) : '-'}</div>
+                                    <div className="text-right">Sampang, {formData.date ? format(new Date(formData.date), "d MMMM yyyy", { locale: dfnsId }) : '-'}</div>
                                     <p className="text-center font-bold">{formData.committeeName}</p>
                                     <div className="flex justify-between text-center">
                                         <div className="w-48">
@@ -622,10 +666,26 @@ export default function LettersPage() {
                                         <p className="font-bold underline">{kepalaMadrasah}</p>
                                     </div>
                                 </div>
+                            ) : formData.type === 'pemberitahuan' ? (
+                                <div className="space-y-6">
+                                    <div className="flex justify-end">
+                                        <div className="text-center w-48">
+                                            <p>Sampang, {formData.date ? format(new Date(formData.date), "d MMMM yyyy", { locale: dfnsId }) : '-'}</p>
+                                            <p><strong>Kepala Madrasah</strong></p>
+                                            <div className="h-12"></div>
+                                            <p className="font-bold underline">{kepalaMadrasah}</p>
+                                        </div>
+                                    </div>
+                                    {formData.footerNote && (
+                                        <div className="mt-8 pt-2 border-t border-dashed">
+                                            <p className="italic"><strong>Nb:</strong> {formData.footerNote}</p>
+                                        </div>
+                                    )}
+                                </div>
                             ) : (
                                 <div className="flex justify-end">
                                     <div className="text-center w-48">
-                                        {formData.type === 'izin' && <p className="mb-1 text-right">Sampang, {formData.date ? format(new Date(formData.date), "dd MMMM yyyy", { locale: dfnsId }) : '-'}</p>}
+                                        {formData.type === 'izin' && <p className="mb-1 text-right">Sampang, {formData.date ? format(new Date(formData.date), "d MMMM yyyy", { locale: dfnsId }) : '-'}</p>}
                                         <p><strong>Kepala Madrasah</strong></p>
                                         <div className="h-12"></div>
                                         <p className="font-bold underline">{kepalaMadrasah}</p>
