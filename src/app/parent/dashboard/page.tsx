@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
@@ -19,7 +20,9 @@ import {
     CheckCircle2,
     XCircle,
     Info,
-    UserCircle
+    UserCircle,
+    ExternalLink,
+    FileSearch
 } from "lucide-react";
 import {
   Dialog,
@@ -58,6 +61,7 @@ export default function ParentDashboardPage() {
   const [nis, setNis] = useState<string | null>(null);
   const [todayStr, setTodayStr] = useState<string>("");
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const firestore = useFirestore();
   const { activeYear } = useAcademicYear();
 
@@ -191,19 +195,22 @@ export default function ParentDashboardPage() {
 
         {/* Action Buttons */}
         <div className="grid grid-cols-3 gap-3">
-            <Link href="/parent/finance" className="flex flex-col items-center gap-2 p-3 rounded-xl bg-card border shadow-sm hover:border-primary/50 transition-all">
+            <Link href="/parent/finance" className="flex flex-col items-center gap-2 p-3 rounded-xl bg-card border shadow-sm hover:border-primary/50 transition-all text-center">
                 <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
                     <Wallet className="h-5 w-5" />
                 </div>
                 <span className="text-[10px] font-bold uppercase tracking-tight">Keuangan</span>
             </Link>
-            <Link href="/parent/reports" className="flex flex-col items-center gap-2 p-3 rounded-xl bg-card border shadow-sm hover:border-primary/50 transition-all">
+            <button 
+                onClick={() => setIsReportDialogOpen(true)}
+                className="flex flex-col items-center gap-2 p-3 rounded-xl bg-card border shadow-sm hover:border-primary/50 transition-all text-center"
+            >
                 <div className="p-2 bg-green-50 text-green-600 rounded-lg">
                     <FileText className="h-5 w-5" />
                 </div>
                 <span className="text-[10px] font-bold uppercase tracking-tight">Rapor</span>
-            </Link>
-            <Link href="/parent/schedule" className="flex flex-col items-center gap-2 p-3 rounded-xl bg-card border shadow-sm hover:border-primary/50 transition-all">
+            </button>
+            <Link href="/parent/schedule" className="flex flex-col items-center gap-2 p-3 rounded-xl bg-card border shadow-sm hover:border-primary/50 transition-all text-center">
                 <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
                     <CalendarDays className="h-5 w-5" />
                 </div>
@@ -356,6 +363,61 @@ export default function ParentDashboardPage() {
 
                 <DialogFooter className="mt-6">
                     <Button onClick={() => setIsDetailOpen(false)} className="w-full">Tutup</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
+        {/* Report Link Modal */}
+        <Dialog open={isReportDialogOpen} onOpenChange={setIsReportDialogOpen}>
+            <DialogContent className="sm:max-w-sm">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                        <FileText className="h-5 w-5 text-green-600" /> Akses Rapor Santri
+                    </DialogTitle>
+                    <DialogDescription>Pilih jenis laporan yang ingin Anda akses.</DialogDescription>
+                </DialogHeader>
+                
+                <div className="py-6 space-y-4">
+                    {student.reportUrl ? (
+                        <div className="p-4 rounded-xl bg-green-50 border border-green-100 flex flex-col items-center text-center gap-3">
+                            <div className="p-3 bg-white rounded-full shadow-sm">
+                                <FileSearch className="h-8 w-8 text-green-600" />
+                            </div>
+                            <div>
+                                <h4 className="font-bold text-sm text-green-800">Rapor Digital PDF</h4>
+                                <p className="text-[10px] text-green-600/80 mt-1">Dokumen rapor resmi yang telah diterbitkan oleh Admin Madrasah.</p>
+                            </div>
+                            <Button asChild className="w-full bg-green-600 hover:bg-green-700 gap-2 mt-2">
+                                <a href={student.reportUrl} target="_blank" rel="noopener noreferrer">
+                                    <ExternalLink className="h-4 w-4" /> Buka Link Rapor
+                                </a>
+                            </Button>
+                        </div>
+                    ) : (
+                        <div className="p-4 rounded-xl bg-muted/30 border border-dashed flex flex-col items-center text-center gap-2">
+                            <AlertTriangle className="h-8 w-8 text-muted-foreground/40" />
+                            <p className="text-xs font-medium text-muted-foreground">Tautan rapor digital PDF belum tersedia dari Admin.</p>
+                        </div>
+                    )}
+
+                    <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                            <span className="w-full border-t border-muted" />
+                        </div>
+                        <div className="relative flex justify-center text-[10px] uppercase font-bold">
+                            <span className="bg-background px-2 text-muted-foreground">Atau</span>
+                        </div>
+                    </div>
+
+                    <Button variant="outline" asChild className="w-full gap-2 font-bold h-11 border-primary/20 hover:bg-primary/5 hover:text-primary">
+                        <Link href="/parent/reports">
+                            <ArrowRight className="h-4 w-4" /> Lihat Rincian Nilai Semester
+                        </Link>
+                    </Button>
+                </div>
+
+                <DialogFooter>
+                    <Button variant="ghost" onClick={() => setIsReportDialogOpen(false)} className="w-full text-xs">Tutup</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
