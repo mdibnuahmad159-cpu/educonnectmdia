@@ -374,7 +374,7 @@ export default function ParentDashboardPage() {
                     <DialogTitle className="flex items-center gap-2">
                         <FileText className="h-5 w-5 text-green-600" /> Akses Rapor Santri
                     </DialogTitle>
-                    <DialogDescription>Pilih jenis laporan yang ingin Anda akses.</DialogDescription>
+                    <DialogDescription>Silakan akses dokumen rapor resmi di bawah ini.</DialogDescription>
                 </DialogHeader>
                 
                 <div className="py-6 space-y-4">
@@ -399,21 +399,6 @@ export default function ParentDashboardPage() {
                             <p className="text-xs font-medium text-muted-foreground">Tautan rapor digital PDF belum tersedia dari Admin.</p>
                         </div>
                     )}
-
-                    <div className="relative">
-                        <div className="absolute inset-0 flex items-center">
-                            <span className="w-full border-t border-muted" />
-                        </div>
-                        <div className="relative flex justify-center text-[10px] uppercase font-bold">
-                            <span className="bg-background px-2 text-muted-foreground">Atau</span>
-                        </div>
-                    </div>
-
-                    <Button variant="outline" asChild className="w-full gap-2 font-bold h-11 border-primary/20 hover:bg-primary/5 hover:text-primary">
-                        <Link href="/parent/reports">
-                            <ArrowRight className="h-4 w-4" /> Lihat Rincian Nilai Semester
-                        </Link>
-                    </Button>
                 </div>
 
                 <DialogFooter>
