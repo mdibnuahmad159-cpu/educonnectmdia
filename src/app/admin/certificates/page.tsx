@@ -294,7 +294,7 @@ export default function CertificatesPage() {
                             padding: 40px 60px;
                         }
                         .header-text {
-                            margin-top: -80px; /* Raised text as requested */
+                            margin-top: -120px;
                             margin-bottom: 20px;
                         }
                         .title-main {
@@ -320,12 +320,12 @@ export default function CertificatesPage() {
                             color: #000;
                         }
                         .name-container {
-                            margin-bottom: 5px; /* Reduced gap */
+                            margin-bottom: 5px;
                             width: 80%;
                         }
                         .student-name {
                             font-family: 'Dancing Script', cursive;
-                            font-size: 32pt; /* Same as Penghargaan */
+                            font-size: 32pt;
                             color: #9c27b0;
                             display: inline-block;
                             padding: 0 50px;
@@ -438,50 +438,186 @@ export default function CertificatesPage() {
             return;
         }
 
-        const doc = new jsPDF({ orientation: "landscape", unit: "px", format: "a4" });
-        const pageWidth = doc.internal.pageSize.getWidth();
-        const pageHeight = doc.internal.pageSize.getHeight();
+        const headName = teachers?.find(t => t.jabatan === 'Kepala Madrasah')?.name || "..........................";
+        const schoolName = profile?.namaMadrasah || "Madrasah Diniyah Ibnu Ahmad";
+
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) {
+            toast({ variant: "destructive", title: "Gagal Membuka Jendela", description: "Mohon izinkan pop-up untuk mencetak sertifikat." });
+            return;
+        }
+
+        let htmlContent = `
+            <html>
+                <head>
+                    <title>Cetak Massal Sertifikat</title>
+                    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;700&family=Playfair+Display:wght@700;900&family=PT+Sans:wght@400;700&display=swap" rel="stylesheet">
+                    <style>
+                        @page { size: landscape; margin: 0; }
+                        body { 
+                            margin: 0; 
+                            padding: 0; 
+                            font-family: 'PT Sans', sans-serif; 
+                            background-color: white;
+                            color: #333;
+                            -webkit-print-color-adjust: exact;
+                        }
+                        .page-break { page-break-after: always; }
+                        .certificate-container {
+                            position: relative;
+                            width: 100vw;
+                            height: 100vh;
+                            background-size: 100% 100%;
+                            background-repeat: no-repeat;
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            justify-content: center;
+                            text-align: center;
+                            box-sizing: border-box;
+                            overflow: hidden;
+                            padding: 40px 60px;
+                        }
+                        .header-text {
+                            margin-top: -120px;
+                            margin-bottom: 20px;
+                        }
+                        .title-main {
+                            font-family: 'Playfair Display', serif;
+                            font-size: 68pt;
+                            font-weight: 900;
+                            color: #9c27b0;
+                            margin: 0;
+                            line-height: 1;
+                            text-transform: uppercase;
+                            letter-spacing: 2px;
+                        }
+                        .title-sub {
+                            font-family: 'Playfair Display', serif;
+                            font-size: 32pt;
+                            font-weight: 700;
+                            color: #9c27b0;
+                            margin: -5px 0 0 0;
+                        }
+                        .intro-text {
+                            font-size: 16pt;
+                            margin-bottom: 15px;
+                            color: #000;
+                        }
+                        .name-container {
+                            margin-bottom: 5px;
+                            width: 80%;
+                        }
+                        .student-name {
+                            font-family: 'Dancing Script', cursive;
+                            font-size: 32pt;
+                            color: #9c27b0;
+                            display: inline-block;
+                            padding: 0 50px;
+                            border-bottom: 2px solid #000;
+                            line-height: 1.1;
+                            white-space: nowrap;
+                            max-width: 100%;
+                            overflow: hidden;
+                            text-overflow: ellipsis;
+                        }
+                        .description {
+                            font-size: 18pt;
+                            max-width: 85%;
+                            line-height: 1.4;
+                            color: #000;
+                            margin-top: 5px;
+                        }
+                        .footer {
+                            position: absolute;
+                            bottom: 60px;
+                            width: 85%;
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: end;
+                            padding: 0 40px;
+                        }
+                        .signature {
+                            text-align: center;
+                        }
+                        .sig-name {
+                            font-weight: 700;
+                            font-size: 18pt;
+                            text-decoration: underline;
+                            display: inline-block;
+                            margin-bottom: 5px;
+                        }
+                        .sig-title {
+                            font-size: 16pt;
+                            color: #333;
+                        }
+                        .date-location {
+                            text-align: center;
+                            font-size: 18pt;
+                            color: #000;
+                            line-height: 1.3;
+                        }
+                        @media print {
+                            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                            .certificate-container { width: 100%; height: 100%; }
+                        }
+                    </style>
+                </head>
+                <body>
+        `;
 
         filteredCertificates.forEach((certificate, index) => {
-            if (index > 0) doc.addPage();
-            
             const template = templates!.find(t => t.id === certificate.category)!;
-            doc.addImage(template.imageUrl, "JPEG", 0, 0, pageWidth, pageHeight);
-
-            doc.setFont("helvetica", "bold");
-            doc.setTextColor(156, 39, 176); // Purple matching #9c27b0
-            
-            const nameText = certificate.studentName.toUpperCase();
-            
-            // Auto scale font size for long names
-            let nameFontSize = 32;
-            doc.setFontSize(nameFontSize);
-            while (doc.getTextWidth(nameText) > (pageWidth * 0.8) && nameFontSize > 14) {
-                nameFontSize -= 2;
-                doc.setFontSize(nameFontSize);
-            }
-            
-            doc.text(nameText, pageWidth / 2, pageHeight / 2 - 20, { align: "center" });
-
-            doc.setFont("helvetica", "normal");
-            doc.setFontSize(18);
-            doc.setTextColor(51, 51, 51);
-            
-            const rankText = certificate.category === 'bintang' ? 'Sebagai Bintang Pelajar' : `sebagai juara ${certificate.rank.toLowerCase()}`;
-            doc.text(rankText, pageWidth / 2, pageHeight / 2 + 5, { align: "center" });
-
-            if (certificate.category === 'lomba' && certificate.competitionName) {
-                doc.text(`pada ${certificate.competitionName.toLowerCase()}`, pageWidth / 2, pageHeight / 2 + 30, { align: "center" });
-            } else {
-                doc.text(`Semester ${certificate.academicYear}`, pageWidth / 2, pageHeight / 2 + 30, { align: "center" });
-            }
-
             const dateFormatted = format(parseISO(certificate.date), "d MMMM yyyy", { locale: dfnsId });
-            doc.setFontSize(12);
-            doc.text(`Sampang, ${dateFormatted}`, pageWidth - 60, pageHeight - 60, { align: "right" });
+            const rankText = certificate.rank.toLowerCase();
+            const competitionText = (certificate.competitionName || "lomba").toLowerCase();
+
+            htmlContent += `
+                <div class="certificate-container ${index < filteredCertificates.length - 1 ? 'page-break' : ''}" style="background-image: url('${template.imageUrl}');">
+                    <div class="header-text">
+                        <div class="title-main">SERTIFIKAT</div>
+                        <div class="title-sub">Penghargaan</div>
+                    </div>
+
+                    <div class="intro-text">Sertifikat ini dipersembahkan kepada</div>
+                    
+                    <div class="name-container">
+                        <div class="student-name">${certificate.studentName}</div>
+                    </div>
+
+                    <div class="description">
+                        sebagai juara ${rankText} pada ${competitionText}<br>
+                        Yang diselenggarakan di ${schoolName.toLowerCase()} pada tahun ajaran ${certificate.academicYear}.
+                    </div>
+
+                    <div class="footer">
+                        <div class="signature">
+                            <div class="sig-name">${headName}</div><br>
+                            <div class="sig-title">Kepala Madrasah</div>
+                        </div>
+
+                        <div class="date-location">
+                            Sampang,<br>
+                            ${dateFormatted}
+                        </div>
+                    </div>
+                </div>
+            `;
         });
 
-        doc.save(`Sertifikat_Massal_${activeYear.replace('/', '-')}.pdf`);
+        htmlContent += `
+                </body>
+            </html>
+        `;
+
+        printWindow.document.write(htmlContent);
+        printWindow.document.close();
+        printWindow.onload = () => {
+            setTimeout(() => {
+                printWindow.focus();
+                printWindow.print();
+            }, 500);
+        };
     };
 
     const handleExportExcel = () => {
