@@ -1286,7 +1286,7 @@ export default function GradesPage() {
             <Card className="border-none shadow-none bg-transparent">
                 <CardHeader className="p-0 pb-4">
                     <div className="space-y-4">
-                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                        <div className="flex justify-between items-center gap-3">
                             <div>
                                 <CardTitle className="text-lg font-headline text-primary font-normal">Input Nilai</CardTitle>
                                 <CardDescription className="text-[10px]">
@@ -1294,86 +1294,82 @@ export default function GradesPage() {
                                 </CardDescription>
                             </div>
                             
-                            <div className="flex flex-col items-end gap-2">
-                                <div className="flex items-center gap-1.5">
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="outline" size="xs" className="h-8 gap-1.5 px-3 font-normal border-primary/20">
-                                                <FileUp className="h-3.5 w-3.5" />
-                                                Impor
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuItem onClick={handleDownloadTemplate}>
-                                                <Download className="mr-2 h-3.5 w-3.5" />
-                                                Unduh Template
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
-                                                <Upload className="mr-2 h-3.5 w-3.5" />
-                                                Unggah Excel
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                    <input type="file" ref={fileInputRef} className="hidden" accept=".xlsx,.xls" onChange={handleImportExcel} />
+                            <Button 
+                                onClick={handleSave} 
+                                disabled={isLoading || isSaving} 
+                                size="xs" 
+                                className="h-8 gap-1.5 px-3 shadow-sm bg-primary hover:bg-primary/90 font-normal"
+                            >
+                                {isSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                                Simpan
+                            </Button>
+                        </div>
 
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="outline" size="xs" className="h-8 gap-1.5 px-3 font-normal border-primary/20">
-                                                <FileDown className="h-3.5 w-3.5" />
-                                                Ekspor
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuItem onClick={handleExportExcel}>
-                                                <FileSpreadsheet className="mr-2 h-3.5 w-3.5" />
-                                                Legger (Excel)
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={handleExportPdf}>
-                                                <FileText className="mr-2 h-3.5 w-3.5" />
-                                                Legger (PDF)
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={handlePrint}>
-                                                <Printer className="mr-2 h-3.5 w-3.5" />
-                                                Cetak
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
+                        <div className="flex flex-wrap items-center justify-end gap-1.5">
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" size="xs" className="h-8 gap-1.5 px-3 font-normal border-primary/20">
+                                        <FileUp className="h-3.5 w-3.5" />
+                                        Impor
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={handleDownloadTemplate}>
+                                        <Download className="mr-2 h-3.5 w-3.5" />
+                                        Unduh Template
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
+                                        <Upload className="mr-2 h-3.5 w-3.5" />
+                                        Unggah Excel
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                            <input type="file" ref={fileInputRef} className="hidden" accept=".xlsx,.xls" onChange={handleImportExcel} />
 
-                                    <Button 
-                                        onClick={handleSave} 
-                                        disabled={isLoading || isSaving} 
-                                        size="xs" 
-                                        className="h-8 gap-1.5 px-3 shadow-sm bg-primary hover:bg-primary/90 font-normal"
-                                    >
-                                        {isSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
-                                        Simpan
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" size="xs" className="h-8 gap-1.5 px-3 font-normal border-primary/20">
+                                        <FileDown className="h-3.5 w-3.5" />
+                                        Ekspor
                                     </Button>
-                                </div>
-                                
-                                <div className="flex items-center gap-1.5">
-                                    <Button 
-                                        onClick={handleBulkPrint} 
-                                        variant="outline" 
-                                        size="xs" 
-                                        disabled={isLoading || !studentsWithStats.length}
-                                        className="h-8 gap-1.5 px-3 font-normal border-primary/20 text-primary"
-                                    >
-                                        <PrinterCheck className="h-3.5 w-3.5" />
-                                        Cetak Rapor Massal
-                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={handleExportExcel}>
+                                        <FileSpreadsheet className="mr-2 h-3.5 w-3.5" />
+                                        Legger (Excel)
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={handleExportPdf}>
+                                        <FileText className="mr-2 h-3.5 w-3.5" />
+                                        Legger (PDF)
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={handlePrint}>
+                                        <Printer className="mr-2 h-3.5 w-3.5" />
+                                        Cetak
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
 
-                                    <Button 
-                                        onClick={handlePrintRankings} 
-                                        variant="outline" 
-                                        size="xs" 
-                                        disabled={isLoading}
-                                        className="h-8 gap-1.5 px-3 font-normal border-primary/20 text-primary"
-                                    >
-                                        <Trophy className="h-3.5 w-3.5" />
-                                        Laporan Peringkat
-                                    </Button>
-                                </div>
-                            </div>
+                            <Button 
+                                onClick={handleBulkPrint} 
+                                variant="outline" 
+                                size="xs" 
+                                disabled={isLoading || !studentsWithStats.length}
+                                className="h-8 gap-1.5 px-3 font-normal border-primary/20 text-primary"
+                            >
+                                <PrinterCheck className="h-3.5 w-3.5" />
+                                Cetak Rapor Massal
+                            </Button>
+
+                            <Button 
+                                onClick={handlePrintRankings} 
+                                variant="outline" 
+                                size="xs" 
+                                disabled={isLoading}
+                                className="h-8 gap-1.5 px-3 font-normal border-primary/20 text-primary"
+                            >
+                                <Trophy className="h-3.5 w-3.5" />
+                                Laporan Peringkat
+                            </Button>
                         </div>
 
                         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto pt-2 border-t border-primary/5">
