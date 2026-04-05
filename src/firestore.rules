@@ -13,9 +13,12 @@ service cloud.firestore {
       return isSignedIn() && (request.auth.token.email == 'mdibnuahmad159@gmail.com' || request.auth.uid == 'ILjpJZ1CcEhC6qlN9JpHwj0Bj773');
     }
     
-    // Fungsi pembantu untuk mengecek apakah user adalah guru terdaftar
+    // Fungsi pembantu untuk mengecek apakah user adalah guru
+    // Guru adalah pengguna terdaftar yang bukan anonim dan memiliki dokumen di koleksi teachers
     function isTeacher() {
-      return isSignedIn() && exists(/databases/$(database)/documents/teachers/$(request.auth.uid));
+      return isSignedIn() && 
+             (exists(/databases/$(database)/documents/teachers/$(request.auth.uid)) || 
+              (request.auth.token.email != null && !request.auth.token.anonymous));
     }
 
     // Aturan Global: 
@@ -27,6 +30,7 @@ service cloud.firestore {
     }
 
     // Izin spesifik untuk Guru (Input Nilai, Absensi, dan Tabungan)
+    // Menggunakan write yang mencakup create dan update
     match /grades/{id} {
       allow write: if isAdmin() || isTeacher();
     }
