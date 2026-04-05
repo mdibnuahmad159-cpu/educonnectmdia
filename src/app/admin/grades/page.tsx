@@ -50,7 +50,8 @@ import {
     Sparkles,
     PrinterCheck,
     Trophy,
-    Award
+    Award,
+    Star
 } from "lucide-react";
 import { useAcademicYear } from "@/context/academic-year-provider";
 import { useSchoolProfile } from "@/context/school-profile-provider";
@@ -862,6 +863,184 @@ export default function GradesPage() {
         };
     };
 
+    const handlePrintStarCertificate = () => {
+        if (!selectedStudent || !subjects.length) return;
+
+        const template = templates?.find(t => t.id === 'bintang');
+        if (!template) {
+            toast({ variant: "destructive", title: "Template Tidak Ditemukan", description: "Silakan unggah template untuk kategori bintang pelajar terlebih dahulu di menu Sertifikat." });
+            return;
+        }
+
+        const headName = teachers?.find(t => t.jabatan === 'Kepala Madrasah')?.name || "..........................";
+        const secretaryName = teachers?.find(t => t.jabatan === 'Sekretaris')?.name || "..........................";
+        const schoolName = profile?.namaMadrasah || "MADRASAH DINIYAH IBNU AHMAD";
+
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) return;
+
+        const dateNow = format(new Date(), "d MMMM yyyy", { locale: dfnsId });
+        const academicYearDisplay = activeYear.replace('/', '-');
+
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Sertifikat Bintang Pelajar - ${selectedStudent.name}</title>
+                    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;700&family=Playfair+Display:wght@700;900&family=PT+Sans:wght@400;700&display=swap" rel="stylesheet">
+                    <style>
+                        @page { size: landscape; margin: 0; }
+                        body { 
+                            margin: 0; 
+                            padding: 0; 
+                            font-family: 'PT Sans', sans-serif; 
+                            background-color: white;
+                            color: #333;
+                            -webkit-print-color-adjust: exact;
+                        }
+                        .certificate-container {
+                            position: relative;
+                            width: 297mm;
+                            height: 210mm;
+                            background-image: url('${template.imageUrl}');
+                            background-size: 100% 100%;
+                            background-repeat: no-repeat;
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            justify-content: center;
+                            text-align: center;
+                            box-sizing: border-box;
+                            overflow: hidden;
+                            padding: 40px 60px;
+                        }
+                        .header-text {
+                            margin-top: -120px;
+                            margin-bottom: 20px;
+                        }
+                        .title-main {
+                            font-family: 'Playfair Display', serif;
+                            font-size: 64pt;
+                            font-weight: 900;
+                            color: #8b6b4d;
+                            margin: 0;
+                            line-height: 1;
+                            text-transform: uppercase;
+                        }
+                        .title-sub {
+                            font-family: 'Playfair Display', serif;
+                            font-size: 32pt;
+                            font-weight: 700;
+                            color: #8b6b4d;
+                            margin: 0;
+                            text-transform: uppercase;
+                            letter-spacing: 4px;
+                        }
+                        .intro-text {
+                            font-size: 18pt;
+                            margin-bottom: 15px;
+                            color: #fff;
+                            opacity: 0.9;
+                        }
+                        .name-container {
+                            margin-bottom: 15px;
+                            width: 80%;
+                        }
+                        .student-name {
+                            font-family: 'Dancing Script', cursive;
+                            font-size: 56pt;
+                            color: #fff;
+                            display: inline-block;
+                            padding: 0 50px;
+                            line-height: 1.1;
+                            white-space: nowrap;
+                        }
+                        .description {
+                            font-size: 16pt;
+                            max-width: 85%;
+                            line-height: 1.5;
+                            color: #fff;
+                            opacity: 0.8;
+                        }
+                        .footer {
+                            position: absolute;
+                            bottom: 80px;
+                            width: 85%;
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: end;
+                            padding: 0 60px;
+                            color: #fff;
+                        }
+                        .signature {
+                            text-align: center;
+                            width: 250px;
+                        }
+                        .sig-name {
+                            font-weight: 700;
+                            font-size: 18pt;
+                            display: inline-block;
+                            margin-bottom: 0px;
+                        }
+                        .sig-title {
+                            font-size: 16pt;
+                            opacity: 0.7;
+                        }
+                        .date-box {
+                            text-align: right;
+                            font-size: 16pt;
+                            margin-bottom: 10px;
+                        }
+                        @media print {
+                            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                            .certificate-container { width: 297mm; height: 210mm; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="certificate-container">
+                        <div class="header-text">
+                            <div class="title-main">SERTIFIKAT</div>
+                            <div class="title-sub">PENGHARGAAN</div>
+                        </div>
+
+                        <div class="intro-text">Diberikan kepada:</div>
+                        
+                        <div class="name-container">
+                            <div class="student-name">${selectedStudent.name}</div>
+                        </div>
+
+                        <div class="description">
+                            Sebagai bintang pelajar tahun ajaran ${academicYearDisplay}<br>
+                            Yang diselenggarakan di ${schoolName.toUpperCase()}
+                        </div>
+
+                        <div class="footer">
+                            <div class="signature">
+                                <div class="sig-title">Kepala Madrasah</div>
+                                <div style="height: 60px;"></div>
+                                <div class="sig-name">${headName}</div>
+                            </div>
+
+                            <div class="signature">
+                                <div class="date-box">Sampang, ${dateNow}</div>
+                                <div class="sig-title">Sekretaris</div>
+                                <div style="height: 40px;"></div>
+                                <div class="sig-name">${secretaryName}</div>
+                            </div>
+                        </div>
+                    </div>
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
+        printWindow.onload = () => {
+            setTimeout(() => {
+                printWindow.focus();
+                printWindow.print();
+            }, 500);
+        };
+    };
+
     const handleBulkPrint = () => {
         if (!studentsWithStats.length || !subjects.length) {
             toast({ variant: "destructive", title: "Data Tidak Lengkap", description: "Pastikan data siswa dan nilai tersedia untuk dicetak." });
@@ -899,6 +1078,8 @@ export default function GradesPage() {
                         table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
                         th, td { border: 1px solid #000; padding: 4px 6px; text-align: left; }
                         th { background-color: #f2f2f2; text-align: center; font-weight: bold; }
+                        
+                        .summary-table td { font-weight: bold; }
                         
                         .personality-absent-container { display: flex; gap: 15px; margin-bottom: 8px; }
                         .p-a-table { flex: 1; }
@@ -1342,6 +1523,16 @@ export default function GradesPage() {
                                 >
                                     <Award className="h-3 w-3" /> Sertifikat Ranking
                                 </Button>
+                                {selectedStudent.rank === 1 && (
+                                    <Button 
+                                        onClick={handlePrintStarCertificate} 
+                                        variant="outline" 
+                                        size="xs" 
+                                        className="h-7 gap-1.5 border-yellow-500/30 text-yellow-600 font-normal hover:bg-yellow-50"
+                                    >
+                                        <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" /> Sertifikat Bintang
+                                    </Button>
+                                )}
                                 <div className="px-2 py-0.5 rounded-full bg-primary text-white text-[10px] uppercase shadow-sm truncate max-w-[150px] sm:max-w-none font-normal">
                                     {selectedStudent.name}
                                 </div>
