@@ -37,6 +37,26 @@ export function addStudent(db: Firestore, student: Omit<Student, 'id'>) {
   });
 }
 
+export async function addStudentsBatch(db: Firestore, students: Omit<Student, 'id'>[]) {
+    if (students.length === 0) return;
+    
+    const chunks = [];
+    for (let i = 0; i < students.length; i += 500) {
+        chunks.push(students.slice(i, i + 500));
+    }
+
+    for (const chunk of chunks) {
+        const batch = writeBatch(db);
+        chunk.forEach(student => {
+            const nisString = String(student.nis);
+            const prefixedNis = nisString.startsWith('MDIA') ? nisString : `MDIA${nisString}`;
+            const studentRef = doc(db, 'students', prefixedNis);
+            batch.set(studentRef, { ...student, nis: prefixedNis, id: prefixedNis });
+        });
+        await batch.commit();
+    }
+}
+
 export function updateStudent(db: Firestore, studentId: string, student: Partial<Student>) {
   const studentRef = doc(db, 'students', studentId);
   setDoc(studentRef, student, { merge: true }).catch(error => {
@@ -154,6 +174,24 @@ export function addCurriculum(db: Firestore, curriculum: Omit<Curriculum, 'id'>)
   });
 }
 
+export async function addCurriculumBatch(db: Firestore, items: Omit<Curriculum, 'id'>[]) {
+    if (items.length === 0) return;
+    
+    const chunks = [];
+    for (let i = 0; i < items.length; i += 500) {
+        chunks.push(items.slice(i, i + 500));
+    }
+
+    for (const chunk of chunks) {
+        const batch = writeBatch(db);
+        chunk.forEach(item => {
+            const newRef = doc(collection(db, 'curriculum'));
+            batch.set(newRef, { ...item, id: newRef.id });
+        });
+        await batch.commit();
+    }
+}
+
 export function updateCurriculum(db: Firestore, curriculumId: string, curriculum: Partial<Omit<Curriculum, 'id'>>) {
   const curriculumRef = doc(db, 'curriculum', curriculumId);
   setDoc(curriculumRef, curriculum, { merge: true }).catch(error => {
@@ -226,6 +264,26 @@ export function addAlumnus(db: Firestore, alumnusData: Omit<Alumni, 'id'>) {
       requestResourceData: data,
     }));
   });
+}
+
+export async function addAlumniBatch(db: Firestore, alumni: Omit<Alumni, 'id'>[]) {
+    if (alumni.length === 0) return;
+    
+    const chunks = [];
+    for (let i = 0; i < alumni.length; i += 500) {
+        chunks.push(alumni.slice(i, i + 500));
+    }
+
+    for (const chunk of chunks) {
+        const batch = writeBatch(db);
+        chunk.forEach(alumnusData => {
+            const nisString = String(alumnusData.nis);
+            const prefixedNis = nisString.startsWith('MDIA') ? nisString : `MDIA${nisString}`;
+            const alumnusRef = doc(db, 'alumni', prefixedNis);
+            batch.set(alumnusRef, { ...alumnusData, nis: prefixedNis, id: prefixedNis });
+        });
+        await batch.commit();
+    }
 }
 
 export function updateAlumnus(db: Firestore, alumnusId: string, alumnusData: Partial<Omit<Alumni, 'id'>>) {
@@ -386,13 +444,22 @@ export function addCertificate(db: Firestore, certificate: Omit<Certificate, 'id
   });
 }
 
-export function addCertificatesBatch(db: Firestore, certificates: Omit<Certificate, 'id'>[]) {
-    const batch = writeBatch(db);
-    certificates.forEach(c => {
-        const newRef = doc(collection(db, 'certificates'));
-        batch.set(newRef, { ...c, id: newRef.id });
-    });
-    return batch.commit();
+export async function addCertificatesBatch(db: Firestore, certificates: Omit<Certificate, 'id'>[]) {
+    if (certificates.length === 0) return;
+    
+    const chunks = [];
+    for (let i = 0; i < certificates.length; i += 500) {
+        chunks.push(certificates.slice(i, i + 500));
+    }
+
+    for (const chunk of chunks) {
+        const batch = writeBatch(db);
+        chunk.forEach(c => {
+            const newRef = doc(collection(db, 'certificates'));
+            batch.set(newRef, { ...c, id: newRef.id });
+        });
+        await batch.commit();
+    }
 }
 
 export function updateCertificate(db: Firestore, id: string, certificate: Partial<Omit<Certificate, 'id'>>) {

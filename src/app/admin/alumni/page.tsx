@@ -50,7 +50,7 @@ import { Trash2, Loader2, FileDown, Printer, FileSpreadsheet, FileText, PlusCirc
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { addAlumnus, updateAlumnus, deleteAlumnus } from "@/lib/firebase-helpers";
+import { addAlumnus, updateAlumnus, deleteAlumnus, addAlumniBatch } from "@/lib/firebase-helpers";
 import { AlumniForm } from "./components/alumni-form";
 
 export default function AlumniPage() {
@@ -159,9 +159,9 @@ export default function AlumniPage() {
                     return;
                 }
 
-                toast({ title: "Mengimpor Data", description: `Mulai mengimpor ${json.length} data alumni...` });
+                toast({ title: "Mengimpor Data", description: `Mulai memproses ${json.length} data alumni...` });
 
-                let successCount = 0;
+                const alumniToImport: Omit<Alumni, 'id'>[] = [];
                 let errorCount = 0;
 
                 for (const item of json) {
@@ -183,15 +183,18 @@ export default function AlumniPage() {
                     }
                     
                     alumniData.nis = String(alumniData.nis);
-
-                    addAlumnus(firestore, alumniData as Omit<Alumni, 'id'>);
-                    successCount++;
+                    alumniToImport.push(alumniData as Omit<Alumni, 'id'>);
                 }
 
-                 toast({ title: "Impor Selesai", description: `${successCount} item berhasil diimpor. ${errorCount} gagal.` });
+                if (alumniToImport.length > 0) {
+                    await addAlumniBatch(firestore, alumniToImport);
+                    toast({ title: "Impor Selesai", description: `${alumniToImport.length} item berhasil diimpor. ${errorCount} gagal.` });
+                } else {
+                    toast({ variant: "destructive", title: "Gagal", description: "Tidak ada data valid untuk diimpor." });
+                }
 
             } catch (error) {
-                toast({ variant: "destructive", title: "Gagal Membaca File", description: "Tidak dapat memproses file Excel." });
+                toast({ variant: "destructive", title: "Gagal Memproses File", description: "Terjadi kesalahan saat mengimpor data. Pastikan format Excel benar." });
                 console.error(error);
             } finally {
                 if (event.target) {

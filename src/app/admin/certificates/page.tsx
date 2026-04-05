@@ -62,7 +62,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { addCertificate, updateCertificate, deleteCertificate } from "@/lib/firebase-helpers";
+import { addCertificate, updateCertificate, deleteCertificate, addCertificatesBatch } from "@/lib/firebase-helpers";
 import { CertificateForm } from "./components/certificate-form";
 import { TemplateUploadDialog } from "./components/template-upload-dialog";
 import { format, parseISO } from "date-fns";
@@ -185,9 +185,9 @@ export default function CertificatesPage() {
                     return;
                 }
 
-                toast({ title: "Mengimpor Data", description: `Mulai mengimpor ${json.length} data sertifikat...` });
+                toast({ title: "Mengimpor Data", description: `Mulai memproses ${json.length} data sertifikat...` });
 
-                let successCount = 0;
+                const certsToImport: Omit<Certificate, 'id'>[] = [];
                 let errorCount = 0;
 
                 for (const item of json) {
@@ -213,7 +213,7 @@ export default function CertificatesPage() {
                         continue;
                     }
 
-                    const finalData: Omit<Certificate, 'id'> = {
+                    certsToImport.push({
                         studentId: student.id,
                         studentName: student.name,
                         category: 'lomba',
@@ -221,16 +221,18 @@ export default function CertificatesPage() {
                         competitionName: certData.competitionName,
                         date: String(certData.date),
                         academicYear: activeYear
-                    };
-
-                    addCertificate(firestore, finalData);
-                    successCount++;
+                    });
                 }
 
-                 toast({ title: "Impor Selesai", description: `${successCount} sertifikat berhasil diimpor. ${errorCount} gagal.` });
+                if (certsToImport.length > 0) {
+                    await addCertificatesBatch(firestore, certsToImport);
+                    toast({ title: "Impor Selesai", description: `${certsToImport.length} sertifikat berhasil diimpor. ${errorCount} gagal.` });
+                } else {
+                    toast({ variant: "destructive", title: "Gagal", description: "Tidak ada data valid untuk diimpor." });
+                }
 
             } catch (error) {
-                toast({ variant: "destructive", title: "Gagal Membaca File", description: "Tidak dapat memproses file Excel." });
+                toast({ variant: "destructive", title: "Gagal Memproses File", description: "Terjadi kesalahan saat menyimpan data. Pastikan format Excel benar." });
                 console.error(error);
             } finally {
                 if (event.target) {

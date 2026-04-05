@@ -44,7 +44,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { addCurriculum, updateCurriculum, deleteCurriculum } from "@/lib/firebase-helpers";
+import { addCurriculum, updateCurriculum, deleteCurriculum, addCurriculumBatch } from "@/lib/firebase-helpers";
 import { CurriculumForm } from "./components/curriculum-form";
 
 export default function CurriculumPage() {
@@ -142,9 +142,9 @@ export default function CurriculumPage() {
                     return;
                 }
 
-                toast({ title: "Mengimpor Data", description: `Mulai mengimpor ${json.length} data kurikulum...` });
+                toast({ title: "Mengimpor Data", description: `Mulai memproses ${json.length} data kurikulum...` });
 
-                let successCount = 0;
+                const itemsToImport: Omit<Curriculum, 'id'>[] = [];
                 let errorCount = 0;
 
                 for (const item of json) {
@@ -166,14 +166,18 @@ export default function CurriculumPage() {
                     }
 
                     curriculumData.classLevel = Number(curriculumData.classLevel);
-                    addCurriculum(firestore, curriculumData as Omit<Curriculum, 'id'>);
-                    successCount++;
+                    itemsToImport.push(curriculumData as Omit<Curriculum, 'id'>);
                 }
 
-                 toast({ title: "Impor Selesai", description: `${successCount} item berhasil diimpor. ${errorCount} gagal.` });
+                if (itemsToImport.length > 0) {
+                    await addCurriculumBatch(firestore, itemsToImport);
+                    toast({ title: "Impor Selesai", description: `${itemsToImport.length} item berhasil diimpor. ${errorCount} gagal.` });
+                } else {
+                    toast({ variant: "destructive", title: "Gagal", description: "Tidak ada data valid untuk diimpor." });
+                }
 
             } catch (error) {
-                toast({ variant: "destructive", title: "Gagal Membaca File", description: "Tidak dapat memproses file Excel." });
+                toast({ variant: "destructive", title: "Gagal Memproses File", description: "Terjadi kesalahan saat menyimpan data. Pastikan format Excel benar." });
                 console.error(error);
             } finally {
                 if (event.target) {
@@ -429,5 +433,3 @@ export default function CurriculumPage() {
         </>
     );
 }
-
-    

@@ -214,6 +214,8 @@ export function TeacherManagement() {
                     }
 
                     try {
+                        // Note: Teachers are added one by one because they require Auth account creation
+                        // which cannot be batched in Firestore. 
                         await addTeacher(firestore, teacherData as Omit<Teacher, 'id'> & {password: string});
                         successCount++;
                     } catch (error) {
@@ -225,7 +227,7 @@ export function TeacherManagement() {
                 toast({ title: "Impor Selesai", description: `${successCount} guru berhasil diimpor. ${errorCount} gagal.` });
 
             } catch (error) {
-                toast({ variant: "destructive", title: "Gagal Membaca File", description: "Tidak dapat memproses file Excel." });
+                toast({ variant: "destructive", title: "Gagal Memproses File", description: "Terjadi kesalahan saat memproses file Excel." });
                 console.error(error);
             } finally {
                 if (event.target) {
@@ -442,7 +444,14 @@ export function TeacherManagement() {
             </TableHeader>
             <TableBody>
               {loading ? (
-                <TableRow><TableCell colSpan={5} className="text-center">Memuat data...</TableCell></TableRow>
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-10">
+                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                      <Loader2 className="h-6 w-6 animate-spin"/>
+                      <span>Memuat data guru...</span>
+                    </div>
+                  </TableCell>
+                </TableRow>
               ) : sortedTeachers.length > 0 ? (
                 sortedTeachers.map((teacher, index) => (
                 <TableRow key={teacher.id}>
@@ -453,11 +462,11 @@ export function TeacherManagement() {
                           <AvatarImage src={teacher.avatarUrl || undefined} alt={teacher.name} />
                           <AvatarFallback>{teacher.name.charAt(0)}</AvatarFallback>
                       </Avatar>
-                      <span>{teacher.name}</span>
+                      <span className="text-xs">{teacher.name}</span>
                     </div>
                   </TableCell>
-                  <TableCell>{teacher.jabatan || '-'}</TableCell>
-                  <TableCell>{teacher.noWa || '-'}</TableCell>
+                  <TableCell className="text-xs">{teacher.jabatan || '-'}</TableCell>
+                  <TableCell className="text-xs">{teacher.noWa || '-'}</TableCell>
                   <TableCell className="text-right">
                     <Button variant="outline" size="xs" onClick={() => handleDetail(teacher)}>
                         Detail
@@ -465,7 +474,11 @@ export function TeacherManagement() {
                   </TableCell>
                 </TableRow>
               ))) : (
-                <TableRow><TableCell colSpan={5} className="text-center">Belum ada data guru.</TableCell></TableRow>
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
+                    Belum ada data guru.
+                  </TableCell>
+                </TableRow>
               )}
             </TableBody>
           </Table>

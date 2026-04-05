@@ -4,7 +4,7 @@
 import { useState, useRef, useMemo } from "react";
 import { PlusCircle, AlertTriangle, Download, Upload, FileDown, FileUp, FileSpreadsheet, FileText, Printer } from "lucide-react";
 import { useCollection, useFirestore, useMemoFirebase, useUser } from "@/firebase";
-import { addStudent, updateStudent, deleteStudent } from "@/lib/firebase-helpers";
+import { addStudent, updateStudent, deleteStudent, addStudentsBatch } from "@/lib/firebase-helpers";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -127,9 +127,9 @@ export function StudentManagement() {
                   return;
               }
 
-              toast({ title: "Mengimpor Data", description: `Mulai mengimpor ${json.length} data siswa...` });
+              toast({ title: "Mengimpor Data", description: `Mulai memproses ${json.length} data siswa...` });
 
-              let successCount = 0;
+              const studentsToImport: Omit<Student, 'id'>[] = [];
               let errorCount = 0;
 
               for (const item of json) {
@@ -159,15 +159,18 @@ export function StudentManagement() {
                   }
                   
                   studentData.nis = String(studentData.nis);
-
-                  addStudent(firestore, studentData as Omit<Student, 'id'>);
-                  successCount++;
+                  studentsToImport.push(studentData as Omit<Student, 'id'>);
               }
 
-               toast({ title: "Impor Selesai", description: `${successCount} siswa berhasil diimpor. ${errorCount} gagal.` });
+              if (studentsToImport.length > 0) {
+                  await addStudentsBatch(firestore, studentsToImport);
+                  toast({ title: "Impor Selesai", description: `${studentsToImport.length} siswa berhasil diimpor. ${errorCount} gagal.` });
+              } else {
+                  toast({ variant: "destructive", title: "Gagal", description: "Tidak ada data valid untuk diimpor." });
+              }
 
           } catch (error) {
-              toast({ variant: "destructive", title: "Gagal Membaca File", description: "Tidak dapat memproses file Excel." });
+              toast({ variant: "destructive", title: "Gagal Memproses File", description: "Terjadi kesalahan saat menyimpan data. Pastikan format Excel benar." });
               console.error(error);
           } finally {
               if (event.target) {
@@ -381,7 +384,14 @@ export function StudentManagement() {
             </TableHeader>
             <TableBody>
               {loading ? (
-                <TableRow><TableCell colSpan={4} className="text-center">Memuat data...</TableCell></TableRow>
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center py-10">
+                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                      <Loader2 className="h-6 w-6 animate-spin"/>
+                      <span>Memuat data siswa...</span>
+                    </div>
+                  </TableCell>
+                </TableRow>
               ) : sortedStudents && sortedStudents.length > 0 ? (
                 sortedStudents.map((student, index) => (
                 <TableRow key={student.id}>
@@ -392,10 +402,10 @@ export function StudentManagement() {
                         <AvatarImage src={student.avatarUrl || undefined} alt={student.name} />
                         <AvatarFallback>{student.name.charAt(0)}</AvatarFallback>
                       </Avatar>
-                      <span className="font-medium">{student.name}</span>
+                      <span className="font-medium text-xs">{student.name}</span>
                     </div>
                   </TableCell>
-                   <TableCell>{student.nis}</TableCell>
+                   <TableCell className="text-xs">{student.nis}</TableCell>
                   <TableCell className="text-right">
                     <Button variant="outline" size="xs" onClick={() => handleDetail(student)}>
                       Detail
@@ -404,7 +414,7 @@ export function StudentManagement() {
                 </TableRow>
               ))) : (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center">
+                  <TableCell colSpan={4} className="text-center py-10 text-muted-foreground">
                     Belum ada data siswa.
                   </TableCell>
                 </TableRow>
