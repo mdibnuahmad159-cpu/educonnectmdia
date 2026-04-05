@@ -69,7 +69,6 @@ import { format, parseISO } from "date-fns";
 import { id as dfnsId } from "date-fns/locale";
 import jsPDF from "jspdf";
 import 'jspdf-autotable';
-import * as XLSX from 'xlsx';
 import { useAcademicYear } from "@/context/academic-year-provider";
 import { useSchoolProfile } from "@/context/school-profile-provider";
 
@@ -317,15 +316,20 @@ export default function CertificatesPage() {
                         }
                         .name-container {
                             margin-bottom: 30px;
+                            width: 80%;
                         }
                         .student-name {
                             font-family: 'Dancing Script', cursive;
-                            font-size: 78pt;
+                            font-size: 42pt;
                             color: #9c27b0;
                             display: inline-block;
                             padding: 0 50px;
                             border-bottom: 2px solid #000;
                             line-height: 1.1;
+                            white-space: nowrap;
+                            max-width: 100%;
+                            overflow: hidden;
+                            text-overflow: ellipsis;
                         }
                         .description {
                             font-size: 18pt;
@@ -440,10 +444,18 @@ export default function CertificatesPage() {
             doc.addImage(template.imageUrl, "JPEG", 0, 0, pageWidth, pageHeight);
 
             doc.setFont("helvetica", "bold");
-            doc.setFontSize(28);
             doc.setTextColor(156, 39, 176); // Purple matching #9c27b0
             
             const nameText = certificate.studentName.toUpperCase();
+            
+            // Auto scale font size for long names
+            let nameFontSize = 28;
+            doc.setFontSize(nameFontSize);
+            while (doc.getTextWidth(nameText) > (pageWidth * 0.8) && nameFontSize > 14) {
+                nameFontSize -= 2;
+                doc.setFontSize(nameFontSize);
+            }
+            
             doc.text(nameText, pageWidth / 2, pageHeight / 2 - 20, { align: "center" });
 
             doc.setFont("helvetica", "normal");
