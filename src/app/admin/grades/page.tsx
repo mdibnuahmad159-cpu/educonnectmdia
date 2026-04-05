@@ -831,7 +831,7 @@ export default function GradesPage() {
                         </table>
 
                         <div class="description" style="font-weight: normal; margin-top: 5px;">
-                            Yang diselenggarakan di ${schoolName.toLowerCase()} pada<br>
+                            Yang diselenggarakan di ${schoolName.toUpperCase()} pada<br>
                             tahun ajaran ${activeYear}.
                         </div>
 
@@ -1012,9 +1012,9 @@ export default function GradesPage() {
                             body { font-family: 'PT Sans', sans-serif; padding: 0; margin: 0; color: #000; line-height: 1.1; }
                             .container { width: 100%; max-width: 100%; margin: 0 auto; }
                             .header { text-align: center; margin-bottom: 10px; border-bottom: 1.5px solid #000; padding-bottom: 5px; }
-                            <h1>${schoolName}</h1>
-                            <h2>LAPORAN PERINGKAT SANTRI (TOP 3 PER KELAS)</h2>
-                            <div class="meta">Semester ${selectedGradeType} | Tahun Ajaran ${activeYear}</div>
+                            h1 { margin: 0; font-size: 16px; text-transform: uppercase; }
+                            h2 { margin: 2px 0; font-size: 14px; }
+                            .meta { font-size: 10px; margin-bottom: 5px; }
                             
                             table { width: 100%; border-collapse: collapse; border: 1px solid #000; margin-top: 5px; table-layout: fixed; }
                             th, td { border: 1px solid #000; padding: 3px 4px; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 9px; }
@@ -1252,12 +1252,12 @@ export default function GradesPage() {
                                         const isSelected = selectedStudentId === student.id;
                                         return (
                                             <TableRow 
+                                                onClick={() => setSelectedStudentId(student.id)}
                                                 key={student.id} 
                                                 className={cn(
                                                     "cursor-pointer transition-colors group h-14",
                                                     isSelected ? "bg-primary/10 hover:bg-primary/15" : "hover:bg-muted/50"
                                                 )}
-                                                onClick={() => setSelectedStudentId(student.id)}
                                             >
                                                 <TableCell className="text-center font-mono text-[10px] p-0">
                                                     <span className={cn(
