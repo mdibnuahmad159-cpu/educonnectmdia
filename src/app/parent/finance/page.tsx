@@ -85,6 +85,7 @@ export default function ParentFinancePage() {
 
     const sppStats = useMemo(() => {
         const defaultAmount = profile?.defaultSppAmount || 50000;
+        const targetMonths = 10; // Kebijakan Admin: 10 bulan lunas setahun
         let totalPaid = 0;
         let paidCount = 0;
 
@@ -96,14 +97,15 @@ export default function ParentFinancePage() {
             }
         });
 
-        const remainingMonths = Math.max(0, MONTHS.length - paidCount);
-        const totalArrears = remainingMonths * defaultAmount;
+        const remainingNeeded = Math.max(0, targetMonths - paidCount);
+        const totalArrears = remainingNeeded * defaultAmount;
 
         return {
             totalPaid,
             totalArrears,
             paidCount,
-            isFullPaid: paidCount >= 10 // Berdasarkan kebijakan 10 bulan lunas tahunan
+            targetMonths,
+            isFullPaid: paidCount >= targetMonths
         };
     }, [sppMap, profile]);
 
@@ -149,17 +151,31 @@ export default function ParentFinancePage() {
                             <span className="text-[9px] font-bold uppercase tracking-tight">Total Terbayar</span>
                         </div>
                         <p className="text-sm font-bold text-blue-700">Rp {sppStats.totalPaid.toLocaleString()}</p>
-                        <p className="text-[8px] text-blue-600/70 font-medium">Tahun Ajaran {activeYear}</p>
+                        <p className="text-[8px] text-blue-600/70 font-medium">Sudah bayar {sppStats.paidCount} bulan</p>
                     </CardContent>
                 </Card>
-                <Card className="border-none shadow-sm bg-orange-50">
+                <Card className={cn(
+                    "border-none shadow-sm transition-colors",
+                    sppStats.isFullPaid ? "bg-green-50" : "bg-orange-50"
+                )}>
                     <CardContent className="p-4 flex flex-col gap-1">
-                        <div className="flex items-center gap-2 text-orange-600 mb-1">
-                            <AlertCircle className="h-3.5 w-3.5" />
-                            <span className="text-[9px] font-bold uppercase tracking-tight">Total Tunggakan</span>
+                        <div className={cn(
+                            "flex items-center gap-2 mb-1",
+                            sppStats.isFullPaid ? "text-green-600" : "text-orange-600"
+                        )}>
+                            {sppStats.isFullPaid ? <CheckCircle2 className="h-3.5 w-3.5" /> : <AlertCircle className="h-3.5 w-3.5" />}
+                            <span className="text-[9px] font-bold uppercase tracking-tight">Tunggakan (Target 10 Bln)</span>
                         </div>
-                        <p className="text-sm font-bold text-orange-700">Rp {sppStats.totalArrears.toLocaleString()}</p>
-                        <p className="text-[8px] text-orange-600/70 font-medium">Estimasi s/d Akhir Tahun</p>
+                        <p className={cn(
+                            "text-sm font-bold",
+                            sppStats.isFullPaid ? "text-green-700" : "text-orange-700"
+                        )}>
+                            {sppStats.isFullPaid ? "LUNAS TAHUNAN" : `Rp ${sppStats.totalArrears.toLocaleString()}`}
+                        </p>
+                        <p className={cn(
+                            "text-[8px] font-medium",
+                            sppStats.isFullPaid ? "text-green-600/70" : "text-orange-600/70"
+                        )}>Tahun Ajaran {activeYear}</p>
                     </CardContent>
                 </Card>
             </div>
@@ -171,7 +187,7 @@ export default function ParentFinancePage() {
                         <CardTitle className="text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                             <CreditCard className="h-3.5 w-3.5" /> Kontrol Pembayaran SPP
                         </CardTitle>
-                        <CardDescription className="text-[10px]">Klik bulan untuk melihat detail</CardDescription>
+                        <CardDescription className="text-[10px]">Riwayat pelunasan bulanan</CardDescription>
                     </div>
                     {sppStats.isFullPaid && (
                         <div className="flex items-center gap-1 text-[9px] font-bold text-green-600 bg-green-100 px-2 py-0.5 rounded-full uppercase">
