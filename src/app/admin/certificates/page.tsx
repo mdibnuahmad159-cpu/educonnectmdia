@@ -257,10 +257,10 @@ export default function CertificatesPage() {
         }
 
         const dateFormatted = format(parseISO(certificate.date), "d MMMM yyyy", { locale: dfnsId });
-        const schoolName = profile?.namaMadrasah || "Madrasah Diniyah Ibnu Ahmad";
+        const schoolName = profile?.namaMadrasah || "MADRASAH DINIYAH IBNU AHMAD";
         
         const rankText = certificate.rank.toLowerCase();
-        const competitionText = (certificate.competitionName || "lomba").toLowerCase();
+        const competitionText = "lomba " + (certificate.competitionName || "").toLowerCase();
 
         printWindow.document.write(`
             <html>
@@ -294,7 +294,7 @@ export default function CertificatesPage() {
                             padding: 40px 60px;
                         }
                         .header-text {
-                            margin-top: -120px;
+                            margin-top: -140px;
                             margin-bottom: 20px;
                         }
                         .title-main {
@@ -320,7 +320,7 @@ export default function CertificatesPage() {
                             color: #000;
                         }
                         .name-container {
-                            margin-bottom: 5px;
+                            margin-bottom: 0px;
                             width: 80%;
                         }
                         .student-name {
@@ -393,7 +393,7 @@ export default function CertificatesPage() {
 
                         <div class="description">
                             sebagai juara ${rankText} pada ${competitionText}<br>
-                            Yang diselenggarakan di ${schoolName.toLowerCase()} pada tahun ajaran ${certificate.academicYear}.
+                            Yang diselenggarakan di ${schoolName.toUpperCase()} pada tahun ajaran ${certificate.academicYear}.
                         </div>
 
                         <div class="footer">
@@ -479,7 +479,7 @@ export default function CertificatesPage() {
                             padding: 40px 60px;
                         }
                         .header-text {
-                            margin-top: -120px;
+                            margin-top: -140px;
                             margin-bottom: 20px;
                         }
                         .title-main {
@@ -505,7 +505,7 @@ export default function CertificatesPage() {
                             color: #000;
                         }
                         .name-container {
-                            margin-bottom: 5px;
+                            margin-bottom: 0px;
                             width: 80%;
                         }
                         .student-name {
@@ -570,7 +570,7 @@ export default function CertificatesPage() {
             const template = templates!.find(t => t.id === certificate.category)!;
             const dateFormatted = format(parseISO(certificate.date), "d MMMM yyyy", { locale: dfnsId });
             const rankText = certificate.rank.toLowerCase();
-            const competitionText = (certificate.competitionName || "lomba").toLowerCase();
+            const competitionText = "lomba " + (certificate.competitionName || "").toLowerCase();
 
             htmlContent += `
                 <div class="certificate-container ${index < filteredCertificates.length - 1 ? 'page-break' : ''}" style="background-image: url('${template.imageUrl}');">
@@ -587,7 +587,7 @@ export default function CertificatesPage() {
 
                     <div class="description">
                         sebagai juara ${rankText} pada ${competitionText}<br>
-                        Yang diselenggarakan di ${schoolName.toLowerCase()} pada tahun ajaran ${certificate.academicYear}.
+                        Yang diselenggarakan di ${schoolName.toUpperCase()} pada tahun ajaran ${certificate.academicYear}.
                     </div>
 
                     <div class="footer">
