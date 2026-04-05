@@ -253,13 +253,20 @@ export async function graduateStudents(db: Firestore, studentIds: string[], grad
 }
 
 export function addAlumnus(db: Firestore, alumnusData: Omit<Alumni, 'id'>) {
-  const nisString = String(alumnusData.nis);
-  const prefixedNis = nisString.startsWith('MDIA') ? nisString : `MDIA${nisString}`;
-  const alumnusRef = doc(db, 'alumni', prefixedNis);
-  const data = { ...alumnusData, nis: prefixedNis, id: prefixedNis };
-  setDoc(alumnusRef, data).catch(error => {
+  const newRef = doc(collection(db, 'alumni'));
+  let finalNis = alumnusData.nis?.trim();
+  
+  if (!finalNis) {
+    // Generate random alphanumeric NIS starting with 'AL'
+    finalNis = 'AL' + Math.random().toString(36).substring(2, 9).toUpperCase();
+  } else if (!finalNis.startsWith('MDIA')) {
+    finalNis = `MDIA${finalNis}`;
+  }
+
+  const data = { ...alumnusData, nis: finalNis, id: newRef.id };
+  setDoc(newRef, data).catch(error => {
     errorEmitter.emit('permission-error', new FirestorePermissionError({
-      path: alumnusRef.path,
+      path: newRef.path,
       operation: 'create',
       requestResourceData: data,
     }));
@@ -277,10 +284,16 @@ export async function addAlumniBatch(db: Firestore, alumni: Omit<Alumni, 'id'>[]
     for (const chunk of chunks) {
         const batch = writeBatch(db);
         chunk.forEach(alumnusData => {
-            const nisString = String(alumnusData.nis);
-            const prefixedNis = nisString.startsWith('MDIA') ? nisString : `MDIA${nisString}`;
-            const alumnusRef = doc(db, 'alumni', prefixedNis);
-            batch.set(alumnusRef, { ...alumnusData, nis: prefixedNis, id: prefixedNis });
+            const newRef = doc(collection(db, 'alumni'));
+            let finalNis = alumnusData.nis?.trim();
+            
+            if (!finalNis) {
+                finalNis = 'AL' + Math.random().toString(36).substring(2, 10).toUpperCase();
+            } else if (!finalNis.startsWith('MDIA')) {
+                finalNis = `MDIA${finalNis}`;
+            }
+
+            batch.set(newRef, { ...alumnusData, nis: finalNis, id: newRef.id });
         });
         await batch.commit();
     }
@@ -288,11 +301,19 @@ export async function addAlumniBatch(db: Firestore, alumni: Omit<Alumni, 'id'>[]
 
 export function updateAlumnus(db: Firestore, alumnusId: string, alumnusData: Partial<Omit<Alumni, 'id'>>) {
   const alumnusRef = doc(db, 'alumni', alumnusId);
-  setDoc(alumnusRef, alumnusData, { merge: true }).catch(error => {
+  const data = { ...alumnusData };
+  
+  // If NIS is provided manually and doesn't have the prefix, add it.
+  // Unless it's an auto-generated 'AL' NIS.
+  if (data.nis && !data.nis.startsWith('MDIA') && !data.nis.startsWith('AL')) {
+      data.nis = `MDIA${data.nis}`;
+  }
+
+  setDoc(alumnusRef, data, { merge: true }).catch(error => {
     errorEmitter.emit('permission-error', new FirestorePermissionError({
       path: alumnusRef.path,
       operation: 'update',
-      requestResourceData: alumnusData,
+      requestResourceData: data,
     }));
   });
 }

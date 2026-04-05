@@ -127,7 +127,7 @@ export default function AlumniPage() {
     };
 
     const alumniColumns = {
-        nis: 'NIS',
+        nis: 'NIS (Opsional)',
         name: 'Nama',
         tahunLulus: 'Tahun Lulus',
         address: 'Alamat',
@@ -176,13 +176,19 @@ export default function AlumniPage() {
                         }
                     }
 
-                    if (!alumniData.nis || !alumniData.name || !alumniData.tahunLulus) {
+                    // Only name and year are absolutely required for import logic
+                    if (!alumniData.name || !alumniData.tahunLulus) {
                         errorCount++;
                         console.error("Skipping alumni item due to missing required fields:", alumniData);
                         continue;
                     }
                     
-                    alumniData.nis = String(alumniData.nis);
+                    if (alumniData.nis) {
+                        alumniData.nis = String(alumniData.nis);
+                    } else {
+                        alumniData.nis = "";
+                    }
+                    
                     alumniToImport.push(alumniData as Omit<Alumni, 'id'>);
                 }
 
@@ -307,7 +313,7 @@ export default function AlumniPage() {
                 <CardHeader>
                     <CardTitle>Alumni</CardTitle>
                     <CardDescription>
-                        Kelola dan lihat data siswa yang telah lulus.
+                        Kelola dan lihat data siswa yang telah lulus. NIS bersifat opsional.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -412,7 +418,11 @@ export default function AlumniPage() {
                                 <TableRow key={item.id}>
                                     <TableCell>{index + 1}</TableCell>
                                     <TableCell className="font-medium">{item.name}</TableCell>
-                                    <TableCell>{item.nis}</TableCell>
+                                    <TableCell>
+                                        <span className={item.nis.startsWith('AL') ? "text-muted-foreground italic text-[10px]" : ""}>
+                                            {item.nis}
+                                        </span>
+                                    </TableCell>
                                     <TableCell>{item.tahunLulus}</TableCell>
                                     <TableCell>{item.address || '-'}</TableCell>
                                     <TableCell>{item.noWa || '-'}</TableCell>

@@ -27,7 +27,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { Alumni } from "@/types";
 
 const formSchema = z.object({
-  nis: z.string().min(1, "NIS harus diisi"),
+  nis: z.string().optional().or(z.literal("")),
   name: z.string().min(1, "Nama harus diisi"),
   tahunLulus: z.string().min(1, "Tahun lulus harus diisi"),
   address: z.string().optional(),
@@ -60,7 +60,12 @@ export function AlumniForm({ isOpen, setIsOpen, alumnus, onSave }: AlumniFormPro
   useEffect(() => {
     if (isOpen) {
         if (alumnus) {
-          form.reset(alumnus);
+          form.reset({
+            ...alumnus,
+            nis: alumnus.nis || "",
+            address: alumnus.address || "",
+            noWa: alumnus.noWa || "",
+          });
         } else {
           form.reset(defaultValues);
         }
@@ -68,7 +73,7 @@ export function AlumniForm({ isOpen, setIsOpen, alumnus, onSave }: AlumniFormPro
   }, [alumnus, form, isOpen]);
   
   const onSubmit = (values: AlumniFormData) => {
-    onSave(values);
+    onSave(values as Omit<Alumni, 'id'>);
   };
 
   return (
@@ -88,9 +93,9 @@ export function AlumniForm({ isOpen, setIsOpen, alumnus, onSave }: AlumniFormPro
                   name="nis"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>NIS</FormLabel>
+                      <FormLabel>NIS (Opsional)</FormLabel>
                       <FormControl>
-                        <Input {...field} disabled={!!alumnus} />
+                        <Input {...field} placeholder="Kosongkan jika belum ada (akan dibuat otomatis)" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
