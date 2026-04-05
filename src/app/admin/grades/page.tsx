@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection, query, where, Firestore, getDocs } from "firebase/firestore";
-import type { Student, Curriculum, Grade, ReportSummary, ReportSummaryStatus, Teacher } from "@/types";
+import type { Student, Curriculum, Grade, ReportSummary, ReportSummaryStatus, Teacher, CertificateTemplate } from "@/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -49,7 +49,8 @@ import {
     Printer,
     Sparkles,
     PrinterCheck,
-    Trophy
+    Trophy,
+    Award
 } from "lucide-react";
 import { useAcademicYear } from "@/context/academic-year-provider";
 import { useSchoolProfile } from "@/context/school-profile-provider";
@@ -90,6 +91,16 @@ function getPredikat(score: number): string {
 function getRoman(num: number): string {
     const romans = ["-", "I (Satu)", "II (Dua)", "III (Tiga)", "IV (Empat)", "V (Lima)", "VI (Enam)"];
     return romans[num] || String(num);
+}
+
+function getRankText(rank: number): string {
+    const ranks = ["", "pertama", "kedua", "ketiga"];
+    return ranks[rank] || String(rank);
+}
+
+function getClassFullText(num: number): string {
+    const texts = ["-", "I (satu)", "II (dua)", "III (tiga)", "IV (empat)", "V (lima)", "VI (enam)"];
+    return texts[num] || String(num);
 }
 
 export default function GradesPage() {
@@ -144,6 +155,9 @@ export default function GradesPage() {
         return collection(firestore, "teachers");
     }, [firestore]);
     const { data: teachers } = useCollection<Teacher>(teachersQuery);
+
+    const templatesCollection = useMemoFirebase(() => firestore ? collection(firestore, "certificate_templates") : null, [firestore]);
+    const { data: templates } = useCollection<CertificateTemplate>(templatesCollection);
 
     useEffect(() => {
         if (existingGrades) {
@@ -405,7 +419,7 @@ export default function GradesPage() {
             startY: 30,
             theme: 'grid',
             styles: { fontSize: 7, cellPadding: 1 },
-            headStyles: { fillColor: [46, 125, 50] }
+            headStyles: { fillColor: [22, 163, 74] }
         });
 
         doc.save(`legger_nilai_kelas_${selectedClass}_${selectedGradeType}.pdf`);
@@ -472,7 +486,7 @@ export default function GradesPage() {
         };
 
         const waliKelas = teachers?.find(t => t.jabatan === `Wali Kelas ${selectedClass}`)?.name || "...";
-        const kepalaMadrasah = "Imam Abdullah"; 
+        const kepalaMadrasah = teachers?.find(t => t.jabatan === 'Kepala Madrasah')?.name || "..........................";
         const location = profile?.alamat?.split(',')[0] || "Sampang";
         const dateNow = format(new Date(), "dd MMMM yyyy", { locale: dfnsId });
 
@@ -660,6 +674,191 @@ export default function GradesPage() {
         };
     };
 
+    const handlePrintRankingCertificate = () => {
+        if (!selectedStudent || !subjects.length) return;
+
+        const template = templates?.find(t => t.id === 'ranking');
+        if (!template) {
+            toast({ variant: "destructive", title: "Template Tidak Ditemukan", description: "Silakan unggah template untuk kategori ranking terlebih dahulu di menu Sertifikat." });
+            return;
+        }
+
+        const headName = teachers?.find(t => t.jabatan === 'Kepala Madrasah')?.name || "..........................";
+        const waliKelasName = teachers?.find(t => t.jabatan === `Wali Kelas ${selectedClass}`)?.name || "..........................";
+        const schoolName = profile?.namaMadrasah || "MADRASAH DINIYAH IBNU AHMAD";
+
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) return;
+
+        const rankText = getRankText(selectedStudent.rank);
+        const classText = getClassFullText(Number(selectedClass));
+        const dateNow = format(new Date(), "dd MMMM yyyy", { locale: dfnsId });
+
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Sertifikat Ranking - ${selectedStudent.name}</title>
+                    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;700&family=Playfair+Display:wght@700;900&family=PT+Sans:wght@400;700&display=swap" rel="stylesheet">
+                    <style>
+                        @page { size: landscape; margin: 0; }
+                        body { 
+                            margin: 0; 
+                            padding: 0; 
+                            font-family: 'PT Sans', sans-serif; 
+                            background-color: white;
+                            color: #333;
+                            -webkit-print-color-adjust: exact;
+                        }
+                        .certificate-container {
+                            position: relative;
+                            width: 297mm;
+                            height: 210mm;
+                            background-image: url('${template.imageUrl}');
+                            background-size: 100% 100%;
+                            background-repeat: no-repeat;
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            justify-content: center;
+                            text-align: center;
+                            box-sizing: border-box;
+                            overflow: hidden;
+                            padding: 40px 60px;
+                        }
+                        .header-text {
+                            margin-top: -100px;
+                            margin-bottom: 10px;
+                        }
+                        .title-main {
+                            font-family: 'Playfair Display', serif;
+                            font-size: 42pt;
+                            font-weight: 900;
+                            color: #8b6b4d;
+                            margin: 0;
+                            line-height: 1;
+                        }
+                        .intro-text {
+                            font-size: 16pt;
+                            margin-bottom: 15px;
+                            color: #000;
+                            font-weight: bold;
+                        }
+                        .name-container {
+                            margin-bottom: 10px;
+                            width: 80%;
+                        }
+                        .student-name {
+                            font-family: 'Dancing Script', cursive;
+                            font-size: 42pt;
+                            color: #000;
+                            display: inline-block;
+                            padding: 0 50px;
+                            border-bottom: 2px solid #000;
+                            line-height: 1.1;
+                            white-space: nowrap;
+                        }
+                        .description {
+                            font-size: 16pt;
+                            max-width: 85%;
+                            line-height: 1.4;
+                            color: #000;
+                            margin-top: 10px;
+                        }
+                        .score-table {
+                            margin: 15px auto;
+                            font-size: 16pt;
+                            font-weight: bold;
+                            text-align: left;
+                        }
+                        .score-table td {
+                            padding: 2px 10px;
+                        }
+                        .footer {
+                            position: absolute;
+                            bottom: 60px;
+                            width: 85%;
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: end;
+                            padding: 0 40px;
+                        }
+                        .signature {
+                            text-align: center;
+                            width: 250px;
+                        }
+                        .sig-name {
+                            font-weight: 700;
+                            font-size: 18pt;
+                            display: inline-block;
+                            margin-bottom: 0px;
+                            text-decoration: underline;
+                        }
+                        .sig-title {
+                            font-size: 16pt;
+                            color: #333;
+                        }
+                        @media print {
+                            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                            .certificate-container { width: 297mm; height: 210mm; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="certificate-container">
+                        <div class="header-text">
+                            <div class="title-main">Sertifikat Penghargaan</div>
+                        </div>
+
+                        <div class="intro-text">Dengan ini, kami menyatakan bahwa:</div>
+                        
+                        <div class="name-container">
+                            <div class="student-name">${selectedStudent.name}</div>
+                        </div>
+
+                        <div class="description">
+                            Sebagai ranking ${rankText} pada kelas ${classText} dengan hasil kompetensi sebagai berikut:
+                        </div>
+
+                        <table class="score-table">
+                            <tr>
+                                <td>Jumlah Nilai</td>
+                                <td>: ${selectedStudent.total}</td>
+                            </tr>
+                            <tr>
+                                <td>Rata-rata</td>
+                                <td>: ${selectedStudent.average.toFixed(1).replace('.', ',')}</td>
+                            </tr>
+                        </table>
+
+                        <div class="description" style="font-weight: normal; margin-top: 5px;">
+                            Yang diselenggarakan di ${schoolName.toLowerCase()} pada<br>
+                            tahun ajaran ${activeYear}.
+                        </div>
+
+                        <div class="footer">
+                            <div class="signature">
+                                <div class="sig-name">${headName}</div><br>
+                                <div class="sig-title">Kepala Madrasah</div>
+                            </div>
+
+                            <div class="signature">
+                                <div class="sig-name">${waliKelasName}</div><br>
+                                <div class="sig-title">Wali kelas</div>
+                            </div>
+                        </div>
+                    </div>
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
+        printWindow.onload = () => {
+            setTimeout(() => {
+                printWindow.focus();
+                printWindow.print();
+            }, 500);
+        };
+    };
+
     const handleBulkPrint = () => {
         if (!studentsWithStats.length || !subjects.length) {
             toast({ variant: "destructive", title: "Data Tidak Lengkap", description: "Pastikan data siswa dan nilai tersedia untuk dicetak." });
@@ -813,24 +1012,23 @@ export default function GradesPage() {
                             body { font-family: 'PT Sans', sans-serif; padding: 0; margin: 0; color: #000; line-height: 1.1; }
                             .container { width: 100%; max-width: 100%; margin: 0 auto; }
                             .header { text-align: center; margin-bottom: 10px; border-bottom: 1.5px solid #000; padding-bottom: 5px; }
-                            h1 { margin: 0; font-size: 15px; text-transform: uppercase; font-weight: bold; }
-                            h2 { margin: 2px 0; font-size: 13px; font-weight: bold; color: #222; }
-                            .meta { font-size: 10px; margin-bottom: 5px; font-weight: normal; }
+                            <h1>${schoolName}</h1>
+                            <h2>LAPORAN PERINGKAT SANTRI (TOP 3 PER KELAS)</h2>
+                            <div class="meta">Semester ${selectedGradeType} | Tahun Ajaran ${activeYear}</div>
                             
                             table { width: 100%; border-collapse: collapse; border: 1px solid #000; margin-top: 5px; table-layout: fixed; }
                             th, td { border: 1px solid #000; padding: 3px 4px; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 9px; }
                             th { background-color: #f5f5f5; text-align: center; text-transform: uppercase; font-size: 8.5px; font-weight: bold; }
                             
-                            /* Column Widths */
-                            th:nth-child(1), td:nth-child(1) { width: 25px; } /* No */
-                            th:nth-child(2), td:nth-child(2) { width: 45px; } /* Kelas */
-                            th:nth-child(3), td:nth-child(3) { width: 140px; white-space: normal; } /* Nama */
-                            th:nth-child(4), td:nth-child(4) { width: 35px; } /* Rank */
-                            th:nth-child(5), td:nth-child(5) { width: 100px; } /* Ayah */
-                            th:nth-child(6), td:nth-child(6) { width: 100px; } /* Ibu */
-                            th:nth-child(7), td:nth-child(7) { width: auto; white-space: normal; } /* Alamat */
-                            th:nth-child(8), td:nth-child(8) { width: 40px; } /* Total */
-                            th:nth-child(9), td:nth-child(9) { width: 40px; } /* Rerata */
+                            th:nth-child(1), td:nth-child(1) { width: 25px; } 
+                            th:nth-child(2), td:nth-child(2) { width: 45px; } 
+                            th:nth-child(3), td:nth-child(3) { width: 140px; white-space: normal; } 
+                            th:nth-child(4), td:nth-child(4) { width: 35px; } 
+                            th:nth-child(5), td:nth-child(5) { width: 100px; } 
+                            th:nth-child(6), td:nth-child(6) { width: 100px; } 
+                            th:nth-child(7), td:nth-child(7) { width: auto; white-space: normal; } 
+                            th:nth-child(8), td:nth-child(8) { width: 40px; } 
+                            th:nth-child(9), td:nth-child(9) { width: 40px; } 
 
                             .footer { margin-top: 15px; display: flex; justify-content: flex-end; }
                             .sign-box { text-align: center; width: 200px; font-size: 10px; }
@@ -965,7 +1163,7 @@ export default function GradesPage() {
                                     className="h-8 gap-1.5 px-3 font-normal border-primary/20 text-primary"
                                 >
                                     <PrinterCheck className="h-3.5 w-3.5" />
-                                    Cetak Massal
+                                    Cetak Rapor Massal
                                 </Button>
 
                                 <Button 
@@ -1133,6 +1331,14 @@ export default function GradesPage() {
                                     className="h-7 gap-1.5 border-primary/30 text-primary font-normal"
                                 >
                                     <Printer className="h-3 w-3" /> Cetak Rapor
+                                </Button>
+                                <Button 
+                                    onClick={handlePrintRankingCertificate} 
+                                    variant="outline" 
+                                    size="xs" 
+                                    className="h-7 gap-1.5 border-primary/30 text-primary font-normal"
+                                >
+                                    <Award className="h-3 w-3" /> Sertifikat Ranking
                                 </Button>
                                 <div className="px-2 py-0.5 rounded-full bg-primary text-white text-[10px] uppercase shadow-sm truncate max-w-[150px] sm:max-w-none font-normal">
                                     {selectedStudent.name}
