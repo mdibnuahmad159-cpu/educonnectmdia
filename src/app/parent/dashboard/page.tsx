@@ -301,7 +301,16 @@ export default function ParentDashboardPage() {
                     <div className="flex justify-center py-4"><Loader2 className="h-4 w-4 animate-spin opacity-20" /></div>
                 ) : filteredAnnouncements.length > 0 ? (
                     filteredAnnouncements.map((item) => (
-                        <div key={item.id} className="group p-3 rounded-lg bg-muted/30 border border-transparent hover:border-primary/20 transition-all">
+                        <div key={item.id} className="group p-3 rounded-lg bg-muted/30 border border-transparent hover:border-primary/20 transition-all overflow-hidden">
+                            {item.imageUrl && (
+                                <div className="mb-2 rounded-md overflow-hidden bg-muted/50 border">
+                                    <img 
+                                        src={item.imageUrl} 
+                                        alt={item.title} 
+                                        className="w-full h-auto max-h-[300px] object-contain"
+                                    />
+                                </div>
+                            )}
                             <div className="flex justify-between items-start gap-2">
                                 <h4 className="text-[11px] font-bold leading-tight line-clamp-1">{item.title}</h4>
                                 <span className="text-[8px] whitespace-nowrap text-muted-foreground font-mono">
