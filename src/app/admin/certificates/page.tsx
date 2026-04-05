@@ -655,6 +655,61 @@ export default function CertificatesPage() {
         doc.save(`Data_Prestasi_Siswa_${activeYear.replace('/', '-')}.pdf`);
     };
 
+    const handlePrintTable = () => {
+        if (!filteredCertificates.length) {
+            toast({ variant: "destructive", title: "Tidak Ada Data", description: "Tidak ada data prestasi untuk dicetak." });
+            return;
+        }
+
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) return;
+
+        const tableRows = filteredCertificates.map((c, i) => `
+            <tr>
+                <td style="text-align: center;">${i + 1}</td>
+                <td>${c.studentName}</td>
+                <td>${c.rank}</td>
+                <td>${c.category === 'lomba' ? c.competitionName : `${c.category} (TA ${c.academicYear})`}</td>
+            </tr>
+        `).join('');
+
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Cetak Daftar Prestasi</title>
+                    <style>
+                        body { font-family: sans-serif; font-size: 12px; padding: 20px; }
+                        h1 { text-align: center; font-size: 18px; margin-bottom: 20px; }
+                        table { width: 100%; border-collapse: collapse; }
+                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        th { background-color: #f2f2f2; font-weight: bold; }
+                    </style>
+                </head>
+                <body>
+                    <h1>Daftar Prestasi Siswa - TA ${activeYear}</h1>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 40px;">No</th>
+                                <th>Nama Siswa</th>
+                                <th>Juara</th>
+                                <th>Keterangan Lomba</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${tableRows}
+                        </tbody>
+                    </table>
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
+        printWindow.onload = () => {
+            printWindow.focus();
+            printWindow.print();
+        };
+    };
+
     const getRankBadge = (rank: Certificate['rank']) => {
         switch (rank) {
             case 'Pertama': return <Badge className="bg-yellow-500 hover:bg-yellow-600 border-none font-normal">Juara 1</Badge>;
@@ -724,6 +779,10 @@ export default function CertificatesPage() {
                             <DropdownMenuItem onClick={handleExportPdf}>
                                 <FileText className="mr-2 h-3.5 w-3.5" />
                                 Ekspor ke PDF
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={handlePrintTable}>
+                                <Printer className="mr-2 h-3.5 w-3.5" />
+                                Cetak
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
