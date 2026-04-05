@@ -279,8 +279,8 @@ export default function CertificatesPage() {
                         }
                         .certificate-container {
                             position: relative;
-                            width: 100vw;
-                            height: 100vh;
+                            width: 297mm;
+                            height: 210mm;
                             background-image: url('${template.imageUrl}');
                             background-size: 100% 100%;
                             background-repeat: no-repeat;
@@ -325,7 +325,7 @@ export default function CertificatesPage() {
                         }
                         .student-name {
                             font-family: 'Dancing Script', cursive;
-                            font-size: 32pt;
+                            font-size: 48pt;
                             color: #9c27b0;
                             display: inline-block;
                             padding: 0 50px;
@@ -374,7 +374,7 @@ export default function CertificatesPage() {
                         }
                         @media print {
                             body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                            .certificate-container { width: 100%; height: 100%; }
+                            .certificate-container { width: 297mm; height: 210mm; }
                         }
                     </style>
                 </head>
@@ -439,7 +439,7 @@ export default function CertificatesPage() {
         }
 
         const headName = teachers?.find(t => t.jabatan === 'Kepala Madrasah')?.name || "..........................";
-        const schoolName = profile?.namaMadrasah || "Madrasah Diniyah Ibnu Ahmad";
+        const schoolName = profile?.namaMadrasah || "MADRASAH DINIYAH IBNU AHMAD";
 
         const printWindow = window.open('', '_blank');
         if (!printWindow) {
@@ -465,8 +465,8 @@ export default function CertificatesPage() {
                         .page-break { page-break-after: always; }
                         .certificate-container {
                             position: relative;
-                            width: 100vw;
-                            height: 100vh;
+                            width: 297mm;
+                            height: 210mm;
                             background-size: 100% 100%;
                             background-repeat: no-repeat;
                             display: flex;
@@ -510,7 +510,7 @@ export default function CertificatesPage() {
                         }
                         .student-name {
                             font-family: 'Dancing Script', cursive;
-                            font-size: 32pt;
+                            font-size: 48pt;
                             color: #9c27b0;
                             display: inline-block;
                             padding: 0 50px;
@@ -559,7 +559,7 @@ export default function CertificatesPage() {
                         }
                         @media print {
                             body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                            .certificate-container { width: 100%; height: 100%; }
+                            .certificate-container { width: 297mm; height: 210mm; }
                         }
                     </style>
                 </head>
