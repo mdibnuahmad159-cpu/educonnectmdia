@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useRef, useMemo } from "react";
-import { PlusCircle, AlertTriangle, Download, Upload, FileDown, FileUp, FileSpreadsheet, FileText, Printer } from "lucide-react";
+import { PlusCircle, AlertTriangle, Download, Upload, FileDown, FileUp, FileSpreadsheet, FileText, Printer, Loader2 } from "lucide-react";
 import { useCollection, useFirestore, useMemoFirebase, useUser } from "@/firebase";
 import { addStudent, updateStudent, deleteStudent, addStudentsBatch } from "@/lib/firebase-helpers";
 import { Button } from "@/components/ui/button";
