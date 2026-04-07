@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useRef } from "react";
@@ -421,14 +420,13 @@ export function TeacherManagement() {
                 <TableHead className="w-[40px]">No.</TableHead>
                 <TableHead>Nama</TableHead>
                 <TableHead>Jabatan</TableHead>
-                <TableHead>No. WA</TableHead>
                 <TableHead className="text-right">Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-10">
+                  <TableCell colSpan={4} className="text-center py-10">
                     <div className="flex flex-col items-center gap-2 text-muted-foreground">
                       <Loader2 className="h-6 w-6 animate-spin"/>
                       <span>Memuat data guru...</span>
@@ -449,7 +447,6 @@ export function TeacherManagement() {
                     </div>
                   </TableCell>
                   <TableCell className="text-xs">{teacher.jabatan || '-'}</TableCell>
-                  <TableCell className="text-xs">{teacher.noWa || '-'}</TableCell>
                   <TableCell className="text-right">
                     <Button variant="outline" size="xs" onClick={() => handleDetail(teacher)}>
                         Detail
@@ -458,7 +455,7 @@ export function TeacherManagement() {
                 </TableRow>
               ))) : (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
+                  <TableCell colSpan={4} className="text-center py-10 text-muted-foreground">
                     Belum ada data guru.
                   </TableCell>
                 </TableRow>
