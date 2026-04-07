@@ -26,12 +26,15 @@ import {
     Users,
     Wallet,
     TrendingUp,
-    CalendarDays
+    CalendarDays,
+    Clock,
+    SearchX
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { addSavingsTransaction } from "@/lib/firebase-helpers";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
+import { id as dfnsId } from "date-fns/locale";
 
 export default function TabunganPage() {
     const firestore = useFirestore() as Firestore;
@@ -51,7 +54,7 @@ export default function TabunganPage() {
         setTransactionDate(format(new Date(), 'yyyy-MM-dd'));
     }, []);
 
-    // Fetch Lists
+    // Fetch Lists for Selectors
     const studentsQuery = useMemoFirebase(() => {
         if (!firestore || saverType !== "student") return null;
         return query(collection(firestore, "students"), where("kelas", "==", Number(selectedClass)));
@@ -70,15 +73,12 @@ export default function TabunganPage() {
     }, [firestore, saverType]);
     const { data: externalSavers, loading: loadingExternals } = useCollection<ExternalSaver>(externalSaversQuery);
 
-    // Transaction History for Selected Saver to calculate balance
+    // Fetch ALL Transactions to calculate balance and show local history
     const transactionsQuery = useMemoFirebase(() => {
-        if (!firestore || !selectedSaverId) return null;
-        return query(
-            collection(firestore, "savingsTransactions"), 
-            where("saverId", "==", selectedSaverId)
-        );
-    }, [firestore, selectedSaverId]);
-    const { data: transactions, loading: loadingTransactions } = useCollection<SavingsTransaction>(transactionsQuery);
+        if (!firestore) return null;
+        return query(collection(firestore, "savingsTransactions"), orderBy("date", "desc"));
+    }, [firestore]);
+    const { data: allTransactions, loading: loadingTransactions } = useCollection<SavingsTransaction>(transactionsQuery);
 
     const selectedSaver = useMemo(() => {
         if (saverType === 'student') return students?.find(s => s.id === selectedSaverId);
@@ -86,12 +86,21 @@ export default function TabunganPage() {
         return externalSavers?.find(e => e.id === selectedSaverId);
     }, [saverType, selectedSaverId, students, teachers, externalSavers]);
 
-    const balance = useMemo(() => {
-        if (!transactions) return 0;
-        return transactions.reduce((total, t) => {
-            return t.type === 'deposit' ? total + t.amount : total - t.amount;
-        }, 0);
-    }, [transactions]);
+    const saverBalance = useMemo(() => {
+        if (!allTransactions || !selectedSaverId) return 0;
+        return allTransactions
+            .filter(t => t.saverId === selectedSaverId)
+            .reduce((total, t) => t.type === 'deposit' ? total + t.amount : total - t.amount, 0);
+    }, [allTransactions, selectedSaverId]);
+
+    // History filtered by the selected date in the input
+    const historyOnSelectedDate = useMemo(() => {
+        if (!allTransactions || !transactionDate) return [];
+        return allTransactions.filter(t => {
+            const tDate = format(parseISO(t.date), 'yyyy-MM-dd');
+            return tDate === transactionDate;
+        });
+    }, [allTransactions, transactionDate]);
 
     const handleTransaction = async (type: 'deposit' | 'withdraw') => {
         const val = Number(amount);
@@ -100,14 +109,14 @@ export default function TabunganPage() {
             return;
         }
 
-        if (type === 'withdraw' && val > balance) {
+        if (type === 'withdraw' && val > saverBalance) {
             toast({ variant: "destructive", title: "Saldo Tidak Cukup", description: "Jumlah penarikan melebihi saldo yang tersedia." });
             return;
         }
 
         setIsSaving(true);
         try {
-            // Konstruksi tanggal ISO dengan waktu saat ini agar urutan tetap logis
+            // Construct ISO date with current time for correct chronological sorting
             const [y, m, d] = transactionDate.split('-').map(Number);
             const now = new Date();
             const dateObj = new Date(y, m - 1, d, now.getHours(), now.getMinutes(), now.getSeconds());
@@ -135,7 +144,7 @@ export default function TabunganPage() {
     const isLoadingLists = loadingStudents || loadingTeachers || loadingExternals;
 
     return (
-        <div className="space-y-4 max-w-4xl mx-auto">
+        <div className="space-y-4 max-w-5xl mx-auto">
             <Card className="border-none shadow-sm">
                 <CardHeader className="pb-4">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -145,10 +154,10 @@ export default function TabunganPage() {
                             </CardTitle>
                             <CardDescription className="text-xs">Kelola simpanan siswa, guru, dan penabung umum secara terpadu.</CardDescription>
                         </div>
-                        <Link href="/admin/riwayat-transaksi">
-                            <Button size="sm" variant="outline" className="gap-2 border-primary/30 text-primary">
+                        <Link href="/admin/riwayat-tabungan">
+                            <Button size="sm" variant="outline" className="gap-2 border-primary/30 text-primary h-9">
                                 <History className="h-4 w-4" />
-                                Semua Riwayat
+                                Riwayat Lengkap
                             </Button>
                         </Link>
                     </div>
@@ -230,7 +239,7 @@ export default function TabunganPage() {
                                         <div className="space-y-1 relative z-10">
                                             <p className="text-[10px] uppercase font-bold opacity-80 tracking-widest">Saldo Tabungan Saat Ini</p>
                                             <p className="text-3xl font-bold">
-                                                {loadingTransactions ? <Loader2 className="h-8 w-8 animate-spin" /> : `Rp ${balance.toLocaleString()}`}
+                                                {loadingTransactions ? <Loader2 className="h-8 w-8 animate-spin" /> : `Rp ${saverBalance.toLocaleString()}`}
                                             </p>
                                             <div className="flex items-center gap-2 mt-2 opacity-90">
                                                 <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center font-bold text-xs">
@@ -286,7 +295,7 @@ export default function TabunganPage() {
                                             </Button>
                                             <Button 
                                                 onClick={() => handleTransaction('withdraw')} 
-                                                disabled={isProcessing || balance <= 0}
+                                                disabled={isProcessing || saverBalance <= 0}
                                                 variant="destructive"
                                                 className="gap-2 font-bold h-11 shadow-lg shadow-destructive/20"
                                             >
@@ -302,14 +311,70 @@ export default function TabunganPage() {
                 </CardContent>
             </Card>
 
+            {/* List of transactions for the SELECTED DATE */}
+            <Card className="border-none shadow-sm overflow-hidden">
+                <CardHeader className="py-3 bg-muted/20 border-b">
+                    <CardTitle className="text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                        <History className="h-3.5 w-3.5" /> Riwayat Transaksi Tanggal Terpilih
+                    </CardTitle>
+                    <CardDescription className="text-[10px] font-bold text-primary">
+                        {transactionDate ? format(parseISO(transactionDate), "EEEE, d MMMM yyyy", { locale: dfnsId }) : "-"}
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="p-0">
+                    {loadingTransactions ? (
+                        <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary/30" /></div>
+                    ) : historyOnSelectedDate.length > 0 ? (
+                        <div className="divide-y">
+                            {historyOnSelectedDate.map((t) => (
+                                <div key={t.id} className="flex items-center justify-between p-4 hover:bg-muted/10 transition-colors">
+                                    <div className="flex items-center gap-3">
+                                        <div className={cn(
+                                            "p-2 rounded-full",
+                                            t.type === 'deposit' ? "bg-green-50 text-green-600" : "bg-red-50 text-red-600"
+                                        )}>
+                                            <Clock className="h-3 w-3" />
+                                        </div>
+                                        <div>
+                                            <p className="text-[11px] font-bold leading-tight">{t.saverName}</p>
+                                            <p className="text-[9px] text-muted-foreground font-mono mt-0.5">
+                                                {format(parseISO(t.date), "HH:mm")} • {t.saverType === 'student' ? 'Siswa' : t.saverType === 'teacher' ? 'Guru' : 'Umum'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className={cn(
+                                            "text-sm font-bold",
+                                            t.type === 'deposit' ? "text-green-700" : "text-red-700"
+                                        )}>
+                                            {t.type === 'deposit' ? '+' : '-'} Rp {t.amount.toLocaleString()}
+                                        </p>
+                                        {t.notes && (
+                                            <p className="text-[9px] text-muted-foreground italic truncate max-w-[150px] ml-auto">
+                                                {t.notes}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="py-12 text-center text-muted-foreground/40 flex flex-col items-center">
+                            <SearchX className="h-8 w-8 mb-2 opacity-20" />
+                            <p className="text-[10px] italic">Tidak ada transaksi yang dicatat pada tanggal ini.</p>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
             <Card className="border-primary/10 shadow-none bg-muted/5 border-dashed">
                 <CardContent className="p-4 flex items-center gap-4">
                     <div className="p-3 rounded-full bg-primary/10 text-primary">
                         <CalendarDays className="h-6 w-6" />
                     </div>
                     <div className="text-xs text-muted-foreground leading-relaxed">
-                        <p className="font-bold text-primary mb-1 uppercase tracking-tight">Ketentuan Layanan Tabungan</p>
-                        <p>Setiap transaksi setoran dan penarikan yang Anda lakukan akan tercatat secara permanen dengan stempel waktu sistem. Riwayat lengkap per penabung dapat diakses melalui tombol <strong>Semua Riwayat</strong> di bagian atas halaman.</p>
+                        <p className="font-bold text-primary mb-1 uppercase tracking-tight">Informasi Sinkronisasi</p>
+                        <p>Setiap transaksi yang Anda input menggunakan pemilih tanggal di atas akan muncul di riwayat transaksi harian dan mutasi wali murid sesuai dengan tanggal yang Anda tentukan. Pastikan tanggal sudah benar sebelum menekan tombol setor atau tarik.</p>
                     </div>
                 </CardContent>
             </Card>
