@@ -1,8 +1,8 @@
 
 export type Teacher = {
-  id: string; // Firebase Auth UID
+  id: string; // Document ID
   name: string;
-  email: string;
+  email?: string;
   avatarUrl?: string;
   dokumenUrl?: string;
   jabatan?: string;

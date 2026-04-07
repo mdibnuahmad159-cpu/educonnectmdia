@@ -4,7 +4,7 @@
 import { useState, useMemo, useRef } from "react";
 import { PlusCircle, AlertTriangle, Download, Upload, FileDown, FileUp, FileSpreadsheet, FileText, Printer, Loader2 } from "lucide-react";
 import { useCollection, useFirestore, useMemoFirebase, useUser } from "@/firebase";
-import { addTeacher, updateTeacher, deleteTeacher } from "@/lib/firebase-helpers";
+import { addTeacher, updateTeacher, deleteTeacher, addTeachersBatch } from "@/lib/firebase-helpers";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -131,21 +131,13 @@ export function TeacherManagement() {
       }
     } else {
       try {
-        if (!teacherData.password) {
-            toast({ variant: "destructive", title: "Gagal Menyimpan", description: "Password harus diisi untuk guru baru." });
-            return;
-        }
         const { id, ...dataToAdd } = teacherData;
         await addTeacher(firestore, dataToAdd);
         toast({ title: "Guru Ditambahkan", description: "Data guru baru berhasil ditambahkan." });
         setIsFormOpen(false);
         setSelectedTeacher(null);
       } catch (error: any) {
-        let description = error.message;
-        if (error.code === 'auth/email-already-in-use') {
-            description = 'Email ini sudah terdaftar. Untuk mengaktifkan kembali guru yang telah dihapus, hapus akun mereka dari Firebase Console > Authentication terlebih dahulu.';
-        }
-        toast({ variant: "destructive", title: "Gagal Menyimpan", description: description });
+        toast({ variant: "destructive", title: "Gagal Menyimpan", description: error.message });
       }
     }
   };
@@ -153,7 +145,6 @@ export function TeacherManagement() {
     const teacherColumns = {
         name: 'Nama Lengkap',
         email: 'Email',
-        password: 'Password',
         jabatan: 'Jabatan',
         noWa: 'No. WA',
         nik: 'NIK',
@@ -189,7 +180,7 @@ export function TeacherManagement() {
 
                 toast({ title: "Mengimpor Data", description: `Mulai mengimpor ${json.length} data guru...` });
 
-                let successCount = 0;
+                const teachersToImport: Omit<Teacher, 'id'>[] = [];
                 let errorCount = 0;
 
                 for (const item of json) {
@@ -203,28 +194,20 @@ export function TeacherManagement() {
                         }
                     }
 
-                    if (!teacherData.email || !teacherData.name) {
+                    if (!teacherData.name) {
                         errorCount++;
-                        console.error(`Skipping teacher due to missing required fields (email or name):`, teacherData);
                         continue;
                     }
 
-                    if (!teacherData.password || teacherData.password.length < 6) {
-                        teacherData.password = "123456";
-                    }
-
-                    try {
-                        // Note: Teachers are added one by one because they require Auth account creation
-                        // which cannot be batched in Firestore. 
-                        await addTeacher(firestore, teacherData as Omit<Teacher, 'id'> & {password: string});
-                        successCount++;
-                    } catch (error) {
-                        errorCount++;
-                        console.error(`Gagal mengimpor guru ${teacherData.email}:`, error);
-                    }
+                    teachersToImport.push(teacherData as Omit<Teacher, 'id'>);
                 }
 
-                toast({ title: "Impor Selesai", description: `${successCount} guru berhasil diimpor. ${errorCount} gagal.` });
+                if (teachersToImport.length > 0) {
+                    await addTeachersBatch(firestore, teachersToImport);
+                    toast({ title: "Impor Selesai", description: `${teachersToImport.length} guru berhasil diimpor. ${errorCount} gagal.` });
+                } else {
+                    toast({ variant: "destructive", title: "Gagal", description: "Tidak ada data valid untuk diimpor." });
+                }
 
             } catch (error) {
                 toast({ variant: "destructive", title: "Gagal Memproses File", description: "Terjadi kesalahan saat memproses file Excel." });
@@ -244,7 +227,7 @@ export function TeacherManagement() {
         const dataToExport = sortedTeachers.map(t => ({
             'Nama Lengkap': t.name,
             'Jabatan': t.jabatan || '-',
-            'Email': t.email,
+            'Email': t.email || '-',
             'No. WA': t.noWa || '-',
             'NIK': t.nik || '-',
             'Pendidikan': t.pendidikan || '-',
@@ -271,7 +254,7 @@ export function TeacherManagement() {
                 index + 1,
                 teacher.name,
                 teacher.jabatan || '-',
-                teacher.email,
+                teacher.email || '-',
                 teacher.noWa || '-',
             ];
             tableRows.push(teacherData);
@@ -304,7 +287,7 @@ export function TeacherManagement() {
         <td style="padding: 8px;">${teacher.name}</td>
         <td style="padding: 8px;">${teacher.jabatan || '-'}</td>
         <td style="padding: 8px;">${teacher.noWa || '-'}</td>
-        <td style="padding: 8px;">${teacher.email}</td>
+        <td style="padding: 8px;">${teacher.email || '-'}</td>
       </tr>
     `).join('');
 
@@ -374,7 +357,7 @@ export function TeacherManagement() {
         <CardHeader>
           <CardTitle>Data Guru</CardTitle>
           <CardDescription>
-            Kelola data guru dan akun mereka.
+            Kelola data guru Madrasah.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -502,11 +485,9 @@ export function TeacherManagement() {
        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Anda yakin ingin menghapus guru ini?</AlertDialogTitle>
+            <AlertDialogTitle>Hapus Data Guru?</AlertDialogTitle>
             <AlertDialogDescription>
-              Tindakan ini akan menghapus data guru dari daftar aplikasi, namun <strong>tidak menghapus akun login (autentikasi) mereka.</strong>
-              <br/><br/>
-              Untuk dapat menambahkan kembali guru dengan email yang sama di kemudian hari, Anda harus menghapus akun mereka secara manual dari <strong>Firebase Console &gt; Authentication</strong>.
+              Tindakan ini akan menghapus data guru dari daftar aplikasi secara permanen.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

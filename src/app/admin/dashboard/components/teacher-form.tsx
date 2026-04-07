@@ -38,8 +38,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const formSchema = z.object({
   name: z.string().min(1, "Nama harus diisi"),
-  email: z.string().email("Email tidak valid"),
-  password: z.string().optional(),
+  email: z.string().email("Email tidak valid").optional().or(z.literal("")),
   avatarUrl: z.string().optional().or(z.literal("")),
   avatar: z.any().optional(),
   dokumenUrl: z.string().optional().or(z.literal("")),
@@ -67,32 +66,14 @@ type TeacherFormProps = {
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   teacher: Teacher | null;
-  onSave: (teacher: Omit<Teacher, 'id'> & { password?: string, id?: string }) => void;
+  onSave: (teacher: Omit<Teacher, 'id'> & { id?: string }) => void;
 };
 
 export function TeacherForm({ isOpen, setIsOpen, teacher, onSave }: TeacherFormProps) {
   const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema.superRefine((data, ctx) => {
-        if (!teacher) { // New teacher
-            if (!data.password || data.password.length < 6) {
-                ctx.addIssue({
-                    code: 'custom',
-                    path: ['password'],
-                    message: 'Password minimal 6 karakter untuk guru baru.',
-                });
-            }
-        } else { // Existing teacher
-            if (data.password && data.password.length > 0 && data.password.length < 6) {
-                ctx.addIssue({
-                    code: 'custom',
-                    path: ['password'],
-                    message: 'Password minimal 6 karakter jika diisi.',
-                });
-            }
-        }
-    })),
+    resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "", email: "", password: "", avatarUrl: "", jabatan: "", noWa: "", nik: "",
+      name: "", email: "", avatarUrl: "", jabatan: "", noWa: "", nik: "",
       pendidikan: "", ponpes: "", alamat: "", dokumenUrl: "",
     },
   });
@@ -102,8 +83,7 @@ export function TeacherForm({ isOpen, setIsOpen, teacher, onSave }: TeacherFormP
       if (teacher) {
         form.reset({
           name: teacher.name,
-          email: teacher.email,
-          password: "",
+          email: teacher.email || "",
           avatarUrl: teacher.avatarUrl || "",
           jabatan: teacher.jabatan || "",
           noWa: teacher.noWa || "",
@@ -115,7 +95,7 @@ export function TeacherForm({ isOpen, setIsOpen, teacher, onSave }: TeacherFormP
         });
       } else {
         form.reset({
-          name: "", email: "", password: "", avatarUrl: "", jabatan: "", noWa: "", nik: "",
+          name: "", email: "", avatarUrl: "", jabatan: "", noWa: "", nik: "",
           pendidikan: "", ponpes: "", alamat: "", dokumenUrl: "",
         });
       }
@@ -124,11 +104,6 @@ export function TeacherForm({ isOpen, setIsOpen, teacher, onSave }: TeacherFormP
   
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     const { dokumen, avatar, ...teacherData } = values;
-
-    // Only include password if it's not an empty string
-    if (!teacherData.password) {
-        delete (teacherData as Partial<typeof teacherData>).password;
-    }
 
     onSave({
       id: teacher?.id,
@@ -222,20 +197,8 @@ export function TeacherForm({ isOpen, setIsOpen, teacher, onSave }: TeacherFormP
                 />
                 <FormField control={form.control} name="email" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl><Input type="email" {...field} disabled={!!teacher} /></FormControl>
-                    {teacher && (
-                      <FormDescription className="text-[10px]">
-                        Email tidak dapat diubah karena terhubung dengan akun login.
-                      </FormDescription>
-                    )}
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <FormField control={form.control} name="password" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl><Input type="password" placeholder={teacher ? 'Isi untuk mengubah' : 'Wajib diisi'} {...field} value={field.value ?? ""} /></FormControl>
+                    <FormLabel>Email (Opsional)</FormLabel>
+                    <FormControl><Input type="email" {...field} value={field.value ?? ""} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />

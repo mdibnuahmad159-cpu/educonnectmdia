@@ -1,10 +1,5 @@
 
 import {
-  createUserWithEmailAndPassword,
-  getAuth,
-} from 'firebase/auth';
-import { initializeApp, deleteApp } from 'firebase/app';
-import {
   Firestore,
   doc,
   setDoc,
@@ -19,7 +14,6 @@ import {
 import type { Teacher, Student, SchoolProfile, Curriculum, Alumni, Schedule, TeacherAttendance, StudentAttendance, Announcement, Grade, ReportSummary, Certificate, CertificateTemplate, SPPPayment, ExternalSaver, SavingsTransaction } from '@/types';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import { firebaseConfig } from '@/firebase/config';
 
 
 // This function creates a student document in Firestore.
@@ -78,55 +72,50 @@ export function deleteStudent(db: Firestore, studentId: string) {
   });
 }
 
-// For teachers, we create an auth user and a firestore document.
-// This is now handled by creating a temporary app instance to avoid logging out the admin.
-export async function addTeacher(db: Firestore, teacher: Omit<Teacher, 'id'> & {password: string}) {
-    // Create a temporary app to create the user without signing out the admin
-    const tempAppName = `teacher-creation-${Date.now()}`;
-    const tempApp = initializeApp(firebaseConfig, tempAppName);
-    const tempAuth = getAuth(tempApp);
-
-    let userCredential;
-    try {
-        userCredential = await createUserWithEmailAndPassword(tempAuth, teacher.email, teacher.password);
-    } catch (error) {
-        // Cleanup the temporary app and re-throw the error
-        await deleteApp(tempApp);
-        throw error;
-    }
-    
-    // At this point, the user is created. We can now delete the temp app.
-    await deleteApp(tempApp);
-    
-    const user = userCredential.user;
-    const { password, ...teacherData } = teacher;
-
-    const teacherRef = doc(db, 'teachers', user.uid);
+// For teachers, we no longer use Firebase Auth as login for teachers was removed.
+export async function addTeacher(db: Firestore, teacher: Omit<Teacher, 'id'>) {
+    const teacherCol = collection(db, 'teachers');
+    const newTeacherRef = doc(teacherCol);
     const data = {
-        ...teacherData,
-        id: user.uid,
+        ...teacher,
+        id: newTeacherRef.id,
         createdAt: serverTimestamp()
     };
 
     try {
-        await setDoc(teacherRef, data);
+        await setDoc(newTeacherRef, data);
+        return newTeacherRef.id;
     } catch (error) {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
-            path: teacherRef.path,
+            path: newTeacherRef.path,
             operation: 'create',
             requestResourceData: data,
         }));
-        // Re-throw so the UI can catch it and show the toast
         throw error;
     }
+}
+
+export async function addTeachersBatch(db: Firestore, teachers: Omit<Teacher, 'id'>[]) {
+    if (teachers.length === 0) return;
     
-    return user.uid;
+    const chunks = [];
+    for (let i = 0; i < teachers.length; i += 500) {
+        chunks.push(teachers.slice(i, i + 500));
+    }
+
+    for (const chunk of chunks) {
+        const batch = writeBatch(db);
+        chunk.forEach(teacherData => {
+            const newRef = doc(collection(db, 'teachers'));
+            batch.set(newRef, { ...teacherData, id: newRef.id, createdAt: serverTimestamp() });
+        });
+        await batch.commit();
+    }
 }
 
 export async function updateTeacher(db: Firestore, teacherId: string, teacher: Partial<Omit<Teacher, 'id'>>) {
-    const { password, ...teacherData } = teacher as any;
     const teacherRef = doc(db, 'teachers', teacherId);
-    const data = { ...teacherData, updatedAt: serverTimestamp() };
+    const data = { ...teacher, updatedAt: serverTimestamp() };
     try {
         await setDoc(teacherRef, data, { merge: true });
     } catch (error) {
@@ -135,7 +124,7 @@ export async function updateTeacher(db: Firestore, teacherId: string, teacher: P
             operation: 'update',
             requestResourceData: data,
         }));
-        throw error; // Re-throw to be caught by the UI
+        throw error;
     }
 }
 
