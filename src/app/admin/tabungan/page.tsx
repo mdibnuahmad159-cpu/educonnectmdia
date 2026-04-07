@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection, query, where, Firestore, orderBy } from "firebase/firestore";
@@ -31,6 +31,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { addSavingsTransaction } from "@/lib/firebase-helpers";
 import { cn } from "@/lib/utils";
+import { format } from "date-fns";
 
 export default function TabunganPage() {
     const firestore = useFirestore() as Firestore;
@@ -40,9 +41,15 @@ export default function TabunganPage() {
     const [selectedClass, setSelectedClass] = useState<string>("0");
     const [selectedSaverId, setSelectedSaverId] = useState<string>("");
     
+    // Default today's date
+    const [transactionDate, setTransactionDate] = useState<string>("");
     const [amount, setAmount] = useState<string>("");
     const [notes, setNotes] = useState<string>("");
     const [isProcessing, setIsSaving] = useState(false);
+
+    useEffect(() => {
+        setTransactionDate(format(new Date(), 'yyyy-MM-dd'));
+    }, []);
 
     // Fetch Lists
     const studentsQuery = useMemoFirebase(() => {
@@ -100,13 +107,19 @@ export default function TabunganPage() {
 
         setIsSaving(true);
         try {
+            // Konstruksi tanggal ISO dengan waktu saat ini agar urutan tetap logis
+            const [y, m, d] = transactionDate.split('-').map(Number);
+            const now = new Date();
+            const dateObj = new Date(y, m - 1, d, now.getHours(), now.getMinutes(), now.getSeconds());
+            const isoDate = dateObj.toISOString();
+
             await addSavingsTransaction(firestore, {
                 saverId: selectedSaverId,
                 saverName: selectedSaver?.name || "Unknown",
                 saverType: saverType,
                 type,
                 amount: val,
-                date: new Date().toISOString(),
+                date: isoDate,
                 notes: notes.trim()
             });
             toast({ title: "Transaksi Berhasil", description: `${type === 'deposit' ? 'Setoran' : 'Penarikan'} senilai Rp ${val.toLocaleString()} telah dicatat.` });
@@ -232,6 +245,17 @@ export default function TabunganPage() {
 
                                 <Card className="border-none shadow-sm bg-muted/10 border-l-4 border-l-primary">
                                     <CardContent className="p-6 space-y-4">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 ml-1">
+                                                <CalendarDays className="h-3 w-3" /> Tanggal Transaksi
+                                            </label>
+                                            <Input 
+                                                type="date" 
+                                                value={transactionDate}
+                                                onChange={(e) => setTransactionDate(e.target.value)}
+                                                className="h-10 text-xs font-normal bg-white border-primary/10"
+                                            />
+                                        </div>
                                         <div className="space-y-1.5">
                                             <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Nominal Transaksi (Rp)</label>
                                             <Input 

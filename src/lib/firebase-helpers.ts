@@ -590,7 +590,7 @@ export function addSavingsTransaction(db: Firestore, transaction: Omit<SavingsTr
   const data = {
     ...transaction,
     id: newRef.id,
-    date: new Date().toISOString()
+    date: transaction.date || new Date().toISOString()
   };
   return setDoc(newRef, data).catch(error => {
     errorEmitter.emit('permission-error', new FirestorePermissionError({
