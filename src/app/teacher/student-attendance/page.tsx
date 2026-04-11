@@ -30,6 +30,7 @@ import { Loader2, Calendar, Users, CheckCircle2, AlertCircle, ArrowLeft } from '
 import { useToast } from '@/hooks/use-toast';
 import { saveStudentAttendanceBatch } from '@/lib/firebase-helpers';
 import { useAcademicYear } from '@/context/academic-year-provider';
+import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
 type AttendanceStatus = 'Hadir' | 'Sakit' | 'Izin' | 'Alpa';
