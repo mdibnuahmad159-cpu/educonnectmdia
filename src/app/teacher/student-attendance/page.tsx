@@ -26,7 +26,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, Calendar, Users, CheckCircle2, AlertCircle, ArrowLeft, Info as InfoIcon } from 'lucide-react';
+import { Loader2, Calendar, Users, CheckCircle2, AlertCircle, ArrowLeft, Info as InfoIcon, Coffee } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { saveStudentAttendanceBatch } from '@/lib/firebase-helpers';
 import { useAcademicYear } from '@/context/academic-year-provider';
@@ -60,6 +60,15 @@ export default function TeacherStudentAttendancePage() {
         setNig(sessionStorage.getItem('teacherNig'));
         setSelectedDate(format(new Date(), 'yyyy-MM-dd'));
     }, []);
+
+    const isFriday = useMemo(() => {
+        if (!selectedDate) return false;
+        try {
+            return parseISO(selectedDate).getDay() === 5;
+        } catch (e) {
+            return false;
+        }
+    }, [selectedDate]);
 
     // 1. Fetch Teacher Profile
     const { data: teachers } = useCollection<Teacher>(useMemoFirebase(() => firestore ? collection(firestore, "teachers") : null, [firestore]));
@@ -138,7 +147,7 @@ export default function TeacherStudentAttendancePage() {
 
     // 6. Schedule Validation Logic
     const isScheduledToday = useMemo(() => {
-        if (!selectedDate || !selectedClass || !allSchedules || !nig) return false;
+        if (!selectedDate || !selectedClass || !allSchedules || !nig || isFriday) return false;
         
         // Always allow if the teacher is the Wali Kelas of this class
         if (currentTeacher?.jabatan === `Wali Kelas ${selectedClass}`) return true;
@@ -152,14 +161,14 @@ export default function TeacherStudentAttendancePage() {
 
         const dayEntries = classSchedule[dayKey] || [];
         return dayEntries.some((e: ScheduleEntry) => e.teacherId === nig);
-    }, [selectedDate, selectedClass, allSchedules, nig, currentTeacher]);
+    }, [selectedDate, selectedClass, allSchedules, nig, currentTeacher, isFriday]);
 
     const handleStatusChange = (studentId: string, status: AttendanceStatus) => {
         setAttendance(prev => ({ ...prev, [studentId]: status }));
     };
 
     const handleSave = async () => {
-        if (!firestore || !sortedStudents.length || !selectedClass || !selectedDate || !isScheduledToday) return;
+        if (!firestore || !sortedStudents.length || !selectedClass || !selectedDate || !isScheduledToday || isFriday) return;
         setIsSaving(true);
 
         const attendancePayload: Omit<StudentAttendance, 'id'>[] = sortedStudents.map(student => ({
@@ -202,7 +211,17 @@ export default function TeacherStudentAttendancePage() {
                 </h1>
             </div>
 
-            {!isScheduledToday && selectedDate && selectedClass && !isLoading && (
+            {isFriday && (
+                <Card className="border-blue-200 bg-blue-50/50">
+                    <CardContent className="p-4 flex flex-col items-center text-center gap-2 text-blue-700">
+                        <Coffee className="h-8 w-8 mb-1" />
+                        <p className="font-bold text-sm uppercase tracking-wide">Hari Jum'at: Libur Sekolah</p>
+                        <p className="text-xs opacity-80">Kegiatan belajar mengajar diliburkan. Tidak ada penginputan absensi untuk hari ini.</p>
+                    </CardContent>
+                </Card>
+            )}
+
+            {!isFriday && !isScheduledToday && selectedDate && selectedClass && !isLoading && (
                 <Card className="border-orange-200 bg-orange-50/50">
                     <CardContent className="p-3 flex items-center gap-3 text-orange-700">
                         <AlertCircle className="h-5 w-5 shrink-0" />
@@ -249,7 +268,13 @@ export default function TeacherStudentAttendancePage() {
                     </div>
                 </CardHeader>
                 <CardContent className="p-0">
-                    {assignedClasses.length === 0 && !isLoading ? (
+                    {isFriday ? (
+                        <div className="py-20 flex flex-col items-center justify-center text-muted-foreground italic text-center px-6">
+                            <Coffee className="h-12 w-12 mb-3 opacity-10" />
+                            <p className="text-sm font-bold">Hari Libur</p>
+                            <p className="text-[10px] mt-1">Daftar absensi tidak tersedia pada hari Jum'at.</p>
+                        </div>
+                    ) : assignedClasses.length === 0 && !isLoading ? (
                         <div className="py-20 flex flex-col items-center justify-center text-muted-foreground italic text-center px-6">
                             <AlertCircle className="h-12 w-12 mb-3 opacity-10" />
                             <p className="text-sm">Anda belum memiliki tugas mengajar atau jabatan Wali Kelas.</p>
@@ -325,7 +350,7 @@ export default function TeacherStudentAttendancePage() {
                         </div>
                     )}
                 </CardContent>
-                {selectedClass && sortedStudents.length > 0 && (
+                {!isFriday && selectedClass && sortedStudents.length > 0 && (
                     <CardFooter className="bg-muted/5 border-t py-4 flex flex-col gap-3">
                         <div className="w-full flex items-center justify-between">
                             <div className="text-[10px] text-muted-foreground">

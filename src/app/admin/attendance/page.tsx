@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
@@ -145,6 +146,8 @@ export default function AttendancePage() {
             };
 
             daysInRange.forEach(day => {
+                if (day.getDay() === 5) return; // Skip Friday
+
                 const dateStr = format(day, 'yyyy-MM-dd');
                 const status = attendanceMap.get(`${teacher.id}-${dateStr}`);
                 
@@ -175,6 +178,7 @@ export default function AttendancePage() {
       const body = sortedTeachers.map(teacher => [
           teacher.name,
           ...daysInRange.map(day => {
+              if (day.getDay() === 5) return 'L';
               const dateStr = format(day, 'yyyy-MM-dd');
               return attendanceMap.get(`${teacher.id}-${dateStr}`) || '-';
           })
@@ -227,6 +231,7 @@ export default function AttendancePage() {
                         .Sakit { background-color: #fef9c3 !important; }
                         .Izin { background-color: #dbeafe !important; }
                         .Alpa { background-color: #fee2e2 !important; }
+                        .Friday { background-color: #eff6ff !important; font-weight: bold; }
                         .not-scheduled { background-color: #fee2e2 !important; }
                         .pending { background-color: #f3f4f6 !important; }
                         @media print {
@@ -249,6 +254,7 @@ export default function AttendancePage() {
             tableHtml += '<tr>';
             tableHtml += `<td class="teacher-name">${teacher.name}</td>`;
             daysInRange.forEach(day => {
+                const isFri = day.getDay() === 5;
                 const dateStr = format(day, 'yyyy-MM-dd');
                 const status = attendanceMap.get(`${teacher.id}-${dateStr}`);
                 const dayKey = dayMapping[day.getDay()];
@@ -257,7 +263,10 @@ export default function AttendancePage() {
                 let cellClass = '';
                 let cellContent = '';
 
-                if (status) {
+                if (isFri) {
+                    cellClass = 'Friday';
+                    cellContent = 'L';
+                } else if (status) {
                     cellClass = status; // Hadir, Sakit, Izin, Alpa
                     cellContent = status.charAt(0);
                 } else if (!dayKey) {
@@ -289,7 +298,7 @@ export default function AttendancePage() {
             <Card>
                 <CardHeader>
                     <CardTitle>Rekap Absensi Guru</CardTitle>
-                    <CardDescription>Lihat rekapitulasi absensi guru per rentang tanggal.</CardDescription>
+                    <CardDescription>Lihat rekapitulasi absensi guru per rentang tanggal (Hari Jum'at ditandai 'L').</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className="flex flex-col lg:flex-row justify-between items-end gap-4 mb-6">
@@ -351,7 +360,10 @@ export default function AttendancePage() {
                                     <TableRow className="bg-muted/50">
                                         <TableHead className="sticky left-0 z-10 bg-muted/50 min-w-[180px] border-r font-bold">Nama Guru</TableHead>
                                         {daysInRange.map(day => (
-                                            <TableHead key={day.toISOString()} className="text-center border-r min-w-[35px] px-1 text-[10px] font-bold">{format(day, 'd')}</TableHead>
+                                            <TableHead key={day.toISOString()} className={cn(
+                                                "text-center border-r min-w-[35px] px-1 text-[10px] font-bold",
+                                                day.getDay() === 5 && "text-blue-600 bg-blue-50/50"
+                                            )}>{format(day, 'd')}</TableHead>
                                         ))}
                                     </TableRow>
                                 </TableHeader>
@@ -360,6 +372,7 @@ export default function AttendancePage() {
                                         <TableRow key={teacher.id}>
                                             <TableCell className="sticky left-0 z-10 bg-card font-medium border-r text-xs py-2">{teacher.name}</TableCell>
                                             {daysInRange.map(day => {
+                                                const isFri = day.getDay() === 5;
                                                 const dateStr = format(day, 'yyyy-MM-dd');
                                                 const status = attendanceMap.get(`${teacher.id}-${dateStr}`);
                                                 const dayKey = dayMapping[day.getDay()];
@@ -369,15 +382,15 @@ export default function AttendancePage() {
                                                     <TableCell 
                                                         key={dateStr} 
                                                         className={cn(
-                                                            "text-center text-[10px] p-0 border-r h-8",
-                                                            status 
+                                                            "text-center text-[10px] p-0 border-r h-8 font-mono",
+                                                            isFri ? 'bg-blue-50/50 text-blue-600 font-bold' : status 
                                                                 ? getStatusColor(status)
                                                                 : !isScheduled && dayKey 
                                                                     ? 'bg-red-100/70 dark:bg-red-900/30' 
                                                                     : 'bg-muted/30'
                                                         )}
                                                     >
-                                                        {status ? status.charAt(0) : (isScheduled || !dayKey) ? '-' : ''}
+                                                        {isFri ? 'L' : status ? status.charAt(0) : (isScheduled || !dayKey) ? '-' : ''}
                                                     </TableCell>
                                                 );
                                             })}

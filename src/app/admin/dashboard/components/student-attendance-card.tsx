@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
@@ -17,7 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, Calendar, Users, AlertTriangle, ExternalLink } from 'lucide-react';
+import { Loader2, Calendar, Users, AlertTriangle, ExternalLink, Coffee } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { saveStudentAttendanceBatch } from '@/lib/firebase-helpers';
 
@@ -30,6 +31,14 @@ export function StudentAttendanceCard() {
 
     const [selectedDate, setSelectedDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
     const [selectedClass, setSelectedClass] = useState<string>("0");
+
+    const isFriday = useMemo(() => {
+        try {
+            return parseISO(selectedDate).getDay() === 5;
+        } catch (e) {
+            return false;
+        }
+    }, [selectedDate]);
 
     const studentsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -74,7 +83,7 @@ export function StudentAttendanceCard() {
     };
 
     const handleSave = async () => {
-        if (!firestore || !sortedStudents.length) return;
+        if (!firestore || !sortedStudents.length || isFriday) return;
         setIsSaving(true);
 
         const attendancePayload: Omit<StudentAttendance, 'id'>[] = sortedStudents.map(student => ({
@@ -156,7 +165,13 @@ export function StudentAttendanceCard() {
                     </div>
                 )}
 
-                {isLoading ? (
+                {isFriday ? (
+                    <div className="flex flex-col items-center justify-center py-10 bg-blue-50/50 rounded-lg border border-dashed border-blue-200 text-blue-700">
+                        <Coffee className="h-8 w-8 mb-2 opacity-50" />
+                        <p className="text-xs font-bold uppercase tracking-wide">Hari Jum'at - Libur</p>
+                        <p className="text-[10px] opacity-70">Tidak ada KBM hari ini.</p>
+                    </div>
+                ) : isLoading ? (
                     <div className="flex justify-center items-center h-24">
                         <Loader2 className="h-6 w-6 animate-spin text-primary" />
                     </div>
@@ -198,7 +213,7 @@ export function StudentAttendanceCard() {
                     </div>
                 )}
             </CardContent>
-            {sortedStudents && sortedStudents.length > 0 && (
+            {!isFriday && sortedStudents && sortedStudents.length > 0 && (
                 <CardFooter>
                     <Button onClick={handleSave} disabled={isLoading || isSaving} className="w-full text-xs h-9">
                         {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : `Simpan Absensi Kelas ${selectedClass}`}

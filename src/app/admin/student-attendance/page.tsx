@@ -112,9 +112,13 @@ export default function StudentAttendancePage() {
                 Sakit: 0,
                 Izin: 0,
                 Alpa: 0,
+                'Belum Diabsen': 0
             };
 
             daysInRange.forEach(day => {
+                const isFri = day.getDay() === 5;
+                if (isFri) return; // Skip Friday in summary totals
+
                 const dateStr = format(day, 'yyyy-MM-dd');
                 const status = attendanceMap.get(`${student.id}-${dateStr}`);
                 
@@ -154,6 +158,8 @@ export default function StudentAttendancePage() {
           student.name,
           student.nis,
           ...daysInRange.map(day => {
+              const isFri = day.getDay() === 5;
+              if (isFri) return 'L';
               const dateStr = format(day, 'yyyy-MM-dd');
               return attendanceMap.get(`${student.id}-${dateStr}`) || '-';
           })
@@ -206,6 +212,7 @@ export default function StudentAttendancePage() {
                         .Sakit { background-color: #fef9c3 !important; }
                         .Izin { background-color: #dbeafe !important; }
                         .Alpa { background-color: #fee2e2 !important; }
+                        .Friday { background-color: #eff6ff !important; font-weight: bold; }
                         @media print {
                             body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
                         }
@@ -229,11 +236,12 @@ export default function StudentAttendancePage() {
             tableHtml += `<td class="student-name">${student.name}</td>`;
             tableHtml += `<td>${student.nis}</td>`;
             daysInRange.forEach(day => {
+                const isFri = day.getDay() === 5;
                 const dateStr = format(day, 'yyyy-MM-dd');
                 const status = attendanceMap.get(`${student.id}-${dateStr}`);
                 
-                let cellClass = status || '';
-                let cellContent = status ? status.charAt(0) : '-';
+                let cellClass = isFri ? 'Friday' : (status || '');
+                let cellContent = isFri ? 'L' : (status ? status.charAt(0) : '-');
                 
                 tableHtml += `<td class="${cellClass}">${cellContent}</td>`;
             });
@@ -251,71 +259,71 @@ export default function StudentAttendancePage() {
 
     return (
         <div className="space-y-4">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Rekap Absensi Siswa</CardTitle>
-                    <CardDescription>Lihat rekapitulasi absensi siswa per kelas dan rentang tanggal.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex flex-col xl:flex-row justify-between items-end gap-4 mb-6">
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full xl:w-auto">
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-semibold text-muted-foreground uppercase ml-1">Kelas</label>
-                                <Select value={selectedClass} onValueChange={setSelectedClass}>
-                                    <SelectTrigger className="h-9">
-                                        <Users className="h-3.5 w-3.5 mr-2 opacity-70" />
-                                        <SelectValue placeholder="Pilih Kelas" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {[...Array(7).keys()].map(i => (
-                                            <SelectItem key={i} value={String(i)}>Kelas {i}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-semibold text-muted-foreground uppercase ml-1">Dari Tanggal</label>
-                                <Input 
-                                    type="date" 
-                                    value={fromDate} 
-                                    onChange={(e) => setFromDate(e.target.value)}
-                                    className="h-9"
-                                />
-                            </div>
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-semibold text-muted-foreground uppercase ml-1">Sampai Tanggal</label>
-                                <Input 
-                                    type="date" 
-                                    value={toDate} 
-                                    onChange={(e) => setToDate(e.target.value)}
-                                    className="h-9"
-                                />
-                            </div>
-                        </div>
-                        
-                        <div className="flex items-center gap-2 w-full xl:w-auto justify-end">
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button size="sm" variant="outline" className="gap-1 h-9">
-                                    <FileDown className="h-4 w-4" />
-                                    Ekspor
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={() => handleExport('excel')}>
-                                    <FileSpreadsheet className="mr-2 h-4 w-4" />
-                                    Excel
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleExport('pdf')}>
-                                    <FileText className="mr-2 h-4 w-4" />
-                                    PDF
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                            <Button size="sm" variant="outline" className="gap-1 h-9" onClick={handlePrint}>
-                                <Printer className="h-4 w-4" />
-                                Cetak
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-xl font-headline font-bold text-primary">Rekap Absensi Siswa</h1>
+                    <p className="text-xs text-muted-foreground">Lihat rekapitulasi kehadiran siswa per kelas harian.</p>
+                </div>
+                <div className="flex items-center gap-2">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button size="sm" variant="outline" className="gap-1 h-9">
+                            <FileDown className="h-4 w-4" />
+                            Ekspor
                             </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleExport('excel')}>
+                            <FileSpreadsheet className="mr-2 h-4 w-4 text-green-600" />
+                            Excel (.xlsx)
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleExport('pdf')}>
+                            <FileText className="mr-2 h-4 w-4 text-red-600" />
+                            PDF (.pdf)
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                    <Button size="sm" variant="outline" className="gap-1 h-9" onClick={handlePrint}>
+                        <Printer className="h-4 w-4" />
+                        Cetak
+                    </Button>
+                </div>
+            </div>
+
+            <Card className="border-none shadow-sm">
+                <CardContent className="pt-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-bold text-muted-foreground uppercase ml-1">Pilih Kelas</label>
+                            <Select value={selectedClass} onValueChange={setSelectedClass}>
+                                <SelectTrigger className="h-9">
+                                    <Users className="h-3.5 w-3.5 mr-2 opacity-70" />
+                                    <SelectValue placeholder="Pilih Kelas" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {[...Array(7).keys()].map(i => (
+                                        <SelectItem key={i} value={String(i)}>Kelas {i}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-bold text-muted-foreground uppercase ml-1">Dari Tanggal</label>
+                            <Input 
+                                type="date" 
+                                value={fromDate} 
+                                onChange={(e) => setFromDate(e.target.value)}
+                                className="h-9"
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-bold text-muted-foreground uppercase ml-1">Sampai Tanggal</label>
+                            <Input 
+                                type="date" 
+                                value={toDate} 
+                                onChange={(e) => setToDate(e.target.value)}
+                                className="h-9"
+                            />
                         </div>
                     </div>
 
@@ -353,14 +361,19 @@ export default function StudentAttendancePage() {
                             <Loader2 className="h-8 w-8 animate-spin text-primary" />
                         </div>
                     ) : (
-                        <div className="overflow-x-auto border rounded-md">
+                        <div className="overflow-x-auto border rounded-lg">
                             <Table className="min-w-full border-collapse">
                                 <TableHeader>
                                     <TableRow className="bg-muted/50">
                                         <TableHead className="sticky left-0 z-10 bg-muted/50 min-w-[150px] border-r font-bold">Nama Siswa</TableHead>
                                         <TableHead className="text-center border-r min-w-[80px] font-bold">NIS</TableHead>
                                         {daysInRange.map(day => (
-                                            <TableHead key={day.toISOString()} className="text-center border-r min-w-[35px] px-1 text-[10px] font-bold">{format(day, 'd')}</TableHead>
+                                            <TableHead key={day.toISOString()} className={cn(
+                                                "text-center border-r min-w-[35px] px-1 text-[10px] font-bold",
+                                                day.getDay() === 5 && "text-blue-600 bg-blue-50/50"
+                                            )}>
+                                                {format(day, 'd')}
+                                            </TableHead>
                                         ))}
                                     </TableRow>
                                 </TableHeader>
@@ -370,6 +383,7 @@ export default function StudentAttendancePage() {
                                             <TableCell className="sticky left-0 z-10 bg-card font-medium border-r text-xs py-2">{student.name}</TableCell>
                                             <TableCell className="text-center border-r text-[10px]">{student.nis}</TableCell>
                                             {daysInRange.map(day => {
+                                                const isFri = day.getDay() === 5;
                                                 const dateStr = format(day, 'yyyy-MM-dd');
                                                 const status = attendanceMap.get(`${student.id}-${dateStr}`);
 
@@ -377,11 +391,11 @@ export default function StudentAttendancePage() {
                                                     <TableCell 
                                                         key={dateStr} 
                                                         className={cn(
-                                                            "text-center text-[10px] p-0 border-r h-8",
-                                                            status ? getStatusColor(status) : 'bg-muted/10'
+                                                            "text-center text-[10px] p-0 border-r h-8 font-mono",
+                                                            isFri ? 'bg-blue-50/50 text-blue-600 font-bold' : status ? getStatusColor(status) : 'bg-muted/10'
                                                         )}
                                                     >
-                                                        {status ? status.charAt(0) : '-'}
+                                                        {isFri ? 'L' : status ? status.charAt(0) : '-'}
                                                     </TableCell>
                                                 );
                                             })}
@@ -404,7 +418,7 @@ export default function StudentAttendancePage() {
                 <CardHeader className="py-3">
                     <CardTitle className="text-sm">Ringkasan Absensi Siswa</CardTitle>
                     <CardDescription className="text-[10px]">
-                        Total kehadiran siswa di Kelas {selectedClass} untuk rentang tanggal yang dipilih.
+                        Total kehadiran siswa di Kelas {selectedClass} (Hari Jum'at tidak dihitung).
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="px-3 pb-3">
