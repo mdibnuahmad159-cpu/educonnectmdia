@@ -22,8 +22,9 @@ service cloud.firestore {
     }
 
     // Izin spesifik untuk Guru dan portal (Input Nilai, Absensi, dan Tabungan)
-    // Karena sistem menggunakan portal anonim, izin diberikan kepada semua pengguna terdaftar
-    // Validasi logika (seperti jadwal mengajar) ditangani di tingkat aplikasi
+    // Karena sistem menggunakan portal anonim untuk Guru dan Wali Murid, 
+    // izin penulisan diberikan kepada semua pengguna yang telah login.
+    // Validasi logika (seperti hak akses mengabsen) ditangani di tingkat aplikasi.
     match /grades/{id} {
       allow write: if isSignedIn();
     }

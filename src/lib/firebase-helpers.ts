@@ -327,7 +327,7 @@ export async function graduateStudents(db: Firestore, studentIds: string[], grad
         await batch.commit();
     } catch (error) {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
-            path: '[BATCH-WRITE] /students -> /alumni',
+            path: '[BATCH-WRITE] students-to-alumni',
             operation: 'write',
             requestResourceData: { studentIds, graduationYear, note: "Batch operation failed." },
         }));
@@ -435,7 +435,7 @@ export function saveTeacherAttendanceBatch(db: Firestore, attendances: Omit<Teac
     
     return batch.commit().catch(error => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
-            path: '/teacher_attendances',
+            path: 'teacher_attendances',
             operation: 'write',
             requestResourceData: { note: "Batch write failed for teacher attendance" }
         }));
@@ -455,7 +455,7 @@ export function saveStudentAttendanceBatch(db: Firestore, attendances: Omit<Stud
     
     return batch.commit().catch(error => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
-            path: '/student_attendances',
+            path: 'student_attendances',
             operation: 'write',
             requestResourceData: { note: "Batch write failed for student attendance" }
         }));
@@ -528,7 +528,7 @@ export function saveGradesBatch(db: Firestore, grades: Omit<Grade, 'id' | 'updat
 
   return batch.commit().catch(error => {
     errorEmitter.emit('permission-error', new FirestorePermissionError({
-      path: '/grades-and-summaries',
+      path: 'grades-and-summaries',
       operation: 'write',
       requestResourceData: { note: "Batch save failed" },
     }));
