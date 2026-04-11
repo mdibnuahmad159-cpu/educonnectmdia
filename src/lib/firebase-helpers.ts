@@ -72,22 +72,22 @@ export function deleteStudent(db: Firestore, studentId: string) {
   });
 }
 
-// For teachers, we no longer use Firebase Auth as login for teachers was removed.
 export async function addTeacher(db: Firestore, teacher: Omit<Teacher, 'id'>) {
-    const teacherCol = collection(db, 'teachers');
-    const newTeacherRef = doc(teacherCol);
+    const nigString = String(teacher.nig).trim();
+    const teacherRef = doc(db, 'teachers', nigString);
     const data = {
         ...teacher,
-        id: newTeacherRef.id,
+        nig: nigString,
+        id: nigString,
         createdAt: serverTimestamp()
     };
 
     try {
-        await setDoc(newTeacherRef, data);
-        return newTeacherRef.id;
+        await setDoc(teacherRef, data);
+        return nigString;
     } catch (error) {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
-            path: newTeacherRef.path,
+            path: teacherRef.path,
             operation: 'create',
             requestResourceData: data,
         }));
@@ -106,8 +106,9 @@ export async function addTeachersBatch(db: Firestore, teachers: Omit<Teacher, 'i
     for (const chunk of chunks) {
         const batch = writeBatch(db);
         chunk.forEach(teacherData => {
-            const newRef = doc(collection(db, 'teachers'));
-            batch.set(newRef, { ...teacherData, id: newRef.id, createdAt: serverTimestamp() });
+            const nigString = String(teacherData.nig).trim();
+            const teacherRef = doc(db, 'teachers', nigString);
+            batch.set(teacherRef, { ...teacherData, nig: nigString, id: nigString, createdAt: serverTimestamp() });
         });
         await batch.commit();
     }

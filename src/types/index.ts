@@ -1,6 +1,7 @@
 
 export type Teacher = {
-  id: string; // Document ID
+  id: string; // Document ID (will use NIG)
+  nig: string;
   name: string;
   email?: string;
   avatarUrl?: string;

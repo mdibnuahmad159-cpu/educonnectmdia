@@ -37,7 +37,11 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const formSchema = z.object({
+  nig: z.string().min(1, "NIG harus diisi"),
   name: z.string().min(1, "Nama harus diisi"),
+  password: z.string().optional().refine(val => !val || val.length >= 6, {
+    message: "Password minimal 6 karakter jika diisi.",
+  }),
   email: z.string().email("Email tidak valid").optional().or(z.literal("")),
   avatarUrl: z.string().optional().or(z.literal("")),
   avatar: z.any().optional(),
@@ -73,7 +77,7 @@ export function TeacherForm({ isOpen, setIsOpen, teacher, onSave }: TeacherFormP
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "", email: "", avatarUrl: "", jabatan: "", noWa: "", nik: "",
+      nig: "", name: "", email: "", password: "", avatarUrl: "", jabatan: "", noWa: "", nik: "",
       pendidikan: "", ponpes: "", alamat: "", dokumenUrl: "",
     },
   });
@@ -82,8 +86,10 @@ export function TeacherForm({ isOpen, setIsOpen, teacher, onSave }: TeacherFormP
     if (isOpen) {
       if (teacher) {
         form.reset({
+          nig: teacher.nig || "",
           name: teacher.name,
           email: teacher.email || "",
+          password: "", // Do not pre-fill existing password
           avatarUrl: teacher.avatarUrl || "",
           jabatan: teacher.jabatan || "",
           noWa: teacher.noWa || "",
@@ -95,7 +101,7 @@ export function TeacherForm({ isOpen, setIsOpen, teacher, onSave }: TeacherFormP
         });
       } else {
         form.reset({
-          name: "", email: "", avatarUrl: "", jabatan: "", noWa: "", nik: "",
+          nig: "", name: "", email: "", password: "", avatarUrl: "", jabatan: "", noWa: "", nik: "",
           pendidikan: "", ponpes: "", alamat: "", dokumenUrl: "",
         });
       }
@@ -104,6 +110,11 @@ export function TeacherForm({ isOpen, setIsOpen, teacher, onSave }: TeacherFormP
   
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     const { dokumen, avatar, ...teacherData } = values;
+
+    // Only include password if it's not an empty string
+    if (!teacherData.password) {
+        delete (teacherData as Partial<typeof teacherData>).password;
+    }
 
     onSave({
       id: teacher?.id,
@@ -132,10 +143,25 @@ export function TeacherForm({ isOpen, setIsOpen, teacher, onSave }: TeacherFormP
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <ScrollArea className="h-80 pr-6">
               <div className="space-y-3 py-4">
+                <FormField control={form.control} name="nig" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>NIG (Nomor Induk Guru)</FormLabel>
+                    <FormControl><Input {...field} disabled={!!teacher} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
                 <FormField control={form.control} name="name" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Nama Lengkap</FormLabel>
                     <FormControl><Input {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="password" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password Login</FormLabel>
+                    <FormControl><Input type="password" placeholder="Isi untuk membuat/mengubah" {...field} value={field.value ?? ""} /></FormControl>
+                    <FormDescription>Minimal 6 karakter.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )} />

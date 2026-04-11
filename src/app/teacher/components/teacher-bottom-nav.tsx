@@ -1,3 +1,4 @@
+
 "use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -20,6 +21,8 @@ export function TeacherBottomNav() {
   const handleLogout = async () => {
     if (!auth) return;
     try {
+      // Clear session storage on logout
+      sessionStorage.removeItem('teacherNig');
       await signOut(auth);
       toast({ title: "Logout Berhasil" });
       router.push('/');

@@ -1,6 +1,7 @@
+
 "use client";
 
-import { ReactNode, useEffect } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/firebase";
@@ -13,7 +14,12 @@ export default function TeacherLayout({ children }: { children: ReactNode }) {
   const { user, isUserLoading } = useUser();
   const { profile, loading: isProfileLoading } = useSchoolProfile();
   const router = useRouter();
-  
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   useEffect(() => {
     if (profile?.namaMadrasah) {
       document.title = profile.namaMadrasah;
@@ -21,16 +27,23 @@ export default function TeacherLayout({ children }: { children: ReactNode }) {
   }, [profile]);
 
   useEffect(() => {
-    if (!isUserLoading && !user) {
-      router.push('/');
-    }
-    // Also check if the user is an admin, if so, redirect to admin dashboard
-    if (!isUserLoading && user && user.email === 'mdibnuahmad159@gmail.com') {
-      router.push('/admin/dashboard');
-    }
-  }, [user, isUserLoading, router]);
+    if (isUserLoading || !isClient) return;
+    
+    const teacherNig = sessionStorage.getItem('teacherNig');
 
-  if (isUserLoading || !user || isProfileLoading) {
+    if (!user || !teacherNig) {
+      router.push('/');
+      return;
+    }
+
+    if (user.email === 'mdibnuahmad159@gmail.com') {
+      router.push('/admin/dashboard');
+      return;
+    }
+
+  }, [user, isUserLoading, router, isClient]);
+
+  if (isUserLoading || !user || !isClient || !user.isAnonymous || isProfileLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

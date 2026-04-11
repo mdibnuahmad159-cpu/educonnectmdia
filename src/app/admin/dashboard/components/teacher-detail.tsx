@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -46,6 +47,7 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
     doc.setFontSize(11);
 
     const getTableBody = () => [
+        ['NIG', teacher.nig || "-"],
         ['Nama', teacher.name || "-"],
         ['Jabatan', teacher.jabatan || "-"],
         ['No. WA', teacher.noWa || "-"],
@@ -122,12 +124,13 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
     const avatarSrc = teacher.avatarUrl || '';
     const name = teacher.name || "-";
     const data = [
+      { label: 'NIG', value: teacher.nig || "-" },
       { label: 'Nama', value: teacher.name || "-" },
       { label: 'Jabatan', value: teacher.jabatan || "-" },
       { label: 'No. WA', value: teacher.noWa || "-" },
       { label: 'NIK', value: teacher.nik || "-" },
       { label: 'Email', value: teacher.email || "-" },
-      { label: 'Password', value: "Dikelola oleh sistem" },
+      { label: 'Password', value: teacher.password || "Sudah diatur" },
       { label: 'Pendidikan', value: teacher.pendidikan || "-" },
       { label: 'Ponpes', value: teacher.ponpes || "-" },
       { label: 'Alamat', value: teacher.alamat || "-" },
@@ -226,6 +229,10 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
         </div>
         <div className="py-4 space-y-2 text-xs">
           <div className="grid grid-cols-3 items-center">
+            <span className="text-muted-foreground">NIG</span>
+            <span className="col-span-2 font-bold">{teacher.nig || "-"}</span>
+          </div>
+          <div className="grid grid-cols-3 items-center">
             <span className="text-muted-foreground">Nama</span>
             <span className="col-span-2">{teacher.name || "-"}</span>
           </div>
@@ -247,7 +254,7 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
           </div>
            <div className="grid grid-cols-3 items-center">
             <span className="text-muted-foreground">Password</span>
-            <span className="col-span-2 text-muted-foreground">Dikelola oleh sistem</span>
+            <span className="col-span-2 text-muted-foreground">{teacher.password || "Sudah diatur"}</span>
           </div>
           <div className="grid grid-cols-3 items-center">
             <span className="text-muted-foreground">Pendidikan</span>

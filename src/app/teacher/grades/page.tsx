@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
@@ -47,10 +48,15 @@ export default function TeacherGradesPage() {
     const { activeYear } = useAcademicYear();
     const { toast } = useToast();
 
+    const [nig, setNig] = useState<string | null>(null);
     const [selectedAssignment, setSelectedAssignment] = useState<string>("");
     const [selectedSemester, setSelectedSemester] = useState<GradeType>("Ganjil");
     const [isSaving, setIsSaving] = useState(false);
     const [localGrades, setLocalGrades] = useState<Record<string, number>>({});
+
+    useEffect(() => {
+        setNig(sessionStorage.getItem('teacherNig'));
+    }, []);
 
     // 1. Fetch all schedules to find teacher assignments
     const schedulesQuery = useMemoFirebase(() => {
@@ -64,7 +70,7 @@ export default function TeacherGradesPage() {
 
     // 2. Derive assigned classes and subjects for this teacher
     const assignments = useMemo(() => {
-        if (!allSchedules || !user || !curriculum) return [];
+        if (!allSchedules || !nig || !curriculum) return [];
         
         const myAssignments = new Map<string, { classLevel: number, subjectId: string, subjectName: string }>();
         const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'saturday', 'sunday'] as const;
@@ -73,7 +79,7 @@ export default function TeacherGradesPage() {
             days.forEach(day => {
                 const entries = schedule[day] || [];
                 entries.forEach((entry: ScheduleEntry) => {
-                    if (entry.teacherId === user.uid && entry.subjectId) {
+                    if (entry.teacherId === nig && entry.subjectId) {
                         const subject = curriculum.find(c => c.id === entry.subjectId);
                         if (subject) {
                             const key = `${schedule.classLevel}-${entry.subjectId}`;
@@ -89,7 +95,7 @@ export default function TeacherGradesPage() {
         });
 
         return Array.from(myAssignments.values()).sort((a, b) => a.classLevel - b.classLevel || a.subjectName.localeCompare(b.subjectName));
-    }, [allSchedules, user, curriculum]);
+    }, [allSchedules, nig, curriculum]);
 
     const currentAssignment = useMemo(() => {
         if (!selectedAssignment) return null;
@@ -160,7 +166,7 @@ export default function TeacherGradesPage() {
 
         try {
             await saveGradesBatch(firestore, gradesToSave);
-            toast({ title: "Nilai Berhasil Disimpan", description: `Data nilai ${currentAssignment.subjectName} Kelas ${currentAssignment.classLevel} telah diperbarui.` });
+            toast({ title: "Nilai Berhasil Simpan", description: `Data nilai ${currentAssignment.subjectName} Kelas ${currentAssignment.classLevel} telah diperbarui.` });
         } catch (error) {
             toast({ variant: "destructive", title: "Gagal Menyimpan", description: "Terjadi kesalahan saat menghubungi server." });
         } finally {
@@ -168,7 +174,7 @@ export default function TeacherGradesPage() {
         }
     };
 
-    const isLoading = loadingSchedules || loadingCurriculum || loadingGrades || loadingStudents;
+    const isLoading = loadingSchedules || loadingCurriculum || loadingGrades || loadingStudents || !nig;
 
     return (
         <div className="space-y-4 pb-10">
@@ -247,7 +253,7 @@ export default function TeacherGradesPage() {
                                     {isLoading ? (
                                         <TableRow>
                                             <TableCell colSpan={4} className="h-32 text-center">
-                                                <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary/40" />
+                                                <Loader2 className="h-5 w-5 animate-spin mx-auto text-primary/40" />
                                             </TableCell>
                                         </TableRow>
                                     ) : sortedStudents.length > 0 ? (

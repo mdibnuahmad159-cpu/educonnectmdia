@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -28,7 +29,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { ShieldCheck, UserCircle2, Loader2 } from "lucide-react";
+import { ShieldCheck, UserCircle2, Loader2, GraduationCap } from "lucide-react";
 
 const adminSchema = z.object({
   email: z.string().email("Email tidak valid"),
@@ -40,6 +41,11 @@ const parentSchema = z.object({
   password: z.string().min(1, "Password wajib diisi"),
 });
 
+const teacherSchema = z.object({
+  nig: z.string().min(1, "NIG wajib diisi"),
+  password: z.string().min(1, "Password wajib diisi"),
+});
+
 export function LoginForm() {
   const router = useRouter();
   const { toast } = useToast();
@@ -48,6 +54,7 @@ export function LoginForm() {
   
   const [isAdminLoading, setIsAdminLoading] = useState(false);
   const [isParentLoading, setIsParentLoading] = useState(false);
+  const [isTeacherLoading, setIsTeacherLoading] = useState(false);
 
   const adminForm = useForm<z.infer<typeof adminSchema>>({
     resolver: zodResolver(adminSchema),
@@ -57,6 +64,11 @@ export function LoginForm() {
   const parentForm = useForm<z.infer<typeof parentSchema>>({
     resolver: zodResolver(parentSchema),
     defaultValues: { nis: "", password: "" },
+  });
+
+  const teacherForm = useForm<z.infer<typeof teacherSchema>>({
+    resolver: zodResolver(teacherSchema),
+    defaultValues: { nig: "", password: "" },
   });
 
   const handleAdminSubmit = async (values: z.infer<typeof adminSchema>) => {
@@ -158,8 +170,119 @@ export function LoginForm() {
     }
   };
 
+  const handleTeacherSubmit = async (values: z.infer<typeof teacherSchema>) => {
+    if (!auth || !firestore) return;
+    setIsTeacherLoading(true);
+    try {
+      if (auth.currentUser) {
+        await signOut(auth);
+      }
+
+      const rawNig = String(values.nig).trim();
+      await signInAnonymously(auth);
+
+      const teacherRef = doc(firestore, "teachers", rawNig);
+      const teacherSnap = await getDoc(teacherRef);
+
+      if (!teacherSnap.exists()) {
+        await signOut(auth);
+        toast({
+          variant: "destructive",
+          title: "Login Gagal",
+          description: "Data Guru dengan NIG tersebut tidak ditemukan.",
+        });
+        return;
+      }
+
+      const teacherData = teacherSnap.data();
+      
+      if (String(teacherData.password) === String(values.password)) {
+        sessionStorage.setItem('teacherNig', teacherSnap.id);
+        
+        toast({
+          title: "Login Berhasil",
+          description: `Selamat datang, Ust/Ustzh ${teacherData.name}.`,
+        });
+        router.push("/teacher/dashboard");
+      } else {
+        await signOut(auth);
+        toast({
+          variant: "destructive",
+          title: "Login Gagal",
+          description: "Password yang Anda masukkan salah.",
+        });
+      }
+    } catch (error: any) {
+      if (auth.currentUser?.isAnonymous) {
+        await signOut(auth);
+      }
+      console.error("Teacher login error:", error);
+      toast({
+        variant: "destructive",
+        title: "Terjadi Kesalahan",
+        description: "Gagal melakukan verifikasi. Harap coba lagi.",
+      });
+    } finally {
+      setIsTeacherLoading(false);
+    }
+  };
+
   return (
     <div className="grid gap-4 w-full">
+      {/* Portal Guru */}
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button variant="outline" className="h-20 flex flex-col items-center justify-center gap-2 border-primary/20 hover:border-primary/50 hover:bg-primary/5 group transition-all shadow-sm">
+            <GraduationCap className="h-6 w-6 text-primary/60 group-hover:text-primary transition-colors" />
+            <span className="text-xs font-bold uppercase tracking-widest">Portal Guru</span>
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <GraduationCap className="h-5 w-5 text-primary" />
+              Portal Guru
+            </DialogTitle>
+            <DialogDescription>
+              Masuk menggunakan NIG (Nomor Induk Guru) dan password Anda.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...teacherForm}>
+            <form onSubmit={teacherForm.handleSubmit(handleTeacherSubmit)} className="space-y-4 pt-4">
+              <FormField
+                control={teacherForm.control}
+                name="nig"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>NIG (Nomor Induk Guru)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Contoh: G001" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={teacherForm.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="••••••••" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" className="w-full h-10 font-bold" disabled={isTeacherLoading}>
+                {isTeacherLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "MASUK KE DASBOR GURU"}
+              </Button>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
       {/* Portal Wali Murid */}
       <Dialog>
         <DialogTrigger asChild>

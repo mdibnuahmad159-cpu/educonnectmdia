@@ -40,32 +40,33 @@ const dayMapping: { [key: number]: keyof Omit<Schedule, 'id' | 'classLevel' | 'a
 export default function TeacherDashboardPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
+  const [nig, setNig] = useState<string | null>(null);
   const [todayStr, setTodayStr] = useState<string>("");
 
   useEffect(() => {
+    setNig(sessionStorage.getItem('teacherNig'));
     setTodayStr(format(new Date(), 'yyyy-MM-dd'));
   }, []);
 
   const teacherRef = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return doc(firestore, "teachers", user.uid);
-  }, [firestore, user]);
+    if (!firestore || !nig) return null;
+    return doc(firestore, "teachers", nig);
+  }, [firestore, nig]);
 
   const { data: teacher, loading: isTeacherLoading, error: teacherError } = useDoc<Teacher>(teacherRef);
 
   // Today's Self Attendance (Teacher Attendance)
   const attendanceQuery = useMemoFirebase(() => {
-    if (!firestore || !user || !todayStr) return null;
+    if (!firestore || !nig || !todayStr) return null;
     return query(
         collection(firestore, "teacher_attendances"),
-        where("teacherId", "==", user.uid),
+        where("teacherId", "==", nig),
         where("date", "==", todayStr)
     );
-  }, [firestore, user, todayStr]);
+  }, [firestore, nig, todayStr]);
   const { data: attendanceData, loading: isAttendanceLoading } = useCollection<TeacherAttendance>(attendanceQuery);
 
   // Today's Teaching Schedule
-  // We fetch all schedules for current year and filter by teacherId in memory
   const scheduleQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, "schedules"), where("type", "==", "pelajaran"));
@@ -85,7 +86,7 @@ export default function TeacherDashboardPage() {
   const todayAttendance = attendanceData?.[0];
 
   const teachingScheduleToday = useMemo(() => {
-    if (!allSchedules || !user || !curriculum) return [];
+    if (!allSchedules || !nig || !curriculum) return [];
     const dayIndex = new Date().getDay();
     const dayKey = dayMapping[dayIndex];
     if (!dayKey) return [];
@@ -94,7 +95,7 @@ export default function TeacherDashboardPage() {
     allSchedules.forEach(schedule => {
         const entries = schedule[dayKey] || [];
         entries.forEach(entry => {
-            if (entry.teacherId === user.uid) {
+            if (entry.teacherId === nig) {
                 const subject = curriculum.find(c => c.id === entry.subjectId);
                 myEntries.push({
                     ...entry,
@@ -106,14 +107,14 @@ export default function TeacherDashboardPage() {
     });
 
     return myEntries.sort((a, b) => a.startTime.localeCompare(b.startTime));
-  }, [allSchedules, user, curriculum]);
+  }, [allSchedules, nig, curriculum]);
 
   const filteredAnnouncements = useMemo(() => {
     if (!announcements) return [];
     return announcements.filter(a => a.target === 'Semua' || a.target === 'Guru');
   }, [announcements]);
 
-  const isLoading = isUserLoading || isTeacherLoading;
+  const isLoading = isUserLoading || isTeacherLoading || !nig;
 
   if (isLoading) {
     return (
@@ -154,8 +155,8 @@ export default function TeacherDashboardPage() {
                     <h2 className="text-lg font-bold truncate leading-tight">{teacher.name}</h2>
                     <p className="text-xs opacity-90 font-medium">{teacher.jabatan || 'Guru Madrasah'}</p>
                     <div className="flex items-center gap-2 mt-2">
-                        <span className="text-[9px] font-bold bg-white/20 px-2 py-0.5 rounded uppercase tracking-tighter">ID: {teacher.id.substring(0, 8)}</span>
-                        <span className="text-[9px] font-bold bg-white/20 px-2 py-0.5 rounded uppercase tracking-tighter">{teacher.email}</span>
+                        <span className="text-[9px] font-bold bg-white/20 px-2 py-0.5 rounded uppercase tracking-tighter">NIG: {teacher.nig}</span>
+                        <span className="text-[9px] font-bold bg-white/20 px-2 py-0.5 rounded uppercase tracking-tighter">{teacher.email || 'Tanpa Email'}</span>
                     </div>
                 </div>
             </CardContent>
