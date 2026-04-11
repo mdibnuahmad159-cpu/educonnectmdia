@@ -5,7 +5,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useFirestore, useDoc, useCollection, useMemoFirebase } from "@/firebase";
 import { collection, query, where, doc } from "firebase/firestore";
 import type { Teacher, SavingsTransaction } from "@/types";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
     Loader2, 
