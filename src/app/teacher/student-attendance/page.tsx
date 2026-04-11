@@ -8,6 +8,7 @@ import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where, Firestore } from 'firebase/firestore';
 import type { Student, StudentAttendance, Schedule, ScheduleEntry, Teacher } from '@/types';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -17,16 +18,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, Calendar, Users, CheckCircle2, AlertCircle, ArrowLeft, Info as InfoIcon, Coffee } from 'lucide-react';
+import { Loader2, Calendar, Users, CheckCircle2, AlertCircle, ArrowLeft, Info as InfoIcon, Coffee, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { saveStudentAttendanceBatch } from '@/lib/firebase-helpers';
 import { useAcademicYear } from '@/context/academic-year-provider';
@@ -81,7 +74,7 @@ export default function TeacherStudentAttendancePage() {
     }, [firestore, activeYear]);
     const { data: allSchedules } = useCollection<Schedule>(schedulesQuery);
 
-    // 3. Determine assigned classes
+    // 3. Determine assigned classes (ONLY where teacher is scheduled at FIRST HOUR on any day)
     const assignedClasses = useMemo(() => {
         const classes = new Set<number>();
         if (allSchedules && nig) {
@@ -89,18 +82,15 @@ export default function TeacherStudentAttendancePage() {
             allSchedules.forEach(schedule => {
                 dayKeys.forEach(day => {
                     const entries = schedule[day] || [];
-                    if (entries.some((e: ScheduleEntry) => e.teacherId === nig)) {
+                    // Validation: Teacher must be in the first entry (Jam Pertama)
+                    if (entries[0]?.teacherId === nig) {
                         classes.add(schedule.classLevel);
                     }
                 });
             });
         }
-        if (currentTeacher?.jabatan?.startsWith('Wali Kelas ')) {
-            const match = currentTeacher.jabatan.match(/\d+/);
-            if (match) classes.add(parseInt(match[0]));
-        }
         return Array.from(classes).sort((a, b) => a - b);
-    }, [allSchedules, nig, currentTeacher]);
+    }, [allSchedules, nig]);
 
     useEffect(() => {
         if (assignedClasses.length > 0 && !selectedClass) {
@@ -145,13 +135,10 @@ export default function TeacherStudentAttendancePage() {
         setAttendance(initialAttendance);
     }, [currentAttendance, sortedStudents]);
 
-    // 6. Schedule Validation Logic
-    const isScheduledToday = useMemo(() => {
+    // 6. Schedule Validation Logic (STRICT: MUST BE FIRST HOUR)
+    const isScheduledTodayFirstHour = useMemo(() => {
         if (!selectedDate || !selectedClass || !allSchedules || !nig || isFriday) return false;
         
-        // Always allow if the teacher is the Wali Kelas of this class
-        if (currentTeacher?.jabatan === `Wali Kelas ${selectedClass}`) return true;
-
         const dayIndex = parseISO(selectedDate).getDay();
         const dayKey = dayMapping[dayIndex];
         if (!dayKey) return false;
@@ -160,15 +147,18 @@ export default function TeacherStudentAttendancePage() {
         if (!classSchedule) return false;
 
         const dayEntries = classSchedule[dayKey] || [];
-        return dayEntries.some((e: ScheduleEntry) => e.teacherId === nig);
-    }, [selectedDate, selectedClass, allSchedules, nig, currentTeacher, isFriday]);
+        // STRICT RULE: Only the teacher of the FIRST HOUR (index 0) can take attendance
+        const firstPeriod = dayEntries[0];
+        
+        return firstPeriod?.teacherId === nig;
+    }, [selectedDate, selectedClass, allSchedules, nig, isFriday]);
 
     const handleStatusChange = (studentId: string, status: AttendanceStatus) => {
         setAttendance(prev => ({ ...prev, [studentId]: status }));
     };
 
     const handleSave = async () => {
-        if (!firestore || !sortedStudents.length || !selectedClass || !selectedDate || !isScheduledToday || isFriday) return;
+        if (!firestore || !sortedStudents.length || !selectedClass || !selectedDate || !isScheduledTodayFirstHour || isFriday) return;
         setIsSaving(true);
 
         const attendancePayload: Omit<StudentAttendance, 'id'>[] = sortedStudents.map(student => ({
@@ -221,13 +211,17 @@ export default function TeacherStudentAttendancePage() {
                 </Card>
             )}
 
-            {!isFriday && !isScheduledToday && selectedDate && selectedClass && !isLoading && (
+            {!isFriday && !isScheduledTodayFirstHour && selectedDate && selectedClass && !isLoading && (
                 <Card className="border-orange-200 bg-orange-50/50">
                     <CardContent className="p-3 flex items-center gap-3 text-orange-700">
                         <AlertCircle className="h-5 w-5 shrink-0" />
-                        <p className="text-[11px] leading-tight">
-                            Anda tidak memiliki jadwal mengajar di <strong>Kelas {selectedClass}</strong> pada hari ini ({format(parseISO(selectedDate), "EEEE", { locale: id })}). Anda hanya dapat menyimpan absensi sesuai jadwal mengajar atau jika Anda adalah Wali Kelas tersebut.
-                        </p>
+                        <div className="text-[11px] leading-tight space-y-1">
+                            <p className="font-bold">Akses Terbatas: Hanya Pengajar Jam Pertama</p>
+                            <p>
+                                Sesuai peraturan, absensi hanya dapat dilakukan oleh guru yang mengajar pada <strong>Jam Pertama</strong>. 
+                                Anda tidak terdaftar mengajar di jam pertama Kelas {selectedClass} pada hari ini ({format(parseISO(selectedDate), "EEEE", { locale: id })}).
+                            </p>
+                        </div>
                     </CardContent>
                 </Card>
             )}
@@ -249,7 +243,7 @@ export default function TeacherStudentAttendancePage() {
                                             <SelectItem key={cl} value={String(cl)}>Kelas {cl}</SelectItem>
                                         ))
                                     ) : (
-                                        <SelectItem value="none" disabled>Tidak ada kelas terdaftar</SelectItem>
+                                        <SelectItem value="none" disabled>Tidak ada jadwal jam pertama</SelectItem>
                                     )}
                                 </SelectContent>
                             </Select>
@@ -277,8 +271,8 @@ export default function TeacherStudentAttendancePage() {
                     ) : assignedClasses.length === 0 && !isLoading ? (
                         <div className="py-20 flex flex-col items-center justify-center text-muted-foreground italic text-center px-6">
                             <AlertCircle className="h-12 w-12 mb-3 opacity-10" />
-                            <p className="text-sm">Anda belum memiliki tugas mengajar atau jabatan Wali Kelas.</p>
-                            <p className="text-[10px] mt-1">Harap hubungi Admin jika jadwal belum sinkron.</p>
+                            <p className="text-sm">Anda tidak memiliki jadwal mengajar di jam pertama.</p>
+                            <p className="text-[10px] mt-1">Hanya guru jam pertama yang dapat mengelola absensi harian santri.</p>
                         </div>
                     ) : (
                         <div className="overflow-x-auto">
@@ -317,6 +311,7 @@ export default function TeacherStudentAttendancePage() {
                                                     <Select
                                                         value={attendance[student.id] || 'Belum Diabsen'}
                                                         onValueChange={(value) => handleStatusChange(student.id, value as AttendanceStatus)}
+                                                        disabled={!isScheduledTodayFirstHour}
                                                     >
                                                         <SelectTrigger className={cn(
                                                             "h-8 text-[10px] font-bold uppercase",
@@ -352,20 +347,21 @@ export default function TeacherStudentAttendancePage() {
                 </CardContent>
                 {!isFriday && selectedClass && sortedStudents.length > 0 && (
                     <CardFooter className="bg-muted/5 border-t py-4 flex flex-col gap-3">
-                        <div className="w-full flex items-center justify-between">
+                        <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-4">
                             <div className="text-[10px] text-muted-foreground">
                                 <p className="font-bold text-primary mb-1 uppercase tracking-tight">{dateFormatted}</p>
                                 <p className="flex items-center gap-1">
                                     <InfoIcon className="h-3 w-3" />
-                                    Pastikan status sudah benar sebelum menekan tombol simpan.
+                                    Hanya pengajar jam pertama yang dapat memverifikasi kehadiran.
                                 </p>
                             </div>
                             <Button 
                                 onClick={handleSave} 
-                                disabled={isLoading || isSaving || !isScheduledToday} 
-                                className="gap-2 px-6 shadow-md"
+                                disabled={isLoading || isSaving || !isScheduledTodayFirstHour} 
+                                className="gap-2 px-6 shadow-md w-full sm:w-auto"
                             >
-                                {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Simpan Absensi"}
+                                {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                                Simpan Absensi
                             </Button>
                         </div>
                     </CardFooter>
