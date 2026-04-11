@@ -13,14 +13,6 @@ service cloud.firestore {
       return isSignedIn() && (request.auth.token.email == 'mdibnuahmad159@gmail.com' || request.auth.uid == 'ILjpJZ1CcEhC6qlN9JpHwj0Bj773');
     }
     
-    // Fungsi pembantu untuk mengecek apakah user adalah guru
-    // Guru adalah pengguna terdaftar yang bukan anonim dan memiliki dokumen di koleksi teachers
-    function isTeacher() {
-      return isSignedIn() && 
-             (exists(/databases/$(database)/documents/teachers/$(request.auth.uid)) || 
-              (request.auth.token.email != null && !request.auth.token.anonymous));
-    }
-
     // Aturan Global: 
     // 1. Semua pengguna yang login bisa membaca data
     // 2. Hanya admin utama yang bisa melakukan penulisan secara umum
@@ -29,22 +21,23 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // Izin spesifik untuk Guru (Input Nilai, Absensi, dan Tabungan)
-    // Menggunakan write yang mencakup create dan update
+    // Izin spesifik untuk Guru dan portal (Input Nilai, Absensi, dan Tabungan)
+    // Karena sistem menggunakan portal anonim, izin diberikan kepada semua pengguna terdaftar
+    // Validasi logika (seperti jadwal mengajar) ditangani di tingkat aplikasi
     match /grades/{id} {
-      allow write: if isAdmin() || isTeacher();
+      allow write: if isSignedIn();
     }
     
     match /student_attendances/{id} {
-      allow write: if isAdmin() || isTeacher();
+      allow write: if isSignedIn();
     }
     
     match /report_summaries/{id} {
-      allow write: if isAdmin() || isTeacher();
+      allow write: if isSignedIn();
     }
     
     match /savingsTransactions/{id} {
-      allow write: if isAdmin() || isTeacher();
+      allow write: if isSignedIn();
     }
 
     // Pengecualian khusus: Profil sekolah bisa dibaca publik (untuk halaman login)
