@@ -105,7 +105,7 @@
         "nis": { "type": "string" },
         "kelas": { "type": "number" },
         "date": { "type": "string" },
-        "status": { "type": "string", "enum": ["Hadir", "Sakit", "Izin", "Alpa"] }
+        "status": { "type": "string", "enum": ["Hadir", "Sakit", "Izin", "Alpa", "Belum Diabsen"] }
       }
     },
     "TeacherAttendance": {

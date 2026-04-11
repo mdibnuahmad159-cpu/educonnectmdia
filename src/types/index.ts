@@ -104,7 +104,7 @@ export type StudentAttendance = {
   nis: string;
   kelas: number;
   date: string; // YYYY-MM-DD
-  status: 'Hadir' | 'Sakit' | 'Izin' | 'Alpa';
+  status: 'Hadir' | 'Sakit' | 'Izin' | 'Alpa' | 'Belum Diabsen';
 };
 
 export type Announcement = {
