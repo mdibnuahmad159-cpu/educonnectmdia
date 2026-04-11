@@ -1,9 +1,10 @@
+
 "use client";
 
 import { useState, useMemo, useRef } from "react";
-import { PlusCircle, AlertTriangle, Download, Upload, FileDown, FileUp, FileSpreadsheet, FileText, Printer, Loader2 } from "lucide-react";
+import { PlusCircle, AlertTriangle, Download, Upload, FileDown, FileUp, FileSpreadsheet, FileText, Printer, Loader2, Wand2 } from "lucide-react";
 import { useCollection, useFirestore, useMemoFirebase, useUser } from "@/firebase";
-import { addTeacher, updateTeacher, deleteTeacher, addTeachersBatch } from "@/lib/firebase-helpers";
+import { addTeacher, updateTeacher, deleteTeacher, addTeachersBatch, normalizeTeacherNIGs } from "@/lib/firebase-helpers";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -59,6 +60,7 @@ export function TeacherManagement() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [teacherToDelete, setTeacherToDelete] = useState<string | null>(null);
+  const [isNormalizing, setIsNormalizing] = useState(false);
 
   const jabatanOrder = useMemo(() => [
     'Pengasuh',
@@ -138,6 +140,19 @@ export function TeacherManagement() {
       } catch (error: any) {
         toast({ variant: "destructive", title: "Gagal Menyimpan", description: error.message });
       }
+    }
+  };
+
+  const handleAutoNormalize = async () => {
+    if (!firestore) return;
+    setIsNormalizing(true);
+    try {
+        await normalizeTeacherNIGs(firestore);
+        toast({ title: "Normalisasi Selesai", description: "Semua NIG guru telah diperbarui ke format MDIAGURUxxx." });
+    } catch (e: any) {
+        toast({ variant: "destructive", title: "Gagal Normalisasi", description: e.message });
+    } finally {
+        setIsNormalizing(false);
     }
   };
 
@@ -356,11 +371,22 @@ export function TeacherManagement() {
         <CardHeader>
           <CardTitle>Data Guru</CardTitle>
           <CardDescription>
-            Kelola data guru Madrasah.
+            Kelola data guru Madrasah. NIG digunakan sebagai ID Login.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex justify-end gap-2 mb-4">
+          <div className="flex flex-wrap justify-end gap-2 mb-4">
+              <Button 
+                size="xs" 
+                variant="outline" 
+                className="gap-1 border-primary/20 text-primary" 
+                onClick={handleAutoNormalize}
+                disabled={isNormalizing || loading || !teachers?.length}
+              >
+                {isNormalizing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
+                Normalisasi NIG
+              </Button>
+
               <DropdownMenu>
               <DropdownMenuTrigger asChild>
                   <Button size="xs" variant="outline" className="gap-1">
@@ -419,6 +445,7 @@ export function TeacherManagement() {
               <TableRow>
                 <TableHead className="w-[40px]">No.</TableHead>
                 <TableHead>Nama</TableHead>
+                <TableHead>NIG (Login ID)</TableHead>
                 <TableHead>Jabatan</TableHead>
                 <TableHead className="text-right">Aksi</TableHead>
               </TableRow>
@@ -426,14 +453,14 @@ export function TeacherManagement() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center py-10">
+                  <TableCell colSpan={5} className="text-center py-10">
                     <div className="flex flex-col items-center gap-2 text-muted-foreground">
                       <Loader2 className="h-6 w-6 animate-spin"/>
                       <span>Memuat data guru...</span>
                     </div>
                   </TableCell>
                 </TableRow>
-              ) : sortedTeachers.length > 0 ? (
+              ) : sortedTeachers && sortedTeachers.length > 0 ? (
                 sortedTeachers.map((teacher, index) => (
                 <TableRow key={teacher.id}>
                   <TableCell>{index + 1}</TableCell>
@@ -446,6 +473,9 @@ export function TeacherManagement() {
                       <span className="text-xs">{teacher.name}</span>
                     </div>
                   </TableCell>
+                  <TableCell>
+                    <code className="text-[10px] bg-muted px-1.5 py-0.5 rounded font-bold">{teacher.nig || 'BELUM ADA'}</code>
+                  </TableCell>
                   <TableCell className="text-xs">{teacher.jabatan || '-'}</TableCell>
                   <TableCell className="text-right">
                     <Button variant="outline" size="xs" onClick={() => handleDetail(teacher)}>
@@ -455,7 +485,7 @@ export function TeacherManagement() {
                 </TableRow>
               ))) : (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center py-10 text-muted-foreground">
+                  <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
                     Belum ada data guru.
                   </TableCell>
                 </TableRow>

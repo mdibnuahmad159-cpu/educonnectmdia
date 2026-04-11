@@ -146,7 +146,8 @@ export function TeacherForm({ isOpen, setIsOpen, teacher, onSave }: TeacherFormP
                 <FormField control={form.control} name="nig" render={({ field }) => (
                   <FormItem>
                     <FormLabel>NIG (Nomor Induk Guru)</FormLabel>
-                    <FormControl><Input {...field} disabled={!!teacher} /></FormControl>
+                    <FormControl><Input {...field} placeholder="Contoh: MDIAGURU001" /></FormControl>
+                    <FormDescription>Digunakan untuk ID Login.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )} />

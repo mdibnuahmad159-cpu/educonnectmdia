@@ -10,6 +10,7 @@ import {
   getDocs,
   query,
   where,
+  getDoc,
 } from 'firebase/firestore';
 import type { Teacher, Student, SchoolProfile, Curriculum, Alumni, Schedule, TeacherAttendance, StudentAttendance, Announcement, Grade, ReportSummary, Certificate, CertificateTemplate, SPPPayment, ExternalSaver, SavingsTransaction } from '@/types';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -114,14 +115,86 @@ export async function addTeachersBatch(db: Firestore, teachers: Omit<Teacher, 'i
     }
 }
 
-export async function updateTeacher(db: Firestore, teacherId: string, teacher: Partial<Omit<Teacher, 'id'>>) {
-    const teacherRef = doc(db, 'teachers', teacherId);
-    const data = { ...teacher, updatedAt: serverTimestamp() };
+/**
+ * Updates a teacher. Handles ID migration if NIG changes.
+ */
+export async function updateTeacher(db: Firestore, teacherId: string, teacherUpdate: Partial<Omit<Teacher, 'id'>>) {
+    const oldTeacherRef = doc(db, 'teachers', teacherId);
+    
+    // If NIG is changing, we need to move the document
+    if (teacherUpdate.nig && teacherUpdate.nig !== teacherId) {
+        const newNig = String(teacherUpdate.nig).trim();
+        const newTeacherRef = doc(db, 'teachers', newNig);
+        
+        // Check if target exists
+        const existingDoc = await getDoc(newTeacherRef);
+        if (existingDoc.exists()) {
+            throw new Error(`NIG ${newNig} sudah digunakan oleh guru lain.`);
+        }
+
+        const oldDoc = await getDoc(oldTeacherRef);
+        if (!oldDoc.exists()) throw new Error("Data guru lama tidak ditemukan.");
+
+        const finalData = { 
+            ...oldDoc.data(), 
+            ...teacherUpdate, 
+            id: newNig, 
+            nig: newNig,
+            updatedAt: serverTimestamp() 
+        };
+
+        const batch = writeBatch(db);
+        batch.set(newTeacherRef, finalData);
+        batch.delete(oldTeacherRef);
+
+        // Update References
+        // 1. Schedules
+        const schedulesSnap = await getDocs(query(collection(db, "schedules"), where("academicYear", "!=", "")));
+        schedulesSnap.forEach(sDoc => {
+            const data = sDoc.data() as Schedule;
+            const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
+            let changed = false;
+            days.forEach(day => {
+                if (data[day]) {
+                    data[day].forEach(entry => {
+                        if (entry.teacherId === teacherId) {
+                            entry.teacherId = newNig;
+                            changed = true;
+                        }
+                    });
+                }
+            });
+            if (changed) batch.update(sDoc.ref, data as any);
+        });
+
+        // 2. Attendance
+        const attQuery = query(collection(db, "teacher_attendances"), where("teacherId", "==", teacherId));
+        const attSnap = await getDocs(attQuery);
+        attSnap.forEach(aDoc => {
+            const data = aDoc.data();
+            const newAttId = `${newNig}_${data.date}`;
+            batch.set(doc(db, "teacher_attendances", newAttId), { ...data, teacherId: newNig, id: newAttId });
+            batch.delete(aDoc.ref);
+        });
+
+        // 3. Transactions
+        const transQuery = query(collection(db, "savingsTransactions"), where("saverId", "==", teacherId));
+        const transSnap = await getDocs(transQuery);
+        transSnap.forEach(tDoc => {
+            batch.update(tDoc.ref, { saverId: newNig });
+        });
+
+        await batch.commit();
+        return;
+    }
+
+    // Standard update if NIG didn't change
+    const data = { ...teacherUpdate, updatedAt: serverTimestamp() };
     try {
-        await setDoc(teacherRef, data, { merge: true });
+        await setDoc(oldTeacherRef, data, { merge: true });
     } catch (error) {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
-            path: teacherRef.path,
+            path: oldTeacherRef.path,
             operation: 'update',
             requestResourceData: data,
         }));
@@ -137,6 +210,26 @@ export function deleteTeacher(db: Firestore, teacherId: string) {
             operation: 'delete'
         }));
     });
+}
+
+/**
+ * Normalizes all teachers to have NIG in format MDIAGURU001
+ */
+export async function normalizeTeacherNIGs(db: Firestore) {
+    const snap = await getDocs(collection(db, "teachers"));
+    const teachers = snap.docs.map(d => ({ ...d.data(), id: d.id })) as Teacher[];
+    
+    // Sort to keep consistent ordering
+    teachers.sort((a, b) => a.name.localeCompare(b.name));
+
+    for (let i = 0; i < teachers.length; i++) {
+        const teacher = teachers[i];
+        const targetNig = `MDIAGURU${String(i + 1).padStart(3, '0')}`;
+        
+        if (teacher.id !== targetNig || teacher.nig !== targetNig) {
+            await updateTeacher(db, teacher.id, { nig: targetNig });
+        }
+    }
 }
 
 export function updateSchoolProfile(db: Firestore, profileData: Partial<Omit<SchoolProfile, 'id'>>) {
