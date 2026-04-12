@@ -23,7 +23,8 @@ import {
     User,
     Users,
     Wallet,
-    X
+    X,
+    BadgeCheck
 } from "lucide-react";
 import {
   Select,
@@ -134,7 +135,8 @@ export default function RiwayatTabunganPage() {
     const stats = useMemo(() => {
         const totalIn = filteredTransactions.filter(t => t.type === 'deposit').reduce((sum, t) => sum + t.amount, 0);
         const totalOut = filteredTransactions.filter(t => t.type === 'withdraw').reduce((sum, t) => sum + t.amount, 0);
-        return { totalIn, totalOut };
+        const netBalance = totalIn - totalOut;
+        return { totalIn, totalOut, netBalance };
     }, [filteredTransactions]);
 
     const resetFilters = () => {
@@ -187,6 +189,7 @@ export default function RiwayatTabunganPage() {
         doc.setFontSize(10);
         doc.text(`Total Setoran: Rp ${stats.totalIn.toLocaleString()}`, 14, 22);
         doc.text(`Total Penarikan: Rp ${stats.totalOut.toLocaleString()}`, 14, 27);
+        doc.text(`Saldo Akhir (Filter): Rp ${stats.netBalance.toLocaleString()}`, 14, 32);
 
         (doc as any).autoTable({
             head: [['Tgl', 'Nama Penabung', 'Jenis', 'Nominal', 'Ket']],
@@ -197,7 +200,7 @@ export default function RiwayatTabunganPage() {
                 `Rp ${t.amount.toLocaleString()}`,
                 t.notes || '-'
             ]),
-            startY: 33,
+            startY: 38,
             theme: 'grid',
             headStyles: { fillColor: [22, 101, 52] }
         });
@@ -237,8 +240,11 @@ export default function RiwayatTabunganPage() {
                 </head>
                 <body>
                     <h1>Riwayat Tabungan Madrasah</h1>
-                    <p>Total Setoran: <strong>Rp ${stats.totalIn.toLocaleString()}</strong></p>
-                    <p>Total Penarikan: <strong>Rp ${stats.totalOut.toLocaleString()}</strong></p>
+                    <div style="margin-bottom: 15px; display: flex; gap: 20px;">
+                        <p>Total Setoran: <strong>Rp ${stats.totalIn.toLocaleString()}</strong></p>
+                        <p>Total Penarikan: <strong>Rp ${stats.totalOut.toLocaleString()}</strong></p>
+                        <p>Saldo Akhir (Filter): <strong>Rp ${stats.netBalance.toLocaleString()}</strong></p>
+                    </div>
                     <table>
                         <thead>
                             <tr>
@@ -290,23 +296,32 @@ export default function RiwayatTabunganPage() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <Card className="bg-green-50 border-none shadow-sm">
                     <CardContent className="p-4 flex items-center justify-between">
                         <div className="space-y-1">
-                            <p className="text-[10px] uppercase font-bold text-green-600">Total Setoran (Filter)</p>
-                            <p className="text-lg font-bold text-green-700">Rp {stats.totalIn.toLocaleString()}</p>
+                            <p className="text-[10px] uppercase font-bold text-green-600">Total Setoran</p>
+                            <p className="text-sm font-bold text-green-700">Rp {stats.totalIn.toLocaleString()}</p>
                         </div>
-                        <ArrowUpCircle className="h-8 w-8 text-green-200" />
+                        <ArrowUpCircle className="h-6 w-6 text-green-200" />
                     </CardContent>
                 </Card>
                 <Card className="bg-red-50 border-none shadow-sm">
                     <CardContent className="p-4 flex items-center justify-between">
                         <div className="space-y-1">
-                            <p className="text-[10px] uppercase font-bold text-red-600">Total Penarikan (Filter)</p>
-                            <p className="text-lg font-bold text-red-700">Rp {stats.totalOut.toLocaleString()}</p>
+                            <p className="text-[10px] uppercase font-bold text-red-600">Total Penarikan</p>
+                            <p className="text-sm font-bold text-red-700">Rp {stats.totalOut.toLocaleString()}</p>
                         </div>
-                        <ArrowDownCircle className="h-8 w-8 text-red-200" />
+                        <ArrowDownCircle className="h-6 w-6 text-red-200" />
+                    </CardContent>
+                </Card>
+                <Card className="bg-primary/5 border-none shadow-sm border-l-4 border-l-primary">
+                    <CardContent className="p-4 flex items-center justify-between">
+                        <div className="space-y-1">
+                            <p className="text-[10px] uppercase font-bold text-primary">Saldo Akhir (Filter)</p>
+                            <p className="text-sm font-bold text-primary">Rp {stats.netBalance.toLocaleString()}</p>
+                        </div>
+                        <BadgeCheck className="h-6 w-6 text-primary/20" />
                     </CardContent>
                 </Card>
             </div>
@@ -486,7 +501,7 @@ export default function RiwayatTabunganPage() {
                     <AlertDialogHeader>
                         <AlertDialogTitle>Hapus Catatan Tabungan?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Tindakan ini akan menghapus catatan ini secara permanen. Saldo penabung tidak akan berkurang/bertambah otomatis, harap sesuaikan secara manual jika diperlukan.
+                            Tindakan ini akan menghapus catatan ini secara permanen. Jika data ini dihapus, saldo penabung tidak akan kembali secara otomatis. Harap lakukan penyesuaian saldo jika diperlukan.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
