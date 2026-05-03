@@ -66,7 +66,7 @@ export default function TeacherDashboardPage() {
   }, [firestore, nig, todayStr]);
   const { data: attendanceData, loading: isAttendanceLoading } = useCollection<TeacherAttendance>(attendanceQuery);
 
-  // Today's Teaching Schedule
+  // Today's Teaching Schedule (Inherited logic: fetch all and pick latest if active year is empty)
   const scheduleQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, "schedules"), where("type", "==", "pelajaran"));
@@ -87,12 +87,22 @@ export default function TeacherDashboardPage() {
 
   const teachingScheduleToday = useMemo(() => {
     if (!allSchedules || !nig || !curriculum) return [];
+    
     const dayIndex = new Date().getDay();
     const dayKey = dayMapping[dayIndex];
     if (!dayKey) return [];
 
+    // Find all academic years available and pick latest
+    const availableYears = Array.from(new Set(allSchedules.map(s => s.academicYear))).sort((a,b) => b.localeCompare(a));
+    const latestYear = availableYears[0];
+    
+    if (!latestYear) return [];
+
     const myEntries: any[] = [];
     allSchedules.forEach(schedule => {
+        // We filter for the latest year data ONLY here to provide a stable schedule
+        if (schedule.academicYear !== latestYear) return;
+
         const entries = schedule[dayKey] || [];
         entries.forEach(entry => {
             if (entry.teacherId === nig) {

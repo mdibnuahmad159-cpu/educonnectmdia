@@ -3,7 +3,7 @@
 
 import { useState, useMemo } from "react";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
-import { collection, Firestore, query, where } from "firebase/firestore";
+import { collection, Firestore, query, where, orderBy } from "firebase/firestore";
 import type { Schedule, ScheduleEntry, Curriculum, Teacher } from "@/types";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, FileDown, Printer, FileSpreadsheet, FileText, Edit } from "lucide-react";
+import { Loader2, FileDown, Printer, FileSpreadsheet, FileText, Edit, Info } from "lucide-react";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -37,6 +37,7 @@ import { useAcademicYear } from "@/context/academic-year-provider";
 import { TimeSettingsForm } from "./components/time-settings-form";
 import { upsertSchedule } from "@/lib/firebase-helpers";
 import { ScheduleEntryForm } from "./components/schedule-entry-form";
+import { cn } from "@/lib/utils";
 
 
 const days = [
@@ -89,50 +90,59 @@ export default function SchedulePage() {
     const teachersCollection = useMemoFirebase(() => firestore ? collection(firestore, "teachers") : null, [firestore]);
     const { data: teachers, loading: loadingTeachers } = useCollection<Teacher>(teachersCollection);
     
+    // We fetch ALL schedules of this type to handle persistence across years
     const allSchedulesQuery = useMemoFirebase(() => {
-        if (!firestore || !activeYear) return null;
-        return query(collection(firestore, 'schedules'), where('academicYear', '==', activeYear), where('type', '==', scheduleType));
-    }, [firestore, activeYear, scheduleType]);
+        if (!firestore) return null;
+        return query(collection(firestore, 'schedules'), where('type', '==', scheduleType));
+    }, [firestore, scheduleType]);
     const { data: allSchedulesData, isLoading: loadingAllSchedules } = useCollection<Schedule>(allSchedulesQuery);
 
-    const schedulesMap = useMemo(() => {
-        const map = new Map<number, Schedule>();
+    // Determine the data to actually display
+    const schedulesByYear = useMemo(() => {
+        const map = new Map<string, Schedule[]>();
         if (allSchedulesData) {
-            for (const schedule of allSchedulesData) {
-                map.set(schedule.classLevel, schedule);
-            }
+            allSchedulesData.forEach(s => {
+                const yearList = map.get(s.academicYear) || [];
+                yearList.push(s);
+                map.set(s.academicYear, yearList);
+            });
         }
         return map;
     }, [allSchedulesData]);
 
+    const displayYear = useMemo(() => {
+        if (schedulesByYear.has(activeYear)) return activeYear;
+        
+        // Find latest year with data
+        const sortedYears = Array.from(schedulesByYear.keys()).sort((a, b) => b.localeCompare(a));
+        return sortedYears[0] || activeYear;
+    }, [schedulesByYear, activeYear]);
+
+    const schedulesMap = useMemo(() => {
+        const map = new Map<number, Schedule>();
+        const yearData = schedulesByYear.get(displayYear) || [];
+        yearData.forEach(s => map.set(s.classLevel, s));
+        return map;
+    }, [schedulesByYear, displayYear]);
+
     const periods = useMemo(() => {
-        if (!allSchedulesData || allSchedulesData.length === 0) {
-            // Default periods if no schedules exist yet.
-            return [
-                { startTime: "07:00", endTime: "08:30" },
-                { startTime: "08:30", endTime: "10:00" },
-                { startTime: "10:30", endTime: "12:00" },
-            ];
-        }
-
-        const firstScheduleWithEntries = allSchedulesData.find(s => s.saturday && s.saturday.length > 0);
+        const yearData = schedulesByYear.get(displayYear) || [];
+        const firstScheduleWithEntries = yearData.find(s => s.saturday && s.saturday.length > 0);
         
-        if (!firstScheduleWithEntries) {
-            return [
-                { startTime: "07:00", endTime: "08:30" },
-                { startTime: "08:30", endTime: "10:00" },
-                { startTime: "10:30", endTime: "12:00" },
-            ];
+        if (firstScheduleWithEntries) {
+            const scheduleEntries = firstScheduleWithEntries.saturday.filter(e => e.type === 'subject');
+            if (scheduleEntries.length > 0) {
+                return scheduleEntries.map(p => ({ startTime: p.startTime, endTime: p.endTime })).sort((a,b) => a.startTime.localeCompare(b.startTime));
+            }
         }
 
-        const scheduleEntries = firstScheduleWithEntries.saturday.filter(e => e.type === 'subject');
-        
-        if (scheduleEntries.length > 0) {
-            return scheduleEntries.map(p => ({ startTime: p.startTime, endTime: p.endTime })).sort((a,b) => a.startTime.localeCompare(b.startTime));
-        }
-
-        return [];
-    }, [allSchedulesData]);
+        // Global fallback if no data for displayYear exists either (should only happen on very first app run)
+        return [
+            { startTime: "07:00", endTime: "08:30" },
+            { startTime: "08:30", endTime: "10:00" },
+            { startTime: "10:30", endTime: "12:00" },
+        ];
+    }, [schedulesByYear, displayYear]);
 
     const isLoading = loadingCurriculum || loadingTeachers || loadingAllSchedules;
     const classLevels = [...Array(7).keys()]; // Kelas 0 to 6
@@ -165,11 +175,23 @@ export default function SchedulePage() {
 
         const { classLevel, dayKey, periodIndex } = editContext;
         
-        let scheduleToUpdate = schedulesMap.get(classLevel);
+        // IMPORTANT: We always save to the ACTIVE YEAR, even if we are viewing inherited data
+        let scheduleToUpdate = schedulesByYear.get(activeYear)?.find(s => s.classLevel === classLevel);
+        
         if (!scheduleToUpdate) {
-            scheduleToUpdate = createEmptySchedule(classLevel, activeYear, scheduleType, periods);
+            // If no data for active year, we take the inherited data as a base template
+            const inherited = schedulesMap.get(classLevel);
+            if (inherited) {
+                scheduleToUpdate = {
+                    ...JSON.parse(JSON.stringify(inherited)),
+                    id: `${classLevel}_${activeYear.replace(/\//g, '-')}_${scheduleType}`,
+                    academicYear: activeYear
+                };
+            } else {
+                scheduleToUpdate = createEmptySchedule(classLevel, activeYear, scheduleType, periods);
+            }
         } else {
-            scheduleToUpdate = JSON.parse(JSON.stringify(scheduleToUpdate)); // Deep copy
+            scheduleToUpdate = JSON.parse(JSON.stringify(scheduleToUpdate));
         }
 
         if (!scheduleToUpdate[dayKey] || scheduleToUpdate[dayKey].length === 0) {
@@ -177,16 +199,13 @@ export default function SchedulePage() {
         }
         
         const subjectEntries = scheduleToUpdate[dayKey].filter((e: ScheduleEntry) => e.type === 'subject');
-        
         if (subjectEntries.length <= periodIndex) return;
 
         const entryToUpdate = subjectEntries[periodIndex];
-
         const originalIndex = scheduleToUpdate[dayKey].findIndex((e: ScheduleEntry) => e.startTime === entryToUpdate.startTime && e.endTime === entryToUpdate.endTime && e.type === 'subject');
 
         if (originalIndex !== -1) {
             const currentEntry = scheduleToUpdate[dayKey][originalIndex];
-            
             const updatedEntry = { ...currentEntry };
             
             if ('subjectId' in data) {
@@ -196,7 +215,6 @@ export default function SchedulePage() {
                     delete (updatedEntry as Partial<typeof updatedEntry>).subjectId;
                 }
             }
-    
             if ('teacherId' in data) {
                 if (data.teacherId && data.teacherId !== 'clear') {
                     updatedEntry.teacherId = data.teacherId;
@@ -204,12 +222,11 @@ export default function SchedulePage() {
                     delete (updatedEntry as Partial<typeof updatedEntry>).teacherId;
                 }
             }
-            
             scheduleToUpdate[dayKey][originalIndex] = updatedEntry;
         }
 
         upsertSchedule(firestore, scheduleToUpdate);
-        toast({ title: "Jadwal Disimpan", description: `Jadwal untuk Kelas ${classLevel} telah diperbarui.` });
+        toast({ title: "Jadwal Disimpan", description: `Jadwal Kelas ${classLevel} TA ${activeYear} diperbarui.` });
     };
     
     const handleClearEntry = () => {
@@ -218,15 +235,31 @@ export default function SchedulePage() {
 
     const handleTimeSave = (newPeriods: { startTime: string; endTime: string }[]) => {
         if (!firestore) return;
-    
-        const updatedSchedules: Schedule[] = [];
-    
-        // Update existing schedules
-        for (const schedule of schedulesMap.values()) {
-            const newSchedule = JSON.parse(JSON.stringify(schedule));
+        
+        // When setting time, we apply it to the ACTIVE YEAR
+        // If the active year is currently empty, we initialize it using the inherited data
+        classLevels.forEach(level => {
+            let scheduleToUpdate = schedulesByYear.get(activeYear)?.find(s => s.classLevel === level);
+            
+            if (!scheduleToUpdate) {
+                const inherited = schedulesMap.get(level);
+                if (inherited) {
+                    scheduleToUpdate = {
+                        ...JSON.parse(JSON.stringify(inherited)),
+                        id: `${level}_${activeYear.replace(/\//g, '-')}_${scheduleType}`,
+                        academicYear: activeYear
+                    };
+                } else {
+                    scheduleToUpdate = createEmptySchedule(level, activeYear, scheduleType, newPeriods);
+                }
+            } else {
+                scheduleToUpdate = JSON.parse(JSON.stringify(scheduleToUpdate));
+            }
+
+            // Update all days with new time slots
             days.forEach(day => {
-                const currentDayEntries = newSchedule[day.key]?.filter((e: ScheduleEntry) => e.type === 'subject') || [];
-                const newDayEntries: ScheduleEntry[] = newPeriods.map((period, index) => {
+                const currentDayEntries = scheduleToUpdate[day.key]?.filter((e: ScheduleEntry) => e.type === 'subject') || [];
+                scheduleToUpdate[day.key] = newPeriods.map((period, index) => {
                     const existingEntry = currentDayEntries[index];
                     return {
                         type: 'subject',
@@ -235,56 +268,34 @@ export default function SchedulePage() {
                         subjectId: existingEntry?.subjectId || '',
                         teacherId: existingEntry?.teacherId || '',
                     };
-                }).filter(Boolean) as ScheduleEntry[];
-                newSchedule[day.key] = newDayEntries;
+                });
             });
-            updatedSchedules.push(newSchedule);
-        }
-    
-        // Create schedules for classes that don't have one yet
-        classLevels.forEach(level => {
-            if (!schedulesMap.has(level)) {
-                updatedSchedules.push(createEmptySchedule(level, activeYear, scheduleType, newPeriods));
-            }
+
+            upsertSchedule(firestore, scheduleToUpdate);
         });
-        
-        updatedSchedules.forEach(schedule => upsertSchedule(firestore, schedule));
     
-        toast({ title: "Jam Disimpan", description: "Waktu jadwal telah diperbarui untuk semua kelas." });
+        toast({ title: "Jam Disimpan", description: `Waktu jadwal Tahun Ajaran ${activeYear} telah diperbarui.` });
     };
 
     const handleExport = (format: 'excel' | 'pdf') => {
         if (isLoading) return;
-
         const head = [['Hari', 'Jam', ...classLevels.map(cl => `Kelas ${cl}`)]];
         const body: string[][] = [];
-
         days.forEach(day => {
              periods.forEach((period, periodIndex) => {
                 const row: string[] = [];
-                 if(periodIndex === 0) {
-                     row.push(day.name);
-                 } else {
-                     row.push('');
-                 }
+                if(periodIndex === 0) row.push(day.name);
+                else row.push('');
                 row.push(`${period.startTime} - ${period.endTime}`);
-               
                 classLevels.forEach(classLevel => {
                     const { subject, teacher } = getCellData(classLevel, day.key, periodIndex);
                     row.push(subject ? `${subject.subjectName}\n(${teacher?.name || '...'})` : '');
                 });
                 body.push(row);
             });
-             if (days.length > 1) {
-                // Add a visual separator in the data for PDF/Excel if needed, or handle in styling
-             }
         });
 
-        if (body.length === 0) {
-            toast({ title: "Tidak ada data jadwal untuk diekspor." });
-            return;
-        }
-
+        if (body.length === 0) return;
         const exportFileName = `jadwal_${scheduleType}_${activeYear.replace('/', '-')}`;
 
         if (format === 'excel') {
@@ -299,12 +310,11 @@ export default function SchedulePage() {
                     dataToExport.push(rowData);
                 });
             });
-
             const worksheet = XLSX.utils.json_to_sheet(dataToExport);
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, `Jadwal`);
             XLSX.writeFile(workbook, `${exportFileName}.xlsx`);
-        } else if (format === 'pdf') {
+        } else {
             const doc = new jsPDF({ orientation: 'landscape' });
             doc.text(`Jadwal ${scheduleType === 'pelajaran' ? 'Pelajaran' : 'Ujian'} - Tahun Ajaran ${activeYear}`, 14, 16);
             (doc as any).autoTable({
@@ -313,104 +323,39 @@ export default function SchedulePage() {
                 startY: 20,
                 theme: 'grid',
                 styles: { fontSize: 7, cellPadding: 1, overflow: 'linebreak' },
-                headStyles: { fillColor: [230, 230, 230], textColor: 20, fontSize: 8, fontStyle: 'bold' },
-                 didParseCell: function (data: any) {
-                    if (data.row.index > 0 && data.column.index === 0 && data.cell.raw !== '') {
-                        data.cell.styles.valign = 'middle';
-                        data.cell.styles.halign = 'center';
-                    }
-                },
-                didDrawCell: (data: any) => {
-                     if (data.row.index === 0) return; // Skip header
-                     if (data.column.index === 0 && data.cell.raw !== "") {
-                        // This logic is tricky with autoTable's rendering.
-                        // A simpler way is to handle rowSpans pre-generation if the library supports it,
-                        // or just leave it as is, which is what this code does.
-                     }
-                }
+                headStyles: { fillColor: [230, 230, 230], textColor: 20, fontSize: 8, fontStyle: 'bold' }
             });
             doc.save(`${exportFileName}.pdf`);
         }
     };
     
     const handlePrintTable = () => {
-        if (isLoading) {
-            toast({ variant: "destructive", title: "Data belum siap", description: "Harap tunggu data jadwal selesai dimuat." });
-            return;
-        }
-
+        if (isLoading) return;
         const printWindow = window.open('', '_blank');
-        if (!printWindow) {
-            toast({ variant: "destructive", title: "Gagal membuka jendela cetak." });
-            return;
-        }
-
-        const head = [['Hari', 'Jam', ...classLevels.map(cl => `Kelas ${cl}`)]];
-        if (periods.length === 0) {
-            toast({ title: "Tidak ada data jadwal untuk dicetak." });
-            return;
-        }
-
-        const tableHeader = `<thead><tr>${head[0].map(h => `<th>${h}</th>`).join('')}</tr></thead>`;
-        
+        if (!printWindow) return;
+        const tableHeader = `<thead><tr><th>Hari</th><th>Jam</th>${classLevels.map(cl => `<th>Kelas ${cl}</th>`).join('')}</tr></thead>`;
         const bodyRows: string[] = [];
         days.forEach(day => {
             periods.forEach((period, periodIndex) => {
                 let rowHtml = '<tr>';
-
-                // Day column with rowspan
-                if (periodIndex === 0) {
-                    rowHtml += `<td rowspan="${periods.length}" style="vertical-align: middle; text-align: center;">${day.name}</td>`;
-                }
-
-                // Jam column
+                if (periodIndex === 0) rowHtml += `<td rowspan="${periods.length}" style="vertical-align: middle; text-align: center;">${day.name}</td>`;
                 rowHtml += `<td style="text-align: center; vertical-align: middle;">${period.startTime} - ${period.endTime}</td>`;
-
-                // Class columns
                 classLevels.forEach(classLevel => {
                     const { subject, teacher } = getCellData(classLevel, day.key, periodIndex);
-                    const cellContent = subject 
-                        ? `${subject.subjectName}<br/>(${teacher?.name || '...'})`
-                        : '';
-                    rowHtml += `<td>${cellContent}</td>`;
+                    rowHtml += `<td>${subject ? `${subject.subjectName}<br/>(${teacher?.name || '...'})` : ''}</td>`;
                 });
-
                 rowHtml += '</tr>';
                 bodyRows.push(rowHtml);
             });
         });
-
-        const tableBody = `<tbody>${bodyRows.join('')}</tbody>`;
-
-        const content = `
+        printWindow.document.write(`
           <html>
-            <head>
-              <title>Cetak Jadwal - ${scheduleType === 'pelajaran' ? 'Pelajaran' : 'Ujian'}</title>
-              <style>
-                body { font-family: sans-serif; font-size: 8px; }
-                @page { size: A4 landscape; margin: 15mm; }
-                h1 { font-size: 16px; text-align: left; margin-bottom: 1rem; }
-                table { width: 100%; border-collapse: collapse; }
-                th, td { border: 1px solid #ccc; padding: 4px; text-align: left; vertical-align: top; overflow-wrap: break-word; }
-                th { background-color: #e6e6e6; font-weight: bold; color: #141414; font-size: 9px; }
-              </style>
-            </head>
-            <body>
-              <h1>Jadwal ${scheduleType === 'pelajaran' ? 'Pelajaran' : 'Ujian'} - Tahun Ajaran ${activeYear}</h1>
-              <table>
-                ${tableHeader}
-                ${tableBody}
-              </table>
-            </body>
+            <head><title>Cetak Jadwal</title><style>body { font-family: sans-serif; font-size: 8px; } @page { size: A4 landscape; margin: 15mm; } table { width: 100%; border-collapse: collapse; } th, td { border: 1px solid #ccc; padding: 4px; text-align: left; vertical-align: top; } th { background-color: #f0f0f0; font-weight: bold; }</style></head>
+            <body><h1>Jadwal ${scheduleType === 'pelajaran' ? 'Pelajaran' : 'Ujian'} - TA ${activeYear}</h1><table>${tableHeader}<tbody>${bodyRows.join('')}</tbody></table></body>
           </html>
-        `;
-
-        printWindow.document.write(content);
+        `);
         printWindow.document.close();
-        printWindow.onload = () => {
-          printWindow.focus();
-          printWindow.print();
-        };
+        printWindow.onload = () => { printWindow.focus(); printWindow.print(); };
     };
 
     const initialEntryData = editContext ? getCellData(editContext.classLevel, editContext.dayKey, editContext.periodIndex).entry || {} : {};
@@ -421,7 +366,7 @@ export default function SchedulePage() {
                 <CardHeader>
                     <CardTitle>Jadwal</CardTitle>
                     <CardDescription>
-                        Lihat dan kelola jadwal pelajaran atau ujian untuk semua kelas. Klik pada sel untuk mengedit.
+                        Kelola jadwal pelajaran/ujian. Jadwal akan tetap ada meskipun tahun ajaran berganti sampai Admin mengubahnya.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -463,6 +408,17 @@ export default function SchedulePage() {
                             </Button>
                         </div>
                     </div>
+
+                    {displayYear !== activeYear && !isLoading && (
+                        <div className="mb-4 p-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-800 flex items-center gap-3">
+                            <Info className="h-5 w-5 shrink-0" />
+                            <div className="text-xs">
+                                <p className="font-bold">Menampilkan Jadwal Warisan (Tahun {displayYear})</p>
+                                <p>Jadwal untuk tahun {activeYear} belum ada. Anda dapat mengedit salah satu sel untuk menyalin jadwal ini ke tahun ajaran baru.</p>
+                            </div>
+                        </div>
+                    )}
+
                     {isLoading ? (
                         <div className="flex h-64 items-center justify-center">
                             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -482,14 +438,14 @@ export default function SchedulePage() {
                                         periods.map((period, periodIndex) => (
                                             <TableRow key={`${day.key}-${periodIndex}`}>
                                                 {periodIndex === 0 && (
-                                                    <TableCell rowSpan={periods.length} className="font-semibold align-middle text-center border border-border">
+                                                    <TableCell rowSpan={periods.length} className="font-semibold align-middle text-center border border-border bg-muted/5">
                                                         {day.name}
                                                     </TableCell>
                                                 )}
                                                 <TableCell className="font-medium align-middle text-center border border-border">
-                                                    <div>{period.startTime}</div>
-                                                    <div>-</div>
-                                                    <div>{period.endTime}</div>
+                                                    <div className="text-[10px]">{period.startTime}</div>
+                                                    <div className="text-[9px] opacity-30">-</div>
+                                                    <div className="text-[10px]">{period.endTime}</div>
                                                 </TableCell>
                                                 {classLevels.map(classLevel => {
                                                     const { subject, teacher } = getCellData(classLevel, day.key, periodIndex);
@@ -500,14 +456,16 @@ export default function SchedulePage() {
                                                         >
                                                             <button 
                                                                 onClick={() => handleCellClick(classLevel, day.key, periodIndex)}
-                                                                className="w-full h-full text-left p-2 hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring rounded-sm"
-                                                                aria-label={`Edit jadwal kelas ${classLevel} hari ${day.name} jam ${periodIndex + 1}`}
+                                                                className={cn(
+                                                                    "w-full h-full text-left p-2 hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring rounded-sm transition-colors",
+                                                                    displayYear !== activeYear && "bg-blue-50/20"
+                                                                )}
                                                             >
                                                                 <div className="min-h-[40px]">
                                                                     {subject ? (
                                                                         <div>
-                                                                            <p className="font-semibold text-primary text-xs whitespace-nowrap">{subject.subjectName}</p>
-                                                                            <p className="text-xs text-muted-foreground whitespace-nowrap">{teacher?.name || '...'}</p>
+                                                                            <p className="font-semibold text-primary text-[10px] leading-tight mb-0.5">{subject.subjectName}</p>
+                                                                            <p className="text-[9px] text-muted-foreground truncate">{teacher?.name || '...'}</p>
                                                                         </div>
                                                                     ) : (
                                                                         <div className="h-10"></div>

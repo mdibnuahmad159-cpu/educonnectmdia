@@ -89,17 +89,16 @@ export default function ParentDashboardPage() {
   }, [firestore, nis, todayStr]);
   const { data: attendanceData, loading: isAttendanceLoading } = useCollection<StudentAttendance>(attendanceQuery);
 
-  // Fetch Schedule
+  // Fetch Schedule (Inherited logic: fetch all and pick latest if active year is empty)
   const scheduleQuery = useMemoFirebase(() => {
-    if (!firestore || student?.kelas === undefined || !activeYear) return null;
+    if (!firestore || student?.kelas === undefined) return null;
     return query(
         collection(firestore, "schedules"),
         where("classLevel", "==", student.kelas),
-        where("academicYear", "==", activeYear),
         where("type", "==", "pelajaran")
     );
-  }, [firestore, student?.kelas, activeYear]);
-  const { data: scheduleData, loading: isScheduleLoading } = useCollection<Schedule>(scheduleQuery);
+  }, [firestore, student?.kelas]);
+  const { data: allSchedules, loading: isScheduleLoading } = useCollection<Schedule>(scheduleQuery);
 
   // Fetch Data for Schedule Mapping
   const curriculumQuery = useMemoFirebase(() => firestore ? collection(firestore, "curriculum") : null, [firestore]);
@@ -118,18 +117,26 @@ export default function ParentDashboardPage() {
   const todayAttendance = attendanceData?.[0];
   
   const todayScheduleEntries = useMemo(() => {
-    if (!scheduleData?.[0] || !curriculum || !teachers) return [];
+    if (!allSchedules || !curriculum || !teachers) return [];
+    
+    // Pick the best schedule: active year first, then latest year
+    const activeYearSchedule = allSchedules.find(s => s.academicYear === activeYear);
+    const fallbackSchedule = [...allSchedules].sort((a,b) => b.academicYear.localeCompare(a.academicYear))[0];
+    const scheduleToUse = activeYearSchedule || fallbackSchedule;
+    
+    if (!scheduleToUse) return [];
+
     const dayIndex = new Date().getDay();
     const dayKey = dayMapping[dayIndex];
     if (!dayKey) return [];
 
-    const entries = scheduleData[0][dayKey] || [];
+    const entries = scheduleToUse[dayKey] || [];
     return entries.map(entry => {
         const subject = curriculum.find(c => c.id === entry.subjectId);
         const teacher = teachers.find(t => t.id === entry.teacherId);
         return { ...entry, subjectName: subject?.subjectName, teacherName: teacher?.name };
     }).filter(e => e.subjectName);
-  }, [scheduleData, curriculum, teachers]);
+  }, [allSchedules, curriculum, teachers, activeYear]);
 
   const filteredAnnouncements = useMemo(() => {
     if (!announcements) return [];
@@ -229,12 +236,12 @@ export default function ParentDashboardPage() {
                 <div className={cn(
                     "flex items-center justify-between p-3 rounded-lg border",
                     todayAttendance?.status === 'Hadir' ? "bg-green-50/50 border-green-100" : 
-                    todayAttendance?.status ? "bg-orange-50/50 border-orange-100" : "bg-muted/30 border-muted/50"
+                    todayAttendance?.status && todayAttendance?.status !== 'Belum Diabsen' ? "bg-orange-50/50 border-orange-100" : "bg-muted/30 border-muted/50"
                 )}>
                     <div className="flex items-center gap-3">
                         {todayAttendance?.status === 'Hadir' ? (
                             <CheckCircle2 className="h-5 w-5 text-green-600" />
-                        ) : todayAttendance?.status ? (
+                        ) : todayAttendance?.status && todayAttendance?.status !== 'Belum Diabsen' ? (
                             <Info className="h-5 w-5 text-orange-600" />
                         ) : (
                             <Clock className="h-5 w-5 text-muted-foreground/50" />
