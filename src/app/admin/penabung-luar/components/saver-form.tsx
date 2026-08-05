@@ -21,13 +21,18 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { ExternalSaver } from "@/types";
 
 const formSchema = z.object({
+  nip: z.string().min(1, "NIP harus diisi"),
   name: z.string().min(1, "Nama harus diisi"),
+  password: z.string().optional().refine(val => !val || val.length >= 6, {
+    message: "Password minimal 6 karakter jika diisi.",
+  }),
   phoneNumber: z.string().optional(),
   address: z.string().optional(),
   notes: z.string().optional(),
@@ -43,7 +48,9 @@ type SaverFormProps = {
 };
 
 const defaultValues: SaverFormData = {
+    nip: "",
     name: "",
+    password: "",
     phoneNumber: "",
     address: "",
     notes: "",
@@ -58,7 +65,14 @@ export function SaverForm({ isOpen, setIsOpen, saver, onSave }: SaverFormProps) 
   useEffect(() => {
     if (isOpen) {
         if (saver) {
-          form.reset(saver);
+          form.reset({
+              ...saver,
+              password: "", // Security: don't reset password
+              nip: saver.nip || "",
+              phoneNumber: saver.phoneNumber || "",
+              address: saver.address || "",
+              notes: saver.notes || "",
+          });
         } else {
           form.reset(defaultValues);
         }
@@ -66,7 +80,9 @@ export function SaverForm({ isOpen, setIsOpen, saver, onSave }: SaverFormProps) 
   }, [saver, form, isOpen]);
   
   const onSubmit = (values: SaverFormData) => {
-    onSave(values);
+    const data = { ...values };
+    if (!data.password) delete data.password;
+    onSave(data);
     setIsOpen(false);
   };
 
@@ -76,12 +92,26 @@ export function SaverForm({ isOpen, setIsOpen, saver, onSave }: SaverFormProps) 
         <DialogHeader>
           <DialogTitle>{saver ? "Edit Penabung" : "Tambah Penabung"}</DialogTitle>
           <DialogDescription>
-            Isi detail data penabung luar (non-siswa/guru).
+            Isi detail data penabung luar (non-siswa/guru). NIP digunakan untuk login.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <div className="space-y-4 py-4">
+                <FormField
+                  control={form.control}
+                  name="nip"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>NIP (Nomor Induk Penabung)</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Contoh: PL001" />
+                      </FormControl>
+                      <FormDescription>Digunakan sebagai ID Login penabung.</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <FormField
                   control={form.control}
                   name="name"
@@ -91,6 +121,20 @@ export function SaverForm({ isOpen, setIsOpen, saver, onSave }: SaverFormProps) 
                       <FormControl>
                         <Input {...field} placeholder="Masukkan nama" />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password Login</FormLabel>
+                      <FormControl>
+                        <Input type="password" {...field} value={field.value ?? ""} placeholder="Kosongkan jika tidak diubah" />
+                      </FormControl>
+                      <FormDescription>Minimal 6 karakter.</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

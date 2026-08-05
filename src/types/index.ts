@@ -181,11 +181,13 @@ export type SPPPayment = {
 };
 
 export type ExternalSaver = {
-  id: string;
+  id: string; // Document ID (will use NIP)
+  nip: string;
   name: string;
   address?: string;
   phoneNumber?: string;
   notes?: string;
+  password?: string;
   createdAt?: string;
 };
 

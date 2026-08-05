@@ -641,14 +641,16 @@ export function deleteSPPPayment(db: Firestore, studentId: string, month: number
 }
 
 // External Saver Helpers
-export function addExternalSaver(db: Firestore, saver: Omit<ExternalSaver, 'id'>) {
-  const newRef = doc(collection(db, 'externalSavers'));
+export async function addExternalSaver(db: Firestore, saver: Omit<ExternalSaver, 'id'>) {
+  const nipString = String(saver.nip).trim();
+  const newRef = doc(db, 'externalSavers', nipString);
   const data = {
     ...saver,
-    id: newRef.id,
+    nip: nipString,
+    id: nipString,
     createdAt: new Date().toISOString()
   };
-  setDoc(newRef, data).catch(error => {
+  return setDoc(newRef, data).catch(error => {
     errorEmitter.emit('permission-error', new FirestorePermissionError({
       path: newRef.path,
       operation: 'create',
@@ -657,13 +659,37 @@ export function addExternalSaver(db: Firestore, saver: Omit<ExternalSaver, 'id'>
   });
 }
 
-export function updateExternalSaver(db: Firestore, id: string, saver: Partial<ExternalSaver>) {
-  const ref = doc(db, 'externalSavers', id);
-  setDoc(ref, saver, { merge: true }).catch(error => {
+export async function updateExternalSaver(db: Firestore, id: string, saverUpdate: Partial<ExternalSaver>) {
+  const oldRef = doc(db, 'externalSavers', id);
+  
+  if (saverUpdate.nip && saverUpdate.nip !== id) {
+      const newNip = String(saverUpdate.nip).trim();
+      const newRef = doc(db, 'externalSavers', newNip);
+      
+      const existingDoc = await getDoc(newRef);
+      if (existingDoc.exists()) throw new Error(`NIP ${newNip} sudah digunakan.`);
+
+      const oldDoc = await getDoc(oldRef);
+      if (!oldDoc.exists()) throw new Error("Data lama tidak ditemukan.");
+
+      const batch = writeBatch(db);
+      const finalData = { ...oldDoc.data(), ...saverUpdate, id: newNip, nip: newNip };
+      batch.set(newRef, finalData);
+      batch.delete(oldRef);
+
+      // Update transactions
+      const tQuery = query(collection(db, "savingsTransactions"), where("saverId", "==", id));
+      const tSnap = await getDocs(tQuery);
+      tSnap.forEach(tDoc => batch.update(tDoc.ref, { saverId: newNip }));
+
+      return batch.commit();
+  }
+
+  return setDoc(oldRef, saverUpdate, { merge: true }).catch(error => {
     errorEmitter.emit('permission-error', new FirestorePermissionError({
-      path: ref.path,
+      path: oldRef.path,
       operation: 'update',
-      requestResourceData: saver,
+      requestResourceData: saverUpdate,
     }));
   });
 }

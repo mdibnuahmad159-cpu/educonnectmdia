@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, Loader2, PlusCircle, Edit, Search, Phone } from "lucide-react";
+import { Trash2, Loader2, PlusCircle, Edit, Search, Phone, Fingerprint } from "lucide-react";
 import { addExternalSaver, updateExternalSaver, deleteExternalSaver } from "@/lib/firebase-helpers";
 import { SaverForm } from "./components/saver-form";
 
@@ -53,6 +53,7 @@ export default function ExternalSaversPage() {
         if (!savers) return [];
         return savers.filter(s => 
             s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (s.nip && s.nip.toLowerCase().includes(searchTerm.toLowerCase())) ||
             (s.phoneNumber && s.phoneNumber.includes(searchTerm))
         ).sort((a, b) => a.name.localeCompare(b.name));
     }, [savers, searchTerm]);
@@ -80,14 +81,18 @@ export default function ExternalSaversPage() {
         setSaverToDelete(null);
     };
 
-    const handleSave = (data: any) => {
+    const handleSave = async (data: any) => {
         if (!firestore) return;
-        if (selectedSaver) {
-            updateExternalSaver(firestore, selectedSaver.id, data);
-            toast({ title: "Data Diperbarui", description: "Informasi penabung berhasil diperbarui." });
-        } else {
-            addExternalSaver(firestore, data);
-            toast({ title: "Penabung Ditambahkan", description: "Penabung luar baru berhasil didaftarkan." });
+        try {
+            if (selectedSaver) {
+                await updateExternalSaver(firestore, selectedSaver.id, data);
+                toast({ title: "Data Diperbarui", description: "Informasi penabung berhasil diperbarui." });
+            } else {
+                await addExternalSaver(firestore, data);
+                toast({ title: "Penabung Ditambahkan", description: "Penabung luar baru berhasil didaftarkan." });
+            }
+        } catch (e: any) {
+            toast({ variant: "destructive", title: "Gagal Menyimpan", description: e.message });
         }
     };
 
@@ -96,7 +101,7 @@ export default function ExternalSaversPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-xl font-headline text-primary">Penabung Luar</h1>
-                    <p className="text-xs text-muted-foreground">Kelola data penabung dari luar (bukan siswa/guru).</p>
+                    <p className="text-xs text-muted-foreground">Kelola data penabung dari luar. NIP & Password digunakan untuk akses portal mandiri.</p>
                 </div>
                 <Button size="sm" className="gap-2" onClick={handleAdd}>
                     <PlusCircle className="h-4 w-4" />
@@ -109,7 +114,7 @@ export default function ExternalSaversPage() {
                     <div className="relative max-w-sm">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input 
-                            placeholder="Cari nama atau no. HP..." 
+                            placeholder="Cari nama, NIP atau no. HP..." 
                             className="pl-9 h-9 text-xs"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
@@ -122,9 +127,9 @@ export default function ExternalSaversPage() {
                             <TableRow className="bg-muted/30">
                                 <TableHead className="w-[50px] px-4 font-normal">No.</TableHead>
                                 <TableHead className="font-normal">Nama</TableHead>
+                                <TableHead className="font-normal">NIP (ID Login)</TableHead>
                                 <TableHead className="font-normal">Kontak</TableHead>
                                 <TableHead className="font-normal">Alamat</TableHead>
-                                <TableHead className="font-normal">Keterangan</TableHead>
                                 <TableHead className="text-right px-4 font-normal">Aksi</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -144,6 +149,12 @@ export default function ExternalSaversPage() {
                                     <TableCell className="px-4 text-[11px]">{index + 1}</TableCell>
                                     <TableCell className="text-[11px] font-medium">{item.name}</TableCell>
                                     <TableCell className="text-[11px]">
+                                        <div className="flex items-center gap-1.5">
+                                            <Fingerprint className="h-3 w-3 text-muted-foreground" />
+                                            <code className="bg-muted px-1 rounded text-[10px] font-bold">{item.nip || 'BELUM ADA'}</code>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="text-[11px]">
                                         {item.phoneNumber ? (
                                             <div className="flex items-center gap-1.5">
                                                 <Phone className="h-3 w-3 opacity-50" />
@@ -152,7 +163,6 @@ export default function ExternalSaversPage() {
                                         ) : '-'}
                                     </TableCell>
                                     <TableCell className="text-[11px] truncate max-w-[150px]">{item.address || '-'}</TableCell>
-                                    <TableCell className="text-[11px] italic text-muted-foreground">{item.notes || '-'}</TableCell>
                                     <TableCell className="text-right px-4">
                                         <div className="flex justify-end gap-1">
                                             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(item)}>

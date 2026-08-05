@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { ShieldCheck, UserCircle2, Loader2, GraduationCap } from "lucide-react";
+import { ShieldCheck, UserCircle2, Loader2, GraduationCap, WalletCards } from "lucide-react";
 
 const adminSchema = z.object({
   email: z.string().email("Email tidak valid"),
@@ -46,6 +46,11 @@ const teacherSchema = z.object({
   password: z.string().min(1, "Password wajib diisi"),
 });
 
+const externalSchema = z.object({
+  nip: z.string().min(1, "NIP wajib diisi"),
+  password: z.string().min(1, "Password wajib diisi"),
+});
+
 export function LoginForm() {
   const router = useRouter();
   const { toast } = useToast();
@@ -55,6 +60,7 @@ export function LoginForm() {
   const [isAdminLoading, setIsAdminLoading] = useState(false);
   const [isParentLoading, setIsParentLoading] = useState(false);
   const [isTeacherLoading, setIsTeacherLoading] = useState(false);
+  const [isExternalLoading, setIsExternalLoading] = useState(false);
 
   const adminForm = useForm<z.infer<typeof adminSchema>>({
     resolver: zodResolver(adminSchema),
@@ -69,6 +75,11 @@ export function LoginForm() {
   const teacherForm = useForm<z.infer<typeof teacherSchema>>({
     resolver: zodResolver(teacherSchema),
     defaultValues: { nig: "", password: "" },
+  });
+
+  const externalForm = useForm<z.infer<typeof externalSchema>>({
+    resolver: zodResolver(externalSchema),
+    defaultValues: { nip: "", password: "" },
   });
 
   const handleAdminSubmit = async (values: z.infer<typeof adminSchema>) => {
@@ -227,14 +238,50 @@ export function LoginForm() {
     }
   };
 
+  const handleExternalSubmit = async (values: z.infer<typeof externalSchema>) => {
+    if (!auth || !firestore) return;
+    setIsExternalLoading(true);
+    try {
+      if (auth.currentUser) await signOut(auth);
+
+      const rawNip = String(values.nip).trim();
+      await signInAnonymously(auth);
+
+      const saverRef = doc(firestore, "externalSavers", rawNip);
+      const saverSnap = await getDoc(saverRef);
+
+      if (!saverSnap.exists()) {
+        await signOut(auth);
+        toast({ variant: "destructive", title: "Login Gagal", description: "Data Penabung dengan NIP tersebut tidak ditemukan." });
+        return;
+      }
+
+      const saverData = saverSnap.data();
+      if (String(saverData.password) === String(values.password)) {
+        sessionStorage.setItem('externalNip', saverSnap.id);
+        toast({ title: "Login Berhasil", description: `Selamat datang, ${saverData.name}.` });
+        router.push("/external/dashboard");
+      } else {
+        await signOut(auth);
+        toast({ variant: "destructive", title: "Login Gagal", description: "Password yang Anda masukkan salah." });
+      }
+    } catch (error: any) {
+      if (auth.currentUser?.isAnonymous) await signOut(auth);
+      console.error("External login error:", error);
+      toast({ variant: "destructive", title: "Terjadi Kesalahan", description: "Gagal melakukan verifikasi." });
+    } finally {
+      setIsExternalLoading(false);
+    }
+  };
+
   return (
     <div className="grid gap-4 w-full">
       {/* Portal Guru */}
       <Dialog>
         <DialogTrigger asChild>
-          <Button variant="outline" className="h-20 flex flex-col items-center justify-center gap-2 border-primary/20 hover:border-primary/50 hover:bg-primary/5 group transition-all shadow-sm">
-            <GraduationCap className="h-6 w-6 text-primary/60 group-hover:text-primary transition-colors" />
-            <span className="text-xs font-bold uppercase tracking-widest">Portal Guru</span>
+          <Button variant="outline" className="h-16 flex flex-col items-center justify-center gap-1 border-primary/20 hover:border-primary/50 hover:bg-primary/5 group transition-all shadow-sm">
+            <GraduationCap className="h-5 w-5 text-primary/60 group-hover:text-primary transition-colors" />
+            <span className="text-[10px] font-bold uppercase tracking-widest">Portal Guru</span>
           </Button>
         </DialogTrigger>
         <DialogContent className="sm:max-w-[400px]">
@@ -286,9 +333,9 @@ export function LoginForm() {
       {/* Portal Wali Murid */}
       <Dialog>
         <DialogTrigger asChild>
-          <Button variant="outline" className="h-20 flex flex-col items-center justify-center gap-2 border-primary/20 hover:border-primary/50 hover:bg-primary/5 group transition-all shadow-sm">
-            <UserCircle2 className="h-6 w-6 text-primary/60 group-hover:text-primary transition-colors" />
-            <span className="text-xs font-bold uppercase tracking-widest">Portal Wali Murid</span>
+          <Button variant="outline" className="h-16 flex flex-col items-center justify-center gap-1 border-primary/20 hover:border-primary/50 hover:bg-primary/5 group transition-all shadow-sm">
+            <UserCircle2 className="h-5 w-5 text-primary/60 group-hover:text-primary transition-colors" />
+            <span className="text-[10px] font-bold uppercase tracking-widest">Portal Wali Murid</span>
           </Button>
         </DialogTrigger>
         <DialogContent className="sm:max-w-[400px]">
@@ -331,6 +378,60 @@ export function LoginForm() {
               />
               <Button type="submit" className="w-full h-10 font-bold" disabled={isParentLoading}>
                 {isParentLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "MASUK KE DASHBOARD"}
+              </Button>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Portal Penabung Umum */}
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button variant="outline" className="h-16 flex flex-col items-center justify-center gap-1 border-primary/20 hover:border-primary/50 hover:bg-primary/5 group transition-all shadow-sm">
+            <WalletCards className="h-5 w-5 text-primary/60 group-hover:text-primary transition-colors" />
+            <span className="text-[10px] font-bold uppercase tracking-widest">Portal Penabung Umum</span>
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <WalletCards className="h-5 w-5 text-primary" />
+              Portal Penabung Umum
+            </DialogTitle>
+            <DialogDescription>
+              Gunakan NIP (Nomor Induk Penabung) dan password Anda.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...externalForm}>
+            <form onSubmit={externalForm.handleSubmit(handleExternalSubmit)} className="space-y-4 pt-4">
+              <FormField
+                control={externalForm.control}
+                name="nip"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>NIP (Nomor Induk Penabung)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Contoh: PL001" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={externalForm.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="••••••••" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" className="w-full h-10 font-bold" disabled={isExternalLoading}>
+                {isExternalLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "MASUK KE TABUNGAN"}
               </Button>
             </form>
           </Form>

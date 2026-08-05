@@ -16,7 +16,9 @@
       "description": "Represents a non-student/non-teacher saver.",
       "properties": {
         "id": { "type": "string" },
+        "nip": { "type": "string" },
         "name": { "type": "string" },
+        "password": { "type": "string" },
         "phoneNumber": { "type": "string" },
         "address": { "type": "string" },
         "notes": { "type": "string" },
@@ -46,6 +48,8 @@
         "id": { "type": "string" },
         "email": { "type": "string" },
         "name": { "type": "string" },
+        "nig": { "type": "string" },
+        "password": { "type": "string" },
         "jabatan": { "type": "string" },
         "noWa": { "type": "string" },
         "nik": { "type": "string" },
