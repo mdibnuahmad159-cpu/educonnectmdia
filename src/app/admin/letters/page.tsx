@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo } from "react";
@@ -155,6 +154,7 @@ export default function LettersPage() {
     }, [students, formData.studentId]);
 
     const getRomanClass = (num: number) => {
+        if (num === 0) return "Sifir";
         const textNames = ["-", "Satu", "Dua", "Tiga", "Empat", "Lima", "Enam"];
         return `${num} (${textNames[num] || String(num)})`;
     };
@@ -711,7 +711,7 @@ export default function LettersPage() {
                                         {/* NB Footer for Pemberitahuan */}
                                         {formData.type === 'pemberitahuan' && formData.footerNote && (
                                             <div className="absolute bottom-0 left-0 right-0 pt-2 border-t border-dashed border-black">
-                                                <p className="italic text-[11pt]"><strong>Nb:</strong> {formData.footerNote}</p>
+                                                <p className="italic text-[11pt]"><strong>Nb:</strong> ${formData.footerNote}</p>
                                             </div>
                                         )}
                                     </div>

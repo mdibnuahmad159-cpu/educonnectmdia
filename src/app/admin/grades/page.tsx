@@ -95,6 +95,7 @@ function getPredikat(score: number): string {
 }
 
 function getRoman(num: number): string {
+    if (num === 0) return "Sifir";
     const romans = ["-", "I (Satu)", "II (Dua)", "III (Tiga)", "IV (Empat)", "V (Lima)", "VI (Enam)"];
     return romans[num] || String(num);
 }
@@ -105,6 +106,7 @@ function getRankText(rank: number): string {
 }
 
 function getClassFullText(num: number): string {
+    if (num === 0) return "Sifir";
     const texts = ["-", "I (satu)", "II (dua)", "III (tiga)", "IV (empat)", "V (lima)", "VI (enam)"];
     return texts[num] || String(num);
 }
@@ -405,7 +407,7 @@ export default function GradesPage() {
         const doc = new jsPDF({ orientation: 'landscape' });
         
         doc.setFontSize(14);
-        doc.text(`Legger Nilai Kelas ${selectedClass} - Semester ${selectedGradeType}`, 14, 15);
+        doc.text(`Legger Nilai Kelas ${selectedClass === '0' ? 'Sifir' : selectedClass} - Semester ${selectedGradeType}`, 14, 15);
         doc.setFontSize(10);
         doc.text(`Tahun Ajaran: ${activeYear}`, 14, 22);
 
@@ -450,7 +452,7 @@ export default function GradesPage() {
         printWindow.document.write(`
             <html>
                 <head>
-                    <title>Cetak Nilai Kelas ${selectedClass}</title>
+                    <title>Cetak Nilai Kelas ${selectedClass === '0' ? 'Sifir' : selectedClass}</title>
                     <style>
                         body { font-family: 'PT Sans', sans-serif; padding: 20px; }
                         h1 { text-align: center; font-size: 18px; margin-bottom: 5px; }
@@ -462,7 +464,7 @@ export default function GradesPage() {
                     </style>
                 </head>
                 <body>
-                    <h1>Legger Nilai Kelas ${selectedClass}</h1>
+                    <h1>Legger Nilai Kelas ${selectedClass === '0' ? 'Sifir' : selectedClass}</h1>
                     <p>Semester ${selectedGradeType} | Tahun Ajaran ${activeYear}</p>
                     <table>
                         <thead>
@@ -1055,7 +1057,7 @@ export default function GradesPage() {
         printWindow.document.write(`
             <html>
                 <head>
-                    <title>Cetak Rapor Massal - Kelas ${selectedClass}</title>
+                    <title>Cetak Rapor Massal - Kelas ${selectedClass === '0' ? 'Sifir' : selectedClass}</title>
                     <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&display=swap" rel="stylesheet">
                     <style>
                         @page { size: portrait; margin: 10mm; }
@@ -1172,7 +1174,7 @@ export default function GradesPage() {
                     rowsHtml += `
                         <tr>
                             <td style="text-align: center;">${globalNo++}</td>
-                            <td style="text-align: center;">Kelas ${res.classLevel}</td>
+                            <td style="text-align: center;">${res.classLevel === 0 ? 'Sifir' : 'Kelas ' + res.classLevel}</td>
                             <td style="font-weight: bold;">${s.name}</td>
                             <td style="text-align: center; font-weight: bold;">${s.rank}</td>
                             <td>${s.namaAyah || '-'}</td>
@@ -1380,7 +1382,7 @@ export default function GradesPage() {
                                 </SelectTrigger>
                                 <SelectContent>
                                     {[...Array(7).keys()].map(i => (
-                                        <SelectItem key={i} value={String(i)}>Kelas {i}</SelectItem>
+                                        <SelectItem key={i} value={String(i)}>{i === 0 ? 'Sifir' : 'Kelas ' + i}</SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
@@ -1705,7 +1707,7 @@ export default function GradesPage() {
                             <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-12 text-center">
                                 <BookOpen className="h-12 w-12 mb-4 opacity-5" />
                                 <p className="text-sm opacity-40">Kurikulum Belum Ada</p>
-                                <p className="text-[10px] opacity-30 mt-1 font-normal">Harap atur kurikulum untuk Kelas {selectedClass} di menu Kurikulum.</p>
+                                <p className="text-[10px] opacity-30 mt-1 font-normal">Harap atur kurikulum untuk Kelas {selectedClass === '0' ? 'Sifir' : selectedClass} di menu Kurikulum.</p>
                             </div>
                         )}
                     </ScrollArea>
