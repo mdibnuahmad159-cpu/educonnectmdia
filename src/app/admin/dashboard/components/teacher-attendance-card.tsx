@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { format, parseISO } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
@@ -29,7 +29,7 @@ import { Loader2, Calendar, Camera, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { saveTeacherAttendanceBatch } from '@/lib/firebase-helpers';
 import { useAcademicYear } from '@/context/academic-year-provider';
-import { Html5QrcodeScanner } from 'html5-qrcode';
+import { Html5Qrcode } from 'html5-qrcode';
 
 type AttendanceStatus = 'Hadir' | 'Sakit' | 'Izin' | 'Alpa';
 const STATUS_OPTIONS: AttendanceStatus[] = ['Hadir', 'Sakit', 'Izin', 'Alpa'];
@@ -43,7 +43,7 @@ const dayMapping: { [key: number]: keyof Omit<Schedule, 'id' | 'classLevel' | 'a
     6: 'saturday',
 };
 
-// Separate component to handle the scanner lifecycle safely
+// Separate component to handle the scanner lifecycle safely with better camera handling
 function BarcodeScanner({ 
   onResult, 
   onClose 
@@ -51,30 +51,61 @@ function BarcodeScanner({
   onResult: (text: string) => void, 
   onClose: () => void 
 }) {
-  useEffect(() => {
-    const scanner = new Html5QrcodeScanner("qr-reader", { 
-      fps: 10, 
-      qrbox: { width: 250, height: 250 },
-      aspectRatio: 1.0
-    }, false);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
 
-    scanner.render((decodedText) => {
-      onResult(decodedText);
-    }, (error) => {
-      // Quiet errors are expected during scan frames
-    });
+  useEffect(() => {
+    // Slight delay to ensure the DOM element is fully rendered before scanner attaches
+    const timer = setTimeout(() => {
+      const html5QrCode = new Html5Qrcode("qr-reader");
+      scannerRef.current = html5QrCode;
+
+      const config = { 
+        fps: 10, 
+        qrbox: { width: 250, height: 250 },
+        aspectRatio: 1.0 
+      };
+
+      // Try environment camera (back camera) first
+      html5QrCode.start(
+        { facingMode: "environment" }, 
+        config, 
+        (decodedText) => {
+          onResult(decodedText);
+        },
+        undefined // ignore errors as they happen constantly during scanning
+      ).catch(err => {
+        console.error("Failed to start camera", err);
+        // Fallback to any available camera if environment fails
+        html5QrCode.start(
+            { facingMode: "user" },
+            config,
+            (decodedText) => onResult(decodedText),
+            undefined
+        ).catch(e => console.error("Ultimate camera failure", e));
+      });
+    }, 300);
 
     return () => {
-      scanner.clear().catch(e => console.warn("Scanner cleanup warning", e));
+      clearTimeout(timer);
+      if (scannerRef.current && scannerRef.current.isScanning) {
+        scannerRef.current.stop().then(() => {
+            scannerRef.current?.clear();
+        }).catch(err => console.warn("Scanner cleanup failed", err));
+      }
     };
   }, [onResult]);
 
   return (
     <div className="space-y-4">
-      <div id="qr-reader" className="w-full overflow-hidden rounded-lg border bg-black"></div>
-      <Button variant="ghost" onClick={onClose} className="w-full">
+      <div className="relative aspect-square w-full overflow-hidden rounded-xl border-2 border-primary/20 bg-muted/20">
+        <div id="qr-reader" className="h-full w-full"></div>
+        <div className="absolute inset-0 pointer-events-none border-[40px] border-black/40 flex items-center justify-center">
+            <div className="w-full h-full border-2 border-primary shadow-[0_0_0_100vw_rgba(0,0,0,0.3)]"></div>
+        </div>
+      </div>
+      <Button variant="outline" onClick={onClose} className="w-full h-10 font-bold border-destructive/20 text-destructive hover:bg-destructive/5">
           <X className="h-4 w-4 mr-2" />
-          Tutup Kamera
+          Batalkan Scan
       </Button>
     </div>
   );
@@ -226,7 +257,7 @@ export function TeacherAttendanceCard() {
                             onClick={() => setIsScannerOpen(true)}
                         >
                             <Camera className="h-4 w-4" />
-                            Scan Barcode
+                            Scan QR Absen
                         </Button>
                         <Calendar className="h-4 w-4 text-muted-foreground hidden sm:block" />
                         <Input 
@@ -287,14 +318,14 @@ export function TeacherAttendanceCard() {
             )}
 
             <Dialog open={isScannerOpen} onOpenChange={setIsScannerOpen}>
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="sm:max-w-md p-6">
                     <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                            <Camera className="h-5 w-5 text-primary" />
-                            Scan Barcode Guru
+                        <DialogTitle className="flex items-center gap-2 text-primary">
+                            <Camera className="h-5 w-5" />
+                            Pindai QR Code Guru
                         </DialogTitle>
-                        <DialogDescription>
-                            Arahkan kamera ke QR Code/Barcode yang ada pada portal guru.
+                        <DialogDescription className="text-xs">
+                            Arahkan kamera ke layar guru atau cetakan kartu untuk mendeteksi NIG secara otomatis.
                         </DialogDescription>
                     </DialogHeader>
                     {isScannerOpen && (
