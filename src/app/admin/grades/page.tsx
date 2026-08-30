@@ -531,7 +531,7 @@ export default function GradesPage() {
 
                 <div class="student-info">
                     <div class="info-item"><div class="info-label">Nama Santri</div><div class="info-val"><span>:</span> ${student.name}</div></div>
-                    <div class="info-item"><div class="info-label">NIS</div><div class="info-val"><span>:</span> ${student.name}</div></div>
+                    <div class="info-item"><div class="info-label">NIS</div><div class="info-val"><span>:</span> ${student.nis}</div></div>
                     <div class="info-item"><div class="info-label">Tahun</div><div class="info-val"><span>:</span> ${activeYear}</div></div>
                     <div class="info-item"><div class="info-label">Kelas</div><div class="info-val"><span>:</span> ${getRoman(Number(selectedClass))}</div></div>
                     <div class="info-item"><div class="info-label">Semester</div><div class="info-val"><span>:</span> ${selectedGradeType}</div></div>
@@ -638,12 +638,12 @@ export default function GradesPage() {
                         
                         .student-info { display: flex; flex-wrap: wrap; margin-bottom: 10px; padding: 0 5px; }
                         .info-item { display: flex; margin-bottom: 4px; width: 50%; }
-                        .info-label { width: 90px; }
-                        .info-val { flex: 1; display: flex; }
+                        .info-label { width: 90px; font-size: 11.5px; }
+                        .info-val { flex: 1; display: flex; font-size: 11.5px; }
                         .info-val span { margin-right: 8px; }
 
                         table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
-                        th, td { border: 1px solid #000; padding: 4px 6px; text-align: left; }
+                        th, td { border: 1px solid #000; padding: 4px 6px; text-align: left; font-size: 11.5px; }
                         th { background-color: #f2f2f2; text-align: center; font-weight: bold; }
                         
                         .summary-table td { font-weight: bold; }
@@ -651,12 +651,12 @@ export default function GradesPage() {
                         .personality-absent-container { display: flex; gap: 15px; margin-bottom: 8px; }
                         .p-a-table { flex: 1; }
                         .p-a-table th { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
-                        .p-a-table td { text-align: center; }
+                        .p-a-table td { text-align: center; font-size: 11.5px; }
 
-                        .decision-box { border: 1px solid #000; padding: 8px; margin-bottom: 15px; }
+                        .decision-box { border: 1px solid #000; padding: 8px; margin-bottom: 15px; font-size: 11.5px; }
                         .decision-box strong { font-weight: bold; }
 
-                        .footer { margin-top: 5px; }
+                        .footer { margin-top: 5px; font-size: 11.5px; }
                         .date-row { text-align: right; margin-bottom: 10px; padding-right: 40px; }
                         .sign-container { display: flex; justify-content: space-between; text-align: center; }
                         .sign-box { width: 30%; }
@@ -1073,12 +1073,12 @@ export default function GradesPage() {
                         
                         .student-info { display: flex; flex-wrap: wrap; margin-bottom: 10px; padding: 0 5px; }
                         .info-item { display: flex; margin-bottom: 4px; width: 50%; }
-                        .info-label { width: 90px; }
-                        .info-val { flex: 1; display: flex; }
+                        .info-label { width: 90px; font-size: 11.5px; }
+                        .info-val { flex: 1; display: flex; font-size: 11.5px; }
                         .info-val span { margin-right: 8px; }
 
                         table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
-                        th, td { border: 1px solid #000; padding: 4px 6px; text-align: left; }
+                        th, td { border: 1px solid #000; padding: 4px 6px; text-align: left; font-size: 11.5px; }
                         th { background-color: #f2f2f2; text-align: center; font-weight: bold; }
                         
                         .summary-table td { font-weight: bold; }
@@ -1086,12 +1086,12 @@ export default function GradesPage() {
                         .personality-absent-container { display: flex; gap: 15px; margin-bottom: 8px; }
                         .p-a-table { flex: 1; }
                         .p-a-table th { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
-                        .p-a-table td { text-align: center; }
+                        .p-a-table td { text-align: center; font-size: 11.5px; }
 
-                        .decision-box { border: 1px solid #000; padding: 8px; margin-bottom: 15px; }
+                        .decision-box { border: 1px solid #000; padding: 8px; margin-bottom: 15px; font-size: 11.5px; }
                         .decision-box strong { font-weight: bold; }
 
-                        .footer { margin-top: 5px; }
+                        .footer { margin-top: 5px; font-size: 11.5px; }
                         .date-row { text-align: right; margin-bottom: 10px; padding-right: 40px; }
                         .sign-container { display: flex; justify-content: space-between; text-align: center; }
                         .sign-box { width: 30%; }
