@@ -70,11 +70,6 @@ type GradeType = 'Ganjil' | 'Genap';
 
 const STATUS_OPTIONS: ReportSummaryStatus[] = ['Lanjut Semester', 'Naik Kelas', 'Turun Kelas'];
 
-const MONTH_NAMES = [
-    "", "Januari", "Februari", "Maret", "April", "Mei", "Juni", 
-    "Juli", "Agustus", "September", "Oktober", "November", "Desember"
-];
-
 // Helper for Terbilang (kata-kata angka)
 function terbilang(n: number): string {
     const words = ["", "Satu", "Dua", "Tiga", "Empat", "Lima", "Enam", "Tujuh", "Delapan", "Sembilan", "Sepuluh", "Sebelas"];
@@ -516,6 +511,7 @@ export default function GradesPage() {
 
         const totalWord = terbilang(student.total);
         const avgWord = terbilang(Math.round(student.average));
+        const cleanedNis = (student.nis || "").replace('MDIA', '');
 
         return `
             <div class="report-page">
@@ -531,7 +527,7 @@ export default function GradesPage() {
 
                 <div class="student-info">
                     <div class="info-item"><div class="info-label">Nama Santri</div><div class="info-val"><span>:</span> ${student.name}</div></div>
-                    <div class="info-item"><div class="info-label">NIS</div><div class="info-val"><span>:</span> ${student.nis}</div></div>
+                    <div class="info-item"><div class="info-label">NIS</div><div class="info-val"><span>:</span> ${cleanedNis}</div></div>
                     <div class="info-item"><div class="info-label">Tahun</div><div class="info-val"><span>:</span> ${activeYear}</div></div>
                     <div class="info-item"><div class="info-label">Kelas</div><div class="info-val"><span>:</span> ${getRoman(Number(selectedClass))}</div></div>
                     <div class="info-item"><div class="info-label">Semester</div><div class="info-val"><span>:</span> ${selectedGradeType}</div></div>
