@@ -43,6 +43,43 @@ const dayMapping: { [key: number]: keyof Omit<Schedule, 'id' | 'classLevel' | 'a
     6: 'saturday',
 };
 
+// Separate component to handle the scanner lifecycle safely
+function BarcodeScanner({ 
+  onResult, 
+  onClose 
+}: { 
+  onResult: (text: string) => void, 
+  onClose: () => void 
+}) {
+  useEffect(() => {
+    const scanner = new Html5QrcodeScanner("qr-reader", { 
+      fps: 10, 
+      qrbox: { width: 250, height: 250 },
+      aspectRatio: 1.0
+    }, false);
+
+    scanner.render((decodedText) => {
+      onResult(decodedText);
+    }, (error) => {
+      // Quiet errors are expected during scan frames
+    });
+
+    return () => {
+      scanner.clear().catch(e => console.warn("Scanner cleanup warning", e));
+    };
+  }, [onResult]);
+
+  return (
+    <div className="space-y-4">
+      <div id="qr-reader" className="w-full overflow-hidden rounded-lg border bg-black"></div>
+      <Button variant="ghost" onClick={onClose} className="w-full">
+          <X className="h-4 w-4 mr-2" />
+          Tutup Kamera
+      </Button>
+    </div>
+  );
+}
+
 export function TeacherAttendanceCard() {
     const firestore = useFirestore();
     const { toast } = useToast();
@@ -147,41 +184,22 @@ export function TeacherAttendanceCard() {
         }
     };
 
-    // QR SCANNER LOGIC
-    useEffect(() => {
-        if (isScannerOpen) {
-            const scanner = new Html5QrcodeScanner("qr-reader", { 
-                fps: 10, 
-                qrbox: { width: 250, height: 250 },
-                aspectRatio: 1.0
-            }, false);
-
-            scanner.render((decodedText) => {
-                // Find teacher with this NIG (decodedText is expected to be the NIG)
-                const foundTeacher = teachers?.find(t => t.nig === decodedText || t.id === decodedText);
-                if (foundTeacher) {
-                    const isScheduled = scheduledTeacherIds.has(foundTeacher.id);
-                    if (!isScheduled) {
-                        toast({ variant: "destructive", title: "Guru Tidak Terjadwal", description: `${foundTeacher.name} tidak memiliki jadwal hari ini.` });
-                    } else {
-                        handleStatusChange(foundTeacher.id, 'Hadir');
-                        toast({ title: "Absen Berhasil", description: `${foundTeacher.name} ditandai Hadir.` });
-                        // Close scanner after success to allow manual review/save
-                        scanner.clear();
-                        setIsScannerOpen(false);
-                    }
-                } else {
-                    toast({ variant: "destructive", title: "QR Tidak Dikenal", description: "Data guru tidak ditemukan di sistem." });
-                }
-            }, (error) => {
-                // Error is normal when no QR is in frame
-            });
-
-            return () => {
-                scanner.clear().catch(e => console.error("Scanner clear error", e));
-            };
+    const handleScannerResult = (decodedText: string) => {
+        // Find teacher with this NIG (decodedText is expected to be the NIG)
+        const foundTeacher = teachers?.find(t => t.nig === decodedText || t.id === decodedText);
+        if (foundTeacher) {
+            const isScheduled = scheduledTeacherIds.has(foundTeacher.id);
+            if (!isScheduled) {
+                toast({ variant: "destructive", title: "Guru Tidak Terjadwal", description: `${foundTeacher.name} tidak memiliki jadwal hari ini.` });
+            } else {
+                handleStatusChange(foundTeacher.id, 'Hadir');
+                toast({ title: "Absen Berhasil", description: `${foundTeacher.name} ditandai Hadir.` });
+                setIsScannerOpen(false);
+            }
+        } else {
+            toast({ variant: "destructive", title: "QR Tidak Dikenal", description: "Data guru tidak ditemukan di sistem." });
         }
-    }, [isScannerOpen, teachers, scheduledTeacherIds, toast]);
+    };
     
     const isLoading = loadingTeachers || loadingAttendance || loadingSchedules;
     const dateFormatted = useMemo(() => {
@@ -279,11 +297,12 @@ export function TeacherAttendanceCard() {
                             Arahkan kamera ke QR Code/Barcode yang ada pada portal guru.
                         </DialogDescription>
                     </DialogHeader>
-                    <div id="qr-reader" className="w-full overflow-hidden rounded-lg border bg-black"></div>
-                    <Button variant="ghost" onClick={() => setIsScannerOpen(false)} className="w-full mt-2">
-                        <X className="h-4 w-4 mr-2" />
-                        Tutup Kamera
-                    </Button>
+                    {isScannerOpen && (
+                      <BarcodeScanner 
+                        onResult={handleScannerResult} 
+                        onClose={() => setIsScannerOpen(false)} 
+                      />
+                    )}
                 </DialogContent>
             </Dialog>
         </Card>
