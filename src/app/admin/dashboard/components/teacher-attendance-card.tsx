@@ -17,23 +17,29 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, Calendar } from 'lucide-react';
+import { Loader2, Calendar, Camera, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { saveTeacherAttendanceBatch } from '@/lib/firebase-helpers';
 import { useAcademicYear } from '@/context/academic-year-provider';
+import { Html5QrcodeScanner } from 'html5-qrcode';
 
 type AttendanceStatus = 'Hadir' | 'Sakit' | 'Izin' | 'Alpa';
 const STATUS_OPTIONS: AttendanceStatus[] = ['Hadir', 'Sakit', 'Izin', 'Alpa'];
 
-// Helper to map JS Date day index to our schedule keys
 const dayMapping: { [key: number]: keyof Omit<Schedule, 'id' | 'classLevel' | 'academicYear' | 'type'> } = {
     0: 'sunday',
     1: 'monday',
     2: 'tuesday',
     3: 'wednesday',
     4: 'thursday',
-    // Friday (5) is intentionally omitted as it is not in the schedule schema
     6: 'saturday',
 };
 
@@ -43,6 +49,7 @@ export function TeacherAttendanceCard() {
     const { activeYear } = useAcademicYear();
 
     const [selectedDate, setSelectedDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
+    const [isScannerOpen, setIsScannerOpen] = useState(false);
 
     const teachersCollection = useMemoFirebase(() => firestore ? collection(firestore, 'teachers') : null, [firestore]);
     const { data: teachers, loading: loadingTeachers } = useCollection<Teacher>(teachersCollection);
@@ -127,7 +134,7 @@ export function TeacherAttendanceCard() {
             teacherId: teacher.id,
             teacherName: teacher.name,
             date: selectedDate,
-            status: attendance[teacher.id] || 'Alpa', // Default to Alpa if not set
+            status: attendance[teacher.id] || 'Alpa',
         }));
         
         try {
@@ -139,6 +146,42 @@ export function TeacherAttendanceCard() {
             setIsSaving(false);
         }
     };
+
+    // QR SCANNER LOGIC
+    useEffect(() => {
+        if (isScannerOpen) {
+            const scanner = new Html5QrcodeScanner("qr-reader", { 
+                fps: 10, 
+                qrbox: { width: 250, height: 250 },
+                aspectRatio: 1.0
+            }, false);
+
+            scanner.render((decodedText) => {
+                // Find teacher with this NIG (decodedText is expected to be the NIG)
+                const foundTeacher = teachers?.find(t => t.nig === decodedText || t.id === decodedText);
+                if (foundTeacher) {
+                    const isScheduled = scheduledTeacherIds.has(foundTeacher.id);
+                    if (!isScheduled) {
+                        toast({ variant: "destructive", title: "Guru Tidak Terjadwal", description: `${foundTeacher.name} tidak memiliki jadwal hari ini.` });
+                    } else {
+                        handleStatusChange(foundTeacher.id, 'Hadir');
+                        toast({ title: "Absen Berhasil", description: `${foundTeacher.name} ditandai Hadir.` });
+                        // Close scanner after success to allow manual review/save
+                        scanner.clear();
+                        setIsScannerOpen(false);
+                    }
+                } else {
+                    toast({ variant: "destructive", title: "QR Tidak Dikenal", description: "Data guru tidak ditemukan di sistem." });
+                }
+            }, (error) => {
+                // Error is normal when no QR is in frame
+            });
+
+            return () => {
+                scanner.clear().catch(e => console.error("Scanner clear error", e));
+            };
+        }
+    }, [isScannerOpen, teachers, scheduledTeacherIds, toast]);
     
     const isLoading = loadingTeachers || loadingAttendance || loadingSchedules;
     const dateFormatted = useMemo(() => {
@@ -158,6 +201,15 @@ export function TeacherAttendanceCard() {
                         <CardDescription>{dateFormatted}</CardDescription>
                     </div>
                     <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-8 gap-2 border-primary/30 text-primary"
+                            onClick={() => setIsScannerOpen(true)}
+                        >
+                            <Camera className="h-4 w-4" />
+                            Scan Barcode
+                        </Button>
                         <Calendar className="h-4 w-4 text-muted-foreground hidden sm:block" />
                         <Input 
                             type="date" 
@@ -215,6 +267,25 @@ export function TeacherAttendanceCard() {
                     </Button>
                 </CardFooter>
             )}
+
+            <Dialog open={isScannerOpen} onOpenChange={setIsScannerOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Camera className="h-5 w-5 text-primary" />
+                            Scan Barcode Guru
+                        </DialogTitle>
+                        <DialogDescription>
+                            Arahkan kamera ke QR Code/Barcode yang ada pada portal guru.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div id="qr-reader" className="w-full overflow-hidden rounded-lg border bg-black"></div>
+                    <Button variant="ghost" onClick={() => setIsScannerOpen(false)} className="w-full mt-2">
+                        <X className="h-4 w-4 mr-2" />
+                        Tutup Kamera
+                    </Button>
+                </DialogContent>
+            </Dialog>
         </Card>
     );
 }

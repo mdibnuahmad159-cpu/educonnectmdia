@@ -21,12 +21,22 @@ import {
     CheckCircle2,
     Info,
     UserCircle,
-    BookOpen
+    BookOpen,
+    QrCode,
+    X
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { format, parseISO } from "date-fns";
 import { id as dfnsId } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import QRCode from 'qrcode';
 
 const dayMapping: { [key: number]: keyof Omit<Schedule, 'id' | 'classLevel' | 'academicYear' | 'type'> } = {
     0: 'sunday',
@@ -42,9 +52,12 @@ export default function TeacherDashboardPage() {
   const firestore = useFirestore();
   const [nig, setNig] = useState<string | null>(null);
   const [todayStr, setTodayStr] = useState<string>("");
+  const [isQrOpen, setIsQrOpen] = useState(false);
+  const [qrDataUrl, setQrDataUrl] = useState<string>("");
 
   useEffect(() => {
-    setNig(sessionStorage.getItem('teacherNig'));
+    const storedNig = sessionStorage.getItem('teacherNig');
+    setNig(storedNig);
     setTodayStr(format(new Date(), 'yyyy-MM-dd'));
   }, []);
 
@@ -54,6 +67,17 @@ export default function TeacherDashboardPage() {
   }, [firestore, nig]);
 
   const { data: teacher, loading: isTeacherLoading, error: teacherError } = useDoc<Teacher>(teacherRef);
+
+  // Generate QR Code once teacher data is available
+  useEffect(() => {
+      if (teacher?.nig) {
+          QRCode.toDataURL(teacher.nig, {
+              width: 512,
+              margin: 2,
+              color: { dark: '#000000', light: '#ffffff' }
+          }).then(setQrDataUrl).catch(err => console.error(err));
+      }
+  }, [teacher]);
 
   // Today's Self Attendance (Teacher Attendance)
   const attendanceQuery = useMemoFirebase(() => {
@@ -66,7 +90,7 @@ export default function TeacherDashboardPage() {
   }, [firestore, nig, todayStr]);
   const { data: attendanceData, loading: isAttendanceLoading } = useCollection<TeacherAttendance>(attendanceQuery);
 
-  // Today's Teaching Schedule (Inherited logic: fetch all and pick latest if active year is empty)
+  // Today's Teaching Schedule
   const scheduleQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, "schedules"), where("type", "==", "pelajaran"));
@@ -92,7 +116,6 @@ export default function TeacherDashboardPage() {
     const dayKey = dayMapping[dayIndex];
     if (!dayKey) return [];
 
-    // Find all academic years available and pick latest
     const availableYears = Array.from(new Set(allSchedules.map(s => s.academicYear))).sort((a,b) => b.localeCompare(a));
     const latestYear = availableYears[0];
     
@@ -100,9 +123,7 @@ export default function TeacherDashboardPage() {
 
     const myEntries: any[] = [];
     allSchedules.forEach(schedule => {
-        // We filter for the latest year data ONLY here to provide a stable schedule
         if (schedule.academicYear !== latestYear) return;
-
         const entries = schedule[dayKey] || [];
         entries.forEach(entry => {
             if (entry.teacherId === nig) {
@@ -162,11 +183,23 @@ export default function TeacherDashboardPage() {
                     <AvatarFallback className="bg-white/10 text-xl">{teacher.name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                    <h2 className="text-lg font-bold truncate leading-tight">{teacher.name}</h2>
-                    <p className="text-xs opacity-90 font-medium">{teacher.jabatan || 'Guru Madrasah'}</p>
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <h2 className="text-lg font-bold truncate leading-tight">{teacher.name}</h2>
+                            <p className="text-xs opacity-90 font-medium">{teacher.jabatan || 'Guru Madrasah'}</p>
+                        </div>
+                        <Button 
+                            variant="secondary" 
+                            size="sm" 
+                            className="h-8 gap-2 bg-white text-primary hover:bg-white/90"
+                            onClick={() => setIsQrOpen(true)}
+                        >
+                            <QrCode className="h-4 w-4" />
+                            Absen
+                        </Button>
+                    </div>
                     <div className="flex items-center gap-2 mt-2">
                         <span className="text-[9px] font-bold bg-white/20 px-2 py-0.5 rounded uppercase tracking-tighter">NIG: {teacher.nig}</span>
-                        <span className="text-[9px] font-bold bg-white/20 px-2 py-0.5 rounded uppercase tracking-tighter">{teacher.email || 'Tanpa Email'}</span>
                     </div>
                 </div>
             </CardContent>
@@ -307,6 +340,36 @@ export default function TeacherDashboardPage() {
                 )}
             </CardContent>
         </Card>
+
+        {/* QR CODE DIALOG */}
+        <Dialog open={isQrOpen} onOpenChange={setIsQrOpen}>
+            <DialogContent className="sm:max-w-xs p-6">
+                <DialogHeader>
+                    <DialogTitle className="text-center font-headline text-primary">Absen Sekarang</DialogTitle>
+                    <DialogDescription className="text-center text-[10px]">
+                        Tunjukkan QR Code ini kepada Admin atau Kepala Madrasah untuk absen hari ini.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="flex flex-col items-center justify-center gap-4 py-4">
+                    <div className="p-4 bg-white rounded-2xl shadow-xl border-4 border-primary/10">
+                        {qrDataUrl ? (
+                            <img src={qrDataUrl} alt="My QR Code" className="w-48 h-48" />
+                        ) : (
+                            <div className="w-48 h-48 flex items-center justify-center">
+                                <Loader2 className="h-8 w-8 animate-spin text-primary/20" />
+                            </div>
+                        )}
+                    </div>
+                    <div className="text-center">
+                        <p className="text-sm font-bold text-primary uppercase tracking-wider">{teacher.name}</p>
+                        <p className="text-[10px] font-mono font-bold text-muted-foreground mt-1">NIG: {teacher.nig}</p>
+                    </div>
+                </div>
+                <Button variant="outline" onClick={() => setIsQrOpen(false)} className="w-full h-10 gap-2 border-primary/20">
+                    <X className="h-4 w-4" /> Tutup
+                </Button>
+            </DialogContent>
+        </Dialog>
     </div>
   );
 }
