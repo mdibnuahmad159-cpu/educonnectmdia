@@ -56,12 +56,12 @@ export function AcademicYearSelector() {
 
   return (
     <>
-        <DropdownMenu>
+        <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
             <Button 
                 variant="secondary" 
                 size="xs" 
-                className="rounded-full bg-secondary/80 hover:bg-secondary text-foreground font-bold px-3 h-7.5 border-none shadow-sm transition-all flex items-center gap-1.5 group"
+                className="rounded-full bg-secondary/80 hover:bg-secondary text-foreground font-bold px-3 h-[30px] border-none shadow-sm transition-all flex items-center gap-1.5 group"
             >
                 <Calendar className="h-3.5 w-3.5 opacity-50 group-hover:opacity-100 transition-opacity" />
                 <span className="text-[11px]">{activeYear}</span>
@@ -70,7 +70,7 @@ export function AcademicYearSelector() {
         </DropdownMenuTrigger>
         <DropdownMenuContent 
             align="start" 
-            className="w-44 rounded-[20px] p-1.5 shadow-2xl border-none bg-card animate-in fade-in zoom-in-95 duration-200"
+            className="w-44 rounded-[20px] p-1.5 shadow-2xl border-none bg-card z-[100] animate-in fade-in zoom-in-95 duration-200"
         >
             <div className="px-2.5 py-1.5 text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60">
                 Tahun Ajaran

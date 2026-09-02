@@ -1,58 +1,23 @@
-
 "use client";
 
-import { useState, useMemo } from "react";
-import Link from "next/link";
+import { useMemo } from "react";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection } from "firebase/firestore";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { 
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-import { 
   Users, 
   User, 
-  BookCopy,
-  Calendar,
-  Mail,
-  ClipboardCheck,
-  FileText,
-  School,
-  GraduationCap,
-  CreditCard,
-  PiggyBank,
-  History,
-  AlertTriangle,
-  ClipboardList,
-  Megaphone,
-  UserCheck,
-  Award,
-  UsersRound,
+  PiggyBank, 
+  AlertTriangle, 
   ReceiptText,
-  Wallet,
-  TrendingUp,
   Loader2
 } from "lucide-react";
 import type { Teacher, Student, SavingsTransaction, SPPPayment } from "@/types";
 import { TeacherAttendanceCard } from "./components/teacher-attendance-card";
 import { StudentAttendanceCard } from "./components/student-attendance-card";
 
-const NavLink = ({ href, icon: Icon, label }: { href: string; icon: React.ElementType; label: string }) => (
-    <Link 
-      href={href} 
-      className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors text-center"
-    >
-        <Icon className="h-4 w-4" />
-        <span className="text-xs font-medium">{label}</span>
-    </Link>
-);
-
 export default function DashboardPage() {
   const firestore = useFirestore();
-  const [activeTab, setActiveTab] = useState("akademik");
 
   const teachersCollection = useMemoFirebase(() => firestore ? collection(firestore, "teachers") : null, [firestore]);
   const studentsCollection = useMemoFirebase(() => firestore ? collection(firestore, "students") : null, [firestore]);
@@ -145,53 +110,10 @@ export default function DashboardPage() {
             </Card>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="akademik">Akademik</TabsTrigger>
-            <TabsTrigger value="siswa">Siswa</TabsTrigger>
-            <TabsTrigger value="keuangan">Keuangan</TabsTrigger>
-        </TabsList>
-        <TabsContent value="akademik">
-            <Card>
-                <CardContent className="grid grid-cols-3 sm:grid-cols-4 gap-2 p-3">
-                    <NavLink href="/admin/teachers" icon={Users} label="Data Guru" />
-                    <NavLink href="/admin/curriculum" icon={BookCopy} label="Kurikulum" />
-                    <NavLink href="/admin/schedule" icon={Calendar} label="Jadwal" />
-                    <NavLink href="/admin/letters" icon={Mail} label="Surat" />
-                    <NavLink href="/admin/grades" icon={ClipboardCheck} label="Nilai" />
-                    <NavLink href="/admin/reports" icon={FileText} label="Rapor" />
-                    <NavLink href="/admin/attendance" icon={ClipboardList} label="Absen Guru" />
-                    <NavLink href="/admin/announcements" icon={Megaphone} label="Pengumuman" />
-                    <NavLink href="/admin/certificates" icon={Award} label="Sertifikat" />
-                </CardContent>
-            </Card>
-        </TabsContent>
-        <TabsContent value="siswa">
-            <Card>
-                <CardContent className="grid grid-cols-3 gap-2 p-3">
-                    <NavLink href="/admin/students" icon={User} label="Data Siswa" />
-                    <NavLink href="/admin/class-management" icon={School} label="Manajemen Kelas" />
-                    <NavLink href="/admin/alumni" icon={GraduationCap} label="Alumni" />
-                    <NavLink href="/admin/student-attendance" icon={UserCheck} label="Absen Siswa" />
-                </CardContent>
-            </Card>
-        </TabsContent>
-        <TabsContent value="keuangan">
-            <Card>
-                <CardContent className="grid grid-cols-3 gap-2 p-3">
-                    <NavLink href="/admin/penabung-luar" icon={UsersRound} label="Penabung Luar" />
-                    <NavLink href="/admin/tabungan" icon={PiggyBank} label="Tabungan" />
-                    <NavLink href="/admin/riwayat-tabungan" icon={History} label="Riwayat Tabungan" />
-                    <NavLink href="/admin/spp" icon={CreditCard} label="Input SPP" />
-                    <NavLink href="/admin/riwayat-spp" icon={ReceiptText} label="Riwayat SPP" />
-                </CardContent>
-            </Card>
-        </TabsContent>
-      </Tabs>
-      
-      {activeTab === "akademik" && <TeacherAttendanceCard />}
-      {activeTab === "siswa" && <StudentAttendanceCard />}
-
+      <div className="grid gap-4 md:grid-cols-2">
+          <TeacherAttendanceCard />
+          <StudentAttendanceCard />
+      </div>
     </div>
   );
 }
