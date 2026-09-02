@@ -51,7 +51,7 @@ const adminAssistantFlow = ai.defineFlow(
     ];
 
     const response = await ai.generate({
-      model: 'googleai/gemini-1.5-flash',
+      // Secara otomatis menggunakan model default (gemini-1.5-flash-latest) dari genkit.ts
       output: { schema: AdminAssistantOutputSchema },
       system: `Anda adalah asisten AI profesional untuk Administrator 'Madrasah Diniyah Ibnu Ahmad'.
       Gunakan Bahasa Indonesia yang sopan dan formal.
