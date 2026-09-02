@@ -48,23 +48,23 @@ export default function ExternalLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      <header className="sticky top-0 z-10 flex h-11 items-center justify-between gap-4 border-b bg-card px-2 sm:px-3">
-        <div className="flex items-center gap-2 text-primary">
+      <header className="sticky top-0 z-10 flex h-14 items-center justify-between gap-4 bg-primary px-3 shadow-md text-primary-foreground">
+        <div className="flex items-center gap-2">
             {profile?.logoMadrasahUrl ? (
-                <Image src={profile.logoMadrasahUrl} alt="Logo" width={20} height={20} className="h-5 w-5 object-contain"/>
+                <Image src={profile.logoMadrasahUrl} alt="Logo" width={24} height={24} className="h-6 w-6 object-contain brightness-0 invert"/>
             ) : (
-                <BookOpenCheck className="h-4 w-4" />
+                <BookOpenCheck className="h-5 w-5 text-white" />
             )}
-            <h1 className="text-sm font-semibold font-headline">
+            <h1 className="text-sm font-bold font-headline tracking-tight text-white">
                 {profile?.namaMadrasah || 'EduConnect'}
             </h1>
         </div>
-        <div className="flex items-center gap-1.5 text-[9px] font-bold px-2 py-1 bg-secondary/50 rounded-full border border-primary/5 text-primary/70">
-            <Calendar className="h-3 w-3 opacity-60" />
+        <div className="flex items-center gap-1.5 text-[9px] font-bold px-2.5 py-1 bg-white/10 rounded-full border border-white/10 text-white">
+            <Calendar className="h-3 w-3 opacity-80" />
             <span>{activeYear}</span>
         </div>
       </header>
-      <main className="flex-1 p-2 pb-16 sm:px-4">
+      <main className="flex-1 p-3 pb-24 sm:px-6">
           {children}
       </main>
       <ExternalBottomNav />
