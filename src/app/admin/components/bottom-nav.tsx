@@ -15,11 +15,11 @@ import {
 import { cn } from "@/lib/utils";
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { collection, query, where, Firestore } from "firebase/firestore";
-import type { Teacher, Schedule, ScheduleEntry } from "@/types";
+import type { Teacher, Student, Schedule, ScheduleEntry } from "@/types";
 import { format } from "date-fns";
 import { useAcademicYear } from "@/context/academic-year-provider";
 import { useToast } from "@/hooks/use-toast";
-import { saveTeacherAttendanceBatch } from "@/lib/firebase-helpers";
+import { saveTeacherAttendanceBatch, saveStudentAttendanceBatch } from "@/lib/firebase-helpers";
 import { Html5Qrcode } from "html5-qrcode";
 import {
   Dialog,
@@ -118,6 +118,9 @@ export function BottomNav() {
   const teachersCollection = useMemoFirebase(() => firestore ? collection(firestore, 'teachers') : null, [firestore]);
   const { data: teachers } = useCollection<Teacher>(teachersCollection);
   
+  const studentsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'students') : null, [firestore]);
+  const { data: students } = useCollection<Student>(studentsCollection);
+
   const schedulesQuery = useMemoFirebase(() => {
       if (!firestore || !activeYear) return null;
       return query(collection(firestore, 'schedules'), where('academicYear', '==', activeYear), where('type', '==', 'pelajaran'));
@@ -132,46 +135,69 @@ export function BottomNav() {
     const dayIndex = new Date().getDay();
     const dayKey = dayMapping[dayIndex];
 
-    const foundTeacher = teachers?.find(t => t.nig === decodedText || t.id === decodedText);
-    
-    if (!foundTeacher) {
-      toast({ variant: "destructive", title: "QR Tidak Dikenal", description: "Data guru tidak ditemukan." });
-      setIsProcessing(false);
-      return;
-    }
-
     if (!dayKey || !schedules) {
-      toast({ variant: "destructive", title: "Gagal", description: "Jadwal tidak tersedia." });
+      toast({ variant: "destructive", title: "Gagal", description: "Jadwal tidak tersedia hari ini." });
       setIsProcessing(false);
       return;
     }
 
-    const scheduledIds = new Set<string>();
-    schedules.forEach(s => {
-      const entries = s[dayKey] as ScheduleEntry[];
-      entries?.forEach(e => e.teacherId && scheduledIds.add(e.teacherId));
-    });
+    // Check if it's a Teacher
+    const foundTeacher = teachers?.find(t => t.nig === decodedText || t.id === decodedText);
+    if (foundTeacher) {
+      const scheduledIds = new Set<string>();
+      schedules.forEach(s => {
+        const entries = s[dayKey] as ScheduleEntry[];
+        entries?.forEach(e => e.teacherId && scheduledIds.add(e.teacherId));
+      });
 
-    if (!scheduledIds.has(foundTeacher.id)) {
-      toast({ variant: "destructive", title: "Tidak Terjadwal", description: `${foundTeacher.name} tidak mengajar hari ini.` });
+      if (!scheduledIds.has(foundTeacher.id)) {
+        toast({ variant: "destructive", title: "Tidak Terjadwal", description: `${foundTeacher.name} tidak ada jadwal mengajar hari ini.` });
+      } else {
+        try {
+          await saveTeacherAttendanceBatch(firestore, [{
+            teacherId: foundTeacher.id,
+            teacherName: foundTeacher.name,
+            date: todayStr,
+            status: 'Hadir'
+          }]);
+          toast({ title: "Absen Guru Berhasil", description: `${foundTeacher.name} tercatat Hadir.` });
+          setIsScannerOpen(false);
+        } catch (e) {
+          toast({ variant: "destructive", title: "Gagal Menyimpan" });
+        }
+      }
       setIsProcessing(false);
       return;
     }
 
-    try {
-      await saveTeacherAttendanceBatch(firestore, [{
-        teacherId: foundTeacher.id,
-        teacherName: foundTeacher.name,
-        date: todayStr,
-        status: 'Hadir'
-      }]);
-      toast({ title: "Absen Berhasil", description: `${foundTeacher.name} tercatat Hadir.` });
-      setIsScannerOpen(false);
-    } catch (e) {
-      toast({ variant: "destructive", title: "Gagal Menyimpan" });
-    } finally {
+    // Check if it's a Student
+    const foundStudent = students?.find(s => s.nis === decodedText || s.id === decodedText);
+    if (foundStudent) {
+      const classSchedule = schedules.find(s => s.classLevel === foundStudent.kelas);
+      if (!classSchedule || !classSchedule[dayKey] || (classSchedule[dayKey] as ScheduleEntry[]).length === 0) {
+        toast({ variant: "destructive", title: "Tidak Ada Jadwal", description: `Kelas ${foundStudent.kelas} tidak ada jadwal hari ini.` });
+      } else {
+        try {
+          await saveStudentAttendanceBatch(firestore, [{
+            studentId: foundStudent.id,
+            studentName: foundStudent.name,
+            nis: foundStudent.nis,
+            kelas: foundStudent.kelas!,
+            date: todayStr,
+            status: 'Hadir'
+          }]);
+          toast({ title: "Absen Siswa Berhasil", description: `${foundStudent.name} tercatat Hadir.` });
+          setIsScannerOpen(false);
+        } catch (e) {
+          toast({ variant: "destructive", title: "Gagal Menyimpan" });
+        }
+      }
       setIsProcessing(false);
+      return;
     }
+
+    toast({ variant: "destructive", title: "ID Tidak Dikenal", description: "Data guru atau siswa tidak ditemukan." });
+    setIsProcessing(false);
   };
 
   return (
@@ -180,7 +206,6 @@ export function BottomNav() {
         <div className="flex items-center gap-3 max-w-md w-full pointer-events-auto">
           <nav className="flex-1 bg-black/90 backdrop-blur-md rounded-full p-1.5 flex items-center justify-around shadow-2xl border border-white/10">
             {navItems.map((item) => {
-              // Standardized active check for trailing slashes
               const normalizedPath = pathname.endsWith('/') ? pathname : `${pathname}/`;
               const normalizedHref = item.href.endsWith('/') ? item.href : `${item.href}/`;
               const isActive = normalizedPath.startsWith(normalizedHref);
@@ -197,7 +222,7 @@ export function BottomNav() {
                   <item.icon className="w-5 h-5" />
                   {isActive && (
                     <span className="text-[10px] font-bold uppercase tracking-wider animate-in fade-in zoom-in-95 duration-200">
-                      {item.label}
+                      {item.label === 'Home' ? 'Home' : item.label}
                     </span>
                   )}
                 </Link>
@@ -208,7 +233,7 @@ export function BottomNav() {
           <button
             onClick={() => setIsScannerOpen(true)}
             className="w-14 h-14 bg-accent text-accent-foreground rounded-full flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95 transition-all"
-            aria-label="Scan Absen Guru"
+            aria-label="Scan Absen Guru & Siswa"
           >
             <ScanLine className="w-6 h-6" />
           </button>
@@ -220,10 +245,10 @@ export function BottomNav() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-primary font-headline">
               <Camera className="h-5 w-5" />
-              Scanner Absen Guru
+              Scanner Madrasah
             </DialogTitle>
             <DialogDescription className="text-xs">
-              Pindai QR Code kartu guru untuk mencatat kehadiran hari ini secara otomatis.
+              Pindai barcode Guru atau Siswa untuk mencatat kehadiran secara otomatis.
             </DialogDescription>
           </DialogHeader>
           {isScannerOpen && (

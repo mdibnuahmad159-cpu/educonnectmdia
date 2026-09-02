@@ -1,5 +1,7 @@
+
 "use client";
 
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,11 +13,11 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import type { Student } from "@/types";
-import { Trash2, Edit, Printer, FileDown } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Trash2, Edit, Printer, FileDown, Download, QrCode } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/avatar";
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-
+import QRCode from 'qrcode';
 
 type StudentDetailProps = {
   isOpen: boolean;
@@ -26,6 +28,18 @@ type StudentDetailProps = {
 };
 
 export function StudentDetail({ isOpen, setIsOpen, student, onEdit, onDelete }: StudentDetailProps) {
+  const [qrDataUrl, setQrDataUrl] = useState<string>("");
+
+  useEffect(() => {
+    if (student?.nis) {
+        QRCode.toDataURL(student.nis, {
+            width: 300,
+            margin: 2,
+            color: { dark: '#000000', light: '#ffffff' }
+        }).then(setQrDataUrl).catch(err => console.error(err));
+    }
+  }, [student]);
+
   if (!student) return null;
 
   const handleEdit = () => {
@@ -57,7 +71,6 @@ export function StudentDetail({ isOpen, setIsOpen, student, onEdit, onDelete }: 
         ['Nama Ibu', student.namaIbu || "-"],
         ['Alamat', student.address || "-"],
         ['No. WA', student.noWa || "-"],
-        ['Dokumen', student.dokumenUrl ? 'Tersedia' : '-'],
     ];
 
     let startY = 30;
@@ -139,9 +152,6 @@ export function StudentDetail({ isOpen, setIsOpen, student, onEdit, onDelete }: 
       { label: 'Alamat', value: student.address || "-" },
       { label: 'No. WA', value: student.noWa || "-" },
     ];
-    if (student.dokumenUrl) {
-        data.push({ label: 'Dokumen', value: `Tersedia (tidak ditampilkan)` });
-    }
 
     const tableRows = data.map(item => `
         <tr style="border-bottom: 1px solid #eee;">
@@ -164,6 +174,7 @@ export function StudentDetail({ isOpen, setIsOpen, student, onEdit, onDelete }: 
             .container {
                 padding: 20px;
             }
+            .header-flex { display: flex; gap: 20px; margin-bottom: 20px; align-items: center; }
             h1 { 
                 font-size: 18px; 
                 margin-bottom: 15px; 
@@ -175,9 +186,9 @@ export function StudentDetail({ isOpen, setIsOpen, student, onEdit, onDelete }: 
                 height: 80px;
                 border-radius: 50%;
                 object-fit: cover;
-                margin-bottom: 15px; 
                 border: 2px solid #eee;
             }
+            img.qr { width: 100px; height: 100px; border: 1px solid #ddd; padding: 5px; }
             table { 
                 width: 100%; 
                 border-collapse: collapse; 
@@ -198,7 +209,10 @@ export function StudentDetail({ isOpen, setIsOpen, student, onEdit, onDelete }: 
         <body>
           <div class="container">
             <h1>Detail Siswa</h1>
-            ${avatarSrc ? `<img class="avatar" src="${avatarSrc}" alt="${name}" />` : ''}
+            <div class="header-flex">
+                ${avatarSrc ? `<img class="avatar" src="${avatarSrc}" alt="${name}" />` : ''}
+                ${qrDataUrl ? `<div style="text-align: center;"><img class="qr" src="${qrDataUrl}" alt="QR" /><p style="font-size: 8px; font-family: monospace; margin: 2px 0;">${student.nis}</p></div>` : ''}
+            </div>
             <table>
               <tbody>
                 ${tableRows}
@@ -218,94 +232,109 @@ export function StudentDetail({ isOpen, setIsOpen, student, onEdit, onDelete }: 
     };
   };
 
+  const downloadQr = () => {
+    if (!qrDataUrl) return;
+    const link = document.createElement('a');
+    link.href = qrDataUrl;
+    link.download = `QR_Siswa_${student.nis}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-sm">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Detail Siswa</DialogTitle>
           <DialogDescription>Informasi lengkap data siswa.</DialogDescription>
         </DialogHeader>
-        <div className="flex justify-center pt-4">
-          <Avatar className="h-20 w-20">
-            <AvatarImage src={student.avatarUrl || undefined} alt={student.name} className="object-cover" />
-            <AvatarFallback className="text-2xl">{student.name.charAt(0)}</AvatarFallback>
-          </Avatar>
-        </div>
-        <div className="py-4 space-y-2 text-xs max-h-[50vh] overflow-y-auto">
-          <div className="grid grid-cols-3 items-center">
-            <span className="text-muted-foreground">Nama</span>
-            <span className="col-span-2 font-medium">{student.name || "-"}</span>
-          </div>
-          <div className="grid grid-cols-3 items-center">
-            <span className="text-muted-foreground">NIS</span>
-            <span className="col-span-2">{student.nis || "-"}</span>
-          </div>
-          <div className="grid grid-cols-3 items-center">
-            <span className="text-muted-foreground">Password Wali</span>
-            <span className="col-span-2">{student.password || "Belum diatur"}</span>
-          </div>
-          <div className="grid grid-cols-3 items-center">
-            <span className="text-muted-foreground">Kelas</span>
-            <span className="col-span-2 font-medium">{student.kelas !== undefined ? `Kelas ${student.kelas}` : 'Belum diatur'}</span>
-          </div>
-           <div className="grid grid-cols-3 items-center">
-            <span className="text-muted-foreground">NIK</span>
-            <span className="col-span-2">{student.nik || "-"}</span>
-          </div>
-          <div className="grid grid-cols-3 items-center">
-            <span className="text-muted-foreground">Jenis Kelamin</span>
-            <span className="col-span-2">{student.gender || "-"}</span>
-          </div>
-          <div className="grid grid-cols-3 items-center">
-            <span className="text-muted-foreground">Tempat Lahir</span>
-            <span className="col-span-2">{student.tempatLahir || "-"}</span>
-          </div>
-           <div className="grid grid-cols-3 items-center">
-            <span className="text-muted-foreground">Tanggal Lahir</span>
-            <span className="col-span-2">{student.dateOfBirth || "-"}</span>
-          </div>
-          <div className="grid grid-cols-3 items-center">
-            <span className="text-muted-foreground">Nama Ayah</span>
-            <span className="col-span-2">{student.namaAyah || "-"}</span>
-          </div>
-          <div className="grid grid-cols-3 items-center">
-            <span className="text-muted-foreground">Nama Ibu</span>
-            <span className="col-span-2">{student.namaIbu || "-"}</span>
-          </div>
-          <div className="grid grid-cols-3 items-center">
-            <span className="text-muted-foreground">Alamat</span>
-            <span className="col-span-2">{student.address || "-"}</span>
-          </div>
-          <div className="grid grid-cols-3 items-center">
-            <span className="text-muted-foreground">No. WA</span>
-            <span className="col-span-2">{student.noWa || "-"}</span>
-          </div>
-          {student.dokumenUrl && (
-            <div className="grid grid-cols-3 items-center">
-                <span className="text-muted-foreground">Dokumen</span>
-                <span className="col-span-2">
-                    <a href={student.dokumenUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80">
-                        Lihat Dokumen
-                    </a>
-                </span>
+        
+        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 pt-4">
+            <div className="flex flex-col items-center gap-4">
+                <Avatar className="h-24 w-24 border-2 border-primary/10 shadow-sm">
+                    <AvatarImage src={student.avatarUrl || undefined} alt={student.name} className="object-cover" />
+                    <AvatarFallback className="text-3xl">{student.name.charAt(0)}</AvatarFallback>
+                </Avatar>
+                
+                {qrDataUrl && (
+                    <div className="flex flex-col items-center gap-2 p-3 bg-muted/30 rounded-lg border">
+                        <img src={qrDataUrl} alt="QR Code" className="w-32 h-32" />
+                        <span className="text-[10px] font-mono font-bold">{student.nis}</span>
+                        <Button size="xs" variant="outline" className="h-7 gap-1 px-3" onClick={downloadQr}>
+                            <Download className="h-3 w-3" /> Unduh QR
+                        </Button>
+                    </div>
+                )}
             </div>
-           )}
+
+            <div className="flex-1 w-full space-y-2 text-xs max-h-[40vh] overflow-y-auto pr-2">
+                <div className="grid grid-cols-3 items-center">
+                    <span className="text-muted-foreground font-medium">Nama</span>
+                    <span className="col-span-2 font-bold">{student.name || "-"}</span>
+                </div>
+                <div className="grid grid-cols-3 items-center">
+                    <span className="text-muted-foreground font-medium">NIS</span>
+                    <span className="col-span-2">{student.nis || "-"}</span>
+                </div>
+                <div className="grid grid-cols-3 items-center">
+                    <span className="text-muted-foreground font-medium">Kelas</span>
+                    <span className="col-span-2 font-bold">{student.kelas !== undefined ? `Kelas ${student.kelas}` : 'Belum diatur'}</span>
+                </div>
+                <div className="grid grid-cols-3 items-center">
+                    <span className="text-muted-foreground font-medium">Password Wali</span>
+                    <span className="col-span-2 font-mono">{student.password || "Belum diatur"}</span>
+                </div>
+                <div className="grid grid-cols-3 items-center">
+                    <span className="text-muted-foreground font-medium">NIK</span>
+                    <span className="col-span-2">{student.nik || "-"}</span>
+                </div>
+                <div className="grid grid-cols-3 items-center">
+                    <span className="text-muted-foreground font-medium">L/P</span>
+                    <span className="col-span-2">{student.gender || "-"}</span>
+                </div>
+                <div className="grid grid-cols-3 items-center">
+                    <span className="text-muted-foreground font-medium">Tempat Lahir</span>
+                    <span className="col-span-2">{student.tempatLahir || "-"}</span>
+                </div>
+                <div className="grid grid-cols-3 items-center">
+                    <span className="text-muted-foreground font-medium">Tgl Lahir</span>
+                    <span className="col-span-2">{student.dateOfBirth || "-"}</span>
+                </div>
+                <div className="grid grid-cols-3 items-center">
+                    <span className="text-muted-foreground font-medium">Nama Ayah</span>
+                    <span className="col-span-2">{student.namaAyah || "-"}</span>
+                </div>
+                <div className="grid grid-cols-3 items-center">
+                    <span className="text-muted-foreground font-medium">Nama Ibu</span>
+                    <span className="col-span-2">{student.namaIbu || "-"}</span>
+                </div>
+                <div className="grid grid-cols-3 items-center">
+                    <span className="text-muted-foreground font-medium">Alamat</span>
+                    <span className="col-span-2">{student.address || "-"}</span>
+                </div>
+                <div className="grid grid-cols-3 items-center">
+                    <span className="text-muted-foreground font-medium">No. WA</span>
+                    <span className="col-span-2">{student.noWa || "-"}</span>
+                </div>
+            </div>
         </div>
-        <DialogFooter>
-           <Button variant="outline" size="xs" onClick={handleExportPdf} className="gap-1">
-            <FileDown /> PDF
+
+        <DialogFooter className="mt-4 gap-2">
+           <Button variant="outline" size="xs" onClick={handleExportPdf} className="gap-1.5 h-8">
+            <FileDown className="h-3.5 w-3.5" /> PDF
           </Button>
-          <Button variant="outline" size="xs" onClick={handlePrint} className="gap-1">
-            <Printer /> Cetak
+           <Button variant="outline" size="xs" onClick={handlePrint} className="gap-1.5 h-8">
+            <Printer className="h-3.5 w-3.5" /> Cetak
           </Button>
           <DialogClose asChild>
-            <Button variant="outline" size="xs">Tutup</Button>
+            <Button variant="outline" size="xs" className="h-8">Tutup</Button>
           </DialogClose>
-          <Button variant="destructive" size="xs" onClick={handleDelete} className="gap-1">
-            <Trash2 /> Hapus
+          <Button variant="destructive" size="xs" onClick={handleDelete} className="gap-1.5 h-8">
+            <Trash2 className="h-3.5 w-3.5" /> Hapus
           </Button>
-          <Button size="xs" onClick={handleEdit} className="gap-1">
-            <Edit /> Edit
+          <Button size="xs" onClick={handleEdit} className="gap-1.5 h-8">
+            <Edit className="h-3.5 w-3.5" /> Edit
           </Button>
         </DialogFooter>
       </DialogContent>
