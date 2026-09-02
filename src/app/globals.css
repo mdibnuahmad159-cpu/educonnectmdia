@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -75,12 +76,12 @@
 
 /* Custom Sliding Animations */
 @keyframes slide-right-in {
-  from { transform: translateX(100%); opacity: 0; }
+  from { transform: translateX(30px); opacity: 0; }
   to { transform: translateX(0); opacity: 1; }
 }
 
 @keyframes slide-left-in {
-  from { transform: translateX(-100%); opacity: 0; }
+  from { transform: translateX(-30px); opacity: 0; }
   to { transform: translateX(0); opacity: 1; }
 }
 
@@ -90,4 +91,9 @@
 
 .page-slide-left {
   animation: slide-left-in 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Snap transition for real-time swiping */
+main {
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }

@@ -184,7 +184,11 @@ export function BottomNav() {
           {/* Black Nav Pill */}
           <nav className="flex-1 bg-black/90 backdrop-blur-md rounded-full p-1.5 flex items-center justify-around shadow-2xl border border-white/10">
             {navItems.map((item) => {
-              const isActive = pathname === item.href || (item.href !== "/admin/dashboard" && pathname.startsWith(item.href));
+              // Normalized check to handle trailing slashes
+              const cleanPath = pathname.replace(/\/$/, '');
+              const cleanItemHref = item.href.replace(/\/$/, '');
+              const isActive = cleanPath === cleanItemHref || (cleanItemHref !== '/admin/dashboard' && cleanPath.startsWith(cleanItemHref));
+              
               return (
                 <Link
                   key={item.href}

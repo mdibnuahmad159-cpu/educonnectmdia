@@ -1,3 +1,4 @@
+
 "use client";
 
 import { ReactNode, useEffect, useState, useRef } from "react";
@@ -25,13 +26,14 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
-  const [prevIndex, setPrevIndex] = useState(0);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [direction, setDirection] = useState<'right' | 'left' | 'none'>('right');
+  const [direction, setDirection] = useState<'right' | 'left' | 'none'>('none');
   
-  // Touch Handling for Swiping
+  // Touch Handling for Swiping with visual feedback
+  const contentRef = useRef<HTMLElement>(null);
   const touchStartX = useRef<number | null>(null);
-  const touchEndX = useRef<number | null>(null);
+  const touchCurrentX = useRef<number | null>(null);
+  const isDragging = useRef<boolean>(false);
 
   useEffect(() => {
     if (profile?.namaMadrasah) {
@@ -60,34 +62,61 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       } else {
         setDirection('none');
       }
-      setPrevIndex(currentIndex);
       setCurrentIndex(newIndex);
     }
   }, [pathname, currentIndex]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.targetTouches[0].clientX;
+    isDragging.current = true;
+    if (contentRef.current) {
+      contentRef.current.style.transition = 'none';
+    }
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    touchEndX.current = e.targetTouches[0].clientX;
+    if (!touchStartX.current || !isDragging.current) return;
+    
+    touchCurrentX.current = e.targetTouches[0].clientX;
+    const deltaX = touchCurrentX.current - touchStartX.current;
+
+    // Boundary resistance: restrict swiping past first/last items
+    const isAtStart = currentIndex === 0 && deltaX > 0;
+    const isAtEnd = currentIndex === MAIN_ROUTES.length - 1 && deltaX < 0;
+    
+    const factor = (isAtStart || isAtEnd) ? 0.3 : 1.0;
+    
+    if (contentRef.current) {
+      contentRef.current.style.transform = `translateX(${deltaX * factor}px)`;
+    }
   };
 
   const handleTouchEnd = () => {
-    if (!touchStartX.current || !touchEndX.current) return;
+    if (!touchStartX.current || !touchCurrentX.current) {
+        isDragging.current = false;
+        return;
+    }
     
-    const distance = touchStartX.current - touchEndX.current;
-    const isLeftSwipe = distance > 70;  // Swipe to the left (finger moves right to left)
-    const isRightSwipe = distance < -70; // Swipe to the right (finger moves left to right)
+    const deltaX = touchCurrentX.current - touchStartX.current;
+    const threshold = 75; // Ambang batas geser untuk pindah halaman
+    
+    isDragging.current = false;
 
-    if (isLeftSwipe && currentIndex < MAIN_ROUTES.length - 1) {
-      router.push(MAIN_ROUTES[currentIndex + 1]);
-    } else if (isRightSwipe && currentIndex > 0) {
+    if (contentRef.current) {
+      contentRef.current.style.transition = 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)';
+      contentRef.current.style.transform = 'translateX(0)';
+    }
+
+    if (deltaX > threshold && currentIndex > 0) {
+      // Swipe Right -> Go Left (Previous)
       router.push(MAIN_ROUTES[currentIndex - 1]);
+    } else if (deltaX < -threshold && currentIndex < MAIN_ROUTES.length - 1) {
+      // Swipe Left -> Go Right (Next)
+      router.push(MAIN_ROUTES[currentIndex + 1]);
     }
 
     touchStartX.current = null;
-    touchEndX.current = null;
+    touchCurrentX.current = null;
   };
 
   if (isUserLoading || !user || user.email !== 'mdibnuahmad159@gmail.com' || isProfileLoading) {
@@ -98,16 +127,11 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     );
   }
 
-  // Animation class based on movement direction
+  // Animation class for entering routes
   const animationClass = direction === 'right' ? 'page-slide-right' : direction === 'left' ? 'page-slide-left' : '';
 
   return (
-    <div 
-      className="flex flex-col min-h-screen bg-background overflow-x-hidden"
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-    >
+    <div className="flex flex-col min-h-screen bg-background overflow-x-hidden">
       <header className="sticky top-0 z-10 flex h-11 items-center justify-between gap-4 border-b bg-card px-2 sm:px-3">
         <div className="flex items-center gap-2 text-primary">
             {profile?.logoMadrasahUrl ? (
@@ -131,8 +155,12 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       </header>
       <main 
         key={pathname}
+        ref={contentRef}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
         className={cn(
-          "flex-1 p-2 pb-16 sm:px-4 transition-all duration-300",
+          "flex-1 p-2 pb-16 sm:px-4 will-change-transform",
           animationClass
         )}
       >
