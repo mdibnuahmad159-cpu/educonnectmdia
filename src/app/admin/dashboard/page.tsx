@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useMemo, useState } from "react";
@@ -145,52 +146,52 @@ export default function DashboardPage() {
   return (
     <div className="grid gap-4">
         <div className="grid gap-2 grid-cols-2 lg:grid-cols-4">
-            <Card className="border-none shadow-sm">
+            <Card className="bg-primary text-primary-foreground border-none shadow-sm">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-4">
-                <CardTitle className="text-[10px] font-bold uppercase tracking-tight text-muted-foreground">Total Guru</CardTitle>
-                <Users className="h-3.5 w-3.5 text-muted-foreground opacity-50" />
+                <CardTitle className="text-[10px] font-bold uppercase tracking-tight text-primary-foreground/70">Total Guru</CardTitle>
+                <Users className="h-3.5 w-3.5 text-primary-foreground/40" />
                 </CardHeader>
                 <CardContent className="px-4 pb-4">
-                <div className="text-lg font-bold">
+                <div className="text-lg font-bold text-white">
                     {loadingTeachers ? <Loader2 className="h-4 w-4 animate-spin" /> : teachers?.length ?? 0}
                 </div>
-                <p className="text-[9px] text-muted-foreground">Guru terdaftar</p>
+                <p className="text-[9px] text-primary-foreground/50">Guru terdaftar</p>
                 </CardContent>
             </Card>
-            <Card className="border-none shadow-sm">
+            <Card className="bg-primary text-primary-foreground border-none shadow-sm">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-4">
-                <CardTitle className="text-[10px] font-bold uppercase tracking-tight text-muted-foreground">Total Siswa</CardTitle>
-                <User className="h-3.5 w-3.5 text-muted-foreground opacity-50" />
+                <CardTitle className="text-[10px] font-bold uppercase tracking-tight text-primary-foreground/70">Total Siswa</CardTitle>
+                <User className="h-3.5 w-3.5 text-primary-foreground/40" />
                 </CardHeader>
                 <CardContent className="px-4 pb-4">
-                <div className="text-lg font-bold">
+                <div className="text-lg font-bold text-white">
                     {loadingStudents ? <Loader2 className="h-4 w-4 animate-spin" /> : students?.length ?? 0}
                 </div>
-                <p className="text-[9px] text-muted-foreground">Siswa aktif</p>
+                <p className="text-[9px] text-primary-foreground/50">Siswa aktif</p>
                 </CardContent>
             </Card>
-            <Card className="bg-primary/5 border-none shadow-sm">
+            <Card className="bg-primary text-primary-foreground border-none shadow-sm">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-4">
-                <CardTitle className="text-[10px] font-bold uppercase tracking-tight text-primary">Total Tabungan</CardTitle>
-                <PiggyBank className="h-3.5 w-3.5 text-primary opacity-50" />
+                <CardTitle className="text-[10px] font-bold uppercase tracking-tight text-primary-foreground/70">Total Tabungan</CardTitle>
+                <PiggyBank className="h-3.5 w-3.5 text-primary-foreground/40" />
                 </CardHeader>
                 <CardContent className="px-4 pb-4">
-                <div className="text-lg font-bold text-primary">
+                <div className="text-lg font-bold text-white">
                     {loadingSavings ? <Loader2 className="h-4 w-4 animate-spin" /> : `Rp ${totalSavingsBalance.toLocaleString()}`}
                 </div>
-                <p className="text-[9px] text-primary/60">Saldo seluruh penabung</p>
+                <p className="text-[9px] text-primary-foreground/50">Saldo seluruh penabung</p>
                 </CardContent>
             </Card>
-            <Card className="bg-blue-50 border-none shadow-sm">
+            <Card className="bg-primary text-primary-foreground border-none shadow-sm">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-4">
-                <CardTitle className="text-[10px] font-bold uppercase tracking-tight text-blue-700">Total SPP Masuk</CardTitle>
-                <ReceiptText className="h-3.5 w-3.5 text-blue-700 opacity-50" />
+                <CardTitle className="text-[10px] font-bold uppercase tracking-tight text-primary-foreground/70">Total SPP Masuk</CardTitle>
+                <ReceiptText className="h-3.5 w-3.5 text-primary-foreground/40" />
                 </CardHeader>
                 <CardContent className="px-4 pb-4">
-                <div className="text-lg font-bold text-blue-700">
+                <div className="text-lg font-bold text-white">
                     {loadingSpp ? <Loader2 className="h-4 w-4 animate-spin" /> : `Rp ${totalSppIncome.toLocaleString()}`}
                 </div>
-                <p className="text-[9px] text-blue-600/60">Akumulasi iuran bulanan</p>
+                <p className="text-[9px] text-primary-foreground/50">Akumulasi iuran bulanan</p>
                 </CardContent>
             </Card>
       </div>
