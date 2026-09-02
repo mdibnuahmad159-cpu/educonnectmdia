@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -9,7 +8,6 @@ import { collection, query, where } from 'firebase/firestore';
 import type { Teacher, TeacherAttendance, Schedule, ScheduleEntry } from '@/types';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -30,6 +28,7 @@ import { useToast } from '@/hooks/use-toast';
 import { saveTeacherAttendanceBatch } from '@/lib/firebase-helpers';
 import { useAcademicYear } from '@/context/academic-year-provider';
 import { Html5Qrcode } from 'html5-qrcode';
+import { DatePickerHorizontal } from './date-picker-horizontal';
 
 type AttendanceStatus = 'Hadir' | 'Sakit' | 'Izin' | 'Alpa';
 const STATUS_OPTIONS: AttendanceStatus[] = ['Hadir', 'Sakit', 'Izin', 'Alpa'];
@@ -43,7 +42,6 @@ const dayMapping: { [key: number]: keyof Omit<Schedule, 'id' | 'classLevel' | 'a
     6: 'saturday',
 };
 
-// Separate component to handle the scanner lifecycle safely with better camera handling
 function BarcodeScanner({ 
   onResult, 
   onClose 
@@ -54,43 +52,20 @@ function BarcodeScanner({
   const scannerRef = useRef<Html5Qrcode | null>(null);
 
   useEffect(() => {
-    // Slight delay to ensure the DOM element is fully rendered before scanner attaches
     const timer = setTimeout(() => {
       const html5QrCode = new Html5Qrcode("qr-reader");
       scannerRef.current = html5QrCode;
+      const config = { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 };
 
-      const config = { 
-        fps: 10, 
-        qrbox: { width: 250, height: 250 },
-        aspectRatio: 1.0 
-      };
-
-      // Try environment camera (back camera) first
-      html5QrCode.start(
-        { facingMode: "environment" }, 
-        config, 
-        (decodedText) => {
-          onResult(decodedText);
-        },
-        undefined // ignore errors as they happen constantly during scanning
-      ).catch(err => {
-        console.error("Failed to start camera", err);
-        // Fallback to any available camera if environment fails
-        html5QrCode.start(
-            { facingMode: "user" },
-            config,
-            (decodedText) => onResult(decodedText),
-            undefined
-        ).catch(e => console.error("Ultimate camera failure", e));
+      html5QrCode.start({ facingMode: "environment" }, config, onResult, undefined).catch(err => {
+        html5QrCode.start({ facingMode: "user" }, config, onResult, undefined).catch(e => console.error(e));
       });
     }, 300);
 
     return () => {
       clearTimeout(timer);
       if (scannerRef.current && scannerRef.current.isScanning) {
-        scannerRef.current.stop().then(() => {
-            scannerRef.current?.clear();
-        }).catch(err => console.warn("Scanner cleanup failed", err));
+        scannerRef.current.stop().then(() => scannerRef.current?.clear()).catch(err => console.warn(err));
       }
     };
   }, [onResult]);
@@ -103,9 +78,8 @@ function BarcodeScanner({
             <div className="w-full h-full border-2 border-primary shadow-[0_0_0_100vw_rgba(0,0,0,0.3)]"></div>
         </div>
       </div>
-      <Button variant="outline" onClick={onClose} className="w-full h-10 font-bold border-destructive/20 text-destructive hover:bg-destructive/5">
-          <X className="h-4 w-4 mr-2" />
-          Batalkan Scan
+      <Button variant="outline" onClick={onClose} className="w-full h-10 font-bold border-destructive/20 text-destructive">
+          <X className="h-4 w-4 mr-2" /> Batalkan Scan
       </Button>
     </div>
   );
@@ -126,44 +100,27 @@ export function TeacherAttendanceCard() {
         if (!firestore) return null;
         return query(collection(firestore, 'teacher_attendances'), where('date', '==', selectedDate));
     }, [firestore, selectedDate]);
-
     const { data: todaysAttendance, loading: loadingAttendance } = useCollection<TeacherAttendance>(attendanceQuery);
     
     const selectedDayKey = useMemo(() => {
-        try {
-            return dayMapping[parseISO(selectedDate).getDay()];
-        } catch (e) {
-            return null;
-        }
+        try { return dayMapping[parseISO(selectedDate).getDay()]; } catch (e) { return null; }
     }, [selectedDate]);
 
     const schedulesQuery = useMemoFirebase(() => {
         if (!firestore || !activeYear) return null;
-        return query(
-            collection(firestore, 'schedules'),
-            where('academicYear', '==', activeYear),
-            where('type', '==', 'pelajaran')
-        );
+        return query(collection(firestore, 'schedules'), where('academicYear', '==', activeYear), where('type', '==', 'pelajaran'));
     }, [firestore, activeYear]);
-    const { data: schedules, isLoading: loadingSchedules } = useCollection<Schedule>(schedulesQuery);
+    const { data: schedules } = useCollection<Schedule>(schedulesQuery);
 
     const scheduledTeacherIds = useMemo(() => {
         if (!schedules || !selectedDayKey) return new Set<string>();
-
         const teacherIds = new Set<string>();
         for (const schedule of schedules) {
             const daySchedule = schedule[selectedDayKey as keyof typeof schedule] as ScheduleEntry[];
-            if (daySchedule) {
-                for (const entry of daySchedule) {
-                    if (entry.teacherId) {
-                        teacherIds.add(entry.teacherId);
-                    }
-                }
-            }
+            daySchedule?.forEach(entry => { if (entry.teacherId) teacherIds.add(entry.teacherId); });
         }
         return teacherIds;
     }, [schedules, selectedDayKey]);
-
 
     const [attendance, setAttendance] = useState<Record<string, AttendanceStatus>>({});
     const [isSaving, setIsSaving] = useState(false);
@@ -180,15 +137,10 @@ export function TeacherAttendanceCard() {
         }
     }, [todaysAttendance]);
     
-    const sortedTeachers = useMemo(() => {
-        if (!teachers) return [];
-        return [...teachers].sort((a,b) => a.name.localeCompare(b.name));
-    }, [teachers]);
-
     const scheduledTeachersOnSelectedDate = useMemo(() => {
-        if (!selectedDayKey || !schedules) return []; 
-        return sortedTeachers.filter(teacher => scheduledTeacherIds.has(teacher.id));
-    }, [sortedTeachers, scheduledTeacherIds, selectedDayKey, schedules]);
+        if (!selectedDayKey || !schedules || !teachers) return []; 
+        return teachers.filter(teacher => scheduledTeacherIds.has(teacher.id)).sort((a,b) => a.name.localeCompare(b.name));
+    }, [teachers, scheduledTeacherIds, selectedDayKey, schedules]);
 
     const handleStatusChange = (teacherId: string, status: AttendanceStatus) => {
         setAttendance(prev => ({ ...prev, [teacherId]: status }));
@@ -197,142 +149,113 @@ export function TeacherAttendanceCard() {
     const handleSave = async () => {
         if (!firestore || !scheduledTeachersOnSelectedDate) return;
         setIsSaving(true);
-
         const attendancePayload: Omit<TeacherAttendance, 'id'>[] = scheduledTeachersOnSelectedDate.map(teacher => ({
             teacherId: teacher.id,
             teacherName: teacher.name,
             date: selectedDate,
             status: attendance[teacher.id] || 'Alpa',
         }));
-        
         try {
             await saveTeacherAttendanceBatch(firestore, attendancePayload);
-            toast({ title: 'Absensi Disimpan', description: `Absensi guru untuk tanggal ${selectedDate} telah berhasil disimpan.` });
+            toast({ title: 'Absensi Disimpan', description: `Data berhasil disimpan.` });
         } catch (error) {
-            toast({ variant: 'destructive', title: 'Gagal Menyimpan', description: 'Terjadi kesalahan saat menyimpan absensi.' });
+            toast({ variant: 'destructive', title: 'Gagal Menyimpan' });
         } finally {
             setIsSaving(false);
         }
     };
 
     const handleScannerResult = async (decodedText: string) => {
-        // Find teacher with this NIG (decodedText is expected to be the NIG)
         const foundTeacher = teachers?.find(t => t.nig === decodedText || t.id === decodedText);
         if (foundTeacher) {
             const isScheduled = scheduledTeacherIds.has(foundTeacher.id);
             if (!isScheduled) {
-                toast({ variant: "destructive", title: "Guru Tidak Terjadwal", description: `${foundTeacher.name} tidak memiliki jadwal hari ini.` });
+                toast({ variant: "destructive", title: "Guru Tidak Terjadwal" });
             } else {
-                // Update local state for immediate feedback
                 setAttendance(prev => ({ ...prev, [foundTeacher.id]: 'Hadir' }));
-                
-                // Auto-save the attendance
                 if (firestore && scheduledTeachersOnSelectedDate) {
                     setIsSaving(true);
-                    const attendancePayload: Omit<TeacherAttendance, 'id'>[] = scheduledTeachersOnSelectedDate.map(teacher => ({
+                    const payload: Omit<TeacherAttendance, 'id'>[] = scheduledTeachersOnSelectedDate.map(teacher => ({
                         teacherId: teacher.id,
                         teacherName: teacher.name,
                         date: selectedDate,
                         status: teacher.id === foundTeacher.id ? 'Hadir' : (attendance[teacher.id] || 'Alpa'),
                     }));
-                    
                     try {
-                        await saveTeacherAttendanceBatch(firestore, attendancePayload);
-                        toast({ title: "Absen Berhasil", description: `${foundTeacher.name} otomatis disimpan sebagai Hadir.` });
+                        await saveTeacherAttendanceBatch(firestore, payload);
+                        toast({ title: "Absen Berhasil" });
                         setIsScannerOpen(false);
-                    } catch (error) {
-                        toast({ variant: 'destructive', title: 'Gagal Simpan Otomatis' });
-                    } finally {
-                        setIsSaving(false);
-                    }
+                    } catch (error) { toast({ variant: 'destructive', title: 'Gagal' }); }
+                    finally { setIsSaving(false); }
                 }
             }
-        } else {
-            toast({ variant: "destructive", title: "QR Tidak Dikenal", description: "Data guru tidak ditemukan di sistem." });
-        }
+        } else { toast({ variant: "destructive", title: "QR Tidak Dikenal" }); }
     };
     
-    const isLoading = loadingTeachers || loadingAttendance || loadingSchedules;
-    const dateFormatted = useMemo(() => {
-        try {
-            return format(parseISO(selectedDate), "EEEE, d MMMM yyyy", { locale: id });
-        } catch (e) {
-            return selectedDate;
-        }
-    }, [selectedDate]);
+    const isLoading = loadingTeachers || loadingAttendance;
 
     return (
-        <Card>
-            <CardHeader className="pb-3">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                    <div>
-                        <CardTitle>Absensi Guru</CardTitle>
-                        <CardDescription>{dateFormatted}</CardDescription>
+        <Card className="shadow-none border-none">
+            <CardHeader className="pb-3 px-4">
+                <div className="flex flex-col gap-4">
+                    <div className="flex justify-between items-center">
+                      <div>
+                          <CardTitle className="text-lg font-headline">Absensi Guru</CardTitle>
+                          <CardDescription>Pilih tanggal dan kelola kehadiran harian guru.</CardDescription>
+                      </div>
+                      <Button variant="outline" size="sm" className="h-8 gap-2 border-primary/20 text-primary" onClick={() => setIsScannerOpen(true)}>
+                          <Camera className="h-4 w-4" /> Scan QR
+                      </Button>
                     </div>
-                    <div className="flex items-center gap-2 w-full sm:w-auto">
-                        <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="h-8 gap-2 border-primary/30 text-primary"
-                            onClick={() => setIsScannerOpen(true)}
-                        >
-                            <Camera className="h-4 w-4" />
-                            Scan QR Absen
-                        </Button>
-                        <Calendar className="h-4 w-4 text-muted-foreground hidden sm:block" />
-                        <Input 
-                            type="date" 
-                            value={selectedDate} 
-                            onChange={(e) => setSelectedDate(e.target.value)}
-                            className="h-8 text-xs w-full sm:w-[150px]"
-                        />
-                    </div>
+                    <DatePickerHorizontal 
+                      selectedDate={selectedDate}
+                      onDateChange={setSelectedDate}
+                    />
                 </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-4">
                 {isLoading ? (
                     <div className="flex justify-center items-center h-24">
                         <Loader2 className="h-6 w-6 animate-spin text-primary" />
                     </div>
                 ) : (
-                    <div className="space-y-4 max-h-64 overflow-y-auto pr-2">
-                        {scheduledTeachersOnSelectedDate && scheduledTeachersOnSelectedDate.length > 0 ? scheduledTeachersOnSelectedDate.map(teacher => (
-                            <div key={teacher.id} className="flex items-center justify-between">
+                    <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1">
+                        {scheduledTeachersOnSelectedDate.length > 0 ? scheduledTeachersOnSelectedDate.map(teacher => (
+                            <div key={teacher.id} className="flex items-center justify-between p-2 rounded-xl bg-card border shadow-sm">
                                 <div className="flex items-center gap-3">
-                                    <Avatar className="h-8 w-8">
+                                    <Avatar className="h-10 w-10">
                                         <AvatarImage src={teacher.avatarUrl} alt={teacher.name} />
                                         <AvatarFallback>{teacher.name.charAt(0)}</AvatarFallback>
                                     </Avatar>
-                                    <span className="text-sm font-medium">{teacher.name}</span>
+                                    <div>
+                                        <p className="text-xs font-bold leading-tight">{teacher.name}</p>
+                                        <p className="text-[10px] text-muted-foreground">{teacher.nig}</p>
+                                    </div>
                                 </div>
                                 <Select
                                     value={attendance[teacher.id] || ''}
                                     onValueChange={(value) => handleStatusChange(teacher.id, value as AttendanceStatus)}
                                 >
-                                    <SelectTrigger className="w-[110px] text-xs">
-                                        <SelectValue placeholder="Pilih status" />
+                                    <SelectTrigger className="w-[100px] h-8 text-[10px] bg-muted/30">
+                                        <SelectValue placeholder="Status" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {STATUS_OPTIONS.map(status => (
-                                            <SelectItem key={status} value={status}>
-                                                {status}
-                                            </SelectItem>
-                                        ))}
+                                        {STATUS_OPTIONS.map(status => <SelectItem key={status} value={status}>{status}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                             </div>
                         )) : (
-                            <p className="text-sm text-muted-foreground text-center py-4">
-                                {selectedDayKey ? 'Tidak ada guru yang terjadwal mengajar pada tanggal ini.' : 'Jadwal pelajaran tidak tersedia untuk hari ini.'}
-                            </p>
+                            <div className="py-12 text-center text-muted-foreground border-2 border-dashed rounded-xl opacity-50">
+                                <p className="text-xs italic">Tidak ada jadwal mengajar pada hari ini.</p>
+                            </div>
                         )}
                     </div>
                 )}
             </CardContent>
-            {scheduledTeachersOnSelectedDate && scheduledTeachersOnSelectedDate.length > 0 && (
-                <CardFooter>
-                    <Button onClick={handleSave} disabled={isLoading || isSaving} className="w-full">
-                        {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : `Simpan Absensi (${selectedDate})`}
+            {scheduledTeachersOnSelectedDate.length > 0 && (
+                <CardFooter className="px-4 pb-4 pt-0">
+                    <Button onClick={handleSave} disabled={isLoading || isSaving} className="w-full h-11 font-bold shadow-lg">
+                        {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : `Simpan Seluruh Absensi`}
                     </Button>
                 </CardFooter>
             )}
@@ -340,20 +263,10 @@ export function TeacherAttendanceCard() {
             <Dialog open={isScannerOpen} onOpenChange={setIsScannerOpen}>
                 <DialogContent className="sm:max-w-md p-6">
                     <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-primary">
-                            <Camera className="h-5 w-5" />
-                            Pindai QR Code Guru
-                        </DialogTitle>
-                        <DialogDescription className="text-xs">
-                            Arahkan kamera ke layar guru atau cetakan kartu untuk mendeteksi NIG secara otomatis.
-                        </DialogDescription>
+                        <DialogTitle className="flex items-center gap-2 text-primary"><Camera className="h-5 w-5" /> Pindai QR Guru</DialogTitle>
+                        <DialogDescription className="text-xs">Arahkan kamera ke QR Code guru.</DialogDescription>
                     </DialogHeader>
-                    {isScannerOpen && (
-                      <BarcodeScanner 
-                        onResult={handleScannerResult} 
-                        onClose={() => setIsScannerOpen(false)} 
-                      />
-                    )}
+                    {isScannerOpen && <BarcodeScanner onResult={handleScannerResult} onClose={() => setIsScannerOpen(false)} />}
                 </DialogContent>
             </Dialog>
         </Card>

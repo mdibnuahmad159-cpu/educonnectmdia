@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
@@ -9,7 +8,6 @@ import { collection, query, where } from 'firebase/firestore';
 import type { Student, StudentAttendance } from '@/types';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -18,9 +16,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, Calendar, Users, AlertTriangle, ExternalLink, Coffee } from 'lucide-react';
+import { Loader2, Users, Coffee } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { saveStudentAttendanceBatch } from '@/lib/firebase-helpers';
+import { DatePickerHorizontal } from './date-picker-horizontal';
 
 type AttendanceStatus = 'Hadir' | 'Sakit' | 'Izin' | 'Alpa';
 const STATUS_OPTIONS: AttendanceStatus[] = ['Hadir', 'Sakit', 'Izin', 'Alpa'];
@@ -33,11 +32,7 @@ export function StudentAttendanceCard() {
     const [selectedClass, setSelectedClass] = useState<string>("0");
 
     const isFriday = useMemo(() => {
-        try {
-            return parseISO(selectedDate).getDay() === 5;
-        } catch (e) {
-            return false;
-        }
+        try { return parseISO(selectedDate).getDay() === 5; } catch (e) { return false; }
     }, [selectedDate]);
 
     const studentsQuery = useMemoFirebase(() => {
@@ -50,7 +45,7 @@ export function StudentAttendanceCard() {
         if (!firestore) return null;
         return query(collection(firestore, 'student_attendances'), where('date', '==', selectedDate), where('kelas', '==', Number(selectedClass)));
     }, [firestore, selectedDate, selectedClass]);
-    const { data: currentAttendance, loading: loadingAttendance, error: attendanceError } = useCollection<StudentAttendance>(attendanceQuery);
+    const { data: currentAttendance, loading: loadingAttendance } = useCollection<StudentAttendance>(attendanceQuery);
 
     const [attendance, setAttendance] = useState<Record<string, AttendanceStatus>>({});
     const [isSaving, setIsSaving] = useState(false);
@@ -72,12 +67,6 @@ export function StudentAttendanceCard() {
         return [...students].sort((a,b) => a.name.localeCompare(b.name));
     }, [students]);
 
-    const indexLink = useMemo(() => {
-        if (!attendanceError) return null;
-        const match = attendanceError.message.match(/https:\/\/console\.firebase\.google\.com[^\s]*/);
-        return match ? match[0] : null;
-    }, [attendanceError]);
-
     const handleStatusChange = (studentId: string, status: AttendanceStatus) => {
         setAttendance(prev => ({ ...prev, [studentId]: status }));
     };
@@ -85,8 +74,7 @@ export function StudentAttendanceCard() {
     const handleSave = async () => {
         if (!firestore || !sortedStudents.length || isFriday) return;
         setIsSaving(true);
-
-        const attendancePayload: Omit<StudentAttendance, 'id'>[] = sortedStudents.map(student => ({
+        const payload: Omit<StudentAttendance, 'id'>[] = sortedStudents.map(student => ({
             studentId: student.id,
             studentName: student.name,
             nis: student.nis,
@@ -94,128 +82,90 @@ export function StudentAttendanceCard() {
             date: selectedDate,
             status: attendance[student.id] || 'Alpa',
         }));
-        
         try {
-            await saveStudentAttendanceBatch(firestore, attendancePayload);
-            toast({ title: 'Absensi Disimpan', description: `Absensi Kelas ${selectedClass} untuk tanggal ${selectedDate} telah disimpan.` });
+            await saveStudentAttendanceBatch(firestore, payload);
+            toast({ title: 'Absensi Disimpan', description: `Data berhasil disimpan.` });
         } catch (error) {
-            toast({ variant: 'destructive', title: 'Gagal Menyimpan', description: 'Terjadi kesalahan saat menyimpan absensi.' });
+            toast({ variant: 'destructive', title: 'Gagal Menyimpan' });
         } finally {
             setIsSaving(false);
         }
     };
     
     const isLoading = loadingStudents || loadingAttendance;
-    const dateFormatted = useMemo(() => {
-        try {
-            return format(parseISO(selectedDate), "EEEE, d MMMM yyyy", { locale: id });
-        } catch (e) {
-            return selectedDate;
-        }
-    }, [selectedDate]);
 
     return (
-        <Card>
-            <CardHeader className="pb-3">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                    <div>
-                        <CardTitle>Absensi Siswa</CardTitle>
-                        <CardDescription>{dateFormatted}</CardDescription>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+        <Card className="shadow-none border-none">
+            <CardHeader className="pb-3 px-4">
+                <div className="flex flex-col gap-4">
+                    <div className="flex justify-between items-center">
+                        <div>
+                            <CardTitle className="text-lg font-headline">Absensi Siswa</CardTitle>
+                            <CardDescription>Pilih kelas dan kelola kehadiran santri harian.</CardDescription>
+                        </div>
                         <Select value={selectedClass} onValueChange={setSelectedClass}>
-                            <SelectTrigger className="h-8 text-xs w-[100px]">
+                            <SelectTrigger className="h-8 text-xs w-[100px] border-primary/20 text-primary">
                                 <Users className="h-3 w-3 mr-1" />
                                 <SelectValue placeholder="Kelas" />
                             </SelectTrigger>
                             <SelectContent>
-                                {[...Array(7).keys()].map(i => (
-                                    <SelectItem key={i} value={String(i)}>Kelas {i}</SelectItem>
-                                ))}
+                                {[...Array(7).keys()].map(i => <SelectItem key={i} value={String(i)}>Kelas {i}</SelectItem>)}
                             </SelectContent>
                         </Select>
-                        <Input 
-                            type="date" 
-                            value={selectedDate} 
-                            onChange={(e) => setSelectedDate(e.target.value)}
-                            className="h-8 text-xs w-full sm:w-[130px]"
-                        />
                     </div>
+                    <DatePickerHorizontal 
+                      selectedDate={selectedDate}
+                      onDateChange={setSelectedDate}
+                    />
                 </div>
             </CardHeader>
-            <CardContent>
-                {attendanceError && (
-                    <div className="mb-4 p-3 rounded border border-destructive/20 bg-destructive/5 text-destructive text-[10px]">
-                        <div className="flex items-center gap-2 mb-2">
-                            <AlertTriangle className="h-3 w-3" />
-                            <span className="font-bold">Eror Kueri Database</span>
-                        </div>
-                        {indexLink ? (
-                            <>
-                                <p className="mb-2 leading-relaxed">Indeks komposit diperlukan untuk kueri ini. Harap buat melalui tombol di bawah.</p>
-                                <Button variant="destructive" size="xs" className="h-7 px-2 text-[9px] gap-1" asChild>
-                                    <a href={indexLink} target="_blank" rel="noopener noreferrer">
-                                        <ExternalLink className="h-3 w-3" /> BUAT INDEKS
-                                    </a>
-                                </Button>
-                            </>
-                        ) : (
-                            <p>{attendanceError.message}</p>
-                        )}
-                    </div>
-                )}
-
+            <CardContent className="px-4">
                 {isFriday ? (
-                    <div className="flex flex-col items-center justify-center py-10 bg-blue-50/50 rounded-lg border border-dashed border-blue-200 text-blue-700">
+                    <div className="flex flex-col items-center justify-center py-16 bg-blue-50/50 rounded-xl border border-dashed border-blue-200 text-blue-700">
                         <Coffee className="h-8 w-8 mb-2 opacity-50" />
-                        <p className="text-xs font-bold uppercase tracking-wide">Hari Jum'at - Libur</p>
-                        <p className="text-[10px] opacity-70">Tidak ada KBM hari ini.</p>
+                        <p className="text-xs font-bold uppercase">Hari Libur (Jum'at)</p>
                     </div>
                 ) : isLoading ? (
                     <div className="flex justify-center items-center h-24">
                         <Loader2 className="h-6 w-6 animate-spin text-primary" />
                     </div>
                 ) : (
-                    <div className="space-y-4 max-h-64 overflow-y-auto pr-2">
+                    <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1">
                         {sortedStudents && sortedStudents.length > 0 ? sortedStudents.map(student => (
-                            <div key={student.id} className="flex items-center justify-between">
+                            <div key={student.id} className="flex items-center justify-between p-2 rounded-xl bg-card border shadow-sm">
                                 <div className="flex items-center gap-3">
-                                    <Avatar className="h-8 w-8">
+                                    <Avatar className="h-10 w-10">
                                         <AvatarImage src={student.avatarUrl} alt={student.name} />
                                         <AvatarFallback>{student.name.charAt(0)}</AvatarFallback>
                                     </Avatar>
-                                    <div className="flex flex-col">
-                                        <span className="text-xs font-medium">{student.name}</span>
-                                        <span className="text-[10px] text-muted-foreground">{student.nis}</span>
+                                    <div>
+                                        <p className="text-xs font-bold leading-tight">{student.name}</p>
+                                        <p className="text-[10px] text-muted-foreground">{student.nis}</p>
                                     </div>
                                 </div>
                                 <Select
                                     value={attendance[student.id] || ''}
                                     onValueChange={(value) => handleStatusChange(student.id, value as AttendanceStatus)}
                                 >
-                                    <SelectTrigger className="w-[100px] h-7 text-[10px]">
-                                        <SelectValue placeholder="Pilih status" />
+                                    <SelectTrigger className="w-[100px] h-8 text-[10px] bg-muted/30">
+                                        <SelectValue placeholder="Status" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {STATUS_OPTIONS.map(status => (
-                                            <SelectItem key={status} value={status}>
-                                                {status}
-                                            </SelectItem>
-                                        ))}
+                                        {STATUS_OPTIONS.map(status => <SelectItem key={status} value={status}>{status}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                             </div>
                         )) : (
-                            <p className="text-sm text-muted-foreground text-center py-4">
-                                Tidak ada siswa di Kelas {selectedClass}.
-                            </p>
+                            <div className="py-12 text-center text-muted-foreground border-2 border-dashed rounded-xl opacity-50">
+                                <p className="text-xs italic">Tidak ada siswa di Kelas {selectedClass}.</p>
+                            </div>
                         )}
                     </div>
                 )}
             </CardContent>
             {!isFriday && sortedStudents && sortedStudents.length > 0 && (
-                <CardFooter>
-                    <Button onClick={handleSave} disabled={isLoading || isSaving} className="w-full text-xs h-9">
+                <CardFooter className="px-4 pb-4 pt-0">
+                    <Button onClick={handleSave} disabled={isLoading || isSaving} className="w-full h-11 font-bold shadow-lg">
                         {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : `Simpan Absensi Kelas ${selectedClass}`}
                     </Button>
                 </CardFooter>
