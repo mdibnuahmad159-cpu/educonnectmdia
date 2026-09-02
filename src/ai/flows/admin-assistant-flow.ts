@@ -39,6 +39,33 @@ export async function adminAssistantChat(input: AdminAssistantInput): Promise<Ad
   return adminAssistantFlow(input);
 }
 
+const adminPrompt = ai.definePrompt({
+  name: 'adminAssistantPrompt',
+  model: 'googleai/gemini-1.5-flash',
+  input: { schema: AdminAssistantInputSchema },
+  output: { schema: AdminAssistantOutputSchema },
+  config: {
+    temperature: 0.4,
+  },
+  system: `Anda adalah asisten AI profesional untuk Administrator 'Madrasah Diniyah Ibnu Ahmad'.
+
+Tugas Anda adalah membantu tugas operasional dan administratif sekolah melalui teks dan draf dokumen.
+
+ATURAN OPERASIONAL:
+1. JAWABAN TEKS: Berikan respon teks di field 'text'. Gunakan Bahasa Indonesia yang sangat sopan, formal, dan sesuai standar administrasi sekolah Islam.
+2. DOKUMEN PDF: HANYA jika admin secara eksplisit meminta "buatkan surat", "buatkan draf PDF", "buatkan pengumuman resmi", atau dokumen serupa, isi field 'generatedPdf' dengan konten yang lengkap.
+3. TANPA DOKUMEN: Jika admin hanya bertanya, memberikan info, atau tidak meminta dokumen secara eksplisit, JANGAN isi field 'generatedPdf' (biarkan undefined).
+4. TANPA GAMBAR: DILARANG keras mencoba membuat atau menawarkan gambar ilustrasi. Fokus hanya pada TEKS dan DOKUMEN.`,
+  prompt: `{{#if history}}
+Riwayat percakapan sebelumnya:
+{{#each history}}
+- {{role}}: {{#each content}}{{{text}}}{{/each}}
+{{/each}}
+{{/if}}
+
+Permintaan Admin saat ini: {{{message}}}`,
+});
+
 const adminAssistantFlow = ai.defineFlow(
   {
     name: 'adminAssistantFlow',
@@ -47,27 +74,7 @@ const adminAssistantFlow = ai.defineFlow(
   },
   async (input) => {
     try {
-      const response = await ai.generate({
-        model: 'googleai/gemini-1.5-flash',
-        output: { schema: AdminAssistantOutputSchema },
-        config: {
-            temperature: 0.4, // Suhu rendah untuk konsistensi tinggi pada data terstruktur
-        },
-        system: `Anda adalah asisten AI profesional untuk Administrator 'Madrasah Diniyah Ibnu Ahmad'.
-        
-Tugas Anda adalah membantu tugas operasional dan administratif sekolah.
-ATURAN OPERASIONAL:
-1. Jika admin hanya bertanya, memberikan informasi, atau menyapa, berikan respon di field 'text' saja. JANGAN menyertakan 'generatedPdf'.
-2. HANYA jika admin secara eksplisit meminta "buatkan surat", "buatkan PDF", "draf dokumen", atau kata kunci serupa, Anda WAJIB mengisi objek 'generatedPdf' dengan konten yang lengkap dan formal.
-3. Gunakan Bahasa Indonesia yang sangat sopan dan sesuai standar administrasi sekolah Islam.
-4. DILARANG keras menawarkan atau mencoba membuat gambar. Fokus hanya pada TEKS dan DOKUMEN.`,
-        messages: [
-          ...(input.history || []),
-          { role: 'user', content: [{ text: input.message }] }
-        ],
-      });
-
-      const output = response.output;
+      const { output } = await adminPrompt(input);
       
       if (!output) {
         return { text: "Maaf, saya tidak dapat merumuskan jawaban saat ini. Silakan coba ajukan pertanyaan lain." };
@@ -76,9 +83,8 @@ ATURAN OPERASIONAL:
       return output;
     } catch (error: any) {
       console.error("Critical AI Flow Error:", error);
-      // Fallback: mencoba memberikan respon teks sederhana jika pemrosesan output terstruktur gagal
       return { 
-        text: "Mohon maaf, pusat data AI sedang mengalami kendala teknis sementara. Namun, saya tetap bisa membantu Anda secara manual jika Anda memiliki pertanyaan spesifik tentang data madrasah." 
+        text: "Mohon maaf, pusat data AI sedang mengalami kendala teknis sementara. Saya tetap siap membantu Anda secara manual jika ada kendala administrasi yang mendesak." 
       };
     }
   }
