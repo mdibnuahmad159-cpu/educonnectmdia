@@ -10,6 +10,7 @@ import { BookOpenCheck, Loader2, School } from "lucide-react";
 import { useSchoolProfile } from "@/context/school-profile-provider";
 import { Button } from "@/components/ui/button";
 import { AcademicYearSelector } from "@/components/shared/academic-year-selector";
+import { AIAssistant } from "./components/ai-assistant";
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const { user, isUserLoading } = useUser();
@@ -67,6 +68,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       <main className="flex-1 p-2 pb-16 sm:px-4">
           {children}
       </main>
+      <AIAssistant />
       <BottomNav />
     </div>
   );
