@@ -215,7 +215,7 @@ export function TeacherAttendanceCard() {
         }
     };
 
-    const handleScannerResult = (decodedText: string) => {
+    const handleScannerResult = async (decodedText: string) => {
         // Find teacher with this NIG (decodedText is expected to be the NIG)
         const foundTeacher = teachers?.find(t => t.nig === decodedText || t.id === decodedText);
         if (foundTeacher) {
@@ -223,9 +223,29 @@ export function TeacherAttendanceCard() {
             if (!isScheduled) {
                 toast({ variant: "destructive", title: "Guru Tidak Terjadwal", description: `${foundTeacher.name} tidak memiliki jadwal hari ini.` });
             } else {
-                handleStatusChange(foundTeacher.id, 'Hadir');
-                toast({ title: "Absen Berhasil", description: `${foundTeacher.name} ditandai Hadir.` });
-                setIsScannerOpen(false);
+                // Update local state for immediate feedback
+                setAttendance(prev => ({ ...prev, [foundTeacher.id]: 'Hadir' }));
+                
+                // Auto-save the attendance
+                if (firestore && scheduledTeachersOnSelectedDate) {
+                    setIsSaving(true);
+                    const attendancePayload: Omit<TeacherAttendance, 'id'>[] = scheduledTeachersOnSelectedDate.map(teacher => ({
+                        teacherId: teacher.id,
+                        teacherName: teacher.name,
+                        date: selectedDate,
+                        status: teacher.id === foundTeacher.id ? 'Hadir' : (attendance[teacher.id] || 'Alpa'),
+                    }));
+                    
+                    try {
+                        await saveTeacherAttendanceBatch(firestore, attendancePayload);
+                        toast({ title: "Absen Berhasil", description: `${foundTeacher.name} otomatis disimpan sebagai Hadir.` });
+                        setIsScannerOpen(false);
+                    } catch (error) {
+                        toast({ variant: 'destructive', title: 'Gagal Simpan Otomatis' });
+                    } finally {
+                        setIsSaving(false);
+                    }
+                }
             }
         } else {
             toast({ variant: "destructive", title: "QR Tidak Dikenal", description: "Data guru tidak ditemukan di sistem." });
