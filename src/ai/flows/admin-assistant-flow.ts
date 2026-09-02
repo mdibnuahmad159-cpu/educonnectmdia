@@ -1,7 +1,7 @@
 'use server';
 /**
  * @fileOverview AI Assistant flow for Admin tasks.
- * Handles database searches, content drafting, and image generation.
+ * Handles database searches, content drafting, image generation, and PDF content preparation.
  */
 
 import { ai } from '@/ai/genkit';
@@ -21,10 +21,11 @@ export type AdminAssistantInput = z.infer<typeof AdminAssistantInputSchema>;
 const AdminAssistantOutputSchema = z.object({
   text: z.string().describe('The AI response text.'),
   generatedImage: z.string().optional().describe('Data URI of a generated image if requested.'),
-  suggestedAction: z.object({
-    type: z.enum(['create_announcement', 'find_student', 'find_teacher', 'none']),
-    data: z.any()
-  }).optional()
+  generatedPdf: z.object({
+    title: z.string().describe('The title for the PDF document.'),
+    content: z.string().describe('The full text content for the PDF document.'),
+    filename: z.string().describe('Suggested filename for the PDF.')
+  }).optional().describe('Structured content for PDF generation if requested.')
 });
 
 export type AdminAssistantOutput = z.infer<typeof AdminAssistantOutputSchema>;
@@ -42,21 +43,30 @@ const adminAssistantFlow = ai.defineFlow(
   async (input) => {
     const response = await ai.generate({
       model: 'googleai/gemini-2.5-flash',
+      output: { schema: AdminAssistantOutputSchema },
       system: `You are a helpful AI Assistant for the Administrator of 'Madrasah Diniyah Ibnu Ahmad'. 
-      Your goal is to help find data, draft announcements, and manage school info. 
+      Your goal is to help find data, draft announcements, manage school info, and create documents. 
       You should be professional, polite, and use Indonesian language.
       
-      If the user wants an image (e.g. for an announcement), use your internal knowledge to describe it, but the UI will handle specific triggers.
-      If the user wants to create an announcement, suggest a title and content.`,
+      If the user wants a PDF file (e.g. "buatkan surat", "buat draf pengumuman PDF", "cetak laporan ini ke PDF"), 
+      populate the 'generatedPdf' field with a title, formatted content, and a suitable filename.
+      
+      If the user wants an image (e.g. for an announcement), describe it, but also try to populate generatedImage if requested using Imagen.`,
       prompt: input.message,
       messages: input.history,
     });
 
-    let generatedImage: string | undefined;
+    const output = response.output;
 
-    // Logic to trigger image generation if keywords are found
+    if (!output) {
+      return { text: response.text };
+    }
+
+    let generatedImage = output.generatedImage;
+
+    // Logic to trigger image generation if keywords are found but not provided in output schema yet
     const lowerMessage = input.message.toLowerCase();
-    if (lowerMessage.includes('buat gambar') || lowerMessage.includes('generate image') || lowerMessage.includes('buatkan poster')) {
+    if (!generatedImage && (lowerMessage.includes('buat gambar') || lowerMessage.includes('generate image') || lowerMessage.includes('buatkan poster'))) {
       try {
         const { media } = await ai.generate({
           model: 'googleai/imagen-4.0-fast-generate-001',
@@ -71,8 +81,8 @@ const adminAssistantFlow = ai.defineFlow(
     }
 
     return {
-      text: response.text,
-      generatedImage,
+      ...output,
+      generatedImage
     };
   }
 );
