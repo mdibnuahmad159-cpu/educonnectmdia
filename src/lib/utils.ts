@@ -7,7 +7,7 @@ export function cn(...inputs: ClassValue[]) {
 
 /**
  * Menangani pencetakan dokumen dengan mendeteksi apakah aplikasi berjalan di WebView Android (APK).
- * Jika di WebView, menggunakan teknik Blob + Anchor untuk memaksa pembukaan di browser sistem atau penampil file.
+ * Jika di WebView, mencoba memicu pembukaan konten di browser sistem.
  * Jika di browser normal, menggunakan window.open + window.print().
  */
 export function safePrint(htmlContent: string) {
@@ -15,59 +15,68 @@ export function safePrint(htmlContent: string) {
 
   const ua = window.navigator.userAgent;
   const isAndroid = /Android/i.test(ua);
-  // Deteksi WebView yang lebih akurat: 'wv' atau kombinasi Chrome + Version/ (khas engine WebView)
+  // Deteksi WebView yang lebih akurat
   const isWebView = isAndroid && (ua.includes('wv') || (ua.includes('Chrome') && ua.includes('Version/')));
 
   if (isWebView) {
-    // Strategi APK: Menggunakan Blob dan Anchor dengan atribut download.
-    // Di WebView, window.open sering diblokir, namun link.click() pada URL blob biasanya diizinkan
-    // dan memicu sistem Android untuk menangani file tersebut (membuka di browser eksternal).
     try {
+      // Buat Blob dari konten HTML
       const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       
-      const link = document.createElement('a');
-      link.href = url;
-      link.target = '_blank';
-      // Atribut download membantu sistem Android mengenali ini sebagai file yang perlu dibuka/disimpan
-      link.download = `dokumen_cetak_${new Date().getTime()}.html`;
+      // Strategi: Mencoba membuka di jendela baru (yang biasanya di-intercept oleh OS untuk dibuka di browser)
+      // Tanpa atribut 'download' agar sistem mencoba merender/membuka, bukan menyimpan.
+      const win = window.open(url, '_blank');
       
-      document.body.appendChild(link);
-      link.click();
+      // Jika window.open diblokir/gagal, gunakan trik link tersembunyi
+      if (!win) {
+        const link = document.createElement('a');
+        link.href = url;
+        link.target = '_blank';
+        // Atribut rel="external" membantu pada beberapa wrapper WebView untuk melempar ke browser sistem
+        link.setAttribute('rel', 'external');
+        
+        document.body.appendChild(link);
+        link.click();
+        
+        setTimeout(() => {
+          document.body.removeChild(link);
+        }, 500);
+      }
       
-      // Berikan sedikit jeda sebelum menghapus elemen
+      // Revoke URL setelah beberapa saat agar memori bersih
       setTimeout(() => {
-        document.body.removeChild(link);
         URL.revokeObjectURL(url);
       }, 60000);
       
-      console.log("Printing triggered via Blob strategy for WebView");
+      console.log("WebView Print: Attempted to open in external browser");
     } catch (e) {
-      console.error("Gagal melempar cetakan ke browser", e);
-      alert("Gagal memproses dokumen. Pastikan browser utama (Chrome) terpasang di HP Anda.");
+      console.error("WebView opening failed", e);
+      alert("Gagal melempar dokumen ke browser. Harap pastikan browser utama terpasang di HP Anda.");
     }
   } else {
-    // Strategi Browser Normal (PC / Mobile Chrome Standar)
+    // Strategi Browser Normal (Desktop / Mobile Chrome Standar)
     try {
       const printWindow = window.open('', '_blank');
       if (printWindow) {
         printWindow.document.write(htmlContent);
         
-        // Injeksi skrip untuk trigger print otomatis setelah load
+        // Injeksi skrip untuk trigger print otomatis setelah konten dimuat
+        // Menggunakan event 'load' untuk memastikan gambar (seperti logo/kop) sudah muncul
         printWindow.document.write(`
           <script>
-            window.onload = function() {
+            window.addEventListener('load', function() {
               setTimeout(function() {
                 window.focus();
                 window.print();
-              }, 1000);
-            };
+              }, 500);
+            });
           </script>
         `);
         
         printWindow.document.close();
       } else {
-        // Jika window.open diblokir popup blocker, coba gunakan blob sebagai fallback
+        // Fallback jika window.open diblokir popup blocker: gunakan blob di tab saat ini
         const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
         const url = URL.createObjectURL(blob);
         window.location.assign(url);
