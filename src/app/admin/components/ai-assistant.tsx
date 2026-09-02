@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bot, Send, X, Sparkles, Download, FileText } from "lucide-react";
+import { Bot, Send, X, Sparkles, Download, FileText, Loader2 } from "lucide-react";
 import { adminAssistantChat } from "@/ai/flows/admin-assistant-flow";
 import { cn } from "@/lib/utils";
 import jsPDF from "jspdf";
@@ -25,7 +25,7 @@ export function AIAssistant() {
     const [isOpen, setIsOpen] = useState(false);
     const [input, setInput] = useState("");
     const [messages, setMessages] = useState<Message[]>([
-        { role: 'ai', text: 'Halo Admin! Ada yang bisa saya bantu terkait administrasi Madrasah? Saya bisa membantu menjawab pertanyaan atau membuatkan draf surat dalam format PDF.' }
+        { role: 'ai', text: 'Halo Admin! Ada yang bisa saya bantu terkait administrasi Madrasah? Saya bisa menjawab pertanyaan atau membuatkan draf surat resmi.' }
     ]);
     const [isLoading, setIsLoading] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -48,8 +48,8 @@ export function AIAssistant() {
         setIsLoading(true);
 
         try {
-            // Mengambil 6 pesan terakhir untuk konteks history agar tidak kelebihan token
-            const history = messages.slice(-6).map(m => ({
+            // Mengambil riwayat percakapan terbatas untuk konteks yang efisien
+            const history = messages.slice(-4).map(m => ({
                 role: m.role === 'user' ? 'user' as const : 'model' as const,
                 content: [{ text: m.text }]
             }));
@@ -58,16 +58,16 @@ export function AIAssistant() {
             
             const aiMsg: Message = { 
                 role: 'ai', 
-                text: result.text || "Permintaan Anda telah saya proses.",
+                text: result.text,
                 pdf: result.generatedPdf,
             };
             
             setMessages(prev => [...prev, aiMsg]);
         } catch (error) {
-            console.error("Assistant Client Error:", error);
+            console.error("Client Assistant Error:", error);
             setMessages(prev => [...prev, { 
                 role: 'ai', 
-                text: 'Maaf, terjadi gangguan koneksi sementara ke server AI. Mohon pastikan koneksi internet Anda stabil dan coba lagi.',
+                text: 'Maaf, terjadi gangguan koneksi ke pusat data AI. Silakan coba lagi dalam beberapa saat.',
                 error: true
             }]);
         } finally {
@@ -79,23 +79,24 @@ export function AIAssistant() {
         try {
             const doc = new jsPDF();
             
-            // Header
+            // Header Dokumen
             doc.setFont("helvetica", "bold");
             doc.setFontSize(16);
             doc.text(pdfData.title.toUpperCase(), 105, 25, { align: 'center' });
             doc.setLineWidth(0.5);
             doc.line(20, 30, 190, 30);
             
-            // Content
+            // Isi Dokumen
             doc.setFont("times", "normal");
             doc.setFontSize(12);
             const splitText = doc.splitTextToSize(pdfData.content, 170);
             doc.text(splitText, 20, 45, { align: 'justify' });
             
-            // Footer
+            // Footer Otomatis
             doc.setFontSize(8);
             doc.setTextColor(150);
-            doc.text(`Dihasilkan secara otomatis oleh EduConnect AI Assistant - ${new Date().toLocaleDateString('id-ID')}`, 105, 285, { align: 'center' });
+            const dateStr = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+            doc.text(`Dihasilkan oleh EduConnect AI Assistant pada ${dateStr}`, 105, 285, { align: 'center' });
             
             doc.save(`${pdfData.filename || 'dokumen_madrasah'}.pdf`);
         } catch (e) {
@@ -107,7 +108,7 @@ export function AIAssistant() {
         return (
             <Button 
                 onClick={() => setIsOpen(true)}
-                className="fixed bottom-20 right-6 h-12 w-12 rounded-full shadow-2xl z-50 animate-bounce hover:animate-none bg-primary text-primary-foreground border-2 border-white/20"
+                className="fixed bottom-20 right-6 h-12 w-12 rounded-full shadow-2xl z-50 bg-primary text-primary-foreground border-2 border-white/20 transition-all hover:scale-110 active:scale-95"
             >
                 <Sparkles className="h-6 w-6" />
             </Button>
@@ -115,7 +116,7 @@ export function AIAssistant() {
     }
 
     return (
-        <Card className="fixed bottom-20 right-6 w-[320px] sm:w-[450px] h-[500px] shadow-2xl z-50 flex flex-col border-primary/20 animate-in slide-in-from-bottom-5">
+        <Card className="fixed bottom-20 right-6 w-[320px] sm:w-[450px] h-[500px] shadow-2xl z-50 flex flex-col border-primary/20 animate-in slide-in-from-bottom-5 duration-300">
             <CardHeader className="p-3 border-b bg-primary text-primary-foreground rounded-t-lg flex flex-row items-center justify-between space-y-0">
                 <CardTitle className="text-xs font-bold flex items-center gap-2 uppercase tracking-widest">
                     <Bot className="h-4 w-4" /> Asisten Administrasi
@@ -129,7 +130,7 @@ export function AIAssistant() {
                     <div className="space-y-4 pb-4">
                         {messages.map((msg, i) => (
                             <div key={i} className={cn(
-                                "flex gap-2 max-w-[85%]",
+                                "flex gap-2 max-w-[90%]",
                                 msg.role === 'user' ? "ml-auto flex-row-reverse" : "mr-auto"
                             )}>
                                 <div className={cn(
@@ -162,12 +163,9 @@ export function AIAssistant() {
                         ))}
                         {isLoading && (
                             <div className="flex gap-2 mr-auto">
-                                <div className="bg-white border border-slate-200 p-3 rounded-2xl rounded-tl-none shadow-sm">
-                                    <div className="flex gap-1.5">
-                                        <div className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                                        <div className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                                        <div className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce"></div>
-                                    </div>
+                                <div className="bg-white border border-slate-200 p-3 rounded-2xl rounded-tl-none shadow-sm flex items-center gap-2">
+                                    <Loader2 className="h-3 w-3 animate-spin text-primary/40" />
+                                    <span className="text-[10px] text-muted-foreground animate-pulse">Berpikir...</span>
                                 </div>
                             </div>
                         )}
