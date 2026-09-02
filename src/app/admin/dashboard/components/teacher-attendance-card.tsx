@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -6,15 +7,15 @@ import { id } from 'date-fns/locale';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import type { Teacher, TeacherAttendance, Schedule, ScheduleEntry } from '@/types';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
@@ -23,12 +24,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, Calendar, Camera, X } from 'lucide-react';
+import { Loader2, Calendar, Camera, X, ChevronDown, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { saveTeacherAttendanceBatch } from '@/lib/firebase-helpers';
 import { useAcademicYear } from '@/context/academic-year-provider';
 import { Html5Qrcode } from 'html5-qrcode';
 import { DatePickerHorizontal } from './date-picker-horizontal';
+import { cn } from '@/lib/utils';
 
 type AttendanceStatus = 'Hadir' | 'Sakit' | 'Izin' | 'Alpa';
 const STATUS_OPTIONS: AttendanceStatus[] = ['Hadir', 'Sakit', 'Izin', 'Alpa'];
@@ -123,7 +125,7 @@ export function TeacherAttendanceCard() {
     }, [schedules, selectedDayKey]);
 
     const [attendance, setAttendance] = useState<Record<string, AttendanceStatus>>({});
-    const [isSaving, setIsSaving] = useState(false);
+    const [isSaving, setIsSaving] = useState<string | null>(null);
 
     useEffect(() => {
         if (todaysAttendance) {
@@ -146,22 +148,28 @@ export function TeacherAttendanceCard() {
         setAttendance(prev => ({ ...prev, [teacherId]: status }));
     };
 
-    const handleSave = async () => {
-        if (!firestore || !scheduledTeachersOnSelectedDate) return;
-        setIsSaving(true);
-        const attendancePayload: Omit<TeacherAttendance, 'id'>[] = scheduledTeachersOnSelectedDate.map(teacher => ({
+    const handleSaveSingle = async (teacherId: string) => {
+        if (!firestore) return;
+        const teacher = teachers?.find(t => t.id === teacherId);
+        if (!teacher) return;
+
+        setIsSaving(teacherId);
+        const status = attendance[teacherId] || 'Alpa';
+        
+        const attendancePayload: Omit<TeacherAttendance, 'id'>[] = [{
             teacherId: teacher.id,
             teacherName: teacher.name,
             date: selectedDate,
-            status: attendance[teacher.id] || 'Alpa',
-        }));
+            status: status,
+        }];
+
         try {
             await saveTeacherAttendanceBatch(firestore, attendancePayload);
-            toast({ title: 'Absensi Disimpan', description: `Data berhasil disimpan.` });
+            toast({ title: 'Absensi Diperbarui', description: `${teacher.name} berhasil ditandai ${status}.` });
         } catch (error) {
             toast({ variant: 'destructive', title: 'Gagal Menyimpan' });
         } finally {
-            setIsSaving(false);
+            setIsSaving(null);
         }
     };
 
@@ -174,19 +182,19 @@ export function TeacherAttendanceCard() {
             } else {
                 setAttendance(prev => ({ ...prev, [foundTeacher.id]: 'Hadir' }));
                 if (firestore && scheduledTeachersOnSelectedDate) {
-                    setIsSaving(true);
-                    const payload: Omit<TeacherAttendance, 'id'>[] = scheduledTeachersOnSelectedDate.map(teacher => ({
-                        teacherId: teacher.id,
-                        teacherName: teacher.name,
+                    setIsSaving(foundTeacher.id);
+                    const payload: Omit<TeacherAttendance, 'id'>[] = [{
+                        teacherId: foundTeacher.id,
+                        teacherName: foundTeacher.name,
                         date: selectedDate,
-                        status: teacher.id === foundTeacher.id ? 'Hadir' : (attendance[teacher.id] || 'Alpa'),
-                    }));
+                        status: 'Hadir',
+                    }];
                     try {
                         await saveTeacherAttendanceBatch(firestore, payload);
-                        toast({ title: "Absen Berhasil" });
+                        toast({ title: "Absen Berhasil", description: `${foundTeacher.name} tercatat Hadir.` });
                         setIsScannerOpen(false);
                     } catch (error) { toast({ variant: 'destructive', title: 'Gagal' }); }
-                    finally { setIsSaving(false); }
+                    finally { setIsSaving(null); }
                 }
             }
         } else { toast({ variant: "destructive", title: "QR Tidak Dikenal" }); }
@@ -220,31 +228,77 @@ export function TeacherAttendanceCard() {
                     </div>
                 ) : (
                     <div className="space-y-4">
-                        {scheduledTeachersOnSelectedDate.length > 0 ? scheduledTeachersOnSelectedDate.map(teacher => (
-                            <div key={teacher.id} className="flex items-center justify-between p-2 rounded-xl bg-card border shadow-sm">
-                                <div className="flex items-center gap-3">
-                                    <Avatar className="h-10 w-10">
-                                        <AvatarImage src={teacher.avatarUrl} alt={teacher.name} />
-                                        <AvatarFallback>{teacher.name.charAt(0)}</AvatarFallback>
-                                    </Avatar>
-                                    <div>
-                                        <p className="text-xs font-bold leading-tight">{teacher.name}</p>
-                                        <p className="text-[10px] text-muted-foreground">{teacher.nig}</p>
+                        {scheduledTeachersOnSelectedDate.length > 0 ? scheduledTeachersOnSelectedDate.map(teacher => {
+                            const currentStatus = attendance[teacher.id];
+                            return (
+                                <div key={teacher.id} className="flex items-center justify-between p-2 rounded-xl bg-card border shadow-sm">
+                                    <div className="flex items-center gap-3">
+                                        <Avatar className="h-10 w-10">
+                                            <AvatarImage src={teacher.avatarUrl} alt={teacher.name} />
+                                            <AvatarFallback>{teacher.name.charAt(0)}</AvatarFallback>
+                                        </Avatar>
+                                        <div>
+                                            <p className="text-xs font-bold leading-tight">{teacher.name}</p>
+                                            <p className="text-[10px] text-muted-foreground">{teacher.nig}</p>
+                                        </div>
                                     </div>
+                                    
+                                    <DropdownMenu modal={false}>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button 
+                                                variant="secondary" 
+                                                size="xs" 
+                                                className={cn(
+                                                    "rounded-full font-bold px-3 h-[30px] border-none shadow-sm transition-all flex items-center gap-1.5 group",
+                                                    currentStatus === 'Hadir' ? "bg-green-100 text-green-700 hover:bg-green-200" :
+                                                    currentStatus === 'Sakit' ? "bg-yellow-100 text-yellow-700 hover:bg-yellow-200" :
+                                                    currentStatus === 'Izin' ? "bg-blue-100 text-blue-700 hover:bg-blue-200" :
+                                                    currentStatus === 'Alpa' ? "bg-red-100 text-red-700 hover:bg-red-200" : "bg-muted"
+                                                )}
+                                            >
+                                                <span className="text-[9px] uppercase tracking-wider">{currentStatus || 'Status'}</span>
+                                                <ChevronDown className="h-3 w-3 opacity-30 group-hover:opacity-100 transition-all group-data-[state=open]:rotate-180" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end" className="w-40 rounded-[20px] p-1.5 shadow-2xl border-none bg-card z-50">
+                                            <div className="px-2.5 py-1.5 text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60">
+                                                Status Absen
+                                            </div>
+                                            {STATUS_OPTIONS.map((opt) => (
+                                                <DropdownMenuItem 
+                                                    key={opt}
+                                                    onSelect={() => handleStatusChange(teacher.id, opt)}
+                                                    className={cn(
+                                                        "flex items-center gap-2 p-2 rounded-[14px] cursor-pointer focus:bg-muted group transition-all text-[11px] font-bold uppercase",
+                                                        currentStatus === opt ? "text-primary" : "text-muted-foreground"
+                                                    )}
+                                                >
+                                                    {opt}
+                                                    {currentStatus === opt && <div className="ml-auto w-1 h-1 rounded-full bg-primary" />}
+                                                </DropdownMenuItem>
+                                            ))}
+                                            
+                                            {currentStatus && currentStatus !== 'Hadir' && (
+                                                <>
+                                                    <DropdownMenuSeparator className="my-1.5 bg-muted/50" />
+                                                    <DropdownMenuItem 
+                                                        onSelect={(e) => {
+                                                            e.preventDefault();
+                                                            handleSaveSingle(teacher.id);
+                                                        }}
+                                                        disabled={isSaving === teacher.id}
+                                                        className="flex items-center justify-center gap-2 p-2 rounded-[14px] cursor-pointer bg-primary text-primary-foreground focus:bg-primary/90 text-[10px] font-bold uppercase"
+                                                    >
+                                                        {isSaving === teacher.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                                                        Simpan Perubahan
+                                                    </DropdownMenuItem>
+                                                </>
+                                            )}
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
                                 </div>
-                                <Select
-                                    value={attendance[teacher.id] || ''}
-                                    onValueChange={(value) => handleStatusChange(teacher.id, value as AttendanceStatus)}
-                                >
-                                    <SelectTrigger className="w-[100px] h-8 text-[10px] bg-muted/30">
-                                        <SelectValue placeholder="Status" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {STATUS_OPTIONS.map(status => <SelectItem key={status} value={status}>{status}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        )) : (
+                            );
+                        }) : (
                             <div className="py-12 text-center text-muted-foreground border-2 border-dashed rounded-xl opacity-50">
                                 <p className="text-xs italic">Tidak ada jadwal mengajar pada hari ini.</p>
                             </div>
@@ -252,13 +306,6 @@ export function TeacherAttendanceCard() {
                     </div>
                 )}
             </CardContent>
-            {scheduledTeachersOnSelectedDate.length > 0 && (
-                <CardFooter className="px-4 pb-4 pt-0 mt-4">
-                    <Button onClick={handleSave} disabled={isLoading || isSaving} className="w-full h-11 font-bold shadow-lg">
-                        {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : `Simpan Seluruh Absensi`}
-                    </Button>
-                </CardFooter>
-            )}
 
             <Dialog open={isScannerOpen} onOpenChange={setIsScannerOpen}>
                 <DialogContent className="sm:max-w-md p-6">
