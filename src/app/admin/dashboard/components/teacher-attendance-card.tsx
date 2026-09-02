@@ -24,7 +24,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, Calendar, Camera, X, ChevronDown, Save } from 'lucide-react';
+import { Loader2, Camera, X, Edit2, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { saveTeacherAttendanceBatch } from '@/lib/firebase-helpers';
 import { useAcademicYear } from '@/context/academic-year-provider';
@@ -32,8 +32,8 @@ import { Html5Qrcode } from 'html5-qrcode';
 import { DatePickerHorizontal } from './date-picker-horizontal';
 import { cn } from '@/lib/utils';
 
-type AttendanceStatus = 'Hadir' | 'Sakit' | 'Izin' | 'Alpa';
-const STATUS_OPTIONS: AttendanceStatus[] = ['Hadir', 'Sakit', 'Izin', 'Alpa'];
+type AttendanceStatus = 'Hadir' | 'Sakit' | 'Izin' | 'Alpa' | 'Belum Diabsen';
+const STATUS_OPTIONS: AttendanceStatus[] = ['Hadir', 'Sakit', 'Izin', 'Alpa', 'Belum Diabsen'];
 
 const dayMapping: { [key: number]: keyof Omit<Schedule, 'id' | 'classLevel' | 'academicYear' | 'type'> } = {
     0: 'sunday',
@@ -130,7 +130,7 @@ export function TeacherAttendanceCard() {
     useEffect(() => {
         if (todaysAttendance) {
             const initialAttendance = todaysAttendance.reduce((acc, record) => {
-                acc[record.teacherId] = record.status;
+                acc[record.teacherId] = record.status as AttendanceStatus;
                 return acc;
             }, {} as Record<string, AttendanceStatus>);
             setAttendance(initialAttendance);
@@ -154,13 +154,13 @@ export function TeacherAttendanceCard() {
         if (!teacher) return;
 
         setIsSaving(teacherId);
-        const status = attendance[teacherId] || 'Alpa';
+        const status = attendance[teacherId] || 'Belum Diabsen';
         
         const attendancePayload: Omit<TeacherAttendance, 'id'>[] = [{
             teacherId: teacher.id,
             teacherName: teacher.name,
             date: selectedDate,
-            status: status,
+            status: status as any,
         }];
 
         try {
@@ -209,7 +209,7 @@ export function TeacherAttendanceCard() {
                     <div className="flex justify-between items-center">
                       <div>
                           <CardTitle className="text-lg font-headline">Absensi Guru</CardTitle>
-                          <CardDescription>Pilih tanggal dan kelola kehadiran harian guru.</CardDescription>
+                          <CardDescription>Kelola kehadiran harian melalui scan atau input manual.</CardDescription>
                       </div>
                       <Button variant="outline" size="sm" className="h-8 gap-2 border-primary/20 text-primary" onClick={() => setIsScannerOpen(true)}>
                           <Camera className="h-4 w-4" /> Scan QR
@@ -229,7 +229,7 @@ export function TeacherAttendanceCard() {
                 ) : (
                     <div className="space-y-4">
                         {scheduledTeachersOnSelectedDate.length > 0 ? scheduledTeachersOnSelectedDate.map(teacher => {
-                            const currentStatus = attendance[teacher.id];
+                            const currentStatus = attendance[teacher.id] || 'Belum Diabsen';
                             return (
                                 <div key={teacher.id} className="flex items-center justify-between p-2 rounded-xl bg-card border shadow-sm">
                                     <div className="flex items-center gap-3">
@@ -243,59 +243,60 @@ export function TeacherAttendanceCard() {
                                         </div>
                                     </div>
                                     
-                                    <DropdownMenu modal={false}>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button 
-                                                variant="secondary" 
-                                                size="xs" 
-                                                className={cn(
-                                                    "rounded-full font-bold px-3 h-[30px] border-none shadow-sm transition-all flex items-center gap-1.5 group",
-                                                    currentStatus === 'Hadir' ? "bg-green-100 text-green-700 hover:bg-green-200" :
-                                                    currentStatus === 'Sakit' ? "bg-yellow-100 text-yellow-700 hover:bg-yellow-200" :
-                                                    currentStatus === 'Izin' ? "bg-blue-100 text-blue-700 hover:bg-blue-200" :
-                                                    currentStatus === 'Alpa' ? "bg-red-100 text-red-700 hover:bg-red-200" : "bg-muted"
-                                                )}
-                                            >
-                                                <span className="text-[9px] uppercase tracking-wider">{currentStatus || 'Status'}</span>
-                                                <ChevronDown className="h-3 w-3 opacity-30 group-hover:opacity-100 transition-all group-data-[state=open]:rotate-180" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end" className="w-40 rounded-[20px] p-1.5 shadow-2xl border-none bg-card z-50">
-                                            <div className="px-2.5 py-1.5 text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60">
-                                                Status Absen
-                                            </div>
-                                            {STATUS_OPTIONS.map((opt) => (
-                                                <DropdownMenuItem 
-                                                    key={opt}
-                                                    onSelect={() => handleStatusChange(teacher.id, opt)}
-                                                    className={cn(
-                                                        "flex items-center gap-2 p-2 rounded-[14px] cursor-pointer focus:bg-muted group transition-all text-[11px] font-bold uppercase",
-                                                        currentStatus === opt ? "text-primary" : "text-muted-foreground"
-                                                    )}
-                                                >
-                                                    {opt}
-                                                    {currentStatus === opt && <div className="ml-auto w-1 h-1 rounded-full bg-primary" />}
-                                                </DropdownMenuItem>
-                                            ))}
-                                            
-                                            {currentStatus && currentStatus !== 'Hadir' && (
-                                                <>
-                                                    <DropdownMenuSeparator className="my-1.5 bg-muted/50" />
+                                    <div className="flex items-center gap-2">
+                                        <div className={cn(
+                                            "text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-tighter",
+                                            currentStatus === 'Hadir' ? "bg-green-100 text-green-700" :
+                                            currentStatus === 'Sakit' ? "bg-yellow-100 text-yellow-700" :
+                                            currentStatus === 'Izin' ? "bg-blue-100 text-blue-700" :
+                                            currentStatus === 'Alpa' ? "bg-red-100 text-red-700" : "bg-muted text-muted-foreground"
+                                        )}>
+                                            {currentStatus}
+                                        </div>
+
+                                        <DropdownMenu modal={false}>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-primary/10">
+                                                    <Edit2 className="h-3.5 w-3.5 text-primary" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end" className="w-44 rounded-[20px] p-1.5 shadow-2xl border-none bg-card z-50 animate-in fade-in zoom-in-95">
+                                                <div className="px-2.5 py-1.5 text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60">
+                                                    Ubah Status
+                                                </div>
+                                                {STATUS_OPTIONS.map((opt) => (
                                                     <DropdownMenuItem 
-                                                        onSelect={(e) => {
-                                                            e.preventDefault();
-                                                            handleSaveSingle(teacher.id);
-                                                        }}
-                                                        disabled={isSaving === teacher.id}
-                                                        className="flex items-center justify-center gap-2 p-2 rounded-[14px] cursor-pointer bg-primary text-primary-foreground focus:bg-primary/90 text-[10px] font-bold uppercase"
+                                                        key={opt}
+                                                        onSelect={() => handleStatusChange(teacher.id, opt)}
+                                                        className={cn(
+                                                            "flex items-center gap-2 p-2 rounded-[14px] cursor-pointer focus:bg-muted group transition-all text-[11px] font-bold uppercase",
+                                                            currentStatus === opt ? "text-primary" : "text-muted-foreground"
+                                                        )}
                                                     >
-                                                        {isSaving === teacher.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
-                                                        Simpan Perubahan
+                                                        {opt}
+                                                        {currentStatus === opt && <div className="ml-auto w-1 h-1 rounded-full bg-primary" />}
                                                     </DropdownMenuItem>
-                                                </>
-                                            )}
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
+                                                ))}
+                                                
+                                                {currentStatus && currentStatus !== 'Hadir' && currentStatus !== 'Belum Diabsen' && (
+                                                    <>
+                                                        <DropdownMenuSeparator className="my-1.5 bg-muted/50" />
+                                                        <DropdownMenuItem 
+                                                            onSelect={(e) => {
+                                                                e.preventDefault();
+                                                                handleSaveSingle(teacher.id);
+                                                            }}
+                                                            disabled={isSaving === teacher.id}
+                                                            className="flex items-center justify-center gap-2 p-2 rounded-[14px] cursor-pointer bg-primary text-primary-foreground focus:bg-primary/90 text-[10px] font-bold uppercase"
+                                                        >
+                                                            {isSaving === teacher.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                                                            Simpan
+                                                        </DropdownMenuItem>
+                                                    </>
+                                                )}
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </div>
                                 </div>
                             );
                         }) : (
