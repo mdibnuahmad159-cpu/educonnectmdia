@@ -4,23 +4,18 @@ import { useState, useMemo, useEffect } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import type { Teacher, TeacherAttendance, Schedule, ScheduleEntry } from '@/types';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, parseISO } from 'date-fns';
 import { id as dfnsId } from 'date-fns/locale';
 import { cn, safePrint } from '@/lib/utils';
-import { Loader2, Printer, FileSpreadsheet, FileText, FileDown } from 'lucide-react';
-import * as XLSX from 'xlsx';
+import { Loader2, Printer, FileDown, CheckCircle2, UserX, AlertCircle, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { useAcademicYear } from '@/context/academic-year-provider';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 const getStatusColor = (status: TeacherAttendance['status']) => {
     switch (status) {
@@ -109,6 +104,91 @@ export default function AttendancePage() {
         return [...teachers].sort((a,b) => a.name.localeCompare(b.name));
     }, [teachers]);
 
+    const summaryStats = useMemo(() => {
+        let totalScheduled = 0;
+        let totalHadir = 0;
+        let totalSakit = 0;
+        let totalIzin = 0;
+        let totalAlpa = 0;
+
+        if (!sortedTeachers.length || !daysInRange.length) return null;
+
+        daysInRange.forEach(day => {
+            const isFri = day.getDay() === 5;
+            if (isFri) return;
+
+            const dayKey = dayMapping[day.getDay()];
+            const dateStr = format(day, 'yyyy-MM-dd');
+            
+            sortedTeachers.forEach(teacher => {
+                const isScheduled = dayKey ? scheduledTeachersByDay.get(dayKey)?.has(teacher.id) : false;
+                if (!isScheduled) return;
+
+                totalScheduled++;
+                const status = attendanceMap.get(`${teacher.id}-${dateStr}`);
+                if (status === 'Hadir') totalHadir++;
+                else if (status === 'Sakit') totalSakit++;
+                else if (status === 'Izin') totalIzin++;
+                else if (status === 'Alpa') totalAlpa++;
+            });
+        });
+
+        return { totalScheduled, totalHadir, totalSakit, totalIzin, totalAlpa };
+    }, [sortedTeachers, daysInRange, attendanceMap, scheduledTeachersByDay]);
+
+    const handleExportPdf = () => {
+        if (!sortedTeachers.length || !fromDate || !toDate || !summaryStats) return;
+        
+        const doc = new jsPDF({ orientation: 'landscape' });
+        const start = parseISO(fromDate);
+        const end = parseISO(toDate);
+        const rangeTitle = `${format(start, 'd MMMM yyyy', { locale: dfnsId })} - ${format(end, 'd MMMM yyyy', { locale: dfnsId })}`;
+
+        doc.setFontSize(14);
+        doc.text('REKAP ABSENSI GURU', 14, 15);
+        doc.setFontSize(10);
+        doc.text(`Periode: ${rangeTitle}`, 14, 22);
+
+        const tableHead = [['Nama Guru', ...daysInRange.map(day => format(day, 'd/M'))]];
+        const tableBody = sortedTeachers.map(teacher => {
+            const row = [teacher.name];
+            daysInRange.forEach(day => {
+                const isFri = day.getDay() === 5;
+                const status = attendanceMap.get(`${teacher.id}-${format(day, 'yyyy-MM-dd')}`);
+                row.push(isFri ? 'L' : (status ? status.charAt(0) : '-'));
+            });
+            return row;
+        });
+
+        (doc as any).autoTable({
+            head: tableHead,
+            body: tableBody,
+            startY: 28,
+            theme: 'grid',
+            styles: { fontSize: 7, cellPadding: 1 },
+            headStyles: { fillColor: [46, 125, 50] },
+            didParseCell: (data: any) => {
+                if (data.section === 'body' && data.column.index > 0) {
+                    if (data.cell.text[0] === 'L') data.cell.styles.fillColor = [239, 246, 255];
+                    if (data.cell.text[0] === 'H') data.cell.styles.textColor = [22, 163, 74];
+                    if (data.cell.text[0] === 'A') data.cell.styles.textColor = [220, 38, 38];
+                }
+            }
+        });
+
+        const finalY = (doc as any).lastAutoTable.finalY + 10;
+        doc.setFontSize(11);
+        doc.text('RINGKASAN KEHADIRAN (BERDASARKAN JADWAL)', 14, finalY);
+        doc.setFontSize(9);
+        doc.text(`Total Jadwal Guru: ${summaryStats.totalScheduled}`, 14, finalY + 7);
+        doc.text(`Total Hadir: ${summaryStats.totalHadir}`, 14, finalY + 12);
+        doc.text(`Total Sakit: ${summaryStats.totalSakit}`, 14, finalY + 17);
+        doc.text(`Total Izin: ${summaryStats.totalIzin}`, 14, finalY + 22);
+        doc.text(`Total Alpa: ${summaryStats.totalAlpa}`, 14, finalY + 27);
+
+        doc.save(`Rekap_Absensi_Guru_${fromDate}_to_${toDate}.pdf`);
+    };
+
     const handlePrint = () => {
        if (!sortedTeachers.length || !fromDate || !toDate) return;
         const start = parseISO(fromDate);
@@ -132,6 +212,7 @@ export default function AttendancePage() {
                         .Izin { background-color: #dbeafe !important; }
                         .Alpa { background-color: #fee2e2 !important; }
                         .Friday { background-color: #eff6ff !important; font-weight: bold; }
+                        .summary { margin-top: 20px; font-weight: bold; }
                         @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
                     </style>
                 </head>
@@ -161,59 +242,141 @@ export default function AttendancePage() {
             });
             tableHtml += '</tr>';
         });
-        tableHtml += '</tbody></table></body></html>';
+        tableHtml += '</tbody></table>';
+        
+        if (summaryStats) {
+            tableHtml += `
+                <div class="summary">
+                    <p>RINGKASAN KEHADIRAN:</p>
+                    <p>Total Jadwal Guru: ${summaryStats.totalScheduled}</p>
+                    <p>Total Hadir: ${summaryStats.totalHadir}</p>
+                    <p>Total Sakit: ${summaryStats.totalSakit}</p>
+                    <p>Total Izin: ${summaryStats.totalIzin}</p>
+                    <p>Total Alpa: ${summaryStats.totalAlpa}</p>
+                </div>
+            `;
+        }
+
+        tableHtml += '</body></html>';
         safePrint(tableHtml);
     };
 
     const isLoading = loadingTeachers || loadingAttendance || !fromDate;
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Rekap Absensi Guru</CardTitle>
-                <CardDescription>Lihat rekapitulasi absensi guru per rentang tanggal.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="flex flex-col lg:flex-row justify-between items-end gap-4 mb-6">
-                    <div className="grid grid-cols-2 gap-3 w-full lg:w-auto">
-                        <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
-                        <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
+        <div className="space-y-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Rekap Absensi Guru</CardTitle>
+                    <CardDescription>Lihat rekapitulasi absensi guru per rentang tanggal.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex flex-col lg:flex-row justify-between items-end gap-4 mb-6">
+                        <div className="grid grid-cols-2 gap-3 w-full lg:w-auto">
+                            <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
+                            <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
+                        </div>
+                        <div className="flex gap-2 w-full lg:w-auto">
+                            <Button variant="outline" onClick={handleExportPdf} className="flex-1 lg:flex-none gap-2">
+                                <FileDown className="h-4 w-4" /> Ekspor PDF
+                            </Button>
+                            <Button variant="outline" onClick={handlePrint} className="flex-1 lg:flex-none gap-2">
+                                <Printer className="h-4 w-4" /> Cetak
+                            </Button>
+                        </div>
                     </div>
-                    <Button variant="outline" onClick={handlePrint} className="gap-2">
-                        <Printer className="h-4 w-4" /> Cetak Laporan
-                    </Button>
-                </div>
-                {isLoading ? <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div> : (
-                    <div className="overflow-x-auto border rounded-md">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="sticky left-0 bg-card min-w-[150px]">Nama Guru</TableHead>
-                                    {daysInRange.map(day => (
-                                        <TableHead key={day.toISOString()} className="text-center px-1 text-[10px]">{format(day, 'd')}</TableHead>
-                                    ))}
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {sortedTeachers.map(teacher => (
-                                    <TableRow key={teacher.id}>
-                                        <TableCell className="sticky left-0 bg-card text-xs">{teacher.name}</TableCell>
-                                        {daysInRange.map(day => {
-                                            const isFri = day.getDay() === 5;
-                                            const status = attendanceMap.get(`${teacher.id}-${format(day, 'yyyy-MM-dd')}`);
-                                            return (
-                                                <TableCell key={day.toISOString()} className={cn("text-center text-[10px] p-0 h-8", isFri ? 'bg-blue-50 text-blue-600 font-bold' : status ? getStatusColor(status) : 'bg-muted/10')}>
-                                                    {isFri ? 'L' : status ? status.charAt(0) : '-'}
-                                                </TableCell>
-                                            );
-                                        })}
+                    {isLoading ? <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div> : (
+                        <div className="overflow-x-auto border rounded-md">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead className="sticky left-0 bg-card min-w-[150px]">Nama Guru</TableHead>
+                                        {daysInRange.map(day => (
+                                            <TableHead key={day.toISOString()} className="text-center px-1 text-[10px]">{format(day, 'd')}</TableHead>
+                                        ))}
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-                )}
-            </CardContent>
-        </Card>
+                                </TableHeader>
+                                <TableBody>
+                                    {sortedTeachers.map(teacher => (
+                                        <TableRow key={teacher.id}>
+                                            <TableCell className="sticky left-0 bg-card text-xs">{teacher.name}</TableCell>
+                                            {daysInRange.map(day => {
+                                                const isFri = day.getDay() === 5;
+                                                const status = attendanceMap.get(`${teacher.id}-${format(day, 'yyyy-MM-dd')}`);
+                                                return (
+                                                    <TableCell key={day.toISOString()} className={cn("text-center text-[10px] p-0 h-8", isFri ? 'bg-blue-50 text-blue-600 font-bold' : status ? getStatusColor(status) : 'bg-muted/10')}>
+                                                        {isFri ? 'L' : status ? status.charAt(0) : '-'}
+                                                    </TableCell>
+                                                );
+                                            })}
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
+            {!isLoading && summaryStats && (
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                    <Card className="bg-primary/5 border-primary/10">
+                        <CardHeader className="p-3 pb-0">
+                            <CardDescription className="text-[10px] font-bold uppercase">Total Jadwal</CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-3 pt-1">
+                            <div className="flex items-center gap-2">
+                                <Info className="h-4 w-4 text-primary" />
+                                <span className="text-lg font-bold">{summaryStats.totalScheduled}</span>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card className="bg-green-50 border-green-100">
+                        <CardHeader className="p-3 pb-0">
+                            <CardDescription className="text-[10px] font-bold uppercase text-green-700">Hadir</CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-3 pt-1">
+                            <div className="flex items-center gap-2 text-green-700">
+                                <CheckCircle2 className="h-4 w-4" />
+                                <span className="text-lg font-bold">{summaryStats.totalHadir}</span>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card className="bg-yellow-50 border-yellow-100">
+                        <CardHeader className="p-3 pb-0">
+                            <CardDescription className="text-[10px] font-bold uppercase text-yellow-700">Sakit</CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-3 pt-1">
+                            <div className="flex items-center gap-2 text-yellow-700">
+                                <AlertCircle className="h-4 w-4" />
+                                <span className="text-lg font-bold">{summaryStats.totalSakit}</span>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card className="bg-blue-50 border-blue-100">
+                        <CardHeader className="p-3 pb-0">
+                            <CardDescription className="text-[10px] font-bold uppercase text-blue-700">Izin</CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-3 pt-1">
+                            <div className="flex items-center gap-2 text-blue-700">
+                                <Info className="h-4 w-4" />
+                                <span className="text-lg font-bold">{summaryStats.totalIzin}</span>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card className="bg-red-50 border-red-100">
+                        <CardHeader className="p-3 pb-0">
+                            <CardDescription className="text-[10px] font-bold uppercase text-red-700">Alpa</CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-3 pt-1">
+                            <div className="flex items-center gap-2 text-red-700">
+                                <UserX className="h-4 w-4" />
+                                <span className="text-lg font-bold">{summaryStats.totalAlpa}</span>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            )}
+        </div>
     );
 }
