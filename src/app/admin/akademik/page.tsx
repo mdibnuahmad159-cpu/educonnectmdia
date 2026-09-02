@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -14,7 +13,8 @@ import {
   Award,
   BookOpen
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 const academicMenus = [
   { href: "/admin/teachers", icon: Users, label: "Data Guru", color: "bg-blue-50 text-blue-600" },
@@ -30,7 +30,7 @@ const academicMenus = [
 
 export default function AkademikMenuPage() {
   return (
-    <div className="space-y-6 animate-in slide-in-from-right duration-500">
+    <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold font-headline text-primary flex items-center gap-2">
           <BookOpen className="h-6 w-6" /> Kategori Akademik
@@ -54,8 +54,4 @@ export default function AkademikMenuPage() {
       </div>
     </div>
   );
-}
-
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(" ");
 }

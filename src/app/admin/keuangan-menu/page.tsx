@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -11,6 +10,7 @@ import {
   Wallet
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 const financeMenus = [
   { href: "/admin/penabung-luar", icon: UsersRound, label: "Penabung Luar", color: "bg-blue-50 text-blue-600" },
@@ -23,7 +23,7 @@ const financeMenus = [
 
 export default function KeuanganMenuPage() {
   return (
-    <div className="space-y-6 animate-in slide-in-from-right duration-500">
+    <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold font-headline text-primary flex items-center gap-2">
           <Wallet className="h-6 w-6" /> Kategori Keuangan
@@ -47,8 +47,4 @@ export default function KeuanganMenuPage() {
       </div>
     </div>
   );
-}
-
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(" ");
 }
