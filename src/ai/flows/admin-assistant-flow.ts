@@ -10,6 +10,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
+import { gemini15Flash, imagen3Fast } from '@genkit-ai/google-genai';
 
 const AdminAssistantInputSchema = z.object({
   message: z.string().describe('The user message or request.'),
@@ -39,7 +40,7 @@ export async function adminAssistantChat(input: AdminAssistantInput): Promise<Ad
   } catch (error) {
     console.error("Critical error in adminAssistantChat:", error);
     return { 
-      text: "Maaf, sistem sedang mengalami gangguan komunikasi dengan pusat data AI. Silakan coba kirim pesan kembali." 
+      text: "Maaf, asisten AI sedang sibuk atau mengalami gangguan koneksi sementara. Mohon coba kirim pesan Anda kembali dalam beberapa saat." 
     };
   }
 }
@@ -51,51 +52,49 @@ const adminAssistantFlow = ai.defineFlow(
     outputSchema: AdminAssistantOutputSchema,
   },
   async (input) => {
-    // Construct messages array for chat history
     const messages = [
       ...(input.history || []),
       { role: 'user' as const, content: [{ text: input.message }] }
     ];
 
     try {
-      // Using global ai object defaults for model and safety
+      // 1. Generate Structured Response (Text + PDF info)
       const response = await ai.generate({
+        model: gemini15Flash,
         output: { schema: AdminAssistantOutputSchema },
         system: `Anda adalah asisten AI profesional untuk Admin 'Madrasah Diniyah Ibnu Ahmad'.
         Gunakan Bahasa Indonesia yang sopan dan formal.
         
         Tugas:
-        1. Bantu buat draf pengumuman/surat.
-        2. Berikan saran data.
-        3. Siapkan konten PDF jika diminta (field 'generatedPdf').
-        
-        PENTING: Jangan menyebutkan kendala teknis kepada pengguna kecuali benar-benar gagal.`,
+        1. Bantu cari info santri/guru (minta admin cek menu terkait jika data spesifik tidak ada).
+        2. Buat draf pengumuman, surat, atau laporan.
+        3. Jika user minta file PDF, isi field 'generatedPdf' dengan konten yang sesuai.
+        4. Jangan menyebutkan kendala teknis model.`,
         messages: messages,
       });
 
       const output = response.output;
       if (!output) {
-        return { text: response.text || "Permintaan Anda telah saya proses." };
+        return { text: response.text || "Permintaan Anda sedang saya proses." };
       }
 
-      let generatedImage = output.generatedImage;
+      let generatedImage = undefined;
 
-      // Logic to trigger image generation if requested explicitly
+      // 2. Optional Image Generation logic (handled separately to avoid total failure)
       const lowerMessage = input.message.toLowerCase();
-      const keywords = ['buat gambar', 'generate image', 'buatkan poster', 'ilustrasi', 'gambar'];
-      const wantsImage = keywords.some(k => lowerMessage.includes(keywords[0]));
+      const needsImage = ['gambar', 'ilustrasi', 'poster', 'foto', 'generate image'].some(k => lowerMessage.includes(k));
       
-      if (!generatedImage && wantsImage) {
+      if (needsImage) {
         try {
-          const imageResponse = await ai.generate({
-            model: 'googleai/imagen-4.0-fast-generate-001',
-            prompt: `Ilustrasi sekolah islam modern madrasah diniyah: ${input.message}`,
+          const imageRes = await ai.generate({
+            model: imagen3Fast,
+            prompt: `Ilustrasi sekolah islam modern madrasah diniyah, gaya bersih dan profesional: ${input.message}`,
           });
-          if (imageResponse.media?.url) {
-            generatedImage = imageResponse.media.url;
+          if (imageRes.media?.url) {
+            generatedImage = imageRes.media.url;
           }
         } catch (e) {
-          console.error("Optional image generation failed:", e);
+          console.warn("Image generation skipped due to error:", e);
         }
       }
 
@@ -104,14 +103,15 @@ const adminAssistantFlow = ai.defineFlow(
         generatedImage
       };
     } catch (innerError) {
-      console.error("Error generating AI response:", innerError);
-      // Fallback to simple text generation if structured output fails
+      console.error("Structured AI generation failed, falling back to simple text:", innerError);
+      // Final Fallback: Simple text generation
       try {
         const fallback = await ai.generate({
+          model: gemini15Flash,
           prompt: input.message,
-          system: "Jawab sebagai asisten admin sekolah dalam Bahasa Indonesia."
+          system: "Jawablah sebagai asisten administrasi sekolah dalam Bahasa Indonesia yang ramah."
         });
-        return { text: fallback.text };
+        return { text: fallback.text || "Saya memahami permintaan Anda, namun saat ini saya hanya bisa merespon dalam bentuk teks." };
       } catch (finalError) {
         throw finalError;
       }
