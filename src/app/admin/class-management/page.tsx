@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo } from "react";
@@ -9,9 +8,7 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import {
   Table,
@@ -52,6 +49,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useAcademicYear } from "@/context/academic-year-provider";
 import { graduateStudents } from "@/lib/firebase-helpers";
+import { cn } from "@/lib/utils";
 
 export default function ClassManagementPage() {
   const firestore = useFirestore() as Firestore;
@@ -291,28 +289,34 @@ export default function ClassManagementPage() {
   return (
     <div className="space-y-4">
       <Card className="border-none shadow-lg bg-primary text-primary-foreground">
-        <CardHeader className="pb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="space-y-1">
-              <CardTitle className="text-2xl font-bold font-headline">Manajemen Kelas</CardTitle>
-              <CardDescription className="text-primary-foreground/70 text-xs">
-                Kelola kenaikan, penurunan, dan perpindahan kelas siswa secara massal.
-              </CardDescription>
-            </div>
+        <CardHeader className="p-4 flex flex-row flex-wrap items-center gap-2">
+            <Select value={filterClass} onValueChange={setFilterClass}>
+                <SelectTrigger className="w-[140px] h-8 text-xs font-normal bg-white/10 border-white/20 text-white focus:ring-white/30">
+                    <SelectValue placeholder="Pilih kelas" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="semua">Semua Kelas</SelectItem>
+                    {[...Array(7).keys()].map(i => (
+                        <SelectItem key={i} value={String(i)}>Kelas {i}</SelectItem>
+                    ))}
+                    <SelectItem value="belum_diatur">Belum diatur</SelectItem>
+                </SelectContent>
+            </Select>
+
             <div className="flex flex-wrap items-center gap-2">
                 <Button size="xs" variant="outline" onClick={handlePromote} disabled={selectedStudents.length === 0} className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8">
-                <ChevronsUp className="h-3.5 w-3.5" /> Naik Kelas
+                <ChevronsUp className="h-3.5 w-3.5" /> Naik
                 </Button>
                 <Button size="xs" variant="outline" onClick={handleDemote} disabled={selectedStudents.length === 0} className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8">
-                <ChevronsDown className="h-3.5 w-3.5" /> Turun Kelas
+                <ChevronsDown className="h-3.5 w-3.5" /> Turun
                 </Button>
                 <Button size="xs" variant="outline" onClick={() => setIsMoveDialogOpen(true)} disabled={selectedStudents.length === 0} className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8">
-                <ArrowRightLeft className="h-3.5 w-3.5" /> Pindah Kelas
+                <ArrowRightLeft className="h-3.5 w-3.5" /> Pindah
                 </Button>
                 <Button size="xs" variant="destructive" onClick={handleGraduate} disabled={selectedStudents.length === 0} className="gap-1.5 h-8 font-bold shadow-md">
                   <GraduationCap className="h-3.5 w-3.5" /> Luluskan
                 </Button>
-                <div className="w-px h-6 bg-white/10 mx-1 hidden sm:block" />
+                
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button size="xs" variant="outline" className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8">
@@ -332,21 +336,6 @@ export default function ClassManagementPage() {
                     <Printer className="h-3.5 w-3.5" /> Cetak
                 </Button>
             </div>
-          </div>
-          <div className="pt-4">
-              <Select value={filterClass} onValueChange={setFilterClass}>
-                  <SelectTrigger className="w-full sm:w-[180px] h-9 text-xs font-normal bg-white/10 border-white/20 text-white focus:ring-white/30">
-                      <SelectValue placeholder="Filter per kelas" />
-                  </SelectTrigger>
-                  <SelectContent>
-                      <SelectItem value="semua">Semua Kelas</SelectItem>
-                      {[...Array(7).keys()].map(i => (
-                          <SelectItem key={i} value={String(i)}>Kelas {i}</SelectItem>
-                      ))}
-                      <SelectItem value="belum_diatur">Belum diatur</SelectItem>
-                  </SelectContent>
-              </Select>
-          </div>
         </CardHeader>
       </Card>
 
@@ -457,4 +446,3 @@ export default function ClassManagementPage() {
     </div>
   );
 }
-

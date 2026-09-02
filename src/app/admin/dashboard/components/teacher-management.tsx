@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useRef } from "react";
@@ -9,9 +8,7 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import {
   AlertDialog,
@@ -360,80 +357,70 @@ export function TeacherManagement() {
   return (
     <div className="space-y-4">
       <Card className="border-none shadow-lg bg-primary text-primary-foreground">
-        <CardHeader className="pb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="space-y-1">
-              <CardTitle className="text-2xl font-bold font-headline">Data Guru</CardTitle>
-              <CardDescription className="text-primary-foreground/70 text-xs">
-                Kelola data guru Madrasah. NIG digunakan sebagai ID Login.
-              </CardDescription>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Button 
-                size="xs" 
-                variant="outline" 
-                className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8" 
-                onClick={handleAutoNormalize}
-                disabled={isNormalizing || loading || !teachers?.length}
-              >
-                {isNormalizing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
-                Normalisasi NIG
-              </Button>
+        <CardHeader className="p-4 flex flex-row flex-wrap items-center gap-2">
+            <Button 
+            size="xs" 
+            variant="outline" 
+            className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8" 
+            onClick={handleAutoNormalize}
+            disabled={isNormalizing || loading || !teachers?.length}
+            >
+            {isNormalizing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
+            Normalisasi NIG
+            </Button>
 
-              <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                  <Button size="xs" variant="outline" className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8">
-                  <FileUp className="h-3.5 w-3.5" />
-                  Impor
-                  </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={handleDownloadTeacherTemplate}>
-                  <Download className="mr-2 h-3.5 w-3.5" />
-                  Unduh Template
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
-                  <Upload className="mr-2 h-3.5 w-3.5" />
-                  Unggah Excel
-                  </DropdownMenuItem>
-              </DropdownMenuContent>
-              </DropdownMenu>
-              <input
-                  type="file"
-                  ref={fileInputRef}
-                  className="hidden"
-                  accept=".xlsx, .xls"
-                  onChange={handleImportTeachers}
-              />
+            <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button size="xs" variant="outline" className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8">
+                <FileUp className="h-3.5 w-3.5" />
+                Impor
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleDownloadTeacherTemplate}>
+                <Download className="mr-2 h-3.5 w-3.5" />
+                Unduh Template
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
+                <Upload className="mr-2 h-3.5 w-3.5" />
+                Unggah Excel
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+            </DropdownMenu>
+            <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                accept=".xlsx, .xls"
+                onChange={handleImportTeachers}
+            />
 
-              <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                  <Button size="xs" variant="outline" className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8">
-                  <FileDown className="h-3.5 w-3.5" />
-                  Ekspor
-                  </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={handleExportTeachersExcel}>
-                  <FileSpreadsheet className="mr-2 h-3.5 w-3.5" />
-                  Ekspor ke Excel
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleExportTeachersPdf}>
-                  <FileText className="mr-2 h-3.5 w-3.5" />
-                  Ekspor ke PDF
-                  </DropdownMenuItem>
-              </DropdownMenuContent>
-              </DropdownMenu>
-              <Button size="xs" variant="outline" className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8" onClick={handlePrintTable}>
-                  <Printer className="h-3.5 w-3.5" />
-                  Cetak Data
-              </Button>
-              <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90" onClick={handleAdd}>
-                <PlusCircle className="h-3.5 w-3.5" />
-                Tambah Guru
-              </Button>
-            </div>
-          </div>
+            <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button size="xs" variant="outline" className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8">
+                <FileDown className="h-3.5 w-3.5" />
+                Ekspor
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleExportTeachersExcel}>
+                <FileSpreadsheet className="mr-2 h-3.5 w-3.5" />
+                Ekspor ke Excel
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportTeachersPdf}>
+                <FileText className="mr-2 h-3.5 w-3.5" />
+                Ekspor ke PDF
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+            </DropdownMenu>
+            <Button size="xs" variant="outline" className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8" onClick={handlePrintTable}>
+                <Printer className="h-3.5 w-3.5" />
+                Cetak Data
+            </Button>
+            <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90" onClick={handleAdd}>
+            <PlusCircle className="h-3.5 w-3.5" />
+            Tambah Guru
+            </Button>
         </CardHeader>
       </Card>
 
@@ -513,4 +500,3 @@ export function TeacherManagement() {
     </div>
   );
 }
-

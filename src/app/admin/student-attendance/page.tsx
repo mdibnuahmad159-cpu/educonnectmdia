@@ -1,11 +1,10 @@
-
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where, Firestore } from 'firebase/firestore';
 import type { Student, StudentAttendance } from '@/types';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,7 +36,7 @@ const getStatusColor = (status: StudentAttendance['status']) => {
         case 'Sakit': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300';
         case 'Izin': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300';
         case 'Alpa': return 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300';
-        default: return 'bg-muted/30';
+        default: return 'bg-muted/10';
     }
 };
 
@@ -45,7 +44,6 @@ export default function StudentAttendancePage() {
     const firestore = useFirestore() as Firestore;
     const { toast } = useToast();
 
-    // Hydration fix
     const [fromDate, setFromDate] = useState<string>("");
     const [toDate, setToDate] = useState<string>("");
     const [selectedClass, setSelectedClass] = useState<string>("0");
@@ -112,12 +110,13 @@ export default function StudentAttendancePage() {
                 Sakit: 0,
                 Izin: 0,
                 Alpa: 0,
-                'Belum Diabsen': 0
+                'Belum Diabsen': 0,
+                'Libur': 0
             };
 
             daysInRange.forEach(day => {
                 const isFri = day.getDay() === 5;
-                if (isFri) return; // Skip Friday in summary totals
+                if (isFri) return;
 
                 const dateStr = format(day, 'yyyy-MM-dd');
                 const status = attendanceMap.get(`${student.id}-${dateStr}`);
@@ -136,7 +135,6 @@ export default function StudentAttendancePage() {
         });
     }, [sortedStudents, daysInRange, attendanceMap]);
 
-    // Helper to extract index link from error message
     const indexLink = useMemo(() => {
         if (!attendanceError) return null;
         const match = attendanceError.message.match(/https:\/\/console\.firebase\.google\.com[^\s]*/);
@@ -259,74 +257,55 @@ export default function StudentAttendancePage() {
 
     return (
         <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-xl font-headline font-bold text-primary">Rekap Absensi Siswa</h1>
-                    <p className="text-xs text-muted-foreground">Lihat rekapitulasi kehadiran siswa per kelas harian.</p>
-                </div>
-                <div className="flex items-center gap-2">
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button size="sm" variant="outline" className="gap-1 h-9">
-                            <FileDown className="h-4 w-4" />
-                            Ekspor
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleExport('excel')}>
-                            <FileSpreadsheet className="mr-2 h-4 w-4 text-green-600" />
-                            Excel (.xlsx)
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleExport('pdf')}>
-                            <FileText className="mr-2 h-4 w-4 text-red-600" />
-                            PDF (.pdf)
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                    <Button size="sm" variant="outline" className="gap-1 h-9" onClick={handlePrint}>
-                        <Printer className="h-4 w-4" />
-                        Cetak
-                    </Button>
-                </div>
-            </div>
-
-            <Card className="border-none shadow-sm">
-                <CardContent className="pt-6">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-bold text-muted-foreground uppercase ml-1">Pilih Kelas</label>
-                            <Select value={selectedClass} onValueChange={setSelectedClass}>
-                                <SelectTrigger className="h-9">
-                                    <Users className="h-3.5 w-3.5 mr-2 opacity-70" />
-                                    <SelectValue placeholder="Pilih Kelas" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {[...Array(7).keys()].map(i => (
-                                        <SelectItem key={i} value={String(i)}>Kelas {i}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-bold text-muted-foreground uppercase ml-1">Dari Tanggal</label>
-                            <Input 
-                                type="date" 
-                                value={fromDate} 
-                                onChange={(e) => setFromDate(e.target.value)}
-                                className="h-9"
-                            />
-                        </div>
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-bold text-muted-foreground uppercase ml-1">Sampai Tanggal</label>
-                            <Input 
-                                type="date" 
-                                value={toDate} 
-                                onChange={(e) => setToDate(e.target.value)}
-                                className="h-9"
-                            />
+            <Card className="border-none shadow-lg bg-primary text-primary-foreground">
+                <CardHeader className="p-4 flex flex-row flex-wrap items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                         <Select value={selectedClass} onValueChange={setSelectedClass}>
+                            <SelectTrigger className="h-8 text-xs w-[120px] bg-white/10 border-white/20 text-white font-normal">
+                                <Users className="h-3.5 w-3.5 mr-2 opacity-70" />
+                                <SelectValue placeholder="Kelas" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {[...Array(7).keys()].map(i => (
+                                    <SelectItem key={i} value={String(i)}>Kelas {i}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <div className="flex items-center gap-1">
+                            <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="h-8 text-xs bg-white/10 border-white/20 text-white focus:ring-white/30" />
+                            <span className="text-white/40">-</span>
+                            <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="h-8 text-xs bg-white/10 border-white/20 text-white focus:ring-white/30" />
                         </div>
                     </div>
+                    <div className="flex items-center gap-2">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button size="xs" variant="outline" className="gap-1.5 h-8 border-white/20 hover:bg-white/10 text-white font-normal">
+                                <FileDown className="h-3.5 w-3.5" />
+                                Ekspor
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleExport('excel')}>
+                                <FileSpreadsheet className="mr-2 h-4 w-4 text-green-600" />
+                                Excel
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleExport('pdf')}>
+                                <FileText className="mr-2 h-4 w-4 text-red-600" />
+                                PDF
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                        <Button size="xs" variant="outline" className="gap-1.5 h-8 border-white/20 hover:bg-white/10 text-white font-normal" onClick={handlePrint}>
+                            <Printer className="h-3.5 w-3.5" />
+                            Cetak
+                        </Button>
+                    </div>
+                </CardHeader>
+            </Card>
 
+            <Card className="border-none shadow-sm overflow-hidden">
+                <CardContent className="p-4 pt-6">
                     {attendanceError && (
                         <div className="mb-4 p-4 rounded-md bg-destructive/10 text-destructive flex flex-col gap-3">
                             <div className="flex items-center gap-3">
@@ -338,14 +317,8 @@ export default function StudentAttendancePage() {
                             </div>
                             {indexLink && (
                                 <div className="mt-2 p-3 bg-destructive/20 rounded border border-destructive/30">
-                                    <p className="text-[10px] font-bold uppercase mb-2">Tindakan Diperlukan:</p>
-                                    <p className="text-[11px] mb-3 leading-relaxed">Kueri ini memerlukan indeks komposit. Silakan klik tombol di bawah untuk membuatnya di Konsol Firebase Anda.</p>
-                                    <Button 
-                                        variant="destructive" 
-                                        size="sm" 
-                                        className="h-8 gap-2 text-[10px] font-bold"
-                                        asChild
-                                    >
+                                    <p className="text-[11px] mb-3">Kueri ini memerlukan indeks komposit. Silakan klik tombol di bawah untuk membuatnya di Konsol Firebase Anda.</p>
+                                    <Button variant="destructive" size="xs" className="h-8 gap-2 font-bold" asChild>
                                         <a href={indexLink} target="_blank" rel="noopener noreferrer">
                                             <ExternalLink className="h-3.5 w-3.5" />
                                             BUAT INDEKS SEKARANG
@@ -358,7 +331,7 @@ export default function StudentAttendancePage() {
 
                     {isLoading ? (
                         <div className="flex justify-center items-center h-64">
-                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                            <Loader2 className="h-8 w-8 animate-spin text-primary/30" />
                         </div>
                     ) : (
                         <div className="overflow-x-auto border rounded-lg">
@@ -417,9 +390,6 @@ export default function StudentAttendancePage() {
             <Card>
                 <CardHeader className="py-3">
                     <CardTitle className="text-sm">Ringkasan Absensi Siswa</CardTitle>
-                    <CardDescription className="text-[10px]">
-                        Total kehadiran siswa di Kelas {selectedClass} (Hari Jum'at tidak dihitung).
-                    </CardDescription>
                 </CardHeader>
                 <CardContent className="px-3 pb-3">
                     <Table>

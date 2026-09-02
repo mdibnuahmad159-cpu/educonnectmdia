@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useRef } from "react";
@@ -9,9 +8,7 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import {
   Table,
@@ -310,82 +307,20 @@ export default function AlumniPage() {
     return (
         <div className="space-y-4">
             <Card className="border-none shadow-lg bg-primary text-primary-foreground">
-                <CardHeader className="pb-6">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div className="space-y-1">
-                            <CardTitle className="text-2xl font-bold font-headline">Alumni</CardTitle>
-                            <CardDescription className="text-primary-foreground/70 text-xs">
-                                Kelola dan lihat data siswa yang telah lulus. NIS bersifat opsional.
-                            </CardDescription>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2">
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button size="xs" variant="outline" className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8">
-                                    <FileUp className="h-3.5 w-3.5" />
-                                    Impor
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={handleDownloadTemplate}>
-                                    <Download className="mr-2 h-3.5 w-3.5" />
-                                    Unduh Template
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
-                                    <Upload className="mr-2 h-3.5 w-3.5" />
-                                    Unggah Excel
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                            <input
-                                type="file"
-                                ref={fileInputRef}
-                                className="hidden"
-                                accept=".xlsx, .xls"
-                                onChange={handleImportAlumni}
-                            />
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button size="xs" variant="outline" className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8">
-                                    <FileDown className="h-3.5 w-3.5" />
-                                    Ekspor
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={handleExportExcel}>
-                                    <FileSpreadsheet className="mr-2 h-3.5 w-3.5" />
-                                    Ekspor ke Excel
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={handleExportPdf}>
-                                    <FileText className="mr-2 h-3.5 w-3.5" />
-                                    Ekspor ke PDF
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                            <Button size="xs" variant="outline" className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8" onClick={handlePrintTable}>
-                                <Printer className="h-3.5 w-3.5" />
-                                Cetak
-                            </Button>
-                             <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90" onClick={handleAdd}>
-                                <PlusCircle className="h-3.5 w-3.5" />
-                                Tambah Alumni
-                            </Button>
-                        </div>
+                <CardHeader className="p-4 flex flex-row flex-wrap items-center gap-2">
+                    <div className="relative flex-1 min-w-[200px]">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-primary-foreground/50" />
+                        <Input 
+                            placeholder="Cari nama atau NIS..." 
+                            className="pl-9 h-9 text-xs bg-white/10 border-white/20 text-white placeholder:text-white/40 focus-visible:ring-white/30"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
                     </div>
-                    
-                    <div className="flex flex-col sm:flex-row gap-2 pt-4 w-full sm:max-w-xl">
-                        <div className="relative flex-1">
-                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-primary-foreground/50" />
-                            <Input 
-                                placeholder="Cari nama atau NIS..." 
-                                className="pl-9 h-9 text-xs bg-white/10 border-white/20 text-white placeholder:text-white/40 focus-visible:ring-white/30"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                        </div>
+                    <div className="flex flex-wrap items-center gap-2">
                         <Select value={filterYear} onValueChange={setFilterYear}>
-                            <SelectTrigger className="w-full sm:w-[180px] h-9 text-xs font-normal bg-white/10 border-white/20 text-white focus:ring-white/30">
-                                <SelectValue placeholder="Filter per tahun" />
+                            <SelectTrigger className="w-[140px] h-8 text-xs font-normal bg-white/10 border-white/20 text-white focus:ring-white/30">
+                                <SelectValue placeholder="Tahun" />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="semua">Semua Tahun</SelectItem>
@@ -394,6 +329,58 @@ export default function AlumniPage() {
                                 ))}
                             </SelectContent>
                         </Select>
+
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button size="xs" variant="outline" className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8">
+                                <FileUp className="h-3.5 w-3.5" />
+                                Impor
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={handleDownloadTemplate}>
+                                <Download className="mr-2 h-3.5 w-3.5" />
+                                Unduh Template
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
+                                <Upload className="mr-2 h-3.5 w-3.5" />
+                                Unggah Excel
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            className="hidden"
+                            accept=".xlsx, .xls"
+                            onChange={handleImportAlumni}
+                        />
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button size="xs" variant="outline" className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8">
+                                <FileDown className="h-3.5 w-3.5" />
+                                Ekspor
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={handleExportExcel}>
+                                <FileSpreadsheet className="mr-2 h-3.5 w-3.5" />
+                                Excel
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={handleExportPdf}>
+                                <FileText className="mr-2 h-3.5 w-3.5" />
+                                PDF
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                        <Button size="xs" variant="outline" className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8" onClick={handlePrintTable}>
+                            <Printer className="h-3.5 w-3.5" />
+                            Cetak
+                        </Button>
+                        <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90" onClick={handleAdd}>
+                            <PlusCircle className="h-3.5 w-3.5" />
+                            Tambah Alumni
+                        </Button>
                     </div>
                 </CardHeader>
             </Card>
@@ -483,4 +470,3 @@ export default function AlumniPage() {
         </div>
     );
 }
-

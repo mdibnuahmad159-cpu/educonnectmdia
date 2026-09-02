@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useRef } from "react";
@@ -9,9 +8,7 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import {
   Table,
@@ -55,13 +52,6 @@ import {
     Download
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { addCertificate, updateCertificate, deleteCertificate, addCertificatesBatch } from "@/lib/firebase-helpers";
 import { CertificateForm } from "./components/certificate-form";
 import { TemplateUploadDialog } from "./components/template-upload-dialog";
@@ -576,120 +566,8 @@ export default function CertificatesPage() {
     return (
         <div className="space-y-4">
             <Card className="border-none shadow-lg bg-primary text-primary-foreground">
-                <CardHeader className="pb-6">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div className="space-y-1">
-                            <CardTitle className="text-2xl font-bold font-headline">Sertifikat & Prestasi</CardTitle>
-                            <CardDescription className="text-primary-foreground/70 text-xs">
-                                Kelola catatan prestasi dan cetak sertifikat digital.
-                            </CardDescription>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button size="xs" variant="outline" className="gap-2 border-white/20 hover:bg-white/10 text-white font-normal h-8">
-                                        <FileUp className="h-3.5 w-3.5" />
-                                        Impor
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={() => {
-                                        const worksheet = XLSX.utils.json_to_sheet([{}], { header: ['NIS Siswa (Wajib)', 'Juara (Pertama/Kedua/Ketiga)', 'Nama Lomba', 'Tanggal (YYYY-MM-DD)'] });
-                                        const workbook = XLSX.utils.book_new();
-                                        XLSX.utils.book_append_sheet(workbook, worksheet, 'Template Sertifikat');
-                                        XLSX.writeFile(workbook, 'template_impor_sertifikat.xlsx');
-                                    }}>
-                                        <Download className="mr-2 h-3.5 w-3.5" />
-                                        Unduh Template
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
-                                        <Upload className="mr-2 h-3.5 w-3.5" />
-                                        Unggah Excel
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                            <input
-                                type="file"
-                                ref={fileInputRef}
-                                className="hidden"
-                                accept=".xlsx, .xls"
-                                onChange={async (event) => {
-                                    const file = event.target.files?.[0];
-                                    if (!file || !firestore || !students) return;
-                                    const reader = new FileReader();
-                                    reader.onload = async (e) => {
-                                        try {
-                                            const data = new Uint8Array(e.target?.result as ArrayBuffer);
-                                            const workbook = XLSX.read(data, { type: 'array' });
-                                            const sheetName = workbook.SheetNames[0];
-                                            const worksheet = workbook.Sheets[sheetName];
-                                            const json: any[] = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
-                                            if (json.length === 0) return;
-                                            toast({ title: "Mengimpor Data", description: "Memproses data sertifikat..." });
-                                            const certsToImport: Omit<Certificate, 'id'>[] = [];
-                                            const cols = { nis: 'NIS Siswa (Wajib)', rank: 'Juara (Pertama/Kedua/Ketiga)', competitionName: 'Nama Lomba', date: 'Tanggal (YYYY-MM-DD)' };
-                                            for (const item of json) {
-                                                const student = students.find(s => String(s.nis) === String(item[cols.nis]));
-                                                if (student && item[cols.rank] && item[cols.competitionName]) {
-                                                    certsToImport.push({
-                                                        studentId: student.id, studentName: student.name, category: 'lomba', rank: item[cols.rank] as any,
-                                                        competitionName: item[cols.competitionName], date: String(item[cols.date]), academicYear: activeYear
-                                                    });
-                                                }
-                                            }
-                                            if (certsToImport.length > 0) {
-                                                await addCertificatesBatch(firestore, certsToImport);
-                                                toast({ title: "Impor Selesai", description: `${certsToImport.length} sertifikat berhasil diimpor.` });
-                                            }
-                                        } catch (error) { toast({ variant: "destructive", title: "Gagal" }); }
-                                    };
-                                    reader.readAsArrayBuffer(file);
-                                }}
-                            />
-
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button size="xs" variant="outline" className="gap-2 border-white/20 hover:bg-white/10 text-white font-normal h-8">
-                                        <FileDown className="h-3.5 w-3.5" />
-                                        Ekspor
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={() => {
-                                        if (!filteredCertificates.length) return;
-                                        const data = filteredCertificates.map((c, i) => ({ No: i + 1, 'Nama Siswa': c.studentName, 'Juara': c.rank, 'Kategori': c.category, 'Lomba': c.competitionName, 'Tanggal': c.date }));
-                                        const worksheet = XLSX.utils.json_to_sheet(data);
-                                        const workbook = XLSX.utils.book_new();
-                                        XLSX.utils.book_append_sheet(workbook, worksheet, "Daftar Prestasi");
-                                        XLSX.writeFile(workbook, `Data_Prestasi_${activeYear.replace('/', '-')}.xlsx`);
-                                    }}>
-                                        <FileSpreadsheet className="mr-2 h-3.5 w-3.5" />
-                                        Ekspor ke Excel
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={handlePrintTable}>
-                                        <Printer className="mr-2 h-3.5 w-3.5" />
-                                        Cetak Tabel
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-
-                            <Button size="xs" variant="outline" className="gap-2 border-white/20 hover:bg-white/10 text-white font-normal h-8" onClick={handleBulkPrint}>
-                                <CopyCheck className="h-3.5 w-3.5" />
-                                Cetak Massal
-                            </Button>
-
-                            <Button size="xs" variant="outline" className="gap-2 border-white/20 hover:bg-white/10 text-white font-normal h-8" onClick={() => setIsTemplateOpen(true)}>
-                                <Upload className="h-3.5 w-3.5" />
-                                Upload Template
-                            </Button>
-                            <Button size="xs" variant="secondary" className="gap-2 font-bold shadow-md bg-white text-primary hover:bg-white/90 h-8" onClick={handleAdd}>
-                                <PlusCircle className="h-3.5 w-3.5" />
-                                Tambah Lomba
-                            </Button>
-                        </div>
-                    </div>
-                    
-                    <div className="relative mt-4 max-w-sm">
+                <CardHeader className="p-4 flex flex-row flex-wrap items-center gap-2">
+                    <div className="relative flex-1 min-w-[200px]">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-primary-foreground/50" />
                         <Input 
                             placeholder="Cari nama siswa atau lomba..." 
@@ -697,6 +575,109 @@ export default function CertificatesPage() {
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="pl-9 h-9 text-xs bg-white/10 border-white/20 text-white placeholder:text-white/40 focus-visible:ring-white/30"
                         />
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button size="xs" variant="outline" className="gap-2 border-white/20 hover:bg-white/10 text-white font-normal h-8">
+                                    <FileUp className="h-3.5 w-3.5" />
+                                    Impor
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => {
+                                    const worksheet = XLSX.utils.json_to_sheet([{}], { header: ['NIS Siswa (Wajib)', 'Juara (Pertama/Kedua/Ketiga)', 'Nama Lomba', 'Tanggal (YYYY-MM-DD)'] });
+                                    const workbook = XLSX.utils.book_new();
+                                    XLSX.utils.book_append_sheet(workbook, worksheet, 'Template Sertifikat');
+                                    XLSX.writeFile(workbook, 'template_impor_sertifikat.xlsx');
+                                }}>
+                                    <Download className="mr-2 h-3.5 w-3.5" />
+                                    Unduh Template
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
+                                    <Upload className="mr-2 h-3.5 w-3.5" />
+                                    Unggah Excel
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            className="hidden"
+                            accept=".xlsx, .xls"
+                            onChange={async (event) => {
+                                const file = event.target.files?.[0];
+                                if (!file || !firestore || !students) return;
+                                const reader = new FileReader();
+                                reader.onload = async (e) => {
+                                    try {
+                                        const data = new Uint8Array(e.target?.result as ArrayBuffer);
+                                        const workbook = XLSX.read(data, { type: 'array' });
+                                        const sheetName = workbook.SheetNames[0];
+                                        const worksheet = workbook.Sheets[sheetName];
+                                        const json: any[] = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+                                        if (json.length === 0) return;
+                                        toast({ title: "Mengimpor Data", description: "Memproses data sertifikat..." });
+                                        const certsToImport: Omit<Certificate, 'id'>[] = [];
+                                        const cols = { nis: 'NIS Siswa (Wajib)', rank: 'Juara (Pertama/Kedua/Ketiga)', competitionName: 'Nama Lomba', date: 'Tanggal (YYYY-MM-DD)' };
+                                        for (const item of json) {
+                                            const student = students.find(s => String(s.nis) === String(item[cols.nis]));
+                                            if (student && item[cols.rank] && item[cols.competitionName]) {
+                                                certsToImport.push({
+                                                    studentId: student.id, studentName: student.name, category: 'lomba', rank: item[cols.rank] as any,
+                                                    competitionName: item[cols.competitionName], date: String(item[cols.date]), academicYear: activeYear
+                                                });
+                                            }
+                                        }
+                                        if (certsToImport.length > 0) {
+                                            await addCertificatesBatch(firestore, certsToImport);
+                                            toast({ title: "Impor Selesai", description: `${certsToImport.length} sertifikat berhasil diimpor.` });
+                                        }
+                                    } catch (error) { toast({ variant: "destructive", title: "Gagal" }); }
+                                };
+                                reader.readAsArrayBuffer(file);
+                            }}
+                        />
+
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button size="xs" variant="outline" className="gap-2 border-white/20 hover:bg-white/10 text-white font-normal h-8">
+                                    <FileDown className="h-3.5 w-3.5" />
+                                    Ekspor
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => {
+                                    if (!filteredCertificates.length) return;
+                                    const data = filteredCertificates.map((c, i) => ({ No: i + 1, 'Nama Siswa': c.studentName, 'Juara': c.rank, 'Kategori': c.category, 'Lomba': c.competitionName, 'Tanggal': c.date }));
+                                    const worksheet = XLSX.utils.json_to_sheet(data);
+                                    const workbook = XLSX.utils.book_new();
+                                    XLSX.utils.book_append_sheet(workbook, worksheet, "Daftar Prestasi");
+                                    XLSX.writeFile(workbook, `Data_Prestasi_${activeYear.replace('/', '-')}.xlsx`);
+                                }}>
+                                    <FileSpreadsheet className="mr-2 h-3.5 w-3.5" />
+                                    Ekspor ke Excel
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={handlePrintTable}>
+                                    <Printer className="mr-2 h-3.5 w-3.5" />
+                                    Cetak Tabel
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+
+                        <Button size="xs" variant="outline" className="gap-2 border-white/20 hover:bg-white/10 text-white font-normal h-8" onClick={handleBulkPrint}>
+                            <CopyCheck className="h-3.5 w-3.5" />
+                            Cetak Massal
+                        </Button>
+
+                        <Button size="xs" variant="outline" className="gap-2 border-white/20 hover:bg-white/10 text-white font-normal h-8" onClick={() => setIsTemplateOpen(true)}>
+                            <Upload className="h-3.5 w-3.5" />
+                            Upload Template
+                        </Button>
+                        <Button size="xs" variant="secondary" className="gap-2 font-bold shadow-md bg-white text-primary hover:bg-white/90 h-8" onClick={handleAdd}>
+                            <PlusCircle className="h-3.5 w-3.5" />
+                            Tambah Lomba
+                        </Button>
                     </div>
                 </CardHeader>
             </Card>
@@ -794,4 +775,3 @@ export default function CertificatesPage() {
         </div>
     );
 }
-

@@ -1,16 +1,14 @@
-
 "use client";
 
 import { useState, useMemo } from "react";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
-import { collection, query, Firestore, orderBy, where, deleteDoc, doc } from "firebase/firestore";
-import type { SavingsTransaction, SPPPayment, Student, Teacher, ExternalSaver } from "@/types";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { collection, query, Firestore, orderBy, deleteDoc, doc } from "firebase/firestore";
+import type { SavingsTransaction, SPPPayment } from "@/types";
+import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
     Loader2, 
-    History, 
     Search,
     Trash2,
     Calendar,
@@ -20,7 +18,6 @@ import {
     FileText,
     ArrowUpCircle,
     ArrowDownCircle,
-    Filter,
     User
 } from "lucide-react";
 import {
@@ -32,7 +29,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { format, parseISO, startOfDay, endOfDay } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { id as dfnsId } from "date-fns/locale";
 import {
   Table,
@@ -288,34 +285,47 @@ export default function RiwayatTransaksiPage() {
 
     return (
         <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-xl font-headline text-primary flex items-center gap-2">
-                        <History className="h-6 w-6" /> Riwayat Keuangan Terpadu
-                    </h1>
-                    <p className="text-xs text-muted-foreground">Gabungan mutasi SPP dan Tabungan dari seluruh madrasah.</p>
-                </div>
-                <div className="flex items-center gap-2">
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button size="xs" variant="outline" className="gap-1.5 border-primary/30 text-primary h-9">
-                                <FileDown className="h-4 w-4" /> Ekspor
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={handleExportExcel} className="gap-2">
-                                <FileSpreadsheet className="h-4 w-4 text-green-600" /> Excel (.xlsx)
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={handleExportPdf} className="gap-2">
-                                <FileText className="h-4 w-4 text-red-600" /> PDF (.pdf)
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                    <Button size="xs" variant="outline" className="gap-1.5 border-primary/30 text-primary h-9" onClick={handlePrint}>
-                        <Printer className="h-4 w-4" /> Cetak
-                    </Button>
-                </div>
-            </div>
+            <Card className="border-none shadow-lg bg-primary text-primary-foreground">
+                <CardHeader className="p-4 flex flex-row flex-wrap items-center justify-between gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1 max-w-sm">
+                        <div className="relative">
+                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-primary-foreground/50" />
+                            <Input 
+                                placeholder="Cari nama..." 
+                                className="pl-9 h-8 text-xs bg-white/10 border-white/20 text-white placeholder:text-white/40 focus-visible:ring-white/30"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                        <Input 
+                            type="date" 
+                            className="h-8 text-xs bg-white/10 border-white/20 text-white focus:ring-white/30"
+                            value={dateFilter}
+                            onChange={(e) => setDateFilter(e.target.value)}
+                        />
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button size="xs" variant="outline" className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8 font-normal">
+                                    <FileDown className="h-3.5 w-3.5" /> Ekspor
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={handleExportExcel} className="gap-2">
+                                    <FileSpreadsheet className="h-4 w-4 text-green-600" /> Excel
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={handleExportPdf} className="gap-2">
+                                    <FileText className="h-4 w-4 text-red-600" /> PDF
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                        <Button size="xs" variant="outline" className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8 font-normal" onClick={handlePrint}>
+                            <Printer className="h-3.5 w-3.5" /> Cetak
+                        </Button>
+                    </div>
+                </CardHeader>
+            </Card>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card className="bg-green-50 border-none shadow-sm">
@@ -339,53 +349,6 @@ export default function RiwayatTransaksiPage() {
             </div>
 
             <Card className="border-none shadow-sm overflow-hidden">
-                <CardHeader className="pb-3 border-b bg-muted/5">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div className="relative">
-                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input 
-                                placeholder="Cari nama atau catatan..." 
-                                className="pl-9 h-9 text-xs bg-white"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                        </div>
-                        
-                        <div className="relative">
-                            <User className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
-                            <Select value={nameFilter} onValueChange={setNameFilter}>
-                                <SelectTrigger className="pl-9 h-9 text-xs bg-white">
-                                    <SelectValue placeholder="Filter Nama" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">Semua Nama</SelectItem>
-                                    {uniqueNames.map(name => (
-                                        <SelectItem key={name} value={name}>{name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                            <div className="relative flex-1">
-                                <Calendar className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
-                                <Input 
-                                    type="date" 
-                                    className="pl-9 h-9 text-xs bg-white"
-                                    value={dateFilter}
-                                    onChange={(e) => setDateFilter(e.target.value)}
-                                />
-                            </div>
-                            {(dateFilter || nameFilter !== "all" || searchTerm) && (
-                                <Button variant="ghost" size="xs" className="h-9 px-2 text-destructive" 
-                                    onClick={() => { setDateFilter(""); setNameFilter("all"); setSearchTerm(""); }}
-                                >
-                                    Reset
-                                </Button>
-                            )}
-                        </div>
-                    </div>
-                </CardHeader>
                 <CardContent className="p-0">
                     <div className="overflow-x-auto">
                         <Table>
@@ -436,7 +399,7 @@ export default function RiwayatTransaksiPage() {
                                                 <Button 
                                                     variant="ghost" 
                                                     size="icon" 
-                                                    className="h-7 w-7 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                                                    className="h-7 w-7 text-destructive"
                                                     onClick={() => handleDeleteClick(t)}
                                                 >
                                                     <Trash2 className="h-3.5 w-3.5" />
@@ -455,10 +418,6 @@ export default function RiwayatTransaksiPage() {
                         </Table>
                     </div>
                 </CardContent>
-                <CardFooter className="bg-muted/5 border-t py-2 flex justify-between">
-                    <span className="text-[10px] text-muted-foreground">Menampilkan {filteredTransactions.length} data</span>
-                    <span className="text-[10px] text-primary font-bold uppercase tracking-tight">Madrasah Diniyah Ibnu Ahmad</span>
-                </CardFooter>
             </Card>
 
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
@@ -466,7 +425,7 @@ export default function RiwayatTransaksiPage() {
                     <AlertDialogHeader>
                         <AlertDialogTitle>Hapus Data Keuangan?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Tindakan ini akan menghapus catatan ini secara permanen. Jika ini adalah setoran tabungan, saldo penabung tidak akan berkurang otomatis, harap sesuaikan secara manual.
+                            Tindakan ini akan menghapus catatan ini secara permanen.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -10,9 +9,7 @@ import {
   Card,
   CardContent,
   CardHeader,
-  CardTitle,
   CardFooter,
-  CardDescription,
 } from "@/components/ui/card";
 import {
     AlertDialog,
@@ -78,7 +75,6 @@ export default function AnnouncementsPage() {
             addAnnouncement(firestore, data);
             toast({ title: "Pengumuman Terkirim", description: "Pengumuman baru telah dipublikasikan." });
         }
-        // Pastikan form ditutup dan state dibersihkan
         setIsFormOpen(false);
         setSelectedAnnouncement(null);
     };
@@ -94,19 +90,11 @@ export default function AnnouncementsPage() {
     return (
         <div className="space-y-4">
             <Card className="border-none shadow-lg bg-primary text-primary-foreground">
-                <CardHeader className="pb-6">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div className="space-y-1">
-                            <CardTitle className="text-2xl font-bold font-headline">Pengumuman</CardTitle>
-                            <CardDescription className="text-primary-foreground/70 text-xs">
-                                Kelola informasi dan berita untuk guru serta wali murid.
-                            </CardDescription>
-                        </div>
-                        <Button variant="secondary" size="sm" className="gap-2 font-bold shadow-md bg-white text-primary hover:bg-white/90 h-9" onClick={handleAdd}>
-                            <PlusCircle className="h-4 w-4" />
-                            Buat Pengumuman
-                        </Button>
-                    </div>
+                <CardHeader className="p-4 flex flex-row items-center justify-end">
+                    <Button variant="secondary" size="sm" className="gap-2 font-bold shadow-md bg-white text-primary hover:bg-white/90 h-9" onClick={handleAdd}>
+                        <PlusCircle className="h-4 w-4" />
+                        Buat Pengumuman
+                    </Button>
                 </CardHeader>
             </Card>
 
@@ -155,7 +143,7 @@ export default function AnnouncementsPage() {
                                         <Calendar className="h-3 w-3" />
                                         {item.createdAt ? format(parseISO(item.createdAt), "d MMMM yyyy", { locale: dfnsId }) : '-'}
                                     </div>
-                                    <CardTitle className="text-sm font-bold line-clamp-2">{item.title}</CardTitle>
+                                    <h3 className="text-sm font-bold line-clamp-2">{item.title}</h3>
                                 </CardHeader>
                                 
                                 <CardContent className="p-4 pt-0 flex-1">
@@ -221,4 +209,3 @@ export default function AnnouncementsPage() {
         </div>
     );
 }
-

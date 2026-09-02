@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import type { Teacher, TeacherAttendance, Schedule, ScheduleEntry } from '@/types';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -309,41 +309,44 @@ export default function AttendancePage() {
 
     return (
         <div className="space-y-6 pb-10">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Rekap Absensi Guru</CardTitle>
-                    <CardDescription>Lihat rekapitulasi absensi guru per rentang tanggal.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex flex-col lg:flex-row justify-between items-end gap-4 mb-6">
-                        <div className="grid grid-cols-2 gap-3 w-full lg:w-auto">
-                            <div className="space-y-1">
-                                <label className="text-[10px] uppercase font-bold text-muted-foreground ml-1">Dari</label>
-                                <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
-                            </div>
-                            <div className="space-y-1">
-                                <label className="text-[10px] uppercase font-bold text-muted-foreground ml-1">Sampai</label>
-                                <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
-                            </div>
-                        </div>
-                        <div className="flex gap-2 w-full lg:w-auto">
-                            <Button variant="outline" onClick={handleExportPdf} className="flex-1 lg:flex-none gap-2">
-                                <FileDown className="h-4 w-4" /> Ekspor PDF
-                            </Button>
-                            <Button variant="outline" onClick={handlePrint} className="flex-1 lg:flex-none gap-2">
-                                <Printer className="h-4 w-4" /> Cetak
-                            </Button>
-                        </div>
+            <Card className="border-none shadow-lg bg-primary text-primary-foreground">
+                <CardHeader className="p-4 flex flex-row flex-wrap items-center justify-between gap-4">
+                    <div className="grid grid-cols-2 gap-2 flex-1 max-w-sm">
+                        <Input 
+                            type="date" 
+                            value={fromDate} 
+                            onChange={(e) => setFromDate(e.target.value)} 
+                            className="h-8 text-xs bg-white/10 border-white/20 text-white focus:ring-white/30"
+                        />
+                        <Input 
+                            type="date" 
+                            value={toDate} 
+                            onChange={(e) => setToDate(e.target.value)} 
+                            className="h-8 text-xs bg-white/10 border-white/20 text-white focus:ring-white/30"
+                        />
                     </div>
-                    {isLoading ? <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin" /></div> : (
+                    <div className="flex gap-2">
+                        <Button variant="outline" size="xs" onClick={handleExportPdf} className="h-8 gap-2 border-white/20 hover:bg-white/10 text-white font-normal">
+                            <FileDown className="h-3.5 w-3.5" /> Ekspor PDF
+                        </Button>
+                        <Button variant="outline" size="xs" onClick={handlePrint} className="h-8 gap-2 border-white/20 hover:bg-white/10 text-white font-normal">
+                            <Printer className="h-3.5 w-3.5" /> Cetak
+                        </Button>
+                    </div>
+                </CardHeader>
+            </Card>
+
+            <Card className="border-none shadow-sm overflow-hidden">
+                <CardContent className="p-4">
+                    {isLoading ? <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary/30" /></div> : (
                         <div className="overflow-x-auto border rounded-md">
                             <Table>
                                 <TableHeader>
-                                    <TableRow>
-                                        <TableHead className="sticky left-0 bg-card min-w-[150px] font-bold">Nama Guru</TableHead>
+                                    <TableRow className="bg-muted/30">
+                                        <TableHead className="sticky left-0 bg-muted/50 z-10 min-w-[150px] font-bold border-r">Nama Guru</TableHead>
                                         {daysInRange.map(day => (
                                             <TableHead key={day.toISOString()} className={cn(
-                                                "text-center px-1 text-[10px] font-bold",
+                                                "text-center px-1 text-[10px] font-bold border-r",
                                                 day.getDay() === 5 && "text-blue-600 bg-blue-50"
                                             )}>{format(day, 'd')}</TableHead>
                                         ))}
@@ -375,56 +378,46 @@ export default function AttendancePage() {
                 <div className="space-y-6">
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                         <Card className="bg-primary/5 border-primary/10">
-                            <CardHeader className="p-3 pb-0">
-                                <CardDescription className="text-[10px] font-bold uppercase">Total Jadwal</CardDescription>
-                            </CardHeader>
-                            <CardContent className="p-3 pt-1">
+                            <CardContent className="p-3">
+                                <p className="text-[9px] font-bold uppercase text-muted-foreground mb-1">Total Jadwal</p>
                                 <div className="flex items-center gap-2">
-                                    <Info className="h-4 w-4 text-primary" />
+                                    <Info className="h-3.5 w-3.5 text-primary" />
                                     <span className="text-lg font-bold">{globalStats.totalScheduled}</span>
                                 </div>
                             </CardContent>
                         </Card>
                         <Card className="bg-green-50 border-green-100">
-                            <CardHeader className="p-3 pb-0">
-                                <CardDescription className="text-[10px] font-bold uppercase text-green-700">Hadir</CardDescription>
-                            </CardHeader>
-                            <CardContent className="p-3 pt-1">
+                            <CardContent className="p-3">
+                                <p className="text-[9px] font-bold uppercase text-green-700 mb-1">Hadir</p>
                                 <div className="flex items-center gap-2 text-green-700">
-                                    <CheckCircle2 className="h-4 w-4" />
+                                    <CheckCircle2 className="h-3.5 w-3.5" />
                                     <span className="text-lg font-bold">{globalStats.totalHadir}</span>
                                 </div>
                             </CardContent>
                         </Card>
                         <Card className="bg-yellow-50 border-yellow-100">
-                            <CardHeader className="p-3 pb-0">
-                                <CardDescription className="text-[10px] font-bold uppercase text-yellow-700">Sakit</CardDescription>
-                            </CardHeader>
-                            <CardContent className="p-3 pt-1">
+                            <CardContent className="p-3">
+                                <p className="text-[9px] font-bold uppercase text-yellow-700 mb-1">Sakit</p>
                                 <div className="flex items-center gap-2 text-yellow-700">
-                                    <AlertCircle className="h-4 w-4" />
+                                    <AlertCircle className="h-3.5 w-3.5" />
                                     <span className="text-lg font-bold">{globalStats.totalSakit}</span>
                                 </div>
                             </CardContent>
                         </Card>
                         <Card className="bg-blue-50 border-blue-100">
-                            <CardHeader className="p-3 pb-0">
-                                <CardDescription className="text-[10px] font-bold uppercase text-blue-700">Izin</CardDescription>
-                            </CardHeader>
-                            <CardContent className="p-3 pt-1">
+                            <CardContent className="p-3">
+                                <p className="text-[9px] font-bold uppercase text-blue-700 mb-1">Izin</p>
                                 <div className="flex items-center gap-2 text-blue-700">
-                                    <Info className="h-4 w-4" />
+                                    <Info className="h-3.5 w-3.5" />
                                     <span className="text-lg font-bold">{globalStats.totalIzin}</span>
                                 </div>
                             </CardContent>
                         </Card>
                         <Card className="bg-red-50 border-red-100">
-                            <CardHeader className="p-3 pb-0">
-                                <CardDescription className="text-[10px] font-bold uppercase text-red-700">Alpa</CardDescription>
-                            </CardHeader>
-                            <CardContent className="p-3 pt-1">
+                            <CardContent className="p-3">
+                                <p className="text-[9px] font-bold uppercase text-red-700 mb-1">Alpa</p>
                                 <div className="flex items-center gap-2 text-red-700">
-                                    <UserX className="h-4 w-4" />
+                                    <UserX className="h-3.5 w-3.5" />
                                     <span className="text-lg font-bold">{globalStats.totalAlpa}</span>
                                 </div>
                             </CardContent>
@@ -434,20 +427,19 @@ export default function AttendancePage() {
                     <Card>
                         <CardHeader className="pb-3 border-b bg-muted/5">
                             <CardTitle className="text-sm flex items-center gap-2">
-                                <Users className="h-4 w-4" /> Ringkasan Kehadiran Per Guru
+                                <Users className="h-4 w-4" /> Ringkasan Per Guru
                             </CardTitle>
-                            <CardDescription className="text-[10px]">Statistik akumulasi kehadiran masing-masing guru dalam periode terpilih.</CardDescription>
                         </CardHeader>
                         <CardContent className="p-0">
                             <Table>
                                 <TableHeader className="bg-muted/30">
                                     <TableRow>
-                                        <TableHead className="px-4">Nama Guru</TableHead>
-                                        <TableHead className="text-center">Jadwal</TableHead>
-                                        <TableHead className="text-center text-green-700">Hadir</TableHead>
-                                        <TableHead className="text-center text-yellow-700">Sakit</TableHead>
-                                        <TableHead className="text-center text-blue-700">Izin</TableHead>
-                                        <TableHead className="text-center text-red-700">Alpa</TableHead>
+                                        <TableHead className="px-4 font-bold text-[10px] uppercase">Nama Guru</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] uppercase">Jadwal</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] uppercase text-green-700">Hadir</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] uppercase text-yellow-700">Sakit</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] uppercase text-blue-700">Izin</TableHead>
+                                        <TableHead className="text-center font-bold text-[10px] uppercase text-red-700">Alpa</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>

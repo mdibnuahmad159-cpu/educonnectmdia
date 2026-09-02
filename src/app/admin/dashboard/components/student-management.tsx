@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useRef, useMemo } from "react";
@@ -313,70 +312,8 @@ export function StudentManagement() {
   return (
     <div className="space-y-4">
       <Card className="border-none shadow-lg bg-primary text-primary-foreground">
-        <CardHeader className="pb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="space-y-1">
-              <CardTitle className="text-2xl font-bold font-headline">Data Siswa</CardTitle>
-              <CardDescription className="text-primary-foreground/70 text-xs">
-                Kelola data santri Madrasah. NIS digunakan untuk login wali murid.
-              </CardDescription>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button size="xs" variant="outline" className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8">
-                    <FileUp className="h-3.5 w-3.5" />
-                    Impor
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={handleDownloadStudentTemplate}>
-                    <Download className="mr-2 h-3.5 w-3.5" />
-                    Unduh Template
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
-                    <Upload className="mr-2 h-3.5 w-3.5" />
-                    Unggah Excel
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <input
-                type="file"
-                ref={fileInputRef}
-                className="hidden"
-                accept=".xlsx, .xls"
-                onChange={handleImportStudents}
-              />
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button size="xs" variant="outline" className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8">
-                    <FileDown className="h-3.5 w-3.5" />
-                    Ekspor
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={handleExportStudentsExcel}>
-                    <FileSpreadsheet className="mr-2 h-3.5 w-3.5" />
-                    Excel
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleExportStudentsPdf}>
-                    <FileText className="mr-2 h-3.5 w-3.5" />
-                    PDF
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <Button size="xs" variant="outline" className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8" onClick={handlePrintTable}>
-                <Printer className="h-3.5 w-3.5" />
-                Cetak
-              </Button>
-              <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90" onClick={handleAdd}>
-                <PlusCircle className="h-3.5 w-3.5" />
-                Tambah Siswa
-              </Button>
-            </div>
-          </div>
-          
-          <div className="relative mt-4 max-w-sm">
+        <CardHeader className="p-4 flex flex-row flex-wrap items-center gap-2">
+            <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-primary-foreground/50" />
             <Input 
                 placeholder="Cari nama atau NIS santri..." 
@@ -384,7 +321,60 @@ export function StudentManagement() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
             />
-          </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button size="xs" variant="outline" className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8">
+                        <FileUp className="h-3.5 w-3.5" />
+                        Impor
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={handleDownloadStudentTemplate}>
+                        <Download className="mr-2 h-3.5 w-3.5" />
+                        Unduh Template
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
+                        <Upload className="mr-2 h-3.5 w-3.5" />
+                        Unggah Excel
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+                <input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    accept=".xlsx, .xls"
+                    onChange={handleImportStudents}
+                />
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button size="xs" variant="outline" className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8">
+                        <FileDown className="h-3.5 w-3.5" />
+                        Ekspor
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={handleExportStudentsExcel}>
+                        <FileSpreadsheet className="mr-2 h-3.5 w-3.5" />
+                        Excel
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleExportStudentsPdf}>
+                        <FileText className="mr-2 h-3.5 w-3.5" />
+                        PDF
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+                <Button size="xs" variant="outline" className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8" onClick={handlePrintTable}>
+                    <Printer className="h-3.5 w-3.5" />
+                    Cetak
+                </Button>
+                <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90" onClick={handleAdd}>
+                    <PlusCircle className="h-3.5 w-3.5" />
+                    Tambah Siswa
+                </Button>
+            </div>
         </CardHeader>
       </Card>
       
@@ -450,4 +440,3 @@ export function StudentManagement() {
     </div>
   );
 }
-
