@@ -7,13 +7,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { useUser } from "@/firebase";
 import { BottomNav } from "./components/bottom-nav";
-import { Loader2, School } from "lucide-react";
+import { Loader2, School, Calendar } from "lucide-react";
 import { useSchoolProfile } from "@/context/school-profile-provider";
-import { AcademicYearSelector } from "@/components/shared/academic-year-selector";
+import { useAcademicYear } from "@/context/academic-year-provider";
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const { user, isUserLoading } = useUser();
   const { profile, loading: isProfileLoading } = useSchoolProfile();
+  const { activeYear } = useAcademicYear();
   const router = useRouter();
 
   useEffect(() => {
@@ -44,9 +45,12 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex flex-col min-h-screen bg-background overflow-x-hidden">
       <header className="sticky top-0 z-20 flex h-14 items-center justify-between gap-4 border-b bg-card px-4 shadow-sm">
-        {/* Left: Academic Year Selector */}
+        {/* Left: Academic Year Display (Static) */}
         <div className="flex-1 flex justify-start">
-          <AcademicYearSelector />
+          <div className="flex items-center gap-1.5 text-[10px] font-bold px-3 py-1.5 bg-secondary/50 rounded-full border border-primary/5 text-primary/70">
+              <Calendar className="h-3.5 w-3.5 opacity-60" />
+              <span>{activeYear}</span>
+          </div>
         </div>
         
         {/* Center: App Name */}

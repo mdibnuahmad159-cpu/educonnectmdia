@@ -20,7 +20,8 @@ import { Textarea } from "@/components/ui/textarea";
 import type { SchoolProfile } from "@/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ImageIcon, Loader2 } from "lucide-react";
+import { ImageIcon, Loader2, Calendar } from "lucide-react";
+import { AcademicYearSelector } from "@/components/shared/academic-year-selector";
 
 const formSchema = z.object({
   namaYayasan: z.string().optional(),
@@ -78,7 +79,6 @@ export function ProfileForm({ profile, onSave }: ProfileFormProps) {
       img.src = imageUrl;
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        // Kop surat butuh resolusi lebih tinggi (lebar), logo cukup kecil
         const MAX_WIDTH = fieldName === 'kopSuratUrl' ? 1200 : 400;
         
         let width = img.width;
@@ -94,7 +94,6 @@ export function ProfileForm({ profile, onSave }: ProfileFormProps) {
         const ctx = canvas.getContext('2d');
         if (ctx) {
           ctx.drawImage(img, 0, 0, width, height);
-          // Kompres ke JPEG dengan kualitas 75% untuk menghemat ruang Firestore
           const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
           form.setValue(fieldName, dataUrl);
         } else {
@@ -120,6 +119,19 @@ export function ProfileForm({ profile, onSave }: ProfileFormProps) {
                     <FormField control={form.control} name="namaMadrasah" render={({ field }) => ( <FormItem> <FormLabel>Nama Madrasah</FormLabel> <FormControl><Input {...field} value={field.value ?? ""} /></FormControl> <FormMessage /> </FormItem> )}/>
                 </div>
                 <FormField control={form.control} name="nsdt" render={({ field }) => ( <FormItem> <FormLabel>NSDT (Nomor Statistik Diniyah Takmiliyah)</FormLabel> <FormControl><Input {...field} value={field.value ?? ""} /></FormControl> <FormMessage /> </FormItem> )}/>
+                
+                {/* Academic Year Selector - Now in Profile Page */}
+                <div className="p-4 rounded-xl border bg-primary/5 space-y-3">
+                  <div className="flex items-center gap-2 text-primary">
+                    <Calendar className="h-4 w-4" />
+                    <span className="text-xs font-bold uppercase tracking-wider">Tahun Ajaran Aktif</span>
+                  </div>
+                  <AcademicYearSelector />
+                  <p className="text-[10px] text-muted-foreground italic leading-relaxed">
+                    Mengubah tahun ajaran di sini akan mengubah periode aktif untuk seluruh sistem, termasuk jadwal, nilai, dan tagihan SPP.
+                  </p>
+                </div>
+
                 <FormField control={form.control} name="alamat" render={({ field }) => ( <FormItem> <FormLabel>Alamat Lengkap</FormLabel> <FormControl><Textarea {...field} value={field.value ?? ""} /></FormControl> <FormMessage /> </FormItem> )}/>
                 
                 <div className="grid gap-6 py-4 border-y">

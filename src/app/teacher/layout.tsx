@@ -6,13 +6,14 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/firebase";
 import { TeacherBottomNav } from "./components/teacher-bottom-nav";
-import { BookOpenCheck, Loader2 } from "lucide-react";
+import { BookOpenCheck, Loader2, Calendar } from "lucide-react";
 import { useSchoolProfile } from "@/context/school-profile-provider";
-import { AcademicYearSelector } from "@/components/shared/academic-year-selector";
+import { useAcademicYear } from "@/context/academic-year-provider";
 
 export default function TeacherLayout({ children }: { children: ReactNode }) {
   const { user, isUserLoading } = useUser();
   const { profile, loading: isProfileLoading } = useSchoolProfile();
+  const { activeYear } = useAcademicYear();
   const router = useRouter();
   const [isClient, setIsClient] = useState(false);
 
@@ -64,8 +65,9 @@ export default function TeacherLayout({ children }: { children: ReactNode }) {
                 {profile?.namaMadrasah || 'EduConnect'}
             </h1>
         </div>
-        <div className="flex items-center gap-2">
-          <AcademicYearSelector />
+        <div className="flex items-center gap-1.5 text-[9px] font-bold px-2 py-1 bg-secondary/50 rounded-full border border-primary/5 text-primary/70">
+            <Calendar className="h-3 w-3 opacity-60" />
+            <span>{activeYear}</span>
         </div>
       </header>
       <main className="flex-1 p-2 pb-16 sm:px-4">
