@@ -7,7 +7,7 @@ import { id } from 'date-fns/locale';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import type { Teacher, TeacherAttendance, Schedule, ScheduleEntry } from '@/types';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -203,16 +203,16 @@ export function TeacherAttendanceCard() {
     const isLoading = loadingTeachers || loadingAttendance;
 
     return (
-        <Card className="shadow-none border-none">
+        <div className="animate-in fade-in duration-300">
             <CardHeader className="pb-3 px-4">
                 <div className="flex flex-col gap-4">
                     <div className="flex justify-between items-center">
                       <div>
-                          <CardTitle className="text-lg font-headline">Absensi Guru</CardTitle>
-                          <CardDescription>Kelola kehadiran harian melalui scan atau input manual.</CardDescription>
+                          <CardTitle className="text-sm font-bold uppercase tracking-tight text-primary">Status Mengajar Guru</CardTitle>
+                          <CardDescription className="text-[10px]">Kelola kehadiran melalui scan atau verifikasi manual.</CardDescription>
                       </div>
                       <Button variant="outline" size="sm" className="h-8 gap-2 border-primary/20 text-primary" onClick={() => setIsScannerOpen(true)}>
-                          <Camera className="h-4 w-4" /> Scan QR
+                          <Camera className="h-4 w-4" /> Scan
                       </Button>
                     </div>
                     <DatePickerHorizontal 
@@ -221,35 +221,35 @@ export function TeacherAttendanceCard() {
                     />
                 </div>
             </CardHeader>
-            <CardContent className="px-4">
+            <CardContent className="px-4 pb-6">
                 {isLoading ? (
                     <div className="flex justify-center items-center h-24">
                         <Loader2 className="h-6 w-6 animate-spin text-primary" />
                     </div>
                 ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                         {scheduledTeachersOnSelectedDate.length > 0 ? scheduledTeachersOnSelectedDate.map(teacher => {
                             const currentStatus = attendance[teacher.id] || 'Belum Diabsen';
                             return (
-                                <div key={teacher.id} className="flex items-center justify-between p-2 rounded-xl bg-card border shadow-sm">
+                                <div key={teacher.id} className="flex items-center justify-between p-2.5 rounded-xl bg-card border shadow-sm hover:border-primary/20 transition-all">
                                     <div className="flex items-center gap-3">
-                                        <Avatar className="h-10 w-10">
+                                        <Avatar className="h-9 w-9">
                                             <AvatarImage src={teacher.avatarUrl} alt={teacher.name} />
                                             <AvatarFallback>{teacher.name.charAt(0)}</AvatarFallback>
                                         </Avatar>
                                         <div>
-                                            <p className="text-xs font-bold leading-tight">{teacher.name}</p>
-                                            <p className="text-[10px] text-muted-foreground">{teacher.nig}</p>
+                                            <p className="text-[11px] font-bold leading-tight uppercase">{teacher.name}</p>
+                                            <p className="text-[9px] text-muted-foreground font-mono">{teacher.nig}</p>
                                         </div>
                                     </div>
                                     
                                     <div className="flex items-center gap-2">
                                         <div className={cn(
-                                            "text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-tighter",
+                                            "text-[9px] font-bold px-3 py-1 rounded-full uppercase tracking-tighter",
                                             currentStatus === 'Hadir' ? "bg-green-100 text-green-700" :
                                             currentStatus === 'Sakit' ? "bg-yellow-100 text-yellow-700" :
                                             currentStatus === 'Izin' ? "bg-blue-100 text-blue-700" :
-                                            currentStatus === 'Alpa' ? "bg-red-100 text-red-700" : "bg-muted text-muted-foreground"
+                                            currentStatus === 'Alpa' ? "bg-red-100 text-red-700" : "bg-muted text-muted-foreground/60"
                                         )}>
                                             {currentStatus}
                                         </div>
@@ -260,7 +260,7 @@ export function TeacherAttendanceCard() {
                                                     <Edit2 className="h-3.5 w-3.5 text-primary" />
                                                 </Button>
                                             </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end" className="w-44 rounded-[20px] p-1.5 shadow-2xl border-none bg-card z-50 animate-in fade-in zoom-in-95">
+                                            <DropdownMenuContent align="end" className="w-44 rounded-[20px] p-1.5 shadow-2xl border-none bg-card z-50">
                                                 <div className="px-2.5 py-1.5 text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60">
                                                     Ubah Status
                                                 </div>
@@ -269,7 +269,7 @@ export function TeacherAttendanceCard() {
                                                         key={opt}
                                                         onSelect={() => handleStatusChange(teacher.id, opt)}
                                                         className={cn(
-                                                            "flex items-center gap-2 p-2 rounded-[14px] cursor-pointer focus:bg-muted group transition-all text-[11px] font-bold uppercase",
+                                                            "flex items-center gap-2 p-2 rounded-[14px] cursor-pointer focus:bg-muted text-[11px] font-bold uppercase",
                                                             currentStatus === opt ? "text-primary" : "text-muted-foreground"
                                                         )}
                                                     >
@@ -317,6 +317,6 @@ export function TeacherAttendanceCard() {
                     {isScannerOpen && <BarcodeScanner onResult={handleScannerResult} onClose={() => setIsScannerOpen(false)} />}
                 </DialogContent>
             </Dialog>
-        </Card>
+        </div>
     );
 }
