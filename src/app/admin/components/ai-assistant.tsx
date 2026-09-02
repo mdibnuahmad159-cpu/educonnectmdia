@@ -25,16 +25,17 @@ export function AIAssistant() {
     const [isOpen, setIsOpen] = useState(false);
     const [input, setInput] = useState("");
     const [messages, setMessages] = useState<Message[]>([
-        { role: 'ai', text: 'Halo Admin! Ada yang bisa saya bantu hari ini? Saya bisa membantu menyusun draf pengumuman, membuat gambar ilustrasi, atau membuat file PDF untuk dokumen sekolah.' }
+        { role: 'ai', text: 'Halo Admin! Ada yang bisa saya bantu? Saya bisa mencari data, membuat draf pengumuman, gambar, atau dokumen PDF.' }
     ]);
     const [isLoading, setIsLoading] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
 
+    // Auto scroll ke bawah setiap ada pesan baru
     useEffect(() => {
         if (scrollRef.current) {
-            const scrollContainer = scrollRef.current.querySelector('[data-radix-scroll-area-viewport]');
-            if (scrollContainer) {
-                scrollContainer.scrollTo(0, scrollContainer.scrollHeight);
+            const viewport = scrollRef.current.querySelector('[data-radix-scroll-area-viewport]');
+            if (viewport) {
+                viewport.scrollTo({ top: viewport.scrollHeight, behavior: 'smooth' });
             }
         }
     }, [messages, isOpen, isLoading]);
@@ -48,8 +49,8 @@ export function AIAssistant() {
         setIsLoading(true);
 
         try {
-            // Convert history to Genkit format excluding current message
-            const history = messages.map(m => ({
+            // Susun history untuk AI
+            const history = messages.slice(-6).map(m => ({
                 role: m.role === 'user' ? 'user' as const : 'model' as const,
                 content: [{ text: m.text }]
             }));
@@ -58,13 +59,13 @@ export function AIAssistant() {
             
             setMessages(prev => [...prev, { 
                 role: 'ai', 
-                text: result.text || "Saya telah memproses permintaan Anda.",
+                text: result.text || "Permintaan Anda telah saya proses.",
                 image: result.generatedImage,
                 pdf: result.generatedPdf
             }]);
         } catch (error) {
-            console.error("AI Assistant error:", error);
-            setMessages(prev => [...prev, { role: 'ai', text: 'Maaf, terjadi kesalahan saat menghubungi asisten AI. Mohon coba lagi dalam beberapa saat.' }]);
+            console.error("Chat Error:", error);
+            setMessages(prev => [...prev, { role: 'ai', text: 'Maaf, terjadi gangguan koneksi. Harap coba lagi.' }]);
         } finally {
             setIsLoading(false);
         }
@@ -73,30 +74,18 @@ export function AIAssistant() {
     const generateAndDownloadPdf = (pdfData: { title: string, content: string, filename: string }) => {
         try {
             const doc = new jsPDF();
-            
-            // Header
             doc.setFontSize(18);
-            doc.setTextColor(0, 0, 0);
             doc.text(pdfData.title, 105, 20, { align: 'center' });
-            
-            // Horizontal line
             doc.setLineWidth(0.5);
             doc.line(20, 25, 190, 25);
-            
-            // Content
             doc.setFontSize(11);
-            doc.setFont("helvetica", "normal");
             const splitText = doc.splitTextToSize(pdfData.content, 170);
             doc.text(splitText, 20, 35);
-            
-            // Footer
-            doc.setFontSize(9);
-            doc.setTextColor(100, 100, 100);
-            doc.text(`Dibuat otomatis oleh AI Assistant pada ${new Date().toLocaleDateString('id-ID')}`, 105, 285, { align: 'center' });
-            
-            doc.save(pdfData.filename.endsWith('.pdf') ? pdfData.filename : `${pdfData.filename}.pdf`);
+            doc.setFontSize(8);
+            doc.text(`Dibuat oleh AI Assistant - ${new Date().toLocaleDateString('id-ID')}`, 105, 285, { align: 'center' });
+            doc.save(`${pdfData.filename.replace(/\.pdf$/i, '')}.pdf`);
         } catch (e) {
-            console.error("PDF generation failed:", e);
+            console.error("PDF Fail:", e);
         }
     };
 
@@ -104,7 +93,7 @@ export function AIAssistant() {
         return (
             <Button 
                 onClick={() => setIsOpen(true)}
-                className="fixed bottom-20 right-6 h-12 w-12 rounded-full shadow-lg z-50 animate-bounce hover:animate-none bg-primary text-primary-foreground"
+                className="fixed bottom-20 right-6 h-12 w-12 rounded-full shadow-2xl z-50 animate-bounce hover:animate-none bg-primary text-primary-foreground"
             >
                 <Sparkles className="h-6 w-6" />
             </Button>
@@ -112,10 +101,10 @@ export function AIAssistant() {
     }
 
     return (
-        <Card className="fixed bottom-20 right-6 w-[320px] sm:w-[400px] h-[500px] shadow-2xl z-50 flex flex-col border-primary/20 animate-in slide-in-from-bottom-5 duration-300">
+        <Card className="fixed bottom-20 right-6 w-[320px] sm:w-[400px] h-[500px] shadow-2xl z-50 flex flex-col border-primary/20 animate-in slide-in-from-bottom-5">
             <CardHeader className="p-3 border-b bg-primary text-primary-foreground rounded-t-lg flex flex-row items-center justify-between space-y-0">
-                <CardTitle className="text-sm font-bold flex items-center gap-2">
-                    <Bot className="h-4 w-4" /> AI Assistant Admin
+                <CardTitle className="text-xs font-bold flex items-center gap-2">
+                    <Bot className="h-4 w-4" /> ASISTEN ADMIN
                 </CardTitle>
                 <Button variant="ghost" size="icon" className="h-7 w-7 text-white hover:bg-white/20" onClick={() => setIsOpen(false)}>
                     <X className="h-4 w-4" />
@@ -130,37 +119,35 @@ export function AIAssistant() {
                                 msg.role === 'user' ? "ml-auto flex-row-reverse" : "mr-auto"
                             )}>
                                 <div className={cn(
-                                    "p-3 rounded-2xl text-xs leading-relaxed shadow-sm",
-                                    msg.role === 'user' ? "bg-primary text-primary-foreground rounded-tr-none" : "bg-white border rounded-tl-none text-foreground"
+                                    "p-3 rounded-2xl text-[11px] leading-relaxed shadow-sm",
+                                    msg.role === 'user' ? "bg-primary text-primary-foreground rounded-tr-none" : "bg-white border rounded-tl-none"
                                 )}>
                                     <div className="whitespace-pre-wrap">{msg.text}</div>
                                     
                                     {msg.image && (
-                                        <div className="mt-3 space-y-2 animate-in fade-in zoom-in-95">
-                                            <div className="rounded-md overflow-hidden border bg-muted">
-                                                <img src={msg.image} alt="AI Generated" className="w-full h-auto" />
+                                        <div className="mt-3 space-y-2">
+                                            <div className="rounded-md overflow-hidden border">
+                                                <img src={msg.image} alt="AI" className="w-full h-auto" />
                                             </div>
-                                            <Button variant="outline" size="xs" className="w-full h-7 gap-1.5 text-[10px]" asChild>
-                                                <a href={msg.image} download="ai-image.png">
-                                                    <Download className="h-3 w-3" /> Simpan Gambar
-                                                </a>
+                                            <Button variant="outline" size="xs" className="w-full h-7 text-[9px] gap-1" asChild>
+                                                <a href={msg.image} download="ai-result.png"><Download className="h-3 w-3" /> Simpan Gambar</a>
                                             </Button>
                                         </div>
                                     )}
 
                                     {msg.pdf && (
-                                        <div className="mt-3 p-2 bg-muted/30 rounded-lg border border-dashed border-primary/30 animate-in fade-in slide-in-from-top-1">
+                                        <div className="mt-3 p-2 bg-muted/50 rounded-lg border border-dashed border-primary/30">
                                             <div className="flex items-center gap-2 mb-2">
-                                                <FileText className="h-4 w-4 text-primary" />
-                                                <span className="font-bold truncate text-[10px]">{msg.pdf.title}</span>
+                                                <FileText className="h-3.5 w-3.5 text-primary" />
+                                                <span className="font-bold text-[9px] truncate">{msg.pdf.title}</span>
                                             </div>
                                             <Button 
                                                 variant="default" 
                                                 size="xs" 
-                                                className="w-full h-7 gap-1.5 text-[10px]"
+                                                className="w-full h-7 text-[9px] gap-1"
                                                 onClick={() => msg.pdf && generateAndDownloadPdf(msg.pdf)}
                                             >
-                                                <Download className="h-3 w-3" /> Unduh Dokumen PDF
+                                                <Download className="h-3 w-3" /> Unduh PDF
                                             </Button>
                                         </div>
                                     )}
@@ -178,17 +165,13 @@ export function AIAssistant() {
                 </ScrollArea>
             </CardContent>
             <CardFooter className="p-3 border-t bg-white">
-                <form 
-                    className="flex w-full gap-2" 
-                    onSubmit={(e) => { e.preventDefault(); handleSend(); }}
-                >
+                <form className="flex w-full gap-2" onSubmit={(e) => { e.preventDefault(); handleSend(); }}>
                     <Input 
-                        placeholder="Tulis perintah..." 
+                        placeholder="Tanyakan sesuatu..." 
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
-                        className="h-9 text-xs focus-visible:ring-primary"
+                        className="h-9 text-xs"
                         disabled={isLoading}
-                        autoFocus
                     />
                     <Button type="submit" size="icon" className="h-9 w-9 shrink-0" disabled={isLoading || !input.trim()}>
                         <Send className="h-4 w-4" />
