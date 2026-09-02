@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, parseISO } from 'date-fns';
 import { id as dfnsId } from 'date-fns/locale';
 import { cn, safePrint } from '@/lib/utils';
-import { Loader2, Printer, FileDown, CheckCircle2, UserX, AlertCircle, Info } from 'lucide-react';
+import { Loader2, Printer, FileDown, CheckCircle2, UserX, AlertCircle, Info, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAcademicYear } from '@/context/academic-year-provider';
 import jsPDF from 'jspdf';
@@ -104,40 +104,60 @@ export default function AttendancePage() {
         return [...teachers].sort((a,b) => a.name.localeCompare(b.name));
     }, [teachers]);
 
-    const summaryStats = useMemo(() => {
-        let totalScheduled = 0;
-        let totalHadir = 0;
-        let totalSakit = 0;
-        let totalIzin = 0;
-        let totalAlpa = 0;
+    const teacherSummaries = useMemo(() => {
+        if (!sortedTeachers.length || !daysInRange.length) return [];
 
-        if (!sortedTeachers.length || !daysInRange.length) return null;
+        return sortedTeachers.map(teacher => {
+            let hadir = 0;
+            let sakit = 0;
+            let izin = 0;
+            let alpa = 0;
+            let totalScheduled = 0;
 
-        daysInRange.forEach(day => {
-            const isFri = day.getDay() === 5;
-            if (isFri) return;
+            daysInRange.forEach(day => {
+                const isFri = day.getDay() === 5;
+                if (isFri) return;
 
-            const dayKey = dayMapping[day.getDay()];
-            const dateStr = format(day, 'yyyy-MM-dd');
-            
-            sortedTeachers.forEach(teacher => {
+                const dayKey = dayMapping[day.getDay()];
+                const dateStr = format(day, 'yyyy-MM-dd');
+                
                 const isScheduled = dayKey ? scheduledTeachersByDay.get(dayKey)?.has(teacher.id) : false;
                 if (!isScheduled) return;
 
                 totalScheduled++;
                 const status = attendanceMap.get(`${teacher.id}-${dateStr}`);
-                if (status === 'Hadir') totalHadir++;
-                else if (status === 'Sakit') totalSakit++;
-                else if (status === 'Izin') totalIzin++;
-                else if (status === 'Alpa') totalAlpa++;
+                if (status === 'Hadir') hadir++;
+                else if (status === 'Sakit') sakit++;
+                else if (status === 'Izin') izin++;
+                else if (status === 'Alpa') alpa++;
             });
-        });
 
-        return { totalScheduled, totalHadir, totalSakit, totalIzin, totalAlpa };
+            return {
+                id: teacher.id,
+                name: teacher.name,
+                hadir,
+                sakit,
+                izin,
+                alpa,
+                totalScheduled
+            };
+        });
     }, [sortedTeachers, daysInRange, attendanceMap, scheduledTeachersByDay]);
 
+    const globalStats = useMemo(() => {
+        if (!teacherSummaries.length) return null;
+        
+        return teacherSummaries.reduce((acc, curr) => ({
+            totalScheduled: acc.totalScheduled + curr.totalScheduled,
+            totalHadir: acc.totalHadir + curr.hadir,
+            totalSakit: acc.totalSakit + curr.sakit,
+            totalIzin: acc.totalIzin + curr.izin,
+            totalAlpa: acc.totalAlpa + curr.alpa,
+        }), { totalScheduled: 0, totalHadir: 0, totalSakit: 0, totalIzin: 0, totalAlpa: 0 });
+    }, [teacherSummaries]);
+
     const handleExportPdf = () => {
-        if (!sortedTeachers.length || !fromDate || !toDate || !summaryStats) return;
+        if (!sortedTeachers.length || !fromDate || !toDate || !globalStats) return;
         
         const doc = new jsPDF({ orientation: 'landscape' });
         const start = parseISO(fromDate);
@@ -178,13 +198,21 @@ export default function AttendancePage() {
 
         const finalY = (doc as any).lastAutoTable.finalY + 10;
         doc.setFontSize(11);
-        doc.text('RINGKASAN KEHADIRAN (BERDASARKAN JADWAL)', 14, finalY);
-        doc.setFontSize(9);
-        doc.text(`Total Jadwal Guru: ${summaryStats.totalScheduled}`, 14, finalY + 7);
-        doc.text(`Total Hadir: ${summaryStats.totalHadir}`, 14, finalY + 12);
-        doc.text(`Total Sakit: ${summaryStats.totalSakit}`, 14, finalY + 17);
-        doc.text(`Total Izin: ${summaryStats.totalIzin}`, 14, finalY + 22);
-        doc.text(`Total Alpa: ${summaryStats.totalAlpa}`, 14, finalY + 27);
+        doc.text('RINGKASAN KEHADIRAN PER GURU', 14, finalY);
+
+        const summaryHead = [['Nama Guru', 'Jadwal', 'Hadir', 'Sakit', 'Izin', 'Alpa']];
+        const summaryBody = teacherSummaries.map(s => [
+            s.name, s.totalScheduled, s.hadir, s.sakit, s.izin, s.alpa
+        ]);
+
+        (doc as any).autoTable({
+            head: summaryHead,
+            body: summaryBody,
+            startY: finalY + 5,
+            theme: 'grid',
+            styles: { fontSize: 9 },
+            headStyles: { fillColor: [60, 60, 60] }
+        });
 
         doc.save(`Rekap_Absensi_Guru_${fromDate}_to_${toDate}.pdf`);
     };
@@ -202,22 +230,23 @@ export default function AttendancePage() {
                     <style>
                         body { font-family: sans-serif; font-size: 10px; }
                         @page { size: A4 landscape; margin: 15mm; }
-                        h1 { font-size: 16px; }
-                        table { border-collapse: collapse; width: 100%; }
+                        h1 { font-size: 16px; text-align: center; }
+                        h2 { font-size: 14px; margin-top: 30px; }
+                        table { border-collapse: collapse; width: 100%; margin-top: 10px; }
                         th, td { border: 1px solid #ddd; padding: 4px; text-align: center; }
                         th { background-color: #f2f2f2; }
                         .teacher-name { text-align: left; }
-                        .Hadir { background-color: #dcfce7 !important; }
+                        .Hadir { background-color: #dcfce7 !important; color: #166534; font-weight: bold; }
                         .Sakit { background-color: #fef9c3 !important; }
                         .Izin { background-color: #dbeafe !important; }
-                        .Alpa { background-color: #fee2e2 !important; }
+                        .Alpa { background-color: #fee2e2 !important; color: #991b1b; font-weight: bold; }
                         .Friday { background-color: #eff6ff !important; font-weight: bold; }
-                        .summary { margin-top: 20px; font-weight: bold; }
                         @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
                     </style>
                 </head>
                 <body>
-                    <h1>Rekap Absensi Guru - ${rangeTitle}</h1>
+                    <h1>REKAPITULASI ABSENSI GURU</h1>
+                    <p style="text-align: center;">Periode: ${rangeTitle}</p>
                     <table>
                         <thead>
                             <tr>
@@ -244,18 +273,33 @@ export default function AttendancePage() {
         });
         tableHtml += '</tbody></table>';
         
-        if (summaryStats) {
-            tableHtml += `
-                <div class="summary">
-                    <p>RINGKASAN KEHADIRAN:</p>
-                    <p>Total Jadwal Guru: ${summaryStats.totalScheduled}</p>
-                    <p>Total Hadir: ${summaryStats.totalHadir}</p>
-                    <p>Total Sakit: ${summaryStats.totalSakit}</p>
-                    <p>Total Izin: ${summaryStats.totalIzin}</p>
-                    <p>Total Alpa: ${summaryStats.totalAlpa}</p>
-                </div>
-            `;
-        }
+        tableHtml += `
+            <h2>Ringkasan Kehadiran Guru</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th class="teacher-name">Nama Guru</th>
+                        <th>Total Jadwal</th>
+                        <th>Hadir</th>
+                        <th>Sakit</th>
+                        <th>Izin</th>
+                        <th>Alpa</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${teacherSummaries.map(s => `
+                        <tr>
+                            <td class="teacher-name">${s.name}</td>
+                            <td>${s.totalScheduled}</td>
+                            <td style="color: green; font-weight: bold;">${s.hadir}</td>
+                            <td>${s.sakit}</td>
+                            <td>${s.izin}</td>
+                            <td style="color: red; font-weight: bold;">${s.alpa}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
 
         tableHtml += '</body></html>';
         safePrint(tableHtml);
@@ -264,7 +308,7 @@ export default function AttendancePage() {
     const isLoading = loadingTeachers || loadingAttendance || !fromDate;
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 pb-10">
             <Card>
                 <CardHeader>
                     <CardTitle>Rekap Absensi Guru</CardTitle>
@@ -273,8 +317,14 @@ export default function AttendancePage() {
                 <CardContent>
                     <div className="flex flex-col lg:flex-row justify-between items-end gap-4 mb-6">
                         <div className="grid grid-cols-2 gap-3 w-full lg:w-auto">
-                            <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
-                            <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
+                            <div className="space-y-1">
+                                <label className="text-[10px] uppercase font-bold text-muted-foreground ml-1">Dari</label>
+                                <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-[10px] uppercase font-bold text-muted-foreground ml-1">Sampai</label>
+                                <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
+                            </div>
                         </div>
                         <div className="flex gap-2 w-full lg:w-auto">
                             <Button variant="outline" onClick={handleExportPdf} className="flex-1 lg:flex-none gap-2">
@@ -290,21 +340,24 @@ export default function AttendancePage() {
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead className="sticky left-0 bg-card min-w-[150px]">Nama Guru</TableHead>
+                                        <TableHead className="sticky left-0 bg-card min-w-[150px] font-bold">Nama Guru</TableHead>
                                         {daysInRange.map(day => (
-                                            <TableHead key={day.toISOString()} className="text-center px-1 text-[10px]">{format(day, 'd')}</TableHead>
+                                            <TableHead key={day.toISOString()} className={cn(
+                                                "text-center px-1 text-[10px] font-bold",
+                                                day.getDay() === 5 && "text-blue-600 bg-blue-50"
+                                            )}>{format(day, 'd')}</TableHead>
                                         ))}
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {sortedTeachers.map(teacher => (
                                         <TableRow key={teacher.id}>
-                                            <TableCell className="sticky left-0 bg-card text-xs">{teacher.name}</TableCell>
+                                            <TableCell className="sticky left-0 bg-card text-xs font-medium border-r">{teacher.name}</TableCell>
                                             {daysInRange.map(day => {
                                                 const isFri = day.getDay() === 5;
                                                 const status = attendanceMap.get(`${teacher.id}-${format(day, 'yyyy-MM-dd')}`);
                                                 return (
-                                                    <TableCell key={day.toISOString()} className={cn("text-center text-[10px] p-0 h-8", isFri ? 'bg-blue-50 text-blue-600 font-bold' : status ? getStatusColor(status) : 'bg-muted/10')}>
+                                                    <TableCell key={day.toISOString()} className={cn("text-center text-[10px] p-0 h-8 border-r last:border-r-0 font-mono", isFri ? 'bg-blue-50 text-blue-600 font-bold' : status ? getStatusColor(status) : 'bg-muted/10')}>
                                                         {isFri ? 'L' : status ? status.charAt(0) : '-'}
                                                     </TableCell>
                                                 );
@@ -318,61 +371,98 @@ export default function AttendancePage() {
                 </CardContent>
             </Card>
 
-            {!isLoading && summaryStats && (
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                    <Card className="bg-primary/5 border-primary/10">
-                        <CardHeader className="p-3 pb-0">
-                            <CardDescription className="text-[10px] font-bold uppercase">Total Jadwal</CardDescription>
+            {!isLoading && globalStats && (
+                <div className="space-y-6">
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                        <Card className="bg-primary/5 border-primary/10">
+                            <CardHeader className="p-3 pb-0">
+                                <CardDescription className="text-[10px] font-bold uppercase">Total Jadwal</CardDescription>
+                            </CardHeader>
+                            <CardContent className="p-3 pt-1">
+                                <div className="flex items-center gap-2">
+                                    <Info className="h-4 w-4 text-primary" />
+                                    <span className="text-lg font-bold">{globalStats.totalScheduled}</span>
+                                </div>
+                            </CardContent>
+                        </Card>
+                        <Card className="bg-green-50 border-green-100">
+                            <CardHeader className="p-3 pb-0">
+                                <CardDescription className="text-[10px] font-bold uppercase text-green-700">Hadir</CardDescription>
+                            </CardHeader>
+                            <CardContent className="p-3 pt-1">
+                                <div className="flex items-center gap-2 text-green-700">
+                                    <CheckCircle2 className="h-4 w-4" />
+                                    <span className="text-lg font-bold">{globalStats.totalHadir}</span>
+                                </div>
+                            </CardContent>
+                        </Card>
+                        <Card className="bg-yellow-50 border-yellow-100">
+                            <CardHeader className="p-3 pb-0">
+                                <CardDescription className="text-[10px] font-bold uppercase text-yellow-700">Sakit</CardDescription>
+                            </CardHeader>
+                            <CardContent className="p-3 pt-1">
+                                <div className="flex items-center gap-2 text-yellow-700">
+                                    <AlertCircle className="h-4 w-4" />
+                                    <span className="text-lg font-bold">{globalStats.totalSakit}</span>
+                                </div>
+                            </CardContent>
+                        </Card>
+                        <Card className="bg-blue-50 border-blue-100">
+                            <CardHeader className="p-3 pb-0">
+                                <CardDescription className="text-[10px] font-bold uppercase text-blue-700">Izin</CardDescription>
+                            </CardHeader>
+                            <CardContent className="p-3 pt-1">
+                                <div className="flex items-center gap-2 text-blue-700">
+                                    <Info className="h-4 w-4" />
+                                    <span className="text-lg font-bold">{globalStats.totalIzin}</span>
+                                </div>
+                            </CardContent>
+                        </Card>
+                        <Card className="bg-red-50 border-red-100">
+                            <CardHeader className="p-3 pb-0">
+                                <CardDescription className="text-[10px] font-bold uppercase text-red-700">Alpa</CardDescription>
+                            </CardHeader>
+                            <CardContent className="p-3 pt-1">
+                                <div className="flex items-center gap-2 text-red-700">
+                                    <UserX className="h-4 w-4" />
+                                    <span className="text-lg font-bold">{globalStats.totalAlpa}</span>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    <Card>
+                        <CardHeader className="pb-3 border-b bg-muted/5">
+                            <CardTitle className="text-sm flex items-center gap-2">
+                                <Users className="h-4 w-4" /> Ringkasan Kehadiran Per Guru
+                            </CardTitle>
+                            <CardDescription className="text-[10px]">Statistik akumulasi kehadiran masing-masing guru dalam periode terpilih.</CardDescription>
                         </CardHeader>
-                        <CardContent className="p-3 pt-1">
-                            <div className="flex items-center gap-2">
-                                <Info className="h-4 w-4 text-primary" />
-                                <span className="text-lg font-bold">{summaryStats.totalScheduled}</span>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-green-50 border-green-100">
-                        <CardHeader className="p-3 pb-0">
-                            <CardDescription className="text-[10px] font-bold uppercase text-green-700">Hadir</CardDescription>
-                        </CardHeader>
-                        <CardContent className="p-3 pt-1">
-                            <div className="flex items-center gap-2 text-green-700">
-                                <CheckCircle2 className="h-4 w-4" />
-                                <span className="text-lg font-bold">{summaryStats.totalHadir}</span>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-yellow-50 border-yellow-100">
-                        <CardHeader className="p-3 pb-0">
-                            <CardDescription className="text-[10px] font-bold uppercase text-yellow-700">Sakit</CardDescription>
-                        </CardHeader>
-                        <CardContent className="p-3 pt-1">
-                            <div className="flex items-center gap-2 text-yellow-700">
-                                <AlertCircle className="h-4 w-4" />
-                                <span className="text-lg font-bold">{summaryStats.totalSakit}</span>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-blue-50 border-blue-100">
-                        <CardHeader className="p-3 pb-0">
-                            <CardDescription className="text-[10px] font-bold uppercase text-blue-700">Izin</CardDescription>
-                        </CardHeader>
-                        <CardContent className="p-3 pt-1">
-                            <div className="flex items-center gap-2 text-blue-700">
-                                <Info className="h-4 w-4" />
-                                <span className="text-lg font-bold">{summaryStats.totalIzin}</span>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-red-50 border-red-100">
-                        <CardHeader className="p-3 pb-0">
-                            <CardDescription className="text-[10px] font-bold uppercase text-red-700">Alpa</CardDescription>
-                        </CardHeader>
-                        <CardContent className="p-3 pt-1">
-                            <div className="flex items-center gap-2 text-red-700">
-                                <UserX className="h-4 w-4" />
-                                <span className="text-lg font-bold">{summaryStats.totalAlpa}</span>
-                            </div>
+                        <CardContent className="p-0">
+                            <Table>
+                                <TableHeader className="bg-muted/30">
+                                    <TableRow>
+                                        <TableHead className="px-4">Nama Guru</TableHead>
+                                        <TableHead className="text-center">Jadwal</TableHead>
+                                        <TableHead className="text-center text-green-700">Hadir</TableHead>
+                                        <TableHead className="text-center text-yellow-700">Sakit</TableHead>
+                                        <TableHead className="text-center text-blue-700">Izin</TableHead>
+                                        <TableHead className="text-center text-red-700">Alpa</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {teacherSummaries.map(s => (
+                                        <TableRow key={s.id} className="hover:bg-muted/5 transition-colors">
+                                            <TableCell className="px-4 font-medium text-xs py-2">{s.name}</TableCell>
+                                            <TableCell className="text-center text-xs font-mono">{s.totalScheduled}</TableCell>
+                                            <TableCell className="text-center text-xs font-bold text-green-600">{s.hadir}</TableCell>
+                                            <TableCell className="text-center text-xs font-medium">{s.sakit}</TableCell>
+                                            <TableCell className="text-center text-xs font-medium">{s.izin}</TableCell>
+                                            <TableCell className="text-center text-xs font-bold text-red-600">{s.alpa}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
                         </CardContent>
                     </Card>
                 </div>
