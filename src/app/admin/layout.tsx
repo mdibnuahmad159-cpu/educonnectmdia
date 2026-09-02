@@ -75,7 +75,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex flex-col min-h-screen bg-background overflow-x-hidden">
-      <header className="sticky top-0 z-20 flex flex-col bg-primary shadow-lg text-primary-foreground">
+      <header className="sticky top-0 z-20 flex flex-col bg-primary shadow-lg text-primary-foreground rounded-b-[32px]">
         {/* Top Row: Basic Info & Profile */}
         <div className="flex h-14 items-center justify-between gap-4 px-4 border-b border-white/5">
           <div className="flex-1 flex justify-start">
@@ -110,14 +110,11 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           </div>
         </div>
 
-        {/* Bottom Row: Page Titles */}
-        <div className="px-6 py-6 pb-8">
-            <h2 className="text-2xl font-bold font-headline tracking-tight leading-none text-white">
+        {/* Bottom Row: Page Titles - Compact with Accent Color */}
+        <div className="px-6 py-4 pb-6">
+            <h2 className="text-base font-bold font-headline uppercase tracking-[0.15em] text-accent leading-none">
                 {currentPage.title}
             </h2>
-            <p className="text-[11px] text-white/60 mt-2 font-medium">
-                {currentPage.sub}
-            </p>
         </div>
       </header>
 
