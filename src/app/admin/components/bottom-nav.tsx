@@ -2,23 +2,21 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { 
   Home, 
-  Users, 
-  GraduationCap, 
   Wallet, 
   ScanLine, 
   X, 
-  Loader2, 
   Camera,
-  BookOpen
+  BookOpen,
+  GraduationCap
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { collection, query, where, Firestore } from "firebase/firestore";
-import type { Teacher, Schedule, TeacherAttendance, ScheduleEntry } from "@/types";
-import { format, parseISO } from "date-fns";
+import type { Teacher, Schedule, ScheduleEntry } from "@/types";
+import { format } from "date-fns";
 import { useAcademicYear } from "@/context/academic-year-provider";
 import { useToast } from "@/hooks/use-toast";
 import { saveTeacherAttendanceBatch } from "@/lib/firebase-helpers";
@@ -117,7 +115,6 @@ export function BottomNav() {
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Data fetching for scanner logic
   const teachersCollection = useMemoFirebase(() => firestore ? collection(firestore, 'teachers') : null, [firestore]);
   const { data: teachers } = useCollection<Teacher>(teachersCollection);
   
@@ -181,26 +178,25 @@ export function BottomNav() {
     <>
       <div className="fixed bottom-6 left-0 right-0 z-50 px-4 flex justify-center pointer-events-none">
         <div className="flex items-center gap-3 max-w-md w-full pointer-events-auto">
-          {/* Black Nav Pill */}
           <nav className="flex-1 bg-black/90 backdrop-blur-md rounded-full p-1.5 flex items-center justify-around shadow-2xl border border-white/10">
             {navItems.map((item) => {
-              // Normalized check to handle trailing slashes
-              const cleanPath = pathname.replace(/\/$/, '');
-              const cleanItemHref = item.href.replace(/\/$/, '');
-              const isActive = cleanPath === cleanItemHref || (cleanItemHref !== '/admin/dashboard' && cleanPath.startsWith(cleanItemHref));
+              // Standardized active check for trailing slashes
+              const normalizedPath = pathname.endsWith('/') ? pathname : `${pathname}/`;
+              const normalizedHref = item.href.endsWith('/') ? item.href : `${item.href}/`;
+              const isActive = normalizedPath.startsWith(normalizedHref);
               
               return (
                 <Link
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-2 px-3 py-2 rounded-full transition-all duration-300",
+                    "flex items-center gap-2 px-3 py-2 rounded-full transition-all duration-200",
                     isActive ? "bg-white/20 text-white" : "text-white/50 hover:text-white"
                   )}
                 >
                   <item.icon className="w-5 h-5" />
                   {isActive && (
-                    <span className="text-[10px] font-bold uppercase tracking-wider animate-in fade-in slide-in-from-left-2 duration-300">
+                    <span className="text-[10px] font-bold uppercase tracking-wider animate-in fade-in zoom-in-95 duration-200">
                       {item.label}
                     </span>
                   )}
@@ -209,7 +205,6 @@ export function BottomNav() {
             })}
           </nav>
 
-          {/* Yellow Scanner Button */}
           <button
             onClick={() => setIsScannerOpen(true)}
             className="w-14 h-14 bg-accent text-accent-foreground rounded-full flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95 transition-all"
