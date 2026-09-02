@@ -34,8 +34,28 @@ const AdminAssistantOutputSchema = z.object({
 export type AdminAssistantOutput = z.infer<typeof AdminAssistantOutputSchema>;
 
 /**
+ * Prompt definition for the Admin Assistant.
+ * Uses structured output for predictable responses.
+ */
+const assistantPrompt = ai.definePrompt({
+  name: 'assistantPrompt',
+  input: { schema: AdminAssistantInputSchema },
+  output: { schema: AdminAssistantOutputSchema },
+  model: 'googleai/gemini-1.5-flash',
+  system: `Anda adalah asisten AI profesional untuk Admin 'Madrasah Diniyah Ibnu Ahmad'.
+  Gunakan Bahasa Indonesia yang sopan dan formal.
+  
+  Tugas:
+  1. Bantu cari info santri/guru (minta admin cek menu terkait jika data spesifik tidak ada).
+  2. Buat draf pengumuman, surat, atau laporan sekolah.
+  3. Jika diminta membuat file PDF, isi field 'generatedPdf' dengan konten yang rapi.
+  
+  Penting: Berikan respon yang langsung membantu tanpa menjelaskan kendala teknis.`,
+  prompt: `User message: {{message}}`,
+});
+
+/**
  * Main function to handle AI Assistant chat interactions.
- * Includes top-level error handling to ensure the UI remains responsive.
  */
 export async function adminAssistantChat(input: AdminAssistantInput): Promise<AdminAssistantOutput> {
   try {
@@ -55,70 +75,46 @@ const adminAssistantFlow = ai.defineFlow(
     outputSchema: AdminAssistantOutputSchema,
   },
   async (input) => {
-    // Construct the messages array for the LLM
-    const messages: any[] = [
-      ...(input.history || []),
-      { role: 'user', content: [{ text: input.message }] }
-    ];
-
     try {
-      // 1. Attempt structured generation first
-      // Using 'googleai/gemini-1.5-flash' which is the standard identifier
-      const response = await ai.generate({
-        model: 'googleai/gemini-1.5-flash',
-        output: { schema: AdminAssistantOutputSchema },
-        system: `Anda adalah asisten AI profesional untuk Admin 'Madrasah Diniyah Ibnu Ahmad'.
-        Gunakan Bahasa Indonesia yang sopan dan formal.
-        
-        Tugas:
-        1. Bantu cari info santri/guru (minta admin cek menu terkait jika data spesifik tidak ada).
-        2. Buat draf pengumuman, surat, atau laporan sekolah.
-        3. Jika diminta membuat file PDF, isi field 'generatedPdf' dengan konten yang rapi.
-        
-        Penting: Berikan respon yang langsung membantu tanpa menjelaskan kendala teknis.`,
-        messages: messages,
-      });
-
-      const output = response.output;
+      // 1. Attempt structured generation
+      const { output } = await assistantPrompt(input);
+      
       if (!output) {
-        return { text: response.text || "Saya telah memproses permintaan Anda, namun terjadi kendala saat menyusun data terstruktur." };
+        throw new Error("No output from model");
       }
 
-      let generatedImage = output.generatedImage;
+      let finalOutput = { ...output };
 
-      // 2. Separate Image Generation logic for better reliability
+      // 2. Separate Image Generation logic if requested
       const lowerMessage = input.message.toLowerCase();
       const needsImage = ['gambar', 'ilustrasi', 'poster', 'foto', 'buatkan gambar'].some(k => lowerMessage.includes(k));
       
-      if (needsImage && !generatedImage) {
+      if (needsImage && !finalOutput.generatedImage) {
         try {
           const imageRes = await ai.generate({
             model: 'googleai/imagen-3-fast',
             prompt: `Ilustrasi sekolah islam madrasah diniyah modern, gaya profesional dan bersih: ${input.message}`,
           });
           if (imageRes.media?.url) {
-            generatedImage = imageRes.media.url;
+            finalOutput.generatedImage = imageRes.media.url;
           }
         } catch (e) {
           console.warn("Optional image generation failed:", e);
         }
       }
 
-      return {
-        ...output,
-        generatedImage
-      };
+      return finalOutput;
     } catch (innerError: any) {
       console.error("Structured AI generation failed, falling back to simple text:", innerError);
       
-      // 3. Fail-safe: Simple text generation
+      // 3. Fallback: Simple text generation
       try {
-        const fallback = await ai.generate({
+        const fallbackResponse = await ai.generate({
           model: 'googleai/gemini-1.5-flash',
           prompt: input.message,
           system: "Anda adalah asisten madrasah. Jawablah pesan admin dengan ramah dalam Bahasa Indonesia."
         });
-        return { text: fallback.text || "Maaf, sistem tidak dapat memproses jawaban saat ini. Silakan coba lagi nanti." };
+        return { text: fallbackResponse.text || "Maaf, sistem tidak dapat memproses jawaban saat ini. Silakan coba lagi nanti." };
       } catch (finalError) {
         throw finalError;
       }
