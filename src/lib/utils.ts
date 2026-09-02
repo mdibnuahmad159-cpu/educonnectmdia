@@ -15,7 +15,7 @@ export function safePrint(htmlContent: string) {
 
   const ua = window.navigator.userAgent;
   const isAndroid = /Android/i.test(ua);
-  // Deteksi WebView yang lebih akurat
+  // Deteksi WebView yang lebih akurat (biasanya mengandung 'wv' atau 'Version/X.X' bersama 'Chrome')
   const isWebView = isAndroid && (ua.includes('wv') || (ua.includes('Chrome') && ua.includes('Version/')));
 
   if (isWebView) {
@@ -24,35 +24,31 @@ export function safePrint(htmlContent: string) {
       const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       
-      // Strategi: Mencoba membuka di jendela baru (yang biasanya di-intercept oleh OS untuk dibuka di browser)
-      // Tanpa atribut 'download' agar sistem mencoba merender/membuka, bukan menyimpan.
+      // Strategi di WebView: Gunakan navigasi lokasi saat ini. 
+      // Kebanyakan wrapper WebView akan melempar URL yang tidak dikenal (seperti blob:) 
+      // ke browser default perangkat jika window.open gagal.
       const win = window.open(url, '_blank');
       
-      // Jika window.open diblokir/gagal, gunakan trik link tersembunyi
+      // Jika window.open diblokir (umum di WebView), gunakan navigasi langsung
       if (!win) {
-        const link = document.createElement('a');
-        link.href = url;
-        link.target = '_blank';
-        // Atribut rel="external" membantu pada beberapa wrapper WebView untuk melempar ke browser sistem
-        link.setAttribute('rel', 'external');
-        
-        document.body.appendChild(link);
-        link.click();
-        
-        setTimeout(() => {
-          document.body.removeChild(link);
-        }, 500);
+        window.location.assign(url);
       }
       
-      // Revoke URL setelah beberapa saat agar memori bersih
+      // Revoke URL setelah 1 menit agar memori bersih
       setTimeout(() => {
         URL.revokeObjectURL(url);
       }, 60000);
       
-      console.log("WebView Print: Attempted to open in external browser");
+      console.log("WebView Print: Intent triggered via location assign");
     } catch (e) {
-      console.error("WebView opening failed", e);
-      alert("Gagal melempar dokumen ke browser. Harap pastikan browser utama terpasang di HP Anda.");
+      console.error("WebView Print Error:", e);
+      // Fallback terakhir: Masukkan ke tab baru menggunakan data URI jika Blob gagal
+      try {
+        const dataUri = "data:text/html;charset=utf-8," + encodeURIComponent(htmlContent);
+        window.location.href = dataUri;
+      } catch (e2) {
+        alert("Gagal memproses dokumen untuk dicetak. Harap hubungi Admin.");
+      }
     }
   } else {
     // Strategi Browser Normal (Desktop / Mobile Chrome Standar)
@@ -60,23 +56,23 @@ export function safePrint(htmlContent: string) {
       const printWindow = window.open('', '_blank');
       if (printWindow) {
         printWindow.document.write(htmlContent);
-        
-        // Injeksi skrip untuk trigger print otomatis setelah konten dimuat
-        // Menggunakan event 'load' untuk memastikan gambar (seperti logo/kop) sudah muncul
-        printWindow.document.write(`
-          <script>
-            window.addEventListener('load', function() {
-              setTimeout(function() {
-                window.focus();
-                window.print();
-              }, 500);
-            });
-          </script>
-        `);
-        
         printWindow.document.close();
+        
+        // Gunakan onload untuk memastikan aset (gambar/logo) dimuat sebelum cetak
+        printWindow.onload = function() {
+            printWindow.focus();
+            printWindow.print();
+        };
+
+        // Fallback jika onload tidak terpicu
+        setTimeout(() => {
+            if (printWindow) {
+                printWindow.focus();
+                printWindow.print();
+            }
+        }, 1000);
       } else {
-        // Fallback jika window.open diblokir popup blocker: gunakan blob di tab saat ini
+        // Jika pop-up diblokir total, gunakan Blob di tab yang sama
         const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
         const url = URL.createObjectURL(blob);
         window.location.assign(url);
