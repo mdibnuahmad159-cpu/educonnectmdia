@@ -116,17 +116,17 @@ export default function DashboardPage() {
       {/* Unified Attendance Tab Card */}
       <div className="mt-2">
         <Tabs defaultValue="guru" className="w-full">
-            <div className="bg-muted/40 rounded-t-[24px] px-2 pt-2 flex items-end">
-                <TabsList className="bg-transparent h-auto p-0 gap-0">
+            <div className="bg-muted/40 rounded-t-[24px] flex overflow-hidden">
+                <TabsList className="bg-transparent h-auto p-0 gap-0 w-full flex">
                     <TabsTrigger 
                         value="guru"
-                        className="rounded-t-[18px] rounded-b-none px-6 py-3 data-[state=active]:bg-card data-[state=active]:shadow-none bg-transparent text-[11px] font-bold uppercase tracking-widest text-muted-foreground data-[state=active]:text-primary border-b-2 border-transparent data-[state=active]:border-primary transition-all"
+                        className="flex-1 rounded-t-[24px] rounded-b-none py-4 data-[state=active]:bg-card data-[state=active]:shadow-none bg-transparent text-[11px] font-bold uppercase tracking-widest text-muted-foreground data-[state=active]:text-primary transition-all"
                     >
                         Absensi Guru
                     </TabsTrigger>
                     <TabsTrigger 
                         value="siswa"
-                        className="rounded-t-[18px] rounded-b-none px-6 py-3 data-[state=active]:bg-card data-[state=active]:shadow-none bg-transparent text-[11px] font-bold uppercase tracking-widest text-muted-foreground data-[state=active]:text-primary border-b-2 border-transparent data-[state=active]:border-primary transition-all"
+                        className="flex-1 rounded-t-[24px] rounded-b-none py-4 data-[state=active]:bg-card data-[state=active]:shadow-none bg-transparent text-[11px] font-bold uppercase tracking-widest text-muted-foreground data-[state=active]:text-primary transition-all"
                     >
                         Absensi Siswa
                     </TabsTrigger>
