@@ -2,21 +2,19 @@
 "use client";
 
 import { ReactNode, useEffect } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { useUser } from "@/firebase";
 import { BottomNav } from "./components/bottom-nav";
-import { BookOpenCheck, Loader2, School } from "lucide-react";
+import { Loader2, School } from "lucide-react";
 import { useSchoolProfile } from "@/context/school-profile-provider";
-import { Button } from "@/components/ui/button";
 import { AcademicYearSelector } from "@/components/shared/academic-year-selector";
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const { user, isUserLoading } = useUser();
   const { profile, loading: isProfileLoading } = useSchoolProfile();
   const router = useRouter();
-  const pathname = usePathname();
 
   useEffect(() => {
     if (profile?.namaMadrasah) {
@@ -45,30 +43,43 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex flex-col min-h-screen bg-background overflow-x-hidden">
-      <header className="sticky top-0 z-10 flex h-11 items-center justify-between gap-4 border-b bg-card px-2 sm:px-3">
-        <div className="flex items-center gap-2 text-primary">
-            {profile?.logoMadrasahUrl ? (
-                <Image src={profile.logoMadrasahUrl} alt="Logo" width={20} height={20} className="h-5 w-5 object-contain"/>
-            ) : (
-                <BookOpenCheck className="h-4 w-4" />
-            )}
-            <h1 className="text-sm font-semibold font-headline">
+      <header className="sticky top-0 z-20 flex h-14 items-center justify-between gap-4 border-b bg-card px-4 shadow-sm">
+        {/* Left: Academic Year Selector */}
+        <div className="flex-1 flex justify-start">
+          <AcademicYearSelector />
+        </div>
+        
+        {/* Center: App Name */}
+        <div className="flex-none text-center">
+            <h1 className="text-sm font-bold font-headline text-primary uppercase tracking-tight">
                 {profile?.namaMadrasah || 'EduConnect'}
             </h1>
         </div>
-        <div className="flex items-center gap-2">
-          <AcademicYearSelector />
+
+        {/* Right: School Profile Link with Logo */}
+        <div className="flex-1 flex justify-end">
           <Link href="/admin/profile">
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <School className="h-4 w-4" />
-              <span className="sr-only">Profil Sekolah</span>
-            </Button>
+            <div className="h-9 w-9 rounded-full overflow-hidden border-2 border-primary/10 hover:border-primary/50 transition-all flex items-center justify-center bg-muted">
+              {profile?.logoMadrasahUrl ? (
+                <Image 
+                  src={profile.logoMadrasahUrl} 
+                  alt="Profile" 
+                  width={36} 
+                  height={36} 
+                  className="h-full w-full object-contain"
+                />
+              ) : (
+                <School className="h-5 w-5 text-primary/40" />
+              )}
+            </div>
           </Link>
         </div>
       </header>
+
       <main className="flex-1 p-2 pb-24 sm:px-4">
           {children}
       </main>
+      
       <BottomNav />
     </div>
   );
