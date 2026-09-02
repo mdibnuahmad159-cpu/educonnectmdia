@@ -144,10 +144,10 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
         <div className="flex flex-col md:flex-row h-full min-h-[500px]">
           {/* Left Column: Detailed Info */}
           <div className="flex-1 p-8 bg-card">
-            <div className="mb-6">
-                <h2 className="text-xl font-bold font-headline text-primary">Detail Profil Guru</h2>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">Data Administrasi & Personalia</p>
-            </div>
+            <DialogHeader className="mb-6 text-left sm:text-left">
+                <DialogTitle className="text-xl font-bold font-headline text-primary">Detail Profil Guru</DialogTitle>
+                <DialogDescription className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">Data Administrasi & Personalia</DialogDescription>
+            </DialogHeader>
             
             <ScrollArea className="h-[360px] pr-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6">
