@@ -37,9 +37,9 @@ export async function adminAssistantChat(input: AdminAssistantInput): Promise<Ad
   try {
     return await adminAssistantFlow(input);
   } catch (error) {
-    console.error("Error in adminAssistantChat:", error);
+    console.error("Critical error in adminAssistantChat:", error);
     return { 
-      text: "Maaf, saya mengalami kendala teknis saat memproses permintaan Anda. Silakan coba lagi." 
+      text: "Maaf, saya mengalami kendala teknis saat memproses permintaan Anda. Silakan coba lagi dalam beberapa saat." 
     };
   }
 }
@@ -57,54 +57,59 @@ const adminAssistantFlow = ai.defineFlow(
       { role: 'user' as const, content: [{ text: input.message }] }
     ];
 
-    const response = await ai.generate({
-      model: 'googleai/gemini-1.5-flash',
-      output: { schema: AdminAssistantOutputSchema },
-      system: `Anda adalah asisten AI profesional untuk Administrator 'Madrasah Diniyah Ibnu Ahmad'.
-      Gunakan Bahasa Indonesia yang sopan dan formal.
-      
-      Tugas utama:
-      1. Membantu menyusun draf pengumuman atau surat.
-      2. Memberikan saran pengelolaan data sekolah.
-      3. Menyiapkan konten PDF jika pengguna ingin mencetak dokumen (identifikasi kata kunci: "buat pdf", "cetak", "buatkan surat").
-      
-      Jika pengguna meminta file PDF, pastikan Anda mengisi field 'generatedPdf'.
-      Jika pengguna meminta gambar, Anda bisa menginstruksikan saya dengan kata kunci tertentu seperti "buatkan poster".`,
-      messages: messages,
-    });
+    try {
+      const response = await ai.generate({
+        // Use the model defined in genkit.ts for consistency
+        model: 'googleai/gemini-1.5-flash',
+        output: { schema: AdminAssistantOutputSchema },
+        system: `Anda adalah asisten AI profesional untuk Administrator 'Madrasah Diniyah Ibnu Ahmad'.
+        Gunakan Bahasa Indonesia yang sopan dan formal.
+        
+        Tugas utama:
+        1. Membantu menyusun draf pengumuman atau surat.
+        2. Memberikan saran pengelolaan data sekolah.
+        3. Menyiapkan konten PDF jika pengguna ingin mencetak dokumen (identifikasi kata kunci: "buat pdf", "cetak", "buatkan surat").
+        
+        PENTING:
+        - Jika pengguna meminta file PDF, isi field 'generatedPdf'.
+        - Jika pengguna meminta gambar (poster/ilustrasi), Anda dapat memberitahu pengguna bahwa gambar sedang diproses.`,
+        messages: messages,
+      });
 
-    const output = response.output;
+      const output = response.output;
 
-    // Fallback if structured output fails but text is available
-    if (!output) {
-      return { text: response.text };
-    }
-
-    let generatedImage = output.generatedImage;
-
-    // Separate logic to trigger image generation if requested explicitly
-    // This helps avoid timeouts by separating the concerns if needed, 
-    // but here we do it within the flow for consistency.
-    const lowerMessage = input.message.toLowerCase();
-    const wantsImage = lowerMessage.includes('buat gambar') || lowerMessage.includes('generate image') || lowerMessage.includes('buatkan poster');
-    
-    if (!generatedImage && wantsImage) {
-      try {
-        const imageResponse = await ai.generate({
-          model: 'googleai/imagen-3.0-generate-001',
-          prompt: input.message,
-        });
-        if (imageResponse.media?.url) {
-          generatedImage = imageResponse.media.url;
-        }
-      } catch (e) {
-        console.error("Image generation failed:", e);
+      if (!output) {
+        return { text: response.text || "Saya telah memproses permintaan Anda." };
       }
-    }
 
-    return {
-      ...output,
-      generatedImage
-    };
+      let generatedImage = output.generatedImage;
+
+      // Logic to trigger image generation if requested explicitly
+      const lowerMessage = input.message.toLowerCase();
+      const wantsImage = lowerMessage.includes('buat gambar') || lowerMessage.includes('generate image') || lowerMessage.includes('buatkan poster') || lowerMessage.includes('ilustrasi');
+      
+      if (!generatedImage && wantsImage) {
+        try {
+          const imageResponse = await ai.generate({
+            model: 'googleai/imagen-3.0-generate-001',
+            prompt: `Ilustrasi sekolah islam madrasah diniyah: ${input.message}`,
+          });
+          if (imageResponse.media?.url) {
+            generatedImage = imageResponse.media.url;
+          }
+        } catch (e) {
+          console.error("Optional image generation failed:", e);
+          // Don't fail the whole flow if only image generation fails
+        }
+      }
+
+      return {
+        ...output,
+        generatedImage
+      };
+    } catch (innerError) {
+      console.error("Error generating AI response:", innerError);
+      throw innerError;
+    }
   }
 );
