@@ -10,7 +10,6 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { gemini15Flash, imagen3Fast } from '@genkit-ai/google-genai';
 
 const AdminAssistantInputSchema = z.object({
   message: z.string().describe('The user message or request.'),
@@ -60,7 +59,7 @@ const adminAssistantFlow = ai.defineFlow(
     try {
       // 1. Generate Structured Response (Text + PDF info)
       const response = await ai.generate({
-        model: gemini15Flash,
+        model: 'googleai/gemini-1.5-flash',
         output: { schema: AdminAssistantOutputSchema },
         system: `Anda adalah asisten AI profesional untuk Admin 'Madrasah Diniyah Ibnu Ahmad'.
         Gunakan Bahasa Indonesia yang sopan dan formal.
@@ -87,7 +86,7 @@ const adminAssistantFlow = ai.defineFlow(
       if (needsImage) {
         try {
           const imageRes = await ai.generate({
-            model: imagen3Fast,
+            model: 'googleai/imagen-3-fast',
             prompt: `Ilustrasi sekolah islam modern madrasah diniyah, gaya bersih dan profesional: ${input.message}`,
           });
           if (imageRes.media?.url) {
@@ -107,7 +106,7 @@ const adminAssistantFlow = ai.defineFlow(
       // Final Fallback: Simple text generation
       try {
         const fallback = await ai.generate({
-          model: gemini15Flash,
+          model: 'googleai/gemini-1.5-flash',
           prompt: input.message,
           system: "Jawablah sebagai asisten administrasi sekolah dalam Bahasa Indonesia yang ramah."
         });
