@@ -1,0 +1,51 @@
+
+"use client";
+
+import Link from "next/link";
+import { 
+  User, 
+  School, 
+  GraduationCap, 
+  UserCheck,
+  UsersRound
+} from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+
+const studentMenus = [
+  { href: "/admin/students", icon: User, label: "Data Siswa", color: "bg-blue-50 text-blue-600" },
+  { href: "/admin/class-management", icon: School, label: "Manajemen Kelas", color: "bg-green-50 text-green-600" },
+  { href: "/admin/alumni", icon: GraduationCap, label: "Alumni", color: "bg-purple-50 text-purple-600" },
+  { href: "/admin/student-attendance", icon: UserCheck, label: "Absen Siswa", color: "bg-orange-50 text-orange-600" },
+];
+
+export default function SiswaMenuPage() {
+  return (
+    <div className="space-y-6 animate-in slide-in-from-right duration-500">
+      <div>
+        <h1 className="text-2xl font-bold font-headline text-primary flex items-center gap-2">
+          <UsersRound className="h-6 w-6" /> Kategori Siswa
+        </h1>
+        <p className="text-xs text-muted-foreground mt-1">Kelola data santri, kenaikan kelas, dan absensi harian.</p>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+        {studentMenus.map((menu) => (
+          <Link key={menu.href} href={menu.href}>
+            <Card className="hover:shadow-md hover:border-primary/50 transition-all group">
+              <CardContent className="p-5 flex flex-col items-center justify-center text-center gap-3">
+                <div className={cn("p-3 rounded-2xl group-hover:scale-110 transition-transform", menu.color)}>
+                  <menu.icon className="h-6 w-6" />
+                </div>
+                <span className="text-xs font-bold uppercase tracking-tight text-foreground/80">{menu.label}</span>
+              </CardContent>
+            </Card>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function cn(...inputs: any[]) {
+  return inputs.filter(Boolean).join(" ");
+}

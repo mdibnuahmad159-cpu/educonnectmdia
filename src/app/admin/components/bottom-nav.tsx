@@ -11,7 +11,8 @@ import {
   ScanLine, 
   X, 
   Loader2, 
-  Camera 
+  Camera,
+  BookOpen
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFirestore, useCollection, useMemoFirebase } from "@/firebase";
@@ -33,9 +34,9 @@ import { Button } from "@/components/ui/button";
 
 const navItems = [
   { href: "/admin/dashboard", icon: Home, label: "Home" },
-  { href: "/admin/teachers", icon: Users, label: "Guru" },
-  { href: "/admin/students", icon: GraduationCap, label: "Siswa" },
-  { href: "/admin/riwayat-transaksi", icon: Wallet, label: "Kas" },
+  { href: "/admin/akademik", icon: BookOpen, label: "Akademik" },
+  { href: "/admin/siswa-menu", icon: GraduationCap, label: "Siswa" },
+  { href: "/admin/keuangan-menu", icon: Wallet, label: "Keuangan" },
 ];
 
 const dayMapping: { [key: number]: keyof Omit<Schedule, 'id' | 'classLevel' | 'academicYear' | 'type'> } = {
@@ -183,7 +184,7 @@ export function BottomNav() {
           {/* Black Nav Pill */}
           <nav className="flex-1 bg-black/90 backdrop-blur-md rounded-full p-1.5 flex items-center justify-around shadow-2xl border border-white/10">
             {navItems.map((item) => {
-              const isActive = pathname.startsWith(item.href);
+              const isActive = pathname === item.href || (item.href !== "/admin/dashboard" && pathname.startsWith(item.href));
               return (
                 <Link
                   key={item.href}
