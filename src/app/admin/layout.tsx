@@ -75,9 +75,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex flex-col min-h-screen bg-background overflow-x-hidden">
-      <header className="sticky top-0 z-20 flex flex-col bg-primary shadow-xl text-primary-foreground rounded-b-[24px]">
-        {/* Top Row: Basic Info & Profile */}
-        <div className="flex h-14 items-center justify-between gap-4 px-4 border-b border-white/5">
+      <header className="sticky top-0 z-20 flex flex-col p-2 gap-2 bg-transparent">
+        {/* Top Header Card: Identity & Year */}
+        <div className="flex h-14 items-center justify-between gap-4 px-4 bg-primary text-primary-foreground rounded-2xl shadow-lg border-b border-white/5">
           <div className="flex-1 flex justify-start">
             <div className="flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 bg-white/10 rounded-full border border-white/10 text-white">
                 <Calendar className="h-3 w-3 opacity-80" />
@@ -110,15 +110,15 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           </div>
         </div>
 
-        {/* Bottom Row: Page Titles - Centered with Accent Color */}
-        <div className="px-6 py-4 pb-6 flex justify-center">
-            <h2 className="text-sm font-bold font-headline uppercase tracking-[0.2em] text-accent leading-none text-center">
+        {/* Title Header Card: Centered with Accent Color and Full Rounded */}
+        <div className="px-6 py-4 flex justify-center bg-primary text-accent rounded-2xl shadow-lg">
+            <h2 className="text-sm font-bold font-headline uppercase tracking-[0.2em] leading-none text-center">
                 {currentPage.title}
             </h2>
         </div>
       </header>
 
-      <main className="flex-1 p-3 pb-24 sm:px-6 -mt-4 relative z-20">
+      <main className="flex-1 p-3 pb-24 sm:px-6 relative z-10">
           {children}
       </main>
       
