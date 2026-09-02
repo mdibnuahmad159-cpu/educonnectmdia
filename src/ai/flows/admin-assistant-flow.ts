@@ -34,7 +34,14 @@ const AdminAssistantOutputSchema = z.object({
 export type AdminAssistantOutput = z.infer<typeof AdminAssistantOutputSchema>;
 
 export async function adminAssistantChat(input: AdminAssistantInput): Promise<AdminAssistantOutput> {
-  return adminAssistantFlow(input);
+  try {
+    return await adminAssistantFlow(input);
+  } catch (error) {
+    console.error("Error in adminAssistantChat:", error);
+    return { 
+      text: "Maaf, saya mengalami kendala teknis saat memproses permintaan Anda. Silakan coba lagi." 
+    };
+  }
 }
 
 const adminAssistantFlow = ai.defineFlow(
@@ -51,7 +58,7 @@ const adminAssistantFlow = ai.defineFlow(
     ];
 
     const response = await ai.generate({
-      // Secara otomatis menggunakan model default (gemini-1.5-flash-latest) dari genkit.ts
+      model: 'googleai/gemini-1.5-flash',
       output: { schema: AdminAssistantOutputSchema },
       system: `Anda adalah asisten AI profesional untuk Administrator 'Madrasah Diniyah Ibnu Ahmad'.
       Gunakan Bahasa Indonesia yang sopan dan formal.
@@ -59,11 +66,10 @@ const adminAssistantFlow = ai.defineFlow(
       Tugas utama:
       1. Membantu menyusun draf pengumuman atau surat.
       2. Memberikan saran pengelolaan data sekolah.
-      3. Membuat gambar ilustrasi jika diminta (identifikasi niat ini).
-      4. Menyiapkan konten PDF jika pengguna ingin mencetak dokumen (identifikasi kata kunci: "buat pdf", "cetak", "buatkan surat").
+      3. Menyiapkan konten PDF jika pengguna ingin mencetak dokumen (identifikasi kata kunci: "buat pdf", "cetak", "buatkan surat").
       
       Jika pengguna meminta file PDF, pastikan Anda mengisi field 'generatedPdf'.
-      Jika pengguna meminta gambar, Anda bisa mencoba menghasilkan gambar ilustrasi yang relevan.`,
+      Jika pengguna meminta gambar, Anda bisa menginstruksikan saya dengan kata kunci tertentu seperti "buatkan poster".`,
       messages: messages,
     });
 
@@ -76,7 +82,9 @@ const adminAssistantFlow = ai.defineFlow(
 
     let generatedImage = output.generatedImage;
 
-    // Logic to trigger image generation if requested explicitly
+    // Separate logic to trigger image generation if requested explicitly
+    // This helps avoid timeouts by separating the concerns if needed, 
+    // but here we do it within the flow for consistency.
     const lowerMessage = input.message.toLowerCase();
     const wantsImage = lowerMessage.includes('buat gambar') || lowerMessage.includes('generate image') || lowerMessage.includes('buatkan poster');
     
