@@ -464,6 +464,52 @@ export function saveStudentAttendanceBatch(db: Firestore, attendances: Omit<Stud
     });
 }
 
+/**
+ * Sets a global holiday for a specific date, affecting both teachers and students.
+ */
+export async function setGlobalHoliday(db: Firestore, date: string, teachers: Teacher[], students: Student[], isCancel: boolean) {
+    const status = isCancel ? 'Belum Diabsen' : 'Libur';
+    
+    // Chunk processing because of 500 writes limit per batch
+    const allOperations: { type: 'teacher' | 'student', data: any }[] = [];
+    
+    teachers.forEach(t => allOperations.push({ type: 'teacher', data: t }));
+    students.forEach(s => allOperations.push({ type: 'student', data: s }));
+
+    const chunks = [];
+    for (let i = 0; i < allOperations.length; i += 450) {
+        chunks.push(allOperations.slice(i, i + 450));
+    }
+
+    for (const chunk of chunks) {
+        const batch = writeBatch(db);
+        chunk.forEach(op => {
+            if (op.type === 'teacher') {
+                const id = `${op.data.id}_${date}`;
+                batch.set(doc(db, 'teacher_attendances', id), {
+                    id,
+                    teacherId: op.data.id,
+                    teacherName: op.data.name,
+                    date,
+                    status
+                });
+            } else {
+                const id = `${op.data.id}_${date}`;
+                batch.set(doc(db, 'student_attendances', id), {
+                    id,
+                    studentId: op.data.id,
+                    studentName: op.data.name,
+                    nis: op.data.nis,
+                    kelas: op.data.kelas || 0,
+                    date,
+                    status
+                });
+            }
+        });
+        await batch.commit();
+    }
+}
+
 export function addAnnouncement(db: Firestore, announcement: Omit<Announcement, 'id' | 'createdAt'>) {
   const newRef = doc(collection(db, 'announcements'));
   const data = {

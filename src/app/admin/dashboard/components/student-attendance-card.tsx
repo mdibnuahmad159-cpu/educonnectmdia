@@ -1,9 +1,7 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
-import { format, parseISO } from 'date-fns';
-import { id } from 'date-fns/locale';
+import { parseISO } from 'date-fns';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import type { Student, StudentAttendance } from '@/types';
@@ -27,17 +25,19 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Loader2, Users, Coffee, Edit2, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { saveStudentAttendanceBatch } from '@/lib/firebase-helpers';
-import { DatePickerHorizontal } from './date-picker-horizontal';
 import { cn } from '@/lib/utils';
 
-type AttendanceStatus = 'Hadir' | 'Sakit' | 'Izin' | 'Alpa' | 'Belum Diabsen';
+type AttendanceStatus = 'Hadir' | 'Sakit' | 'Izin' | 'Alpa' | 'Belum Diabsen' | 'Libur';
 const STATUS_OPTIONS: AttendanceStatus[] = ['Hadir', 'Sakit', 'Izin', 'Alpa', 'Belum Diabsen'];
 
-export function StudentAttendanceCard() {
+interface StudentAttendanceCardProps {
+    selectedDate: string;
+}
+
+export function StudentAttendanceCard({ selectedDate }: StudentAttendanceCardProps) {
     const firestore = useFirestore();
     const { toast } = useToast();
 
-    const [selectedDate, setSelectedDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
     const [selectedClass, setSelectedClass] = useState<string>("0");
 
     const isFriday = useMemo(() => {
@@ -76,6 +76,11 @@ export function StudentAttendanceCard() {
         if (!students) return [];
         return [...students].sort((a,b) => a.name.localeCompare(b.name));
     }, [students]);
+
+    const isHoliday = useMemo(() => {
+        if (!sortedStudents.length || Object.keys(attendance).length === 0) return false;
+        return sortedStudents.every(s => attendance[s.id] === 'Libur');
+    }, [sortedStudents, attendance]);
 
     const handleStatusChange = (studentId: string, status: AttendanceStatus) => {
         setAttendance(prev => ({ ...prev, [studentId]: status }));
@@ -129,17 +134,18 @@ export function StudentAttendanceCard() {
                             </SelectContent>
                         </Select>
                     </div>
-                    <DatePickerHorizontal 
-                      selectedDate={selectedDate}
-                      onDateChange={setSelectedDate}
-                    />
                 </div>
             </CardHeader>
             <CardContent className="px-4 pb-6">
-                {isFriday ? (
-                    <div className="flex flex-col items-center justify-center py-16 bg-blue-50/50 rounded-xl border border-dashed border-blue-200 text-blue-700">
+                {isFriday || isHoliday ? (
+                    <div className="flex flex-col items-center justify-center py-16 bg-blue-50/50 rounded-xl border border-dashed border-blue-200 text-blue-700 animate-in zoom-in-95 duration-300">
                         <Coffee className="h-8 w-8 mb-2 opacity-50" />
-                        <p className="text-xs font-bold uppercase">Hari Libur (Jum'at)</p>
+                        <p className="text-xs font-bold uppercase tracking-widest">
+                            {isFriday ? "Hari Libur (Jum'at)" : "Hari Libur Sekolah"}
+                        </p>
+                        <p className="text-[10px] mt-1 opacity-70">
+                            {isFriday ? "Kegiatan belajar mengajar ditiadakan." : "Ditetapkan secara manual oleh Admin."}
+                        </p>
                     </div>
                 ) : isLoading ? (
                     <div className="flex justify-center items-center h-24">

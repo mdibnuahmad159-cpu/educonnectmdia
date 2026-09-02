@@ -1,9 +1,7 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
-import { format, parseISO } from 'date-fns';
-import { id } from 'date-fns/locale';
+import { parseISO } from 'date-fns';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import type { Teacher, TeacherAttendance, Schedule, ScheduleEntry } from '@/types';
@@ -17,11 +15,10 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, Edit2, Save, Coffee, Umbrella, X } from 'lucide-react';
+import { Loader2, Edit2, Save, Coffee } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { saveTeacherAttendanceBatch } from '@/lib/firebase-helpers';
 import { useAcademicYear } from '@/context/academic-year-provider';
-import { DatePickerHorizontal } from './date-picker-horizontal';
 import { cn } from '@/lib/utils';
 
 type AttendanceStatus = 'Hadir' | 'Sakit' | 'Izin' | 'Alpa' | 'Belum Diabsen' | 'Libur';
@@ -36,12 +33,15 @@ const dayMapping: { [key: number]: keyof Omit<Schedule, 'id' | 'classLevel' | 'a
     6: 'saturday',
 };
 
-export function TeacherAttendanceCard() {
+interface TeacherAttendanceCardProps {
+    selectedDate: string;
+}
+
+export function TeacherAttendanceCard({ selectedDate }: TeacherAttendanceCardProps) {
     const firestore = useFirestore();
     const { toast } = useToast();
     const { activeYear } = useAcademicYear();
 
-    const [selectedDate, setSelectedDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
     const [isSaving, setIsSaving] = useState<string | null>(null);
 
     const isFriday = useMemo(() => {
@@ -129,48 +129,6 @@ export function TeacherAttendanceCard() {
             setIsSaving(null);
         }
     };
-
-    const handleSetHoliday = async () => {
-        if (!firestore || !scheduledTeachersOnSelectedDate.length) return;
-        setIsSaving("holiday");
-        
-        const payload: Omit<TeacherAttendance, 'id'>[] = scheduledTeachersOnSelectedDate.map(t => ({
-            teacherId: t.id,
-            teacherName: t.name,
-            date: selectedDate,
-            status: 'Libur' as const,
-        }));
-
-        try {
-            await saveTeacherAttendanceBatch(firestore, payload);
-            toast({ title: 'Berhasil', description: 'Hari ini telah diatur sebagai hari libur.' });
-        } catch (e) {
-            toast({ variant: 'destructive', title: 'Gagal' });
-        } finally {
-            setIsSaving(null);
-        }
-    };
-
-    const handleCancelHoliday = async () => {
-        if (!firestore || !scheduledTeachersOnSelectedDate.length) return;
-        setIsSaving("holiday");
-        
-        const payload: Omit<TeacherAttendance, 'id'>[] = scheduledTeachersOnSelectedDate.map(t => ({
-            teacherId: t.id,
-            teacherName: t.name,
-            date: selectedDate,
-            status: 'Belum Diabsen' as const,
-        }));
-
-        try {
-            await saveTeacherAttendanceBatch(firestore, payload);
-            toast({ title: 'Berhasil', description: 'Status libur telah dibatalkan.' });
-        } catch (e) {
-            toast({ variant: 'destructive', title: 'Gagal' });
-        } finally {
-            setIsSaving(null);
-        }
-    };
     
     const isLoading = loadingTeachers || loadingAttendance;
 
@@ -181,31 +139,9 @@ export function TeacherAttendanceCard() {
                     <div className="flex justify-between items-center">
                       <div>
                           <CardTitle className="text-sm font-bold uppercase tracking-tight text-primary">Status Mengajar Guru</CardTitle>
-                          <CardDescription className="text-[10px]">Pantau kehadiran atau atur libur sekolah.</CardDescription>
+                          <CardDescription className="text-[10px]">Pantau kehadiran guru yang terjadwal hari ini.</CardDescription>
                       </div>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className={cn(
-                            "h-8 gap-2 border-primary/20 transition-all",
-                            isHoliday ? "text-destructive border-destructive/20 hover:bg-destructive/5" : "text-primary hover:bg-primary/5"
-                        )} 
-                        onClick={isHoliday ? handleCancelHoliday : handleSetHoliday}
-                        disabled={isSaving === "holiday" || isFriday || scheduledTeachersOnSelectedDate.length === 0}
-                      >
-                          {isSaving === "holiday" ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : isHoliday ? (
-                              <><X className="h-4 w-4" /> Batalkan Libur</>
-                          ) : (
-                              <><Umbrella className="h-4 w-4" /> Liburkan</>
-                          )}
-                      </Button>
                     </div>
-                    <DatePickerHorizontal 
-                      selectedDate={selectedDate}
-                      onDateChange={setSelectedDate}
-                    />
                 </div>
             </CardHeader>
             <CardContent className="px-4 pb-6">
