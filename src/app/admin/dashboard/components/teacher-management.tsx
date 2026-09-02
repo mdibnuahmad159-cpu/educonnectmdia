@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useMemo, useRef } from "react";
-import { PlusCircle, AlertTriangle, Download, Upload, FileDown, FileUp, FileSpreadsheet, FileText, Printer, Loader2, Wand2 } from "lucide-react";
+import { PlusCircle, AlertTriangle, Download, Upload, FileDown, FileUp, FileSpreadsheet, FileText, Printer, Loader2, Wand2, UserCircle } from "lucide-react";
 import { useCollection, useFirestore, useMemoFirebase, useUser } from "@/firebase";
 import { addTeacher, updateTeacher, deleteTeacher, addTeachersBatch, normalizeTeacherNIGs } from "@/lib/firebase-helpers";
 import { Button } from "@/components/ui/button";
@@ -13,14 +13,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -367,19 +359,20 @@ export function TeacherManagement() {
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <CardTitle>Data Guru</CardTitle>
-          <CardDescription>
-            Kelola data guru Madrasah. NIG digunakan sebagai ID Login.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap justify-end gap-2 mb-4">
+      <Card className="border-none shadow-sm">
+        <CardHeader className="pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <CardTitle className="text-xl font-headline text-primary">Data Guru</CardTitle>
+              <CardDescription className="text-xs">
+                Kelola data guru Madrasah. NIG digunakan sebagai ID Login.
+              </CardDescription>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
               <Button 
                 size="xs" 
                 variant="outline" 
-                className="gap-1 border-primary/20 text-primary" 
+                className="gap-1.5 border-primary/20 text-primary h-8" 
                 onClick={handleAutoNormalize}
                 disabled={isNormalizing || loading || !teachers?.length}
               >
@@ -389,18 +382,18 @@ export function TeacherManagement() {
 
               <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                  <Button size="xs" variant="outline" className="gap-1">
-                  <FileUp className="h-4 w-4" />
+                  <Button size="xs" variant="outline" className="gap-1.5 border-primary/20 h-8">
+                  <FileUp className="h-3.5 w-3.5" />
                   Impor
                   </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={handleDownloadTeacherTemplate}>
-                  <Download className="mr-2 h-4 w-4" />
+                  <Download className="mr-2 h-3.5 w-3.5" />
                   Unduh Template
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
-                  <Upload className="mr-2 h-4 w-4" />
+                  <Upload className="mr-2 h-3.5 w-3.5" />
                   Unggah Excel
                   </DropdownMenuItem>
               </DropdownMenuContent>
@@ -415,83 +408,76 @@ export function TeacherManagement() {
 
               <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                  <Button size="xs" variant="outline" className="gap-1">
-                  <FileDown className="h-4 w-4" />
+                  <Button size="xs" variant="outline" className="gap-1.5 border-primary/20 h-8">
+                  <FileDown className="h-3.5 w-3.5" />
                   Ekspor
                   </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={handleExportTeachersExcel}>
-                  <FileSpreadsheet className="mr-2 h-4 w-4" />
+                  <FileSpreadsheet className="mr-2 h-3.5 w-3.5" />
                   Ekspor ke Excel
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleExportTeachersPdf}>
-                  <FileText className="mr-2 h-4 w-4" />
+                  <FileText className="mr-2 h-3.5 w-3.5" />
                   Ekspor ke PDF
                   </DropdownMenuItem>
               </DropdownMenuContent>
               </DropdownMenu>
-              <Button size="xs" variant="outline" className="gap-1" onClick={handlePrintTable}>
-                  <Printer className="h-4 w-4" />
+              <Button size="xs" variant="outline" className="gap-1.5 border-primary/20 h-8" onClick={handlePrintTable}>
+                  <Printer className="h-3.5 w-3.5" />
                   Cetak Data
               </Button>
-            <Button size="xs" className="gap-1" onClick={handleAdd}>
-              <PlusCircle className="h-4 w-4" />
-              Tambah Guru
-            </Button>
+              <Button size="xs" className="gap-1.5 h-8 font-bold shadow-md" onClick={handleAdd}>
+                <PlusCircle className="h-3.5 w-3.5" />
+                Tambah Guru
+              </Button>
+            </div>
           </div>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[40px]">No.</TableHead>
-                <TableHead>Nama</TableHead>
-                <TableHead>NIG (Login ID)</TableHead>
-                <TableHead>Jabatan</TableHead>
-                <TableHead className="text-right">Aksi</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-10">
-                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                      <Loader2 className="h-6 w-6 animate-spin"/>
-                      <span>Memuat data guru...</span>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : sortedTeachers && sortedTeachers.length > 0 ? (
-                sortedTeachers.map((teacher, index) => (
-                <TableRow key={teacher.id}>
-                  <TableCell>{index + 1}</TableCell>
-                  <TableCell className="font-medium">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-8 w-8">
-                          <AvatarImage src={teacher.avatarUrl || undefined} alt={teacher.name} />
-                          <AvatarFallback>{teacher.name.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      <span className="text-xs">{teacher.name}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <code className="text-[10px] bg-muted px-1.5 py-0.5 rounded font-bold">{teacher.nig || 'BELUM ADA'}</code>
-                  </TableCell>
-                  <TableCell className="text-xs">{teacher.jabatan || '-'}</TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="outline" size="xs" onClick={() => handleDetail(teacher)}>
-                        Detail
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))) : (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
-                    Belum ada data guru.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+        </CardHeader>
+        <CardContent className="pt-2">
+            {loading ? (
+                <div className="flex flex-col items-center justify-center py-20 gap-3 text-muted-foreground">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary/40"/>
+                    <span className="text-xs font-medium uppercase tracking-widest">Memuat data guru...</span>
+                </div>
+            ) : sortedTeachers && sortedTeachers.length > 0 ? (
+                <div className="space-y-3">
+                    {sortedTeachers.map((teacher) => (
+                        <div key={teacher.id} className="flex items-center justify-between p-3 rounded-xl bg-card border shadow-sm hover:border-primary/20 transition-all group">
+                            <div className="flex items-center gap-4">
+                                <Avatar className="h-10 w-10 border-2 border-primary/5 group-hover:border-primary/20 transition-all">
+                                    <AvatarImage src={teacher.avatarUrl || undefined} alt={teacher.name} className="object-cover" />
+                                    <AvatarFallback className="bg-primary/5 text-primary text-sm font-bold">{teacher.name.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                    <p className="text-[12px] font-bold leading-tight uppercase text-foreground group-hover:text-primary transition-colors">{teacher.name}</p>
+                                    <div className="flex items-center gap-2 mt-0.5">
+                                        <p className="text-[10px] text-muted-foreground font-mono bg-muted/50 px-1.5 rounded">NIG: {teacher.nig || 'BELUM ADA'}</p>
+                                        <span className="text-[10px] text-muted-foreground">•</span>
+                                        <p className="text-[10px] text-primary/70 font-medium">{teacher.jabatan || '-'}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="h-8 gap-2 border-primary/10 hover:bg-primary/5 text-[11px] font-bold uppercase tracking-tight"
+                                onClick={() => handleDetail(teacher)}
+                            >
+                                <UserCircle className="h-3.5 w-3.5" />
+                                Detail
+                            </Button>
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <div className="py-20 text-center text-muted-foreground border-2 border-dashed rounded-2xl bg-muted/5">
+                    <AlertTriangle className="h-10 w-10 mx-auto mb-3 opacity-20" />
+                    <p className="text-sm font-medium">Belum ada data guru terdaftar.</p>
+                </div>
+            )}
         </CardContent>
       </Card>
 
