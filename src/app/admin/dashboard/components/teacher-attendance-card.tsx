@@ -219,7 +219,7 @@ export function TeacherAttendanceCard() {
                         <Loader2 className="h-6 w-6 animate-spin text-primary" />
                     </div>
                 ) : (
-                    <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1">
+                    <div className="space-y-4">
                         {scheduledTeachersOnSelectedDate.length > 0 ? scheduledTeachersOnSelectedDate.map(teacher => (
                             <div key={teacher.id} className="flex items-center justify-between p-2 rounded-xl bg-card border shadow-sm">
                                 <div className="flex items-center gap-3">
@@ -253,7 +253,7 @@ export function TeacherAttendanceCard() {
                 )}
             </CardContent>
             {scheduledTeachersOnSelectedDate.length > 0 && (
-                <CardFooter className="px-4 pb-4 pt-0">
+                <CardFooter className="px-4 pb-4 pt-0 mt-4">
                     <Button onClick={handleSave} disabled={isLoading || isSaving} className="w-full h-11 font-bold shadow-lg">
                         {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : `Simpan Seluruh Absensi`}
                     </Button>
