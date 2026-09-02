@@ -94,7 +94,7 @@ export type TeacherAttendance = {
   teacherId: string;
   teacherName: string; // Denormalized
   date: string; // YYYY-MM-DD
-  status: 'Hadir' | 'Sakit' | 'Izin' | 'Alpa' | 'Belum Diabsen';
+  status: 'Hadir' | 'Sakit' | 'Izin' | 'Alpa' | 'Belum Diabsen' | 'Libur';
 };
 
 export type StudentAttendance = {
@@ -104,7 +104,7 @@ export type StudentAttendance = {
   nis: string;
   kelas: number;
   date: string; // YYYY-MM-DD
-  status: 'Hadir' | 'Sakit' | 'Izin' | 'Alpa' | 'Belum Diabsen';
+  status: 'Hadir' | 'Sakit' | 'Izin' | 'Alpa' | 'Belum Diabsen' | 'Libur';
 };
 
 export type Announcement = {
