@@ -145,16 +145,8 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
       <DialogContent className="sm:max-w-sm p-0 overflow-hidden rounded-[32px] border-none shadow-2xl animate-in zoom-in-95 duration-300">
         <div className="flex flex-col bg-card">
           {/* Top Section: Identity Preview */}
-          <div className="bg-primary/5 p-6 flex flex-col items-center text-center">
-            <div className="flex w-full justify-between items-start mb-2">
-                <DialogTitle className="sr-only">Profil {teacher.name}</DialogTitle>
-                <div className="h-8" /> {/* Spacer */}
-                <DialogClose asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-white/50">
-                        <X className="h-4 w-4" />
-                    </Button>
-                </DialogClose>
-            </div>
+          <div className="bg-primary/5 p-6 pt-8 flex flex-col items-center text-center relative">
+            <DialogTitle className="sr-only">Profil {teacher.name}</DialogTitle>
             
             <div className="relative mb-4">
                 <Avatar className="h-28 w-28 border-4 border-white shadow-xl scale-110">
@@ -222,4 +214,3 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
     </Dialog>
   );
 }
-
