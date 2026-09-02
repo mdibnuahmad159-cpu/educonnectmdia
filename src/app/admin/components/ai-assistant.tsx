@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bot, Send, X, Sparkles, User, Loader2, Image as ImageIcon, Download, FileText } from "lucide-react";
+import { Bot, Send, X, Sparkles, Loader2, Download, FileText } from "lucide-react";
 import { adminAssistantChat } from "@/ai/flows/admin-assistant-flow";
 import { cn } from "@/lib/utils";
 import jsPDF from "jspdf";
@@ -25,7 +25,7 @@ export function AIAssistant() {
     const [isOpen, setIsOpen] = useState(false);
     const [input, setInput] = useState("");
     const [messages, setMessages] = useState<Message[]>([
-        { role: 'ai', text: 'Halo Admin! Ada yang bisa saya bantu hari ini? Saya bisa membantu mencari data santri, menyusun draf pengumuman, membuat gambar ilustrasi, atau membuat file PDF.' }
+        { role: 'ai', text: 'Halo Admin! Ada yang bisa saya bantu hari ini? Saya bisa membantu menyusun draf pengumuman, membuat gambar ilustrasi, atau membuat file PDF untuk dokumen sekolah.' }
     ]);
     const [isLoading, setIsLoading] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -37,7 +37,7 @@ export function AIAssistant() {
                 scrollContainer.scrollTo(0, scrollContainer.scrollHeight);
             }
         }
-    }, [messages, isOpen]);
+    }, [messages, isOpen, isLoading]);
 
     const handleSend = async () => {
         if (!input.trim() || isLoading) return;
@@ -48,7 +48,7 @@ export function AIAssistant() {
         setIsLoading(true);
 
         try {
-            // Convert simple history to Genkit format
+            // Convert history to Genkit format excluding current message
             const history = messages.map(m => ({
                 role: m.role === 'user' ? 'user' as const : 'model' as const,
                 content: [{ text: m.text }]
@@ -58,48 +58,53 @@ export function AIAssistant() {
             
             setMessages(prev => [...prev, { 
                 role: 'ai', 
-                text: result.text,
+                text: result.text || "Saya telah memproses permintaan Anda.",
                 image: result.generatedImage,
                 pdf: result.generatedPdf
             }]);
         } catch (error) {
-            setMessages(prev => [...prev, { role: 'ai', text: 'Maaf, terjadi kesalahan saat menghubungi asisten AI.' }]);
+            console.error("AI Assistant error:", error);
+            setMessages(prev => [...prev, { role: 'ai', text: 'Maaf, terjadi kesalahan saat menghubungi asisten AI. Mohon coba lagi dalam beberapa saat.' }]);
         } finally {
             setIsLoading(false);
         }
     };
 
     const generateAndDownloadPdf = (pdfData: { title: string, content: string, filename: string }) => {
-        const doc = new jsPDF();
-        
-        // Header
-        doc.setFontSize(18);
-        doc.setTextColor(0, 0, 0);
-        doc.text(pdfData.title, 105, 20, { align: 'center' });
-        
-        // Horizontal line
-        doc.setLineWidth(0.5);
-        doc.line(20, 25, 190, 25);
-        
-        // Content
-        doc.setFontSize(11);
-        doc.setFont("helvetica", "normal");
-        const splitText = doc.splitTextToSize(pdfData.content, 170);
-        doc.text(splitText, 20, 35);
-        
-        // Footer or Date if needed
-        doc.setFontSize(9);
-        doc.setTextColor(100, 100, 100);
-        doc.text(`Dicetak via AI Assistant pada ${new Date().toLocaleDateString('id-ID')}`, 105, 285, { align: 'center' });
-        
-        doc.save(pdfData.filename.endsWith('.pdf') ? pdfData.filename : `${pdfData.filename}.pdf`);
+        try {
+            const doc = new jsPDF();
+            
+            // Header
+            doc.setFontSize(18);
+            doc.setTextColor(0, 0, 0);
+            doc.text(pdfData.title, 105, 20, { align: 'center' });
+            
+            // Horizontal line
+            doc.setLineWidth(0.5);
+            doc.line(20, 25, 190, 25);
+            
+            // Content
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "normal");
+            const splitText = doc.splitTextToSize(pdfData.content, 170);
+            doc.text(splitText, 20, 35);
+            
+            // Footer
+            doc.setFontSize(9);
+            doc.setTextColor(100, 100, 100);
+            doc.text(`Dibuat otomatis oleh AI Assistant pada ${new Date().toLocaleDateString('id-ID')}`, 105, 285, { align: 'center' });
+            
+            doc.save(pdfData.filename.endsWith('.pdf') ? pdfData.filename : `${pdfData.filename}.pdf`);
+        } catch (e) {
+            console.error("PDF generation failed:", e);
+        }
     };
 
     if (!isOpen) {
         return (
             <Button 
                 onClick={() => setIsOpen(true)}
-                className="fixed bottom-20 right-6 h-12 w-12 rounded-full shadow-lg z-50 animate-bounce hover:animate-none"
+                className="fixed bottom-20 right-6 h-12 w-12 rounded-full shadow-lg z-50 animate-bounce hover:animate-none bg-primary text-primary-foreground"
             >
                 <Sparkles className="h-6 w-6" />
             </Button>
@@ -107,12 +112,12 @@ export function AIAssistant() {
     }
 
     return (
-        <Card className="fixed bottom-20 right-6 w-[320px] sm:w-[420px] h-[550px] shadow-2xl z-50 flex flex-col border-primary/20 animate-in slide-in-from-bottom-5 duration-300">
+        <Card className="fixed bottom-20 right-6 w-[320px] sm:w-[400px] h-[500px] shadow-2xl z-50 flex flex-col border-primary/20 animate-in slide-in-from-bottom-5 duration-300">
             <CardHeader className="p-3 border-b bg-primary text-primary-foreground rounded-t-lg flex flex-row items-center justify-between space-y-0">
                 <CardTitle className="text-sm font-bold flex items-center gap-2">
                     <Bot className="h-4 w-4" /> AI Assistant Admin
                 </CardTitle>
-                <Button variant="ghost" size="icon" className="h-6 w-6 text-white hover:bg-white/20" onClick={() => setIsOpen(false)}>
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-white hover:bg-white/20" onClick={() => setIsOpen(false)}>
                     <X className="h-4 w-4" />
                 </Button>
             </CardHeader>
@@ -126,28 +131,28 @@ export function AIAssistant() {
                             )}>
                                 <div className={cn(
                                     "p-3 rounded-2xl text-xs leading-relaxed shadow-sm",
-                                    msg.role === 'user' ? "bg-primary text-primary-foreground rounded-tr-none" : "bg-white border rounded-tl-none"
+                                    msg.role === 'user' ? "bg-primary text-primary-foreground rounded-tr-none" : "bg-white border rounded-tl-none text-foreground"
                                 )}>
-                                    {msg.text}
+                                    <div className="whitespace-pre-wrap">{msg.text}</div>
                                     
                                     {msg.image && (
-                                        <div className="mt-3 space-y-2">
+                                        <div className="mt-3 space-y-2 animate-in fade-in zoom-in-95">
                                             <div className="rounded-md overflow-hidden border bg-muted">
                                                 <img src={msg.image} alt="AI Generated" className="w-full h-auto" />
                                             </div>
-                                            <Button variant="outline" size="xs" className="w-full h-7 gap-1.5" asChild>
-                                                <a href={msg.image} download="ai-generated.png">
-                                                    <Download className="h-3 w-3" /> Unduh Gambar
+                                            <Button variant="outline" size="xs" className="w-full h-7 gap-1.5 text-[10px]" asChild>
+                                                <a href={msg.image} download="ai-image.png">
+                                                    <Download className="h-3 w-3" /> Simpan Gambar
                                                 </a>
                                             </Button>
                                         </div>
                                     )}
 
                                     {msg.pdf && (
-                                        <div className="mt-3 p-2 bg-muted/30 rounded-lg border border-dashed border-primary/30">
+                                        <div className="mt-3 p-2 bg-muted/30 rounded-lg border border-dashed border-primary/30 animate-in fade-in slide-in-from-top-1">
                                             <div className="flex items-center gap-2 mb-2">
                                                 <FileText className="h-4 w-4 text-primary" />
-                                                <span className="font-bold truncate">{msg.pdf.title}</span>
+                                                <span className="font-bold truncate text-[10px]">{msg.pdf.title}</span>
                                             </div>
                                             <Button 
                                                 variant="default" 
@@ -178,11 +183,12 @@ export function AIAssistant() {
                     onSubmit={(e) => { e.preventDefault(); handleSend(); }}
                 >
                     <Input 
-                        placeholder="Tulis pesan, buat PDF, atau cari data..." 
+                        placeholder="Tulis perintah..." 
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         className="h-9 text-xs focus-visible:ring-primary"
                         disabled={isLoading}
+                        autoFocus
                     />
                     <Button type="submit" size="icon" className="h-9 w-9 shrink-0" disabled={isLoading || !input.trim()}>
                         <Send className="h-4 w-4" />

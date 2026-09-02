@@ -2,11 +2,14 @@
 /**
  * @fileOverview AI Assistant flow for Admin tasks.
  * Handles database searches, content drafting, image generation, and PDF content preparation.
+ * 
+ * - adminAssistantChat - Function to handle chat interactions.
+ * - AdminAssistantInput - Input schema for the assistant.
+ * - AdminAssistantOutput - Output schema for the assistant.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { googleAI } from '@genkit-ai/google-genai';
 
 const AdminAssistantInputSchema = z.object({
   message: z.string().describe('The user message or request.'),
@@ -41,42 +44,53 @@ const adminAssistantFlow = ai.defineFlow(
     outputSchema: AdminAssistantOutputSchema,
   },
   async (input) => {
+    // Construct messages array for chat history + current message
+    const messages = [
+      ...(input.history || []),
+      { role: 'user' as const, content: [{ text: input.message }] }
+    ];
+
     const response = await ai.generate({
-      model: 'googleai/gemini-2.5-flash',
+      model: 'googleai/gemini-1.5-flash',
       output: { schema: AdminAssistantOutputSchema },
-      system: `You are a helpful AI Assistant for the Administrator of 'Madrasah Diniyah Ibnu Ahmad'. 
-      Your goal is to help find data, draft announcements, manage school info, and create documents. 
-      You should be professional, polite, and use Indonesian language.
+      system: `Anda adalah asisten AI profesional untuk Administrator 'Madrasah Diniyah Ibnu Ahmad'.
+      Gunakan Bahasa Indonesia yang sopan dan formal.
       
-      If the user wants a PDF file (e.g. "buatkan surat", "buat draf pengumuman PDF", "cetak laporan ini ke PDF"), 
-      populate the 'generatedPdf' field with a title, formatted content, and a suitable filename.
+      Tugas utama:
+      1. Membantu menyusun draf pengumuman atau surat.
+      2. Memberikan saran pengelolaan data sekolah.
+      3. Membuat gambar ilustrasi jika diminta (identifikasi niat ini).
+      4. Menyiapkan konten PDF jika pengguna ingin mencetak dokumen (identifikasi kata kunci: "buat pdf", "cetak", "buatkan surat").
       
-      If the user wants an image (e.g. for an announcement), describe it, but also try to populate generatedImage if requested using Imagen.`,
-      prompt: input.message,
-      messages: input.history,
+      Jika pengguna meminta file PDF, pastikan Anda mengisi field 'generatedPdf'.
+      Jika pengguna meminta gambar, Anda bisa mencoba menghasilkan gambar ilustrasi yang relevan.`,
+      messages: messages,
     });
 
     const output = response.output;
 
+    // Fallback if structured output fails but text is available
     if (!output) {
       return { text: response.text };
     }
 
     let generatedImage = output.generatedImage;
 
-    // Logic to trigger image generation if keywords are found but not provided in output schema yet
+    // Logic to trigger image generation if requested explicitly
     const lowerMessage = input.message.toLowerCase();
-    if (!generatedImage && (lowerMessage.includes('buat gambar') || lowerMessage.includes('generate image') || lowerMessage.includes('buatkan poster'))) {
+    const wantsImage = lowerMessage.includes('buat gambar') || lowerMessage.includes('generate image') || lowerMessage.includes('buatkan poster');
+    
+    if (!generatedImage && wantsImage) {
       try {
-        const { media } = await ai.generate({
-          model: 'googleai/imagen-4.0-fast-generate-001',
+        const imageResponse = await ai.generate({
+          model: 'googleai/imagen-3.0-generate-001',
           prompt: input.message,
         });
-        if (media?.url) {
-          generatedImage = media.url;
+        if (imageResponse.media?.url) {
+          generatedImage = imageResponse.media.url;
         }
       } catch (e) {
-        console.error("Image generation failed", e);
+        console.error("Image generation failed:", e);
       }
     }
 
