@@ -39,7 +39,7 @@ export async function adminAssistantChat(input: AdminAssistantInput): Promise<Ad
   } catch (error) {
     console.error("Critical error in adminAssistantChat:", error);
     return { 
-      text: "Maaf, saya mengalami kendala teknis saat memproses permintaan Anda. Silakan coba lagi dalam beberapa saat." 
+      text: "Maaf, sistem sedang mengalami gangguan komunikasi dengan pusat data AI. Silakan coba kirim pesan kembali." 
     };
   }
 }
@@ -51,55 +51,51 @@ const adminAssistantFlow = ai.defineFlow(
     outputSchema: AdminAssistantOutputSchema,
   },
   async (input) => {
-    // Construct messages array for chat history + current message
+    // Construct messages array for chat history
     const messages = [
       ...(input.history || []),
       { role: 'user' as const, content: [{ text: input.message }] }
     ];
 
     try {
+      // Using global ai object defaults for model and safety
       const response = await ai.generate({
-        // Use the model defined in genkit.ts for consistency
-        model: 'googleai/gemini-1.5-flash',
         output: { schema: AdminAssistantOutputSchema },
-        system: `Anda adalah asisten AI profesional untuk Administrator 'Madrasah Diniyah Ibnu Ahmad'.
+        system: `Anda adalah asisten AI profesional untuk Admin 'Madrasah Diniyah Ibnu Ahmad'.
         Gunakan Bahasa Indonesia yang sopan dan formal.
         
-        Tugas utama:
-        1. Membantu menyusun draf pengumuman atau surat.
-        2. Memberikan saran pengelolaan data sekolah.
-        3. Menyiapkan konten PDF jika pengguna ingin mencetak dokumen (identifikasi kata kunci: "buat pdf", "cetak", "buatkan surat").
+        Tugas:
+        1. Bantu buat draf pengumuman/surat.
+        2. Berikan saran data.
+        3. Siapkan konten PDF jika diminta (field 'generatedPdf').
         
-        PENTING:
-        - Jika pengguna meminta file PDF, isi field 'generatedPdf'.
-        - Jika pengguna meminta gambar (poster/ilustrasi), Anda dapat memberitahu pengguna bahwa gambar sedang diproses.`,
+        PENTING: Jangan menyebutkan kendala teknis kepada pengguna kecuali benar-benar gagal.`,
         messages: messages,
       });
 
       const output = response.output;
-
       if (!output) {
-        return { text: response.text || "Saya telah memproses permintaan Anda." };
+        return { text: response.text || "Permintaan Anda telah saya proses." };
       }
 
       let generatedImage = output.generatedImage;
 
       // Logic to trigger image generation if requested explicitly
       const lowerMessage = input.message.toLowerCase();
-      const wantsImage = lowerMessage.includes('buat gambar') || lowerMessage.includes('generate image') || lowerMessage.includes('buatkan poster') || lowerMessage.includes('ilustrasi');
+      const keywords = ['buat gambar', 'generate image', 'buatkan poster', 'ilustrasi', 'gambar'];
+      const wantsImage = keywords.some(k => lowerMessage.includes(keywords[0]));
       
       if (!generatedImage && wantsImage) {
         try {
           const imageResponse = await ai.generate({
-            model: 'googleai/imagen-3.0-generate-001',
-            prompt: `Ilustrasi sekolah islam madrasah diniyah: ${input.message}`,
+            model: 'googleai/imagen-4.0-fast-generate-001',
+            prompt: `Ilustrasi sekolah islam modern madrasah diniyah: ${input.message}`,
           });
           if (imageResponse.media?.url) {
             generatedImage = imageResponse.media.url;
           }
         } catch (e) {
           console.error("Optional image generation failed:", e);
-          // Don't fail the whole flow if only image generation fails
         }
       }
 
@@ -109,7 +105,16 @@ const adminAssistantFlow = ai.defineFlow(
       };
     } catch (innerError) {
       console.error("Error generating AI response:", innerError);
-      throw innerError;
+      // Fallback to simple text generation if structured output fails
+      try {
+        const fallback = await ai.generate({
+          prompt: input.message,
+          system: "Jawab sebagai asisten admin sekolah dalam Bahasa Indonesia."
+        });
+        return { text: fallback.text };
+      } catch (finalError) {
+        throw finalError;
+      }
     }
   }
 );
