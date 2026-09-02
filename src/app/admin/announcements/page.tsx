@@ -12,6 +12,7 @@ import {
   CardHeader,
   CardTitle,
   CardFooter,
+  CardDescription,
 } from "@/components/ui/card";
 import {
     AlertDialog,
@@ -91,17 +92,23 @@ export default function AnnouncementsPage() {
     };
 
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-xl font-bold font-headline text-primary">Pengumuman</h1>
-                    <p className="text-xs text-muted-foreground">Kelola informasi dan berita untuk guru serta wali murid.</p>
-                </div>
-                <Button size="sm" className="gap-2" onClick={handleAdd}>
-                    <PlusCircle className="h-4 w-4" />
-                    Buat Pengumuman
-                </Button>
-            </div>
+        <div className="space-y-4">
+            <Card className="border-none shadow-lg bg-primary text-primary-foreground">
+                <CardHeader className="pb-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="space-y-1">
+                            <CardTitle className="text-2xl font-bold font-headline">Pengumuman</CardTitle>
+                            <CardDescription className="text-primary-foreground/70 text-xs">
+                                Kelola informasi dan berita untuk guru serta wali murid.
+                            </CardDescription>
+                        </div>
+                        <Button variant="secondary" size="sm" className="gap-2 font-bold shadow-md bg-white text-primary hover:bg-white/90 h-9" onClick={handleAdd}>
+                            <PlusCircle className="h-4 w-4" />
+                            Buat Pengumuman
+                        </Button>
+                    </div>
+                </CardHeader>
+            </Card>
 
             {error && (
                 <Card className="border-destructive bg-destructive/10">
@@ -115,78 +122,80 @@ export default function AnnouncementsPage() {
                 </Card>
             )}
 
-            {loading ? (
-                <div className="flex flex-col items-center justify-center h-64 gap-3 text-muted-foreground">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary"/>
-                    <span className="text-sm">Memuat daftar pengumuman...</span>
-                </div>
-            ) : announcements && announcements.length > 0 ? (
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 items-start">
-                    {announcements.map((item) => (
-                        <Card key={item.id} className="flex flex-col overflow-hidden hover:shadow-md transition-shadow">
-                            {item.imageUrl ? (
-                                <div className="relative w-full bg-muted/50">
-                                    <img 
-                                        src={item.imageUrl} 
-                                        alt={item.title} 
-                                        className="w-full h-auto max-h-[400px] object-contain"
-                                    />
-                                    <div className="absolute top-2 left-2">
-                                        {getTargetBadge(item.target)}
+            <div className="pt-2">
+                {loading ? (
+                    <div className="flex flex-col items-center justify-center h-64 gap-3 text-muted-foreground">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary"/>
+                        <span className="text-sm">Memuat daftar pengumuman...</span>
+                    </div>
+                ) : announcements && announcements.length > 0 ? (
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 items-start">
+                        {announcements.map((item) => (
+                            <Card key={item.id} className="flex flex-col overflow-hidden hover:shadow-md transition-shadow">
+                                {item.imageUrl ? (
+                                    <div className="relative w-full bg-muted/50">
+                                        <img 
+                                            src={item.imageUrl} 
+                                            alt={item.title} 
+                                            className="w-full h-auto max-h-[400px] object-contain"
+                                        />
+                                        <div className="absolute top-2 left-2">
+                                            {getTargetBadge(item.target)}
+                                        </div>
                                     </div>
-                                </div>
-                            ) : (
-                                <div className="h-20 bg-gradient-to-br from-primary/10 to-primary/5 p-4 flex items-start justify-between">
-                                    {getTargetBadge(item.target)}
-                                    <ImageIcon className="h-6 w-6 text-primary/20" />
-                                </div>
-                            )}
-                            
-                            <CardHeader className="p-4 pb-2">
-                                <div className="flex items-center gap-2 text-[10px] text-muted-foreground mb-1">
-                                    <Calendar className="h-3 w-3" />
-                                    {item.createdAt ? format(parseISO(item.createdAt), "d MMMM yyyy", { locale: dfnsId }) : '-'}
-                                </div>
-                                <CardTitle className="text-sm font-bold line-clamp-2">{item.title}</CardTitle>
-                            </CardHeader>
-                            
-                            <CardContent className="p-4 pt-0 flex-1">
-                                <p className="text-xs text-muted-foreground line-clamp-4 leading-relaxed">
-                                    {item.content}
-                                </p>
-                                {item.linkUrl && (
-                                    <a 
-                                        href={item.linkUrl} 
-                                        target="_blank" 
-                                        rel="noopener noreferrer" 
-                                        className="mt-3 inline-flex items-center gap-1.5 text-[10px] text-primary font-medium hover:underline"
-                                    >
-                                        <ExternalLink className="h-3 w-3" />
-                                        Tautan Terkait
-                                    </a>
+                                ) : (
+                                    <div className="h-20 bg-gradient-to-br from-primary/10 to-primary/5 p-4 flex items-start justify-between">
+                                        {getTargetBadge(item.target)}
+                                        <ImageIcon className="h-6 w-6 text-primary/20" />
+                                    </div>
                                 )}
-                            </CardContent>
-                            
-                            <CardFooter className="p-3 border-t bg-muted/30 flex justify-end gap-2">
-                                <Button variant="ghost" size="xs" className="h-8 w-8 p-0" onClick={() => handleEdit(item)}>
-                                    <Edit className="h-3.5 w-3.5" />
-                                    <span className="sr-only">Edit</span>
-                                </Button>
-                                <Button variant="ghost" size="xs" className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => handleDelete(item.id)}>
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                    <span className="sr-only">Hapus</span>
-                                </Button>
-                            </CardFooter>
-                        </Card>
-                    ))}
-                </div>
-            ) : (
-                <div className="flex flex-col items-center justify-center h-64 border-2 border-dashed rounded-lg bg-muted/20 text-muted-foreground">
-                    <ImageIcon className="h-12 w-12 mb-2 opacity-20" />
-                    <p className="text-sm">Belum ada pengumuman yang dibuat.</p>
-                    <Button variant="link" size="sm" onClick={handleAdd}>Buat sekarang</Button>
-                </div>
-            )}
+                                
+                                <CardHeader className="p-4 pb-2">
+                                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground mb-1">
+                                        <Calendar className="h-3 w-3" />
+                                        {item.createdAt ? format(parseISO(item.createdAt), "d MMMM yyyy", { locale: dfnsId }) : '-'}
+                                    </div>
+                                    <CardTitle className="text-sm font-bold line-clamp-2">{item.title}</CardTitle>
+                                </CardHeader>
+                                
+                                <CardContent className="p-4 pt-0 flex-1">
+                                    <p className="text-xs text-muted-foreground line-clamp-4 leading-relaxed">
+                                        {item.content}
+                                    </p>
+                                    {item.linkUrl && (
+                                        <a 
+                                            href={item.linkUrl} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer" 
+                                            className="mt-3 inline-flex items-center gap-1.5 text-[10px] text-primary font-medium hover:underline"
+                                        >
+                                            <ExternalLink className="h-3 w-3" />
+                                            Tautan Terkait
+                                        </a>
+                                    )}
+                                </CardContent>
+                                
+                                <CardFooter className="p-3 border-t bg-muted/30 flex justify-end gap-2">
+                                    <Button variant="ghost" size="xs" className="h-8 w-8 p-0" onClick={() => handleEdit(item)}>
+                                        <Edit className="h-3.5 w-3.5" />
+                                        <span className="sr-only">Edit</span>
+                                    </Button>
+                                    <Button variant="ghost" size="xs" className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => handleDelete(item.id)}>
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                        <span className="sr-only">Hapus</span>
+                                    </Button>
+                                </CardFooter>
+                            </Card>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="flex flex-col items-center justify-center h-64 border-2 border-dashed rounded-lg bg-muted/20 text-muted-foreground">
+                        <ImageIcon className="h-12 w-12 mb-2 opacity-20" />
+                        <p className="text-sm">Belum ada pengumuman yang dibuat.</p>
+                        <Button variant="link" size="sm" onClick={handleAdd}>Buat sekarang</Button>
+                    </div>
+                )}
+            </div>
 
             <AnnouncementForm 
                 isOpen={isFormOpen}
@@ -212,3 +221,4 @@ export default function AnnouncementsPage() {
         </div>
     );
 }
+

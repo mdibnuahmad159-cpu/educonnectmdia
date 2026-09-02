@@ -275,19 +275,19 @@ export default function CurriculumPage() {
 
     return (
         <div className="space-y-4">
-            <Card className="border-none shadow-sm">
-                <CardHeader className="pb-4">
+            <Card className="border-none shadow-lg bg-primary text-primary-foreground">
+                <CardHeader className="pb-6">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div>
-                            <CardTitle className="text-xl font-headline text-primary">Kurikulum</CardTitle>
-                            <CardDescription className="text-xs">
+                        <div className="space-y-1">
+                            <CardTitle className="text-2xl font-bold font-headline">Kurikulum</CardTitle>
+                            <CardDescription className="text-primary-foreground/70 text-xs">
                                 Kelola mata pelajaran, kelas, dan kitab yang digunakan dalam kurikulum madrasah.
                             </CardDescription>
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
                              <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button size="xs" variant="outline" className="gap-1.5 border-primary/20 h-8">
+                                    <Button size="xs" variant="outline" className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8">
                                     <FileUp className="h-3.5 w-3.5" />
                                     Impor
                                     </Button>
@@ -312,7 +312,7 @@ export default function CurriculumPage() {
                             />
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button size="xs" variant="outline" className="gap-1.5 border-primary/20 h-8">
+                                    <Button size="xs" variant="outline" className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8">
                                     <FileDown className="h-3.5 w-3.5" />
                                     Ekspor
                                     </Button>
@@ -328,11 +328,11 @@ export default function CurriculumPage() {
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
-                            <Button size="xs" variant="outline" className="gap-1.5 border-primary/20 h-8" onClick={handlePrintTable}>
+                            <Button size="xs" variant="outline" className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8" onClick={handlePrintTable}>
                                 <Printer className="h-3.5 w-3.5" />
                                 Cetak
                             </Button>
-                            <Button size="xs" className="gap-1.5 h-8 font-bold shadow-md" onClick={handleAdd}>
+                            <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90" onClick={handleAdd}>
                                 <PlusCircle className="h-3.5 w-3.5" />
                                 Tambah Mapel
                             </Button>
@@ -341,7 +341,7 @@ export default function CurriculumPage() {
                     
                     <div className="flex pt-4">
                         <Select value={filterClass} onValueChange={setFilterClass}>
-                            <SelectTrigger className="w-full sm:w-[180px] h-9 text-xs font-normal bg-muted/20">
+                            <SelectTrigger className="w-full sm:w-[180px] h-9 text-xs font-normal bg-white/10 border-white/20 text-white focus:ring-white/30">
                                 <SelectValue placeholder="Filter per kelas" />
                             </SelectTrigger>
                             <SelectContent>
@@ -353,57 +353,58 @@ export default function CurriculumPage() {
                         </Select>
                     </div>
                 </CardHeader>
-                <CardContent className="pt-2">
-                    {loading ? (
-                        <div className="flex flex-col items-center justify-center py-20 gap-3 text-muted-foreground">
-                            <Loader2 className="h-8 w-8 animate-spin text-primary/40"/>
-                            <span className="text-xs font-medium uppercase tracking-widest">Memuat kurikulum...</span>
-                        </div>
-                    ) : filteredData && filteredData.length > 0 ? (
-                        <div className="space-y-3">
-                            {filteredData.map((item) => (
-                                <div key={item.id} className="flex items-center justify-between p-3 rounded-xl bg-card border shadow-sm hover:border-primary/20 transition-all group">
-                                    <div className="flex items-center gap-4">
-                                        <div className="h-10 w-10 rounded-xl bg-primary/5 text-primary flex items-center justify-center shrink-0">
-                                            <BookOpen className="h-5 w-5" />
-                                        </div>
-                                        <div>
-                                            <p className="text-[12px] font-bold leading-tight uppercase text-foreground group-hover:text-primary transition-colors">
-                                                {item.subjectName}
-                                            </p>
-                                            <div className="flex items-center gap-2 mt-0.5">
-                                                <p className="text-[10px] text-muted-foreground font-mono bg-muted/50 px-1.5 rounded">KODE: {item.subjectCode}</p>
-                                                <span className="text-[10px] text-muted-foreground">•</span>
-                                                <p className="text-[10px] text-primary/70 font-medium">Kelas {item.classLevel}</p>
-                                                {item.bookName && (
-                                                    <>
-                                                        <span className="text-[10px] text-muted-foreground">•</span>
-                                                        <p className="text-[10px] italic text-muted-foreground">Kitab: {item.bookName}</p>
-                                                    </>
-                                                )}
-                                            </div>
-                                        </div>
+            </Card>
+
+            <div className="pt-2">
+                {loading ? (
+                    <div className="flex flex-col items-center justify-center py-20 gap-3 text-muted-foreground">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary/40"/>
+                        <span className="text-xs font-medium uppercase tracking-widest">Memuat kurikulum...</span>
+                    </div>
+                ) : filteredData && filteredData.length > 0 ? (
+                    <div className="space-y-3">
+                        {filteredData.map((item) => (
+                            <div key={item.id} className="flex items-center justify-between p-3 rounded-xl bg-card border shadow-sm hover:border-primary/20 transition-all group">
+                                <div className="flex items-center gap-4">
+                                    <div className="h-10 w-10 rounded-xl bg-primary/5 text-primary flex items-center justify-center shrink-0">
+                                        <BookOpen className="h-5 w-5" />
                                     </div>
-                                    
-                                    <div className="flex items-center gap-1">
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-primary" onClick={() => handleEdit(item)}>
-                                            <Edit className="h-4 w-4" />
-                                        </Button>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(item.id)}>
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
+                                    <div>
+                                        <p className="text-[12px] font-bold leading-tight uppercase text-foreground group-hover:text-primary transition-colors">
+                                            {item.subjectName}
+                                        </p>
+                                        <div className="flex items-center gap-2 mt-0.5">
+                                            <p className="text-[10px] text-muted-foreground font-mono bg-muted/50 px-1.5 rounded">KODE: {item.subjectCode}</p>
+                                            <span className="text-[10px] text-muted-foreground">•</span>
+                                            <p className="text-[10px] text-primary/70 font-medium">Kelas {item.classLevel}</p>
+                                            {item.bookName && (
+                                                <>
+                                                    <span className="text-[10px] text-muted-foreground">•</span>
+                                                    <p className="text-[10px] italic text-muted-foreground">Kitab: {item.bookName}</p>
+                                                </>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="py-20 text-center text-muted-foreground border-2 border-dashed rounded-2xl bg-muted/5">
-                            <SearchX className="h-10 w-10 mx-auto mb-3 opacity-10" />
-                            <p className="text-sm font-medium">Belum ada mata pelajaran terdaftar.</p>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
+                                
+                                <div className="flex items-center gap-1">
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-primary" onClick={() => handleEdit(item)}>
+                                        <Edit className="h-4 w-4" />
+                                    </Button>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(item.id)}>
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="py-20 text-center text-muted-foreground border-2 border-dashed rounded-2xl bg-muted/5">
+                        <SearchX className="h-10 w-10 mx-auto mb-3 opacity-10" />
+                        <p className="text-sm font-medium">Belum ada mata pelajaran terdaftar.</p>
+                    </div>
+                )}
+            </div>
 
             <CurriculumForm
                 isOpen={isFormOpen}
@@ -429,3 +430,4 @@ export default function CurriculumPage() {
         </div>
     );
 }
+

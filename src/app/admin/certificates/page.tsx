@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useRef } from "react";
@@ -573,187 +574,194 @@ export default function CertificatesPage() {
     const isLoading = loadingCertificates || loadingStudents;
 
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-xl font-headline text-primary">Sertifikat & Prestasi</h1>
-                    <p className="text-xs text-muted-foreground">Kelola catatan prestasi dan cetak sertifikat digital.</p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button size="xs" variant="outline" className="gap-2 border-primary/30 text-primary font-normal">
-                                <FileUp className="h-3.5 w-3.5" />
-                                Impor
+        <div className="space-y-4">
+            <Card className="border-none shadow-lg bg-primary text-primary-foreground">
+                <CardHeader className="pb-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="space-y-1">
+                            <CardTitle className="text-2xl font-bold font-headline">Sertifikat & Prestasi</CardTitle>
+                            <CardDescription className="text-primary-foreground/70 text-xs">
+                                Kelola catatan prestasi dan cetak sertifikat digital.
+                            </CardDescription>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button size="xs" variant="outline" className="gap-2 border-white/20 hover:bg-white/10 text-white font-normal h-8">
+                                        <FileUp className="h-3.5 w-3.5" />
+                                        Impor
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => {
+                                        const worksheet = XLSX.utils.json_to_sheet([{}], { header: ['NIS Siswa (Wajib)', 'Juara (Pertama/Kedua/Ketiga)', 'Nama Lomba', 'Tanggal (YYYY-MM-DD)'] });
+                                        const workbook = XLSX.utils.book_new();
+                                        XLSX.utils.book_append_sheet(workbook, worksheet, 'Template Sertifikat');
+                                        XLSX.writeFile(workbook, 'template_impor_sertifikat.xlsx');
+                                    }}>
+                                        <Download className="mr-2 h-3.5 w-3.5" />
+                                        Unduh Template
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
+                                        <Upload className="mr-2 h-3.5 w-3.5" />
+                                        Unggah Excel
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                className="hidden"
+                                accept=".xlsx, .xls"
+                                onChange={async (event) => {
+                                    const file = event.target.files?.[0];
+                                    if (!file || !firestore || !students) return;
+                                    const reader = new FileReader();
+                                    reader.onload = async (e) => {
+                                        try {
+                                            const data = new Uint8Array(e.target?.result as ArrayBuffer);
+                                            const workbook = XLSX.read(data, { type: 'array' });
+                                            const sheetName = workbook.SheetNames[0];
+                                            const worksheet = workbook.Sheets[sheetName];
+                                            const json: any[] = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+                                            if (json.length === 0) return;
+                                            toast({ title: "Mengimpor Data", description: "Memproses data sertifikat..." });
+                                            const certsToImport: Omit<Certificate, 'id'>[] = [];
+                                            const cols = { nis: 'NIS Siswa (Wajib)', rank: 'Juara (Pertama/Kedua/Ketiga)', competitionName: 'Nama Lomba', date: 'Tanggal (YYYY-MM-DD)' };
+                                            for (const item of json) {
+                                                const student = students.find(s => String(s.nis) === String(item[cols.nis]));
+                                                if (student && item[cols.rank] && item[cols.competitionName]) {
+                                                    certsToImport.push({
+                                                        studentId: student.id, studentName: student.name, category: 'lomba', rank: item[cols.rank] as any,
+                                                        competitionName: item[cols.competitionName], date: String(item[cols.date]), academicYear: activeYear
+                                                    });
+                                                }
+                                            }
+                                            if (certsToImport.length > 0) {
+                                                await addCertificatesBatch(firestore, certsToImport);
+                                                toast({ title: "Impor Selesai", description: `${certsToImport.length} sertifikat berhasil diimpor.` });
+                                            }
+                                        } catch (error) { toast({ variant: "destructive", title: "Gagal" }); }
+                                    };
+                                    reader.readAsArrayBuffer(file);
+                                }}
+                            />
+
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button size="xs" variant="outline" className="gap-2 border-white/20 hover:bg-white/10 text-white font-normal h-8">
+                                        <FileDown className="h-3.5 w-3.5" />
+                                        Ekspor
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => {
+                                        if (!filteredCertificates.length) return;
+                                        const data = filteredCertificates.map((c, i) => ({ No: i + 1, 'Nama Siswa': c.studentName, 'Juara': c.rank, 'Kategori': c.category, 'Lomba': c.competitionName, 'Tanggal': c.date }));
+                                        const worksheet = XLSX.utils.json_to_sheet(data);
+                                        const workbook = XLSX.utils.book_new();
+                                        XLSX.utils.book_append_sheet(workbook, worksheet, "Daftar Prestasi");
+                                        XLSX.writeFile(workbook, `Data_Prestasi_${activeYear.replace('/', '-')}.xlsx`);
+                                    }}>
+                                        <FileSpreadsheet className="mr-2 h-3.5 w-3.5" />
+                                        Ekspor ke Excel
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={handlePrintTable}>
+                                        <Printer className="mr-2 h-3.5 w-3.5" />
+                                        Cetak Tabel
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+
+                            <Button size="xs" variant="outline" className="gap-2 border-white/20 hover:bg-white/10 text-white font-normal h-8" onClick={handleBulkPrint}>
+                                <CopyCheck className="h-3.5 w-3.5" />
+                                Cetak Massal
                             </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => {
-                                const worksheet = XLSX.utils.json_to_sheet([{}], { header: ['NIS Siswa (Wajib)', 'Juara (Pertama/Kedua/Ketiga)', 'Nama Lomba', 'Tanggal (YYYY-MM-DD)'] });
-                                const workbook = XLSX.utils.book_new();
-                                XLSX.utils.book_append_sheet(workbook, worksheet, 'Template Sertifikat');
-                                XLSX.writeFile(workbook, 'template_impor_sertifikat.xlsx');
-                            }}>
-                                <Download className="mr-2 h-3.5 w-3.5" />
-                                Unduh Template
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
-                                <Upload className="mr-2 h-3.5 w-3.5" />
-                                Unggah Excel
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                    <input
-                        type="file"
-                        ref={fileInputRef}
-                        className="hidden"
-                        accept=".xlsx, .xls"
-                        onChange={async (event) => {
-                            const file = event.target.files?.[0];
-                            if (!file || !firestore || !students) return;
-                            const reader = new FileReader();
-                            reader.onload = async (e) => {
-                                try {
-                                    const data = new Uint8Array(e.target?.result as ArrayBuffer);
-                                    const workbook = XLSX.read(data, { type: 'array' });
-                                    const sheetName = workbook.SheetNames[0];
-                                    const worksheet = workbook.Sheets[sheetName];
-                                    const json: any[] = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
-                                    if (json.length === 0) return;
-                                    toast({ title: "Mengimpor Data", description: "Memproses data sertifikat..." });
-                                    const certsToImport: Omit<Certificate, 'id'>[] = [];
-                                    const cols = { nis: 'NIS Siswa (Wajib)', rank: 'Juara (Pertama/Kedua/Ketiga)', competitionName: 'Nama Lomba', date: 'Tanggal (YYYY-MM-DD)' };
-                                    for (const item of json) {
-                                        const student = students.find(s => String(s.nis) === String(item[cols.nis]));
-                                        if (student && item[cols.rank] && item[cols.competitionName]) {
-                                            certsToImport.push({
-                                                studentId: student.id, studentName: student.name, category: 'lomba', rank: item[cols.rank] as any,
-                                                competitionName: item[cols.competitionName], date: String(item[cols.date]), academicYear: activeYear
-                                            });
-                                        }
-                                    }
-                                    if (certsToImport.length > 0) {
-                                        await addCertificatesBatch(firestore, certsToImport);
-                                        toast({ title: "Impor Selesai", description: `${certsToImport.length} sertifikat berhasil diimpor.` });
-                                    }
-                                } catch (error) { toast({ variant: "destructive", title: "Gagal" }); }
-                            };
-                            reader.readAsArrayBuffer(file);
-                        }}
-                    />
 
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button size="xs" variant="outline" className="gap-2 border-primary/30 text-primary font-normal">
-                                <FileDown className="h-3.5 w-3.5" />
-                                Ekspor
+                            <Button size="xs" variant="outline" className="gap-2 border-white/20 hover:bg-white/10 text-white font-normal h-8" onClick={() => setIsTemplateOpen(true)}>
+                                <Upload className="h-3.5 w-3.5" />
+                                Upload Template
                             </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => {
-                                if (!filteredCertificates.length) return;
-                                const data = filteredCertificates.map((c, i) => ({ No: i + 1, 'Nama Siswa': c.studentName, 'Juara': c.rank, 'Kategori': c.category, 'Lomba': c.competitionName, 'Tanggal': c.date }));
-                                const worksheet = XLSX.utils.json_to_sheet(data);
-                                const workbook = XLSX.utils.book_new();
-                                XLSX.utils.book_append_sheet(workbook, worksheet, "Daftar Prestasi");
-                                XLSX.writeFile(workbook, `Data_Prestasi_${activeYear.replace('/', '-')}.xlsx`);
-                            }}>
-                                <FileSpreadsheet className="mr-2 h-3.5 w-3.5" />
-                                Ekspor ke Excel
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={handlePrintTable}>
-                                <Printer className="mr-2 h-3.5 w-3.5" />
-                                Cetak Tabel
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-
-                    <Button size="xs" variant="outline" className="gap-2 border-primary/30 text-primary font-normal" onClick={handleBulkPrint}>
-                        <CopyCheck className="h-3.5 w-3.5" />
-                        Cetak Massal
-                    </Button>
-
-                    <Button size="xs" variant="outline" className="gap-2 border-primary/30 text-primary font-normal" onClick={() => setIsTemplateOpen(true)}>
-                        <Upload className="h-3.5 w-3.5" />
-                        Upload Template
-                    </Button>
-                    <Button size="xs" className="gap-2 font-normal" onClick={handleAdd}>
-                        <PlusCircle className="h-3.5 w-3.5" />
-                        Tambah Lomba
-                    </Button>
-                </div>
-            </div>
-
-            <Card className="border-none shadow-sm">
-                <CardHeader className="pb-3 px-4">
-                    <div className="flex items-center gap-2 max-w-sm">
-                        <Search className="h-4 w-4 text-muted-foreground" />
+                            <Button size="xs" variant="secondary" className="gap-2 font-bold shadow-md bg-white text-primary hover:bg-white/90 h-8" onClick={handleAdd}>
+                                <PlusCircle className="h-3.5 w-3.5" />
+                                Tambah Lomba
+                            </Button>
+                        </div>
+                    </div>
+                    
+                    <div className="relative mt-4 max-w-sm">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-primary-foreground/50" />
                         <Input 
                             placeholder="Cari nama siswa atau lomba..." 
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="h-8 text-xs font-normal"
+                            className="pl-9 h-9 text-xs bg-white/10 border-white/20 text-white placeholder:text-white/40 focus-visible:ring-white/30"
                         />
                     </div>
                 </CardHeader>
-                <CardContent className="p-0">
-                    <Table>
-                        <TableHeader>
-                            <TableRow className="bg-muted/30">
-                                <TableHead className="w-[50px] font-normal px-4">No.</TableHead>
-                                <TableHead className="font-normal">Nama</TableHead>
-                                <TableHead className="font-normal">Juara</TableHead>
-                                <TableHead className="font-normal">Lomba</TableHead>
-                                <TableHead className="text-right w-[120px] font-normal px-4">Aksi</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {isLoading ? (
-                                <TableRow>
-                                    <TableCell colSpan={5} className="text-center h-24">
-                                        <div className="flex justify-center items-center gap-2 text-muted-foreground">
-                                            <Loader2 className="h-4 w-4 animate-spin"/>
-                                            <span className="text-xs">Memuat data prestasi...</span>
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            ) : filteredCertificates.length > 0 ? (
-                                filteredCertificates.map((item, index) => (
-                                <TableRow key={item.id} className="hover:bg-muted/10">
-                                    <TableCell className="text-xs px-4">{index + 1}</TableCell>
-                                    <TableCell className="text-xs font-normal">{item.studentName}</TableCell>
-                                    <TableCell>{getRankBadge(item.rank)}</TableCell>
-                                    <TableCell className="text-xs font-normal">
-                                        {item.category === 'lomba' ? item.competitionName : `${getCategoryLabel(item.category)} (TA ${item.academicYear})`}
-                                    </TableCell>
-                                    <TableCell className="text-right px-4">
-                                        <div className="flex justify-end gap-1">
-                                            <Button variant="ghost" size="icon" className="h-7 w-7 text-blue-600" onClick={() => handlePrintCertificate(item)}>
-                                                <Printer className="h-3.5 w-3.5" />
-                                            </Button>
-                                            {item.category === 'lomba' && (
-                                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(item)}>
-                                                    <Edit className="h-3.5 w-3.5" />
-                                                </Button>
-                                            )}
-                                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(item.id)}>
-                                                <Trash2 className="h-3.5 w-3.5" />
-                                            </Button>
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                                ))
-                            ) : (
-                                <TableRow>
-                                    <TableCell colSpan={5} className="h-24 text-center text-xs text-muted-foreground italic">
-                                        {searchTerm ? "Tidak ada hasil pencarian." : "Belum ada data sertifikat yang dicatat."}
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </CardContent>
             </Card>
+
+            <div className="pt-2">
+                <Card className="border-none shadow-sm overflow-hidden">
+                    <CardContent className="p-0">
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="bg-muted/30">
+                                    <TableHead className="w-[50px] font-normal px-4">No.</TableHead>
+                                    <TableHead className="font-normal">Nama</TableHead>
+                                    <TableHead className="font-normal">Juara</TableHead>
+                                    <TableHead className="font-normal">Lomba</TableHead>
+                                    <TableHead className="text-right w-[120px] font-normal px-4">Aksi</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {isLoading ? (
+                                    <TableRow>
+                                        <TableCell colSpan={5} className="text-center h-24">
+                                            <div className="flex justify-center items-center gap-2 text-muted-foreground">
+                                                <Loader2 className="h-4 w-4 animate-spin"/>
+                                                <span className="text-xs">Memuat data prestasi...</span>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ) : filteredCertificates.length > 0 ? (
+                                    filteredCertificates.map((item, index) => (
+                                    <TableRow key={item.id} className="hover:bg-muted/10">
+                                        <TableCell className="text-xs px-4">{index + 1}</TableCell>
+                                        <TableCell className="text-xs font-normal">{item.studentName}</TableCell>
+                                        <TableCell>{getRankBadge(item.rank)}</TableCell>
+                                        <TableCell className="text-xs font-normal">
+                                            {item.category === 'lomba' ? item.competitionName : `${getCategoryLabel(item.category)} (TA ${item.academicYear})`}
+                                        </TableCell>
+                                        <TableCell className="text-right px-4">
+                                            <div className="flex justify-end gap-1">
+                                                <Button variant="ghost" size="icon" className="h-7 w-7 text-blue-600" onClick={() => handlePrintCertificate(item)}>
+                                                    <Printer className="h-3.5 w-3.5" />
+                                                </Button>
+                                                {item.category === 'lomba' && (
+                                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(item)}>
+                                                        <Edit className="h-3.5 w-3.5" />
+                                                    </Button>
+                                                )}
+                                                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(item.id)}>
+                                                    <Trash2 className="h-3.5 w-3.5" />
+                                                </Button>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                    ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={5} className="h-24 text-center text-xs text-muted-foreground italic">
+                                            {searchTerm ? "Tidak ada hasil pencarian." : "Belum ada data sertifikat yang dicatat."}
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+            </div>
 
             <CertificateForm 
                 isOpen={isFormOpen}
@@ -786,3 +794,4 @@ export default function CertificatesPage() {
         </div>
     );
 }
+

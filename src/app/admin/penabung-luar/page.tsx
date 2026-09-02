@@ -98,39 +98,43 @@ export default function ExternalSaversPage() {
 
     return (
         <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-xl font-headline text-primary">Penabung Luar</h1>
-                    <p className="text-xs text-muted-foreground">Kelola data penabung dari luar. NIP & Password digunakan untuk akses portal mandiri.</p>
-                </div>
-                <Button size="sm" className="gap-2" onClick={handleAdd}>
-                    <PlusCircle className="h-4 w-4" />
-                    Tambah Penabung
-                </Button>
-            </div>
-
-            <Card className="border-none shadow-sm">
-                <CardHeader className="pb-3 px-4">
-                    <div className="relative max-w-sm">
-                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Card className="border-none shadow-lg bg-primary text-primary-foreground">
+                <CardHeader className="pb-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="space-y-1">
+                            <CardTitle className="text-2xl font-bold font-headline">Penabung Luar</CardTitle>
+                            <CardDescription className="text-primary-foreground/70 text-xs">
+                                Kelola data penabung non-internal. NIP & Password digunakan untuk akses portal.
+                            </CardDescription>
+                        </div>
+                        <Button variant="secondary" size="sm" className="gap-2 font-bold shadow-md bg-white text-primary hover:bg-white/90 h-9" onClick={handleAdd}>
+                            <PlusCircle className="h-4 w-4" />
+                            Tambah Penabung
+                        </Button>
+                    </div>
+                    <div className="relative mt-4 max-w-sm">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-primary-foreground/50" />
                         <Input 
                             placeholder="Cari nama, NIP atau no. HP..." 
-                            className="pl-9 h-9 text-xs"
+                            className="pl-9 h-9 text-xs bg-white/10 border-white/20 text-white placeholder:text-white/40 focus-visible:ring-white/30"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
                 </CardHeader>
-                <CardContent className="p-0">
+            </Card>
+
+            <div className="pt-2">
+                <div className="overflow-x-auto border rounded-xl bg-card">
                     <Table>
                         <TableHeader>
                             <TableRow className="bg-muted/30">
-                                <TableHead className="w-[50px] px-4 font-normal">No.</TableHead>
-                                <TableHead className="font-normal">Nama</TableHead>
-                                <TableHead className="font-normal">NIP (ID Login)</TableHead>
-                                <TableHead className="font-normal">Kontak</TableHead>
-                                <TableHead className="font-normal">Alamat</TableHead>
-                                <TableHead className="text-right px-4 font-normal">Aksi</TableHead>
+                                <TableHead className="w-[50px] px-4 font-bold text-[10px] uppercase">No.</TableHead>
+                                <TableHead className="font-bold text-[10px] uppercase">Nama</TableHead>
+                                <TableHead className="font-bold text-[10px] uppercase">NIP (ID Login)</TableHead>
+                                <TableHead className="font-bold text-[10px] uppercase">Kontak</TableHead>
+                                <TableHead className="font-bold text-[10px] uppercase">Alamat</TableHead>
+                                <TableHead className="text-right px-4 font-bold text-[10px] uppercase">Aksi</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -145,9 +149,9 @@ export default function ExternalSaversPage() {
                                 </TableRow>
                             ) : filteredSavers.length > 0 ? (
                                 filteredSavers.map((item, index) => (
-                                <TableRow key={item.id} className="hover:bg-muted/10">
+                                <TableRow key={item.id} className="hover:bg-muted/10 transition-colors">
                                     <TableCell className="px-4 text-[11px]">{index + 1}</TableCell>
-                                    <TableCell className="text-[11px] font-medium">{item.name}</TableCell>
+                                    <TableCell className="text-[11px] font-bold uppercase">{item.name}</TableCell>
                                     <TableCell className="text-[11px]">
                                         <div className="flex items-center gap-1.5">
                                             <Fingerprint className="h-3 w-3 text-muted-foreground" />
@@ -184,8 +188,8 @@ export default function ExternalSaversPage() {
                             )}
                         </TableBody>
                     </Table>
-                </CardContent>
-            </Card>
+                </div>
+            </div>
 
             <SaverForm 
                 isOpen={isFormOpen}
@@ -211,3 +215,4 @@ export default function ExternalSaversPage() {
         </div>
     );
 }
+

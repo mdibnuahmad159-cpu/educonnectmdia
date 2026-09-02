@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, FileDown, Printer, FileSpreadsheet, FileText, Edit, Info } from "lucide-react";
+import { Loader2, FileDown, Printer, FileSpreadsheet, FileText, Edit, Info, CalendarRange } from "lucide-react";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -361,60 +361,65 @@ export default function SchedulePage() {
     const initialEntryData = editContext ? getCellData(editContext.classLevel, editContext.dayKey, editContext.periodIndex).entry || {} : {};
 
     return (
-        <>
-            <Card>
-                <CardHeader>
-                    <CardTitle>Jadwal</CardTitle>
-                    <CardDescription>
-                        Kelola jadwal pelajaran/ujian. Jadwal akan tetap ada meskipun tahun ajaran berganti sampai Admin mengubahnya.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-                        <div className="flex flex-col sm:flex-row gap-4">
-                             <Tabs value={scheduleType} onValueChange={(value) => setScheduleType(value as 'pelajaran' | 'ujian')} className="w-full sm:w-auto">
-                                <TabsList className="grid grid-cols-2 w-full sm:w-fit">
-                                    <TabsTrigger value="pelajaran">Pelajaran</TabsTrigger>
-                                    <TabsTrigger value="ujian">Ujian</TabsTrigger>
-                                </TabsList>
-                            </Tabs>
+        <div className="space-y-4">
+            <Card className="border-none shadow-lg bg-primary text-primary-foreground">
+                <CardHeader className="pb-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div className="space-y-1">
+                            <CardTitle className="text-2xl font-bold font-headline">Jadwal</CardTitle>
+                            <CardDescription className="text-primary-foreground/70 text-xs">
+                                Kelola jadwal pelajaran/ujian. Jadwal tetap berlaku lintas tahun ajaran kecuali diubah.
+                            </CardDescription>
                         </div>
                          <div className="flex items-center gap-2">
-                             <Button size="xs" variant="outline" className="gap-1" onClick={() => setIsTimeFormOpen(true)}>
-                                <Edit className="h-3 w-3" />
+                             <Button size="xs" variant="outline" className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8" onClick={() => setIsTimeFormOpen(true)}>
+                                <Edit className="h-3.5 w-3.5" />
                                 Atur Jam
                             </Button>
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button size="xs" variant="outline" className="gap-1">
-                                    <FileDown className="h-3 w-3" />
+                                    <Button size="xs" variant="outline" className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8">
+                                    <FileDown className="h-3.5 w-3.5" />
                                     Ekspor
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuItem onClick={() => handleExport('excel')}>
-                                    <FileSpreadsheet className="mr-2 h-3 w-3" />
+                                    <FileSpreadsheet className="mr-2 h-3.5 w-3.5" />
                                     Excel
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => handleExport('pdf')}>
-                                    <FileText className="mr-2 h-3 w-3" />
+                                    <FileText className="mr-2 h-3.5 w-3.5" />
                                     PDF
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
-                            <Button size="xs" variant="outline" className="gap-1" onClick={handlePrintTable}>
-                                <Printer className="h-3 w-3" />
+                            <Button size="xs" variant="outline" className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8" onClick={handlePrintTable}>
+                                <Printer className="h-3.5 w-3.5" />
                                 Cetak
                             </Button>
                         </div>
                     </div>
+                    
+                    <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                         <Tabs value={scheduleType} onValueChange={(value) => setScheduleType(value as 'pelajaran' | 'ujian')} className="w-full sm:w-auto">
+                            <TabsList className="grid grid-cols-2 w-full sm:w-fit bg-white/10 border-white/20">
+                                <TabsTrigger value="pelajaran" className="data-[state=active]:bg-white data-[state=active]:text-primary text-white">Pelajaran</TabsTrigger>
+                                <TabsTrigger value="ujian" className="data-[state=active]:bg-white data-[state=active]:text-primary text-white">Ujian</TabsTrigger>
+                            </TabsList>
+                        </Tabs>
+                    </div>
+                </CardHeader>
+            </Card>
 
+            <Card className="border-none shadow-sm overflow-hidden">
+                <CardContent className="p-4">
                     {displayYear !== activeYear && !isLoading && (
                         <div className="mb-4 p-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-800 flex items-center gap-3">
                             <Info className="h-5 w-5 shrink-0" />
-                            <div className="text-xs">
+                            <div className="text-[11px]">
                                 <p className="font-bold">Menampilkan Jadwal Warisan (Tahun {displayYear})</p>
-                                <p>Jadwal untuk tahun {activeYear} belum ada. Anda dapat mengedit salah satu sel untuk menyalin jadwal ini ke tahun ajaran baru.</p>
+                                <p>Jadwal untuk tahun {activeYear} belum ada. Edit salah satu sel untuk menyalin ke tahun baru.</p>
                             </div>
                         </div>
                     )}
@@ -425,12 +430,12 @@ export default function SchedulePage() {
                         </div>
                     ) : (
                         <div className="overflow-x-auto">
-                           <Table id="schedule-table-main" className="min-w-full border-collapse border border-border">
+                           <Table className="min-w-full border-collapse border border-border">
                                 <TableHeader>
-                                    <TableRow>
-                                        <TableHead className="w-[100px] min-w-[100px] border border-border">Hari</TableHead>
-                                        <TableHead className="w-[120px] min-w-[120px] border border-border">Jam</TableHead>
-                                        {classLevels.map(cl => <TableHead key={cl} className="w-[180px] min-w-[180px] border border-border text-center">Kelas {cl}</TableHead>)}
+                                    <TableRow className="bg-muted/50">
+                                        <TableHead className="w-[100px] min-w-[100px] border border-border text-center font-bold text-[10px] uppercase">Hari</TableHead>
+                                        <TableHead className="w-[120px] min-w-[120px] border border-border text-center font-bold text-[10px] uppercase">Jam</TableHead>
+                                        {classLevels.map(cl => <TableHead key={cl} className="w-[180px] min-w-[180px] border border-border text-center font-bold text-[10px] uppercase">Kelas {cl}</TableHead>)}
                                     </TableRow>
                                 </TableHeader>
                                <TableBody>
@@ -438,14 +443,14 @@ export default function SchedulePage() {
                                         periods.map((period, periodIndex) => (
                                             <TableRow key={`${day.key}-${periodIndex}`}>
                                                 {periodIndex === 0 && (
-                                                    <TableCell rowSpan={periods.length} className="font-semibold align-middle text-center border border-border bg-muted/5">
+                                                    <TableCell rowSpan={periods.length} className="font-bold align-middle text-center border border-border bg-muted/20 text-[11px]">
                                                         {day.name}
                                                     </TableCell>
                                                 )}
                                                 <TableCell className="font-medium align-middle text-center border border-border">
-                                                    <div className="text-[10px]">{period.startTime}</div>
-                                                    <div className="text-[9px] opacity-30">-</div>
-                                                    <div className="text-[10px]">{period.endTime}</div>
+                                                    <div className="text-[10px] font-bold">{period.startTime}</div>
+                                                    <div className="text-[9px] opacity-30 font-mono">SAMPAI</div>
+                                                    <div className="text-[10px] font-bold">{period.endTime}</div>
                                                 </TableCell>
                                                 {classLevels.map(classLevel => {
                                                     const { subject, teacher } = getCellData(classLevel, day.key, periodIndex);
@@ -457,18 +462,18 @@ export default function SchedulePage() {
                                                             <button 
                                                                 onClick={() => handleCellClick(classLevel, day.key, periodIndex)}
                                                                 className={cn(
-                                                                    "w-full h-full text-left p-2 hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring rounded-sm transition-colors",
+                                                                    "w-full h-full text-left p-2 hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring transition-colors",
                                                                     displayYear !== activeYear && "bg-blue-50/20"
                                                                 )}
                                                             >
                                                                 <div className="min-h-[40px]">
                                                                     {subject ? (
                                                                         <div>
-                                                                            <p className="font-semibold text-primary text-[10px] leading-tight mb-0.5">{subject.subjectName}</p>
-                                                                            <p className="text-[9px] text-muted-foreground truncate">{teacher?.name || '...'}</p>
+                                                                            <p className="font-bold text-primary text-[10px] leading-tight mb-0.5 uppercase">{subject.subjectName}</p>
+                                                                            <p className="text-[9px] text-muted-foreground truncate italic">{teacher?.name || '...'}</p>
                                                                         </div>
                                                                     ) : (
-                                                                        <div className="h-10"></div>
+                                                                        <div className="h-10 opacity-10 flex items-center justify-center"><CalendarRange className="h-3 w-3" /></div>
                                                                     )}
                                                                 </div>
                                                             </button>
@@ -504,6 +509,7 @@ export default function SchedulePage() {
                     onClear={handleClearEntry}
                 />
             )}
-        </>
+        </div>
     );
 }
+

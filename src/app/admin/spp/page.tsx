@@ -344,19 +344,48 @@ export default function SppPage() {
 
     return (
         <div className="space-y-4">
-            <Card className="border-none shadow-sm">
-                <CardHeader className="pb-4">
-                    <CardTitle className="text-xl font-headline text-primary">Pembayaran SPP</CardTitle>
-                    <CardDescription className="text-xs">Kelola pelunasan iuran bulanan siswa untuk tahun ajaran {activeYear}.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Card className="border-none shadow-lg bg-primary text-primary-foreground">
+                <CardHeader className="pb-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="space-y-1">
+                            <CardTitle className="text-2xl font-bold font-headline">Pembayaran SPP</CardTitle>
+                            <CardDescription className="text-primary-foreground/70 text-xs">
+                                Kelola pelunasan iuran bulanan siswa untuk tahun ajaran {activeYear}.
+                            </CardDescription>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                            {selectedStudentId && (
+                                <>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="outline" size="xs" className="h-8 px-3 gap-1.5 font-normal border-white/20 hover:bg-white/10 text-white">
+                                                <FileDown className="h-3.5 w-3.5" /> Ekspor
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuItem onClick={handleExportExcel}>
+                                                <FileSpreadsheet className="mr-2 h-3.5 w-3.5" /> Excel (.xlsx)
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={handleExportPdf}>
+                                                <FileText className="mr-2 h-3.5 w-3.5" /> PDF (.pdf)
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                    <Button variant="outline" size="xs" onClick={handlePrint} className="h-8 px-3 gap-1.5 font-normal border-white/20 hover:bg-white/10 text-white">
+                                        <Printer className="h-3.5 w-3.5" /> Cetak
+                                    </Button>
+                                </>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-6 border-t border-white/10 mt-2">
                         <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1.5 ml-1">
+                            <label className="text-[10px] uppercase font-bold text-primary-foreground/60 flex items-center gap-1.5 ml-1">
                                 <Users className="h-3 w-3" /> Pilih Kelas
                             </label>
                             <Select value={selectedClass} onValueChange={(v) => { setSelectedClass(v); setSelectedStudentId(""); }}>
-                                <SelectTrigger className="h-9 font-normal">
+                                <SelectTrigger className="h-9 font-normal bg-white/10 border-white/20 text-white focus:ring-white/30">
                                     <SelectValue placeholder="Pilih Kelas" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -368,7 +397,7 @@ export default function SppPage() {
                         </div>
 
                         <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1.5 ml-1">
+                            <label className="text-[10px] uppercase font-bold text-primary-foreground/60 flex items-center gap-1.5 ml-1">
                                 <User className="h-3 w-3" /> Pilih Nama Siswa
                             </label>
                             <Select 
@@ -376,7 +405,7 @@ export default function SppPage() {
                                 onValueChange={setSelectedStudentId}
                                 disabled={loadingStudents || !students?.length}
                             >
-                                <SelectTrigger className="h-9 font-normal">
+                                <SelectTrigger className="h-9 font-normal bg-white/10 border-white/20 text-white focus:ring-white/30">
                                     <SelectValue placeholder={loadingStudents ? "Memuat siswa..." : "Pilih Siswa"} />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -388,7 +417,7 @@ export default function SppPage() {
                         </div>
 
                         <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-1.5 ml-1">
+                            <label className="text-[10px] uppercase font-bold text-primary-foreground/60 flex items-center gap-1.5 ml-1">
                                 <Settings2 className="h-3 w-3" /> Tagihan Bulanan (Rp)
                             </label>
                             <div className="flex gap-2">
@@ -397,22 +426,22 @@ export default function SppPage() {
                                     placeholder="Contoh: 50000"
                                     value={localDefaultAmount}
                                     onChange={(e) => setLocalDefaultAmount(e.target.value)}
-                                    className="h-9 font-normal"
+                                    className="h-9 font-normal bg-white/10 border-white/20 text-white placeholder:text-white/40 focus-visible:ring-white/30"
                                 />
-                                <Button size="xs" variant="outline" className="h-9 gap-1.5" onClick={handleUpdateDefaultBill}>
+                                <Button variant="secondary" size="xs" className="h-9 gap-1.5 px-3 bg-white text-primary hover:bg-white/90" onClick={handleUpdateDefaultBill}>
                                     <Save className="h-3 w-3" />
                                     Simpan
                                 </Button>
                             </div>
                         </div>
                     </div>
-                </CardContent>
+                </CardHeader>
             </Card>
 
             {!selectedStudentId ? (
-                <div className="flex flex-col items-center justify-center h-64 border-2 border-dashed rounded-lg bg-muted/10 text-muted-foreground">
+                <div className="flex flex-col items-center justify-center h-64 border-2 border-dashed rounded-xl bg-muted/10 text-muted-foreground">
                     <CreditCard className="h-12 w-12 mb-3 opacity-10" />
-                    <p className="text-sm">Silakan pilih kelas dan siswa untuk mencatat pelunasan.</p>
+                    <p className="text-sm font-medium">Silakan pilih kelas dan siswa untuk mencatat pelunasan.</p>
                 </div>
             ) : (
                 <div className="grid gap-4 animate-in fade-in duration-500">
@@ -472,35 +501,13 @@ export default function SppPage() {
                     </div>
 
                     <Card className="border-none shadow-sm">
-                        <CardHeader className="py-3 px-4 flex flex-row items-center justify-between space-y-0">
-                            <div className="flex items-center gap-3">
-                                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                                    {selectedStudent?.name.charAt(0)}
-                                </div>
-                                <div>
-                                    <h3 className="font-bold text-sm">{selectedStudent?.name}</h3>
-                                    <p className="text-[10px] text-muted-foreground">NIS: {selectedStudent?.nis} • Kelas {selectedStudent?.kelas}</p>
-                                </div>
+                        <CardHeader className="py-3 px-4 flex flex-row items-center gap-3 space-y-0">
+                            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                                {selectedStudent?.name.charAt(0)}
                             </div>
-                            <div className="flex items-center gap-2">
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="outline" size="xs" className="h-8 px-3 gap-1.5 font-normal border-primary/20">
-                                            <FileDown className="h-3.5 w-3.5" /> Ekspor
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        <DropdownMenuItem onClick={handleExportExcel}>
-                                            <FileSpreadsheet className="mr-2 h-3.5 w-3.5" /> Excel (.xlsx)
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={handleExportPdf}>
-                                            <FileText className="mr-2 h-3.5 w-3.5" /> PDF (.pdf)
-                                        </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                                <Button variant="outline" size="xs" onClick={handlePrint} className="h-8 px-3 gap-1.5 font-normal border-primary/20">
-                                    <Printer className="h-3.5 w-3.5" /> Cetak
-                                </Button>
+                            <div>
+                                <h3 className="font-bold text-sm uppercase">{selectedStudent?.name}</h3>
+                                <p className="text-[10px] text-muted-foreground font-mono">NIS: {selectedStudent?.nis} • KELAS {selectedStudent?.kelas}</p>
                             </div>
                         </CardHeader>
                     </Card>
@@ -537,7 +544,7 @@ export default function SppPage() {
                                                 "text-xs font-bold",
                                                 isPaid ? "text-green-700" : "text-muted-foreground"
                                             )}>
-                                                {isPaid ? `LUNAS` : "BELUM BAYAR"}
+                                                {isPaid ? `LUNAS` : "BELUM"}
                                             </p>
                                             <p className="text-[9px] text-muted-foreground truncate">
                                                 {p?.paymentDate ? format(parseISO(p.paymentDate), "d MMM yyyy", { locale: dfnsId }) : "-"}
@@ -579,3 +586,4 @@ export default function SppPage() {
         </div>
     );
 }
+

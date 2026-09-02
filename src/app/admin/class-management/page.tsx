@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo } from "react";
@@ -288,84 +289,83 @@ export default function ClassManagementPage() {
   const isIndeterminate = selectedStudents.length > 0 && selectedStudents.length < filteredStudents.length;
 
   return (
-    <>
-      <Card>
-        <CardHeader>
-          <CardTitle>Manajemen Kelas</CardTitle>
-          <CardDescription>
-            Kelola kenaikan, penurunan, dan perpindahan kelas siswa.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col gap-2 mb-4">
-              <div className="flex">
-                  <Select value={filterClass} onValueChange={setFilterClass}>
-                      <SelectTrigger className="w-full sm:w-[180px]">
-                          <SelectValue placeholder="Filter per kelas" />
-                      </SelectTrigger>
-                      <SelectContent>
-                          <SelectItem value="semua">Semua Kelas</SelectItem>
-                          {[...Array(7).keys()].map(i => (
-                              <SelectItem key={i} value={String(i)}>Kelas {i}</SelectItem>
-                          ))}
-                          <SelectItem value="belum_diatur">Belum diatur</SelectItem>
-                      </SelectContent>
-                  </Select>
-              </div>
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                      <Button size="xs" variant="outline" onClick={handlePromote} disabled={selectedStudents.length === 0} className="gap-1">
-                      <ChevronsUp className="h-3 w-3" /> Naik Kelas
-                      </Button>
-                      <Button size="xs" variant="outline" onClick={handleDemote} disabled={selectedStudents.length === 0} className="gap-1">
-                      <ChevronsDown className="h-3 w-3" /> Turun Kelas
-                      </Button>
-                      <Button size="xs" variant="outline" onClick={() => setIsMoveDialogOpen(true)} disabled={selectedStudents.length === 0} className="gap-1">
-                      <ArrowRightLeft className="h-3 w-3" /> Pindah Kelas
-                      </Button>
-                      <Button size="xs" variant="destructive" onClick={handleGraduate} disabled={selectedStudents.length === 0} className="gap-1">
-                        <GraduationCap className="h-3 w-3" /> Luluskan
-                      </Button>
-                  </div>
-                  <div className="flex items-center gap-2">
-                      <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                              <Button size="xs" variant="outline" className="gap-1">
-                              <FileDown className="h-3 w-3" />
-                              Ekspor
-                              </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={handleExportExcel}>
-                              <FileSpreadsheet className="mr-2 h-3 w-3" />
-                              Excel
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={handleExportPdf}>
-                              <FileText className="mr-2 h-3 w-3" />
-                              PDF
-                              </DropdownMenuItem>
-                          </DropdownMenuContent>
-                      </DropdownMenu>
-                      <Button size="xs" variant="outline" className="gap-1" onClick={handlePrintTable}>
-                          <Printer className="h-3 w-3" />
-                          Cetak
-                      </Button>
-                  </div>
-              </div>
+    <div className="space-y-4">
+      <Card className="border-none shadow-lg bg-primary text-primary-foreground">
+        <CardHeader className="pb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <CardTitle className="text-2xl font-bold font-headline">Manajemen Kelas</CardTitle>
+              <CardDescription className="text-primary-foreground/70 text-xs">
+                Kelola kenaikan, penurunan, dan perpindahan kelas siswa secara massal.
+              </CardDescription>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+                <Button size="xs" variant="outline" onClick={handlePromote} disabled={selectedStudents.length === 0} className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8">
+                <ChevronsUp className="h-3.5 w-3.5" /> Naik Kelas
+                </Button>
+                <Button size="xs" variant="outline" onClick={handleDemote} disabled={selectedStudents.length === 0} className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8">
+                <ChevronsDown className="h-3.5 w-3.5" /> Turun Kelas
+                </Button>
+                <Button size="xs" variant="outline" onClick={() => setIsMoveDialogOpen(true)} disabled={selectedStudents.length === 0} className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8">
+                <ArrowRightLeft className="h-3.5 w-3.5" /> Pindah Kelas
+                </Button>
+                <Button size="xs" variant="destructive" onClick={handleGraduate} disabled={selectedStudents.length === 0} className="gap-1.5 h-8 font-bold shadow-md">
+                  <GraduationCap className="h-3.5 w-3.5" /> Luluskan
+                </Button>
+                <div className="w-px h-6 bg-white/10 mx-1 hidden sm:block" />
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button size="xs" variant="outline" className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8">
+                        <FileDown className="h-3.5 w-3.5" /> Ekspor
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={handleExportExcel}>
+                        <FileSpreadsheet className="mr-2 h-3.5 w-3.5" /> Excel
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleExportPdf}>
+                        <FileText className="mr-2 h-3.5 w-3.5" /> PDF
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+                <Button size="xs" variant="outline" className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8" onClick={handlePrintTable}>
+                    <Printer className="h-3.5 w-3.5" /> Cetak
+                </Button>
+            </div>
           </div>
+          <div className="pt-4">
+              <Select value={filterClass} onValueChange={setFilterClass}>
+                  <SelectTrigger className="w-full sm:w-[180px] h-9 text-xs font-normal bg-white/10 border-white/20 text-white focus:ring-white/30">
+                      <SelectValue placeholder="Filter per kelas" />
+                  </SelectTrigger>
+                  <SelectContent>
+                      <SelectItem value="semua">Semua Kelas</SelectItem>
+                      {[...Array(7).keys()].map(i => (
+                          <SelectItem key={i} value={String(i)}>Kelas {i}</SelectItem>
+                      ))}
+                      <SelectItem value="belum_diatur">Belum diatur</SelectItem>
+                  </SelectContent>
+              </Select>
+          </div>
+        </CardHeader>
+      </Card>
+
+      <Card className="border-none shadow-sm overflow-hidden">
+        <CardContent className="p-0">
           <Table>
-            <TableHeader>
+            <TableHeader className="bg-muted/30">
               <TableRow>
-                <TableHead className="w-[40px]">
+                <TableHead className="w-[40px] px-4">
                   <Checkbox
                     checked={isAllSelected ? true : (isIndeterminate ? "indeterminate" : false)}
                     onCheckedChange={handleSelectAll}
+                    className="border-primary/50 data-[state=checked]:bg-primary"
                   />
                 </TableHead>
-                <TableHead className="w-[50px]">No.</TableHead>
-                <TableHead>Nama</TableHead>
-                <TableHead>NIS</TableHead>
-                <TableHead>Kelas</TableHead>
+                <TableHead className="w-[50px] font-bold text-[10px] uppercase">No.</TableHead>
+                <TableHead className="font-bold text-[10px] uppercase">Nama</TableHead>
+                <TableHead className="font-bold text-[10px] uppercase">NIS</TableHead>
+                <TableHead className="font-bold text-[10px] uppercase">Kelas</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -380,22 +380,30 @@ export default function ClassManagementPage() {
                 </TableRow>
               ) : filteredStudents.length > 0 ? (
                 filteredStudents.map((student, index) => (
-                  <TableRow key={student.id} data-state={selectedStudents.includes(student.id) && "selected"}>
-                    <TableCell>
+                  <TableRow key={student.id} className="hover:bg-muted/10 transition-colors" data-state={selectedStudents.includes(student.id) && "selected"}>
+                    <TableCell className="px-4">
                       <Checkbox
                         checked={selectedStudents.includes(student.id)}
                         onCheckedChange={(checked) => handleSelectStudent(student.id, !!checked)}
+                        className="data-[state=checked]:bg-primary"
                       />
                     </TableCell>
-                    <TableCell>{index + 1}</TableCell>
-                    <TableCell className="font-medium">{student.name}</TableCell>
-                    <TableCell>{student.nis}</TableCell>
-                    <TableCell>{student.kelas !== undefined ? `Kelas ${student.kelas}` : "Belum diatur"}</TableCell>
+                    <TableCell className="text-[11px]">{index + 1}</TableCell>
+                    <TableCell className="font-bold text-[11px] uppercase">{student.name}</TableCell>
+                    <TableCell className="text-[11px] font-mono">{student.nis}</TableCell>
+                    <TableCell className="text-[11px]">
+                        <span className={cn(
+                            "px-2 py-0.5 rounded-full text-[10px] font-bold",
+                            student.kelas !== undefined ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+                        )}>
+                            {student.kelas !== undefined ? `KELAS ${student.kelas}` : "BELUM DIATUR"}
+                        </span>
+                    </TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center">
+                  <TableCell colSpan={5} className="h-24 text-center text-muted-foreground text-xs italic">
                     Belum ada data siswa untuk filter ini.
                   </TableCell>
                 </TableRow>
@@ -446,6 +454,7 @@ export default function ClassManagementPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+    </div>
   );
 }
+

@@ -311,20 +311,20 @@ export function StudentManagement() {
   }
 
   return (
-    <>
-      <Card className="border-none shadow-sm">
-        <CardHeader className="pb-4">
+    <div className="space-y-4">
+      <Card className="border-none shadow-lg bg-primary text-primary-foreground">
+        <CardHeader className="pb-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <CardTitle className="text-xl font-headline text-primary">Data Siswa</CardTitle>
-              <CardDescription className="text-xs">
+            <div className="space-y-1">
+              <CardTitle className="text-2xl font-bold font-headline">Data Siswa</CardTitle>
+              <CardDescription className="text-primary-foreground/70 text-xs">
                 Kelola data santri Madrasah. NIS digunakan untuk login wali murid.
               </CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button size="xs" variant="outline" className="gap-1.5 border-primary/20 h-8">
+                    <Button size="xs" variant="outline" className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8">
                     <FileUp className="h-3.5 w-3.5" />
                     Impor
                     </Button>
@@ -349,7 +349,7 @@ export function StudentManagement() {
               />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button size="xs" variant="outline" className="gap-1.5 border-primary/20 h-8">
+                    <Button size="xs" variant="outline" className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8">
                     <FileDown className="h-3.5 w-3.5" />
                     Ekspor
                     </Button>
@@ -365,11 +365,11 @@ export function StudentManagement() {
                     </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <Button size="xs" variant="outline" className="gap-1.5 border-primary/20 h-8" onClick={handlePrintTable}>
+              <Button size="xs" variant="outline" className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8" onClick={handlePrintTable}>
                 <Printer className="h-3.5 w-3.5" />
                 Cetak
               </Button>
-              <Button size="xs" className="gap-1.5 h-8 font-bold shadow-md" onClick={handleAdd}>
+              <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90" onClick={handleAdd}>
                 <PlusCircle className="h-3.5 w-3.5" />
                 Tambah Siswa
               </Button>
@@ -377,60 +377,61 @@ export function StudentManagement() {
           </div>
           
           <div className="relative mt-4 max-w-sm">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-primary-foreground/50" />
             <Input 
                 placeholder="Cari nama atau NIS santri..." 
-                className="pl-9 h-9 text-xs"
+                className="pl-9 h-9 text-xs bg-white/10 border-white/20 text-white placeholder:text-white/40 focus-visible:ring-white/30"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
         </CardHeader>
-        <CardContent className="pt-2">
-            {loading ? (
-                <div className="flex flex-col items-center justify-center py-20 gap-3 text-muted-foreground">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary/40"/>
-                    <span className="text-xs font-medium uppercase tracking-widest">Memuat data santri...</span>
-                </div>
-            ) : sortedStudents && sortedStudents.length > 0 ? (
-                <div className="space-y-3">
-                    {sortedStudents.map((student) => (
-                        <div key={student.id} className="flex items-center justify-between p-3 rounded-xl bg-card border shadow-sm hover:border-primary/20 transition-all group">
-                            <div className="flex items-center gap-4">
-                                <Avatar className="h-10 w-10 border-2 border-primary/5 group-hover:border-primary/20 transition-all">
-                                    <AvatarImage src={student.avatarUrl || undefined} alt={student.name} className="object-cover" />
-                                    <AvatarFallback className="bg-primary/5 text-primary text-sm font-bold">{student.name.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                                <div>
-                                    <p className="text-[12px] font-bold leading-tight uppercase text-foreground group-hover:text-primary transition-colors">{student.name}</p>
-                                    <div className="flex items-center gap-2 mt-0.5">
-                                        <p className="text-[10px] text-muted-foreground font-mono bg-muted/50 px-1.5 rounded">NIS: {student.nis.replace('MDIA', '')}</p>
-                                        <span className="text-[10px] text-muted-foreground">•</span>
-                                        <p className="text-[10px] text-primary/70 font-medium">Kelas {student.kelas ?? '-'}</p>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="h-8 gap-2 border-primary/10 hover:bg-primary/5 text-[11px] font-bold uppercase tracking-tight"
-                                onClick={() => handleDetail(student)}
-                            >
-                                <UserCircle className="h-3.5 w-3.5" />
-                                Detail
-                            </Button>
-                        </div>
-                    ))}
-                </div>
-            ) : (
-                <div className="py-20 text-center text-muted-foreground border-2 border-dashed rounded-2xl bg-muted/5">
-                    <UserCircle className="h-10 w-10 mx-auto mb-3 opacity-10" />
-                    <p className="text-sm font-medium">Belum ada data santri yang sesuai.</p>
-                </div>
-            )}
-        </CardContent>
       </Card>
+      
+      <div className="pt-2">
+          {loading ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-3 text-muted-foreground">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary/40"/>
+                  <span className="text-xs font-medium uppercase tracking-widest">Memuat data santri...</span>
+              </div>
+          ) : sortedStudents && sortedStudents.length > 0 ? (
+              <div className="space-y-3">
+                  {sortedStudents.map((student) => (
+                      <div key={student.id} className="flex items-center justify-between p-3 rounded-xl bg-card border shadow-sm hover:border-primary/20 transition-all group">
+                          <div className="flex items-center gap-4">
+                              <Avatar className="h-10 w-10 border-2 border-primary/5 group-hover:border-primary/20 transition-all">
+                                  <AvatarImage src={student.avatarUrl || undefined} alt={student.name} className="object-cover" />
+                                  <AvatarFallback className="bg-primary/5 text-primary text-sm font-bold">{student.name.charAt(0)}</AvatarFallback>
+                              </Avatar>
+                              <div>
+                                  <p className="text-[12px] font-bold leading-tight uppercase text-foreground group-hover:text-primary transition-colors">{student.name}</p>
+                                  <div className="flex items-center gap-2 mt-0.5">
+                                      <p className="text-[10px] text-muted-foreground font-mono bg-muted/50 px-1.5 rounded">NIS: {student.nis.replace('MDIA', '')}</p>
+                                      <span className="text-[10px] text-muted-foreground">•</span>
+                                      <p className="text-[10px] text-primary/70 font-medium">Kelas {student.kelas ?? '-'}</p>
+                                  </div>
+                              </div>
+                          </div>
+                          
+                          <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="h-8 gap-2 border-primary/10 hover:bg-primary/5 text-[11px] font-bold uppercase tracking-tight"
+                              onClick={() => handleDetail(student)}
+                          >
+                              <UserCircle className="h-3.5 w-3.5" />
+                              Detail
+                          </Button>
+                      </div>
+                  ))}
+              </div>
+          ) : (
+              <div className="py-20 text-center text-muted-foreground border-2 border-dashed rounded-2xl bg-muted/5">
+                  <UserCircle className="h-10 w-10 mx-auto mb-3 opacity-10" />
+                  <p className="text-sm font-medium">Belum ada data santri yang sesuai.</p>
+              </div>
+          )}
+      </div>
       
       <StudentForm 
         isOpen={isFormOpen} 
@@ -446,6 +447,7 @@ export function StudentManagement() {
         onEdit={handleEdit}
         onDelete={handleDelete}
       />
-    </>
+    </div>
   );
 }
+

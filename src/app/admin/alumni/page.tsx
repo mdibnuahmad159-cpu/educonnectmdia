@@ -46,7 +46,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, Loader2, FileDown, Printer, FileSpreadsheet, FileText, PlusCircle, Edit, FileUp, Upload, Download } from "lucide-react";
+import { Trash2, Loader2, FileDown, Printer, FileSpreadsheet, FileText, PlusCircle, Edit, FileUp, Upload, Download, Search } from "lucide-react";
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -308,50 +308,31 @@ export default function AlumniPage() {
     };
 
     return (
-        <>
-            <Card>
-                <CardHeader>
-                    <CardTitle>Alumni</CardTitle>
-                    <CardDescription>
-                        Kelola dan lihat data siswa yang telah lulus. NIS bersifat opsional.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex flex-col sm:flex-row justify-between items-center gap-2 mb-4">
-                        <div className="flex flex-col sm:flex-row gap-2 w-full">
-                            <Input
-                                placeholder="Cari berdasarkan nama atau NIS..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full sm:max-w-xs"
-                            />
-                            <Select value={filterYear} onValueChange={setFilterYear}>
-                                <SelectTrigger className="w-full sm:w-[180px]">
-                                    <SelectValue placeholder="Filter per tahun" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="semua">Semua Tahun</SelectItem>
-                                    {availableYears.map(year => (
-                                        <SelectItem key={year} value={year}>{year}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+        <div className="space-y-4">
+            <Card className="border-none shadow-lg bg-primary text-primary-foreground">
+                <CardHeader className="pb-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="space-y-1">
+                            <CardTitle className="text-2xl font-bold font-headline">Alumni</CardTitle>
+                            <CardDescription className="text-primary-foreground/70 text-xs">
+                                Kelola dan lihat data siswa yang telah lulus. NIS bersifat opsional.
+                            </CardDescription>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button size="xs" variant="outline" className="gap-1">
-                                    <FileUp className="h-3 w-3" />
+                                    <Button size="xs" variant="outline" className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8">
+                                    <FileUp className="h-3.5 w-3.5" />
                                     Impor
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuItem onClick={handleDownloadTemplate}>
-                                    <Download className="mr-2 h-3 w-3" />
+                                    <Download className="mr-2 h-3.5 w-3.5" />
                                     Unduh Template
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
-                                    <Upload className="mr-2 h-3 w-3" />
+                                    <Upload className="mr-2 h-3.5 w-3.5" />
                                     Unggah Excel
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
@@ -365,42 +346,70 @@ export default function AlumniPage() {
                             />
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button size="xs" variant="outline" className="gap-1">
-                                    <FileDown className="h-3 w-3" />
+                                    <Button size="xs" variant="outline" className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8">
+                                    <FileDown className="h-3.5 w-3.5" />
                                     Ekspor
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuItem onClick={handleExportExcel}>
-                                    <FileSpreadsheet className="mr-2 h-3 w-3" />
+                                    <FileSpreadsheet className="mr-2 h-3.5 w-3.5" />
                                     Ekspor ke Excel
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={handleExportPdf}>
-                                    <FileText className="mr-2 h-3 w-3" />
+                                    <FileText className="mr-2 h-3.5 w-3.5" />
                                     Ekspor ke PDF
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
-                            <Button size="xs" variant="outline" className="gap-1" onClick={handlePrintTable}>
-                                <Printer className="h-3 w-3" />
+                            <Button size="xs" variant="outline" className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8" onClick={handlePrintTable}>
+                                <Printer className="h-3.5 w-3.5" />
                                 Cetak
                             </Button>
-                             <Button size="xs" className="gap-1" onClick={handleAdd}>
-                                <PlusCircle className="h-3 w-3" />
-                                Tambah
+                             <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90" onClick={handleAdd}>
+                                <PlusCircle className="h-3.5 w-3.5" />
+                                Tambah Alumni
                             </Button>
                         </div>
                     </div>
+                    
+                    <div className="flex flex-col sm:flex-row gap-2 pt-4 w-full sm:max-w-xl">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-primary-foreground/50" />
+                            <Input 
+                                placeholder="Cari nama atau NIS..." 
+                                className="pl-9 h-9 text-xs bg-white/10 border-white/20 text-white placeholder:text-white/40 focus-visible:ring-white/30"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                        <Select value={filterYear} onValueChange={setFilterYear}>
+                            <SelectTrigger className="w-full sm:w-[180px] h-9 text-xs font-normal bg-white/10 border-white/20 text-white focus:ring-white/30">
+                                <SelectValue placeholder="Filter per tahun" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="semua">Semua Tahun</SelectItem>
+                                {availableYears.map(year => (
+                                    <SelectItem key={year} value={year}>{year}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </CardHeader>
+            </Card>
+
+            <CardContent className="px-0 pt-2">
+                <div className="overflow-x-auto border rounded-xl bg-card">
                     <Table>
                         <TableHeader>
-                            <TableRow>
-                                <TableHead className="w-[40px]">No.</TableHead>
-                                <TableHead>Nama</TableHead>
-                                <TableHead>NIS</TableHead>
-                                <TableHead>Tahun Lulus</TableHead>
-                                <TableHead>Alamat</TableHead>
-                                <TableHead>No. WA</TableHead>
-                                <TableHead className="text-right w-[80px]">Aksi</TableHead>
+                            <TableRow className="bg-muted/30">
+                                <TableHead className="w-[40px] px-4 font-bold text-[10px] uppercase">No.</TableHead>
+                                <TableHead className="font-bold text-[10px] uppercase">Nama</TableHead>
+                                <TableHead className="font-bold text-[10px] uppercase">NIS</TableHead>
+                                <TableHead className="font-bold text-[10px] uppercase">Tahun Lulus</TableHead>
+                                <TableHead className="font-bold text-[10px] uppercase">Alamat</TableHead>
+                                <TableHead className="font-bold text-[10px] uppercase">No. WA</TableHead>
+                                <TableHead className="text-right w-[80px] font-bold text-[10px] uppercase px-4">Aksi</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -415,38 +424,40 @@ export default function AlumniPage() {
                                 </TableRow>
                             ) : filteredData.length > 0 ? (
                                 filteredData.map((item, index) => (
-                                <TableRow key={item.id}>
-                                    <TableCell>{index + 1}</TableCell>
-                                    <TableCell className="font-medium">{item.name}</TableCell>
-                                    <TableCell>
+                                <TableRow key={item.id} className="hover:bg-muted/10 transition-colors">
+                                    <TableCell className="px-4 text-[11px]">{index + 1}</TableCell>
+                                    <TableCell className="font-bold text-[11px] uppercase">{item.name}</TableCell>
+                                    <TableCell className="text-[11px] font-mono">
                                         <span className={item.nis.startsWith('AL') ? "text-muted-foreground italic text-[10px]" : ""}>
                                             {item.nis}
                                         </span>
                                     </TableCell>
-                                    <TableCell>{item.tahunLulus}</TableCell>
-                                    <TableCell>{item.address || '-'}</TableCell>
-                                    <TableCell>{item.noWa || '-'}</TableCell>
-                                    <TableCell className="text-right">
-                                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(item)}>
-                                            <Edit className="h-4 w-4" />
-                                        </Button>
-                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(item.id)}>
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
+                                    <TableCell className="text-[11px]">{item.tahunLulus}</TableCell>
+                                    <TableCell className="text-[11px] truncate max-w-[150px]">{item.address || '-'}</TableCell>
+                                    <TableCell className="text-[11px]">{item.noWa || '-'}</TableCell>
+                                    <TableCell className="text-right px-4">
+                                        <div className="flex justify-end gap-1">
+                                            <Button variant="ghost" size="icon" className="h-7 w-7 text-primary" onClick={() => handleEdit(item)}>
+                                                <Edit className="h-4 w-4" />
+                                            </Button>
+                                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(item.id)}>
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={7} className="h-24 text-center">
+                                    <TableCell colSpan={7} className="h-24 text-center text-xs text-muted-foreground italic">
                                         Belum ada data alumni untuk filter ini.
                                     </TableCell>
                                 </TableRow>
                             )}
                         </TableBody>
                     </Table>
-                </CardContent>
-            </Card>
+                </div>
+            </CardContent>
 
             <AlumniForm 
                 isOpen={isFormOpen}
@@ -469,6 +480,7 @@ export default function AlumniPage() {
                 </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-        </>
+        </div>
     );
 }
+
