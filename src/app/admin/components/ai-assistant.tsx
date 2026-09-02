@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bot, Send, X, Sparkles, Loader2, Download, FileText } from "lucide-react";
-import { adminAssistantChat } from "@/ai/flows/admin-assistant-flow";
+import { Bot, Send, X, Sparkles, Loader2, Download, FileText, Image as ImageIcon } from "lucide-react";
+import { adminAssistantChat, generateAssistantImage } from "@/ai/flows/admin-assistant-flow";
 import { cn } from "@/lib/utils";
 import jsPDF from "jspdf";
 
@@ -19,13 +19,14 @@ type Message = {
         content: string;
         filename: string;
     };
+    isImageLoading?: boolean;
 };
 
 export function AIAssistant() {
     const [isOpen, setIsOpen] = useState(false);
     const [input, setInput] = useState("");
     const [messages, setMessages] = useState<Message[]>([
-        { role: 'ai', text: 'Halo Admin! Ada yang bisa saya bantu? Saya bisa mencari data, membuat draf pengumuman, gambar, atau dokumen PDF.' }
+        { role: 'ai', text: 'Halo Admin! Ada yang bisa saya bantu hari ini? Saya bisa membantu membuat draf surat, pengumuman, gambar ilustrasi, atau dokumen PDF.' }
     ]);
     const [isLoading, setIsLoading] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -43,29 +44,58 @@ export function AIAssistant() {
     const handleSend = async () => {
         if (!input.trim() || isLoading) return;
 
-        const userMsg = input;
+        const userMsg = input.trim();
         setInput("");
         setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
         setIsLoading(true);
 
+        // Deteksi apakah user minta gambar
+        const lowerMsg = userMsg.toLowerCase();
+        const wantsImage = ['gambar', 'poster', 'ilustrasi', 'image', 'foto', 'buatkan gambar'].some(k => lowerMsg.includes(k));
+
         try {
-            // Susun history untuk AI
+            // Susun history untuk AI (maks 6 pesan terakhir)
             const history = messages.slice(-6).map(m => ({
                 role: m.role === 'user' ? 'user' as const : 'model' as const,
                 content: [{ text: m.text }]
             }));
 
+            // 1. Dapatkan respon teks dan PDF (Cepat)
             const result = await adminAssistantChat({ message: userMsg, history });
             
-            setMessages(prev => [...prev, { 
+            const aiMsg: Message = { 
                 role: 'ai', 
                 text: result.text || "Permintaan Anda telah saya proses.",
-                image: result.generatedImage,
-                pdf: result.generatedPdf
-            }]);
+                pdf: result.generatedPdf,
+                isImageLoading: wantsImage // Tanda bahwa gambar sedang diproses
+            };
+            
+            setMessages(prev => [...prev, aiMsg]);
+
+            // 2. Jalankan pembuatan gambar secara paralel (Lambat)
+            if (wantsImage) {
+                generateAssistantImage(userMsg).then(imgUrl => {
+                    setMessages(prev => {
+                        const updated = [...prev];
+                        // Cari pesan AI terakhir untuk disisipkan gambarnya
+                        for (let i = updated.length - 1; i >= 0; i--) {
+                            if (updated[i].role === 'ai') {
+                                updated[i] = { 
+                                    ...updated[i], 
+                                    image: imgUrl || undefined, 
+                                    isImageLoading: false,
+                                    text: !imgUrl ? updated[i].text + "\n\n(Catatan: Gagal membuat gambar ilustrasi saat ini.)" : updated[i].text
+                                };
+                                break;
+                            }
+                        }
+                        return updated;
+                    });
+                });
+            }
         } catch (error) {
-            console.error("Chat Error:", error);
-            setMessages(prev => [...prev, { role: 'ai', text: 'Maaf, terjadi gangguan koneksi. Harap coba lagi.' }]);
+            console.error("Assistant Connection Error:", error);
+            setMessages(prev => [...prev, { role: 'ai', text: 'Maaf, terjadi gangguan komunikasi dengan server AI. Harap coba beberapa saat lagi.' }]);
         } finally {
             setIsLoading(false);
         }
@@ -82,7 +112,7 @@ export function AIAssistant() {
             const splitText = doc.splitTextToSize(pdfData.content, 170);
             doc.text(splitText, 20, 35);
             doc.setFontSize(8);
-            doc.text(`Dibuat oleh AI Assistant - ${new Date().toLocaleDateString('id-ID')}`, 105, 285, { align: 'center' });
+            doc.text(`Dibuat oleh EduConnect AI Assistant - ${new Date().toLocaleDateString('id-ID')}`, 105, 285, { align: 'center' });
             doc.save(`${pdfData.filename.replace(/\.pdf$/i, '')}.pdf`);
         } catch (e) {
             console.error("PDF Fail:", e);
@@ -101,42 +131,49 @@ export function AIAssistant() {
     }
 
     return (
-        <Card className="fixed bottom-20 right-6 w-[320px] sm:w-[400px] h-[500px] shadow-2xl z-50 flex flex-col border-primary/20 animate-in slide-in-from-bottom-5">
+        <Card className="fixed bottom-20 right-6 w-[320px] sm:w-[420px] h-[550px] shadow-2xl z-50 flex flex-col border-primary/20 animate-in slide-in-from-bottom-5">
             <CardHeader className="p-3 border-b bg-primary text-primary-foreground rounded-t-lg flex flex-row items-center justify-between space-y-0">
                 <CardTitle className="text-xs font-bold flex items-center gap-2">
-                    <Bot className="h-4 w-4" /> ASISTEN ADMIN
+                    <Bot className="h-4 w-4" /> ASISTEN ADMINISTRASI
                 </CardTitle>
                 <Button variant="ghost" size="icon" className="h-7 w-7 text-white hover:bg-white/20" onClick={() => setIsOpen(false)}>
                     <X className="h-4 w-4" />
                 </Button>
             </CardHeader>
-            <CardContent className="flex-1 p-0 overflow-hidden bg-muted/5">
+            <CardContent className="flex-1 p-0 overflow-hidden bg-slate-50">
                 <ScrollArea className="h-full p-4" ref={scrollRef}>
                     <div className="space-y-4">
                         {messages.map((msg, i) => (
                             <div key={i} className={cn(
-                                "flex gap-2 max-w-[85%]",
+                                "flex gap-2 max-w-[90%]",
                                 msg.role === 'user' ? "ml-auto flex-row-reverse" : "mr-auto"
                             )}>
                                 <div className={cn(
                                     "p-3 rounded-2xl text-[11px] leading-relaxed shadow-sm",
-                                    msg.role === 'user' ? "bg-primary text-primary-foreground rounded-tr-none" : "bg-white border rounded-tl-none"
+                                    msg.role === 'user' ? "bg-primary text-primary-foreground rounded-tr-none" : "bg-white border border-slate-200 rounded-tl-none"
                                 )}>
                                     <div className="whitespace-pre-wrap">{msg.text}</div>
                                     
+                                    {msg.isImageLoading && (
+                                        <div className="mt-3 p-3 bg-slate-50 border border-dashed rounded-lg flex items-center justify-center gap-2 text-muted-foreground animate-pulse">
+                                            <Loader2 className="h-3 w-3 animate-spin" />
+                                            <span>Sedang membuat gambar...</span>
+                                        </div>
+                                    )}
+
                                     {msg.image && (
                                         <div className="mt-3 space-y-2">
-                                            <div className="rounded-md overflow-hidden border">
-                                                <img src={msg.image} alt="AI" className="w-full h-auto" />
+                                            <div className="rounded-md overflow-hidden border bg-black/5">
+                                                <img src={msg.image} alt="AI Generated" className="w-full h-auto" />
                                             </div>
                                             <Button variant="outline" size="xs" className="w-full h-7 text-[9px] gap-1" asChild>
-                                                <a href={msg.image} download="ai-result.png"><Download className="h-3 w-3" /> Simpan Gambar</a>
+                                                <a href={msg.image} download="ai-illustration.png"><Download className="h-3 w-3" /> Simpan Gambar</a>
                                             </Button>
                                         </div>
                                     )}
 
                                     {msg.pdf && (
-                                        <div className="mt-3 p-2 bg-muted/50 rounded-lg border border-dashed border-primary/30">
+                                        <div className="mt-3 p-2 bg-primary/5 rounded-lg border border-dashed border-primary/30">
                                             <div className="flex items-center gap-2 mb-2">
                                                 <FileText className="h-3.5 w-3.5 text-primary" />
                                                 <span className="font-bold text-[9px] truncate">{msg.pdf.title}</span>
@@ -156,8 +193,12 @@ export function AIAssistant() {
                         ))}
                         {isLoading && (
                             <div className="flex gap-2 mr-auto">
-                                <div className="bg-white border p-3 rounded-2xl rounded-tl-none shadow-sm">
-                                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                                <div className="bg-white border border-slate-200 p-3 rounded-2xl rounded-tl-none shadow-sm">
+                                    <div className="flex gap-1">
+                                        <div className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                                        <div className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                                        <div className="w-1.5 h-1.5 bg-primary/40 rounded-full animate-bounce"></div>
+                                    </div>
                                 </div>
                             </div>
                         )}
@@ -167,13 +208,13 @@ export function AIAssistant() {
             <CardFooter className="p-3 border-t bg-white">
                 <form className="flex w-full gap-2" onSubmit={(e) => { e.preventDefault(); handleSend(); }}>
                     <Input 
-                        placeholder="Tanyakan sesuatu..." 
+                        placeholder="Ketik pesan atau buat gambar/PDF..." 
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
-                        className="h-9 text-xs"
+                        className="h-9 text-xs focus-visible:ring-primary/30"
                         disabled={isLoading}
                     />
-                    <Button type="submit" size="icon" className="h-9 w-9 shrink-0" disabled={isLoading || !input.trim()}>
+                    <Button type="submit" size="icon" className="h-9 w-9 shrink-0 shadow-sm" disabled={isLoading || !input.trim()}>
                         <Send className="h-4 w-4" />
                     </Button>
                 </form>
