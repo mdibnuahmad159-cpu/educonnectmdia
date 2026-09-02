@@ -14,14 +14,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
     AlertDialog,
     AlertDialogAction,
     AlertDialogCancel,
@@ -39,13 +31,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { PlusCircle, Edit, Trash2, Loader2, FileDown, Printer, FileSpreadsheet, FileText, FileUp, Download, Upload } from "lucide-react";
+import { PlusCircle, Edit, Trash2, Loader2, FileDown, Printer, FileSpreadsheet, FileText, FileUp, Download, Upload, BookOpen, SearchX } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { addCurriculum, updateCurriculum, deleteCurriculum, addCurriculumBatch } from "@/lib/firebase-helpers";
 import { CurriculumForm } from "./components/curriculum-form";
+import { cn } from "@/lib/utils";
 
 export default function CurriculumPage() {
     const firestore = useFirestore() as Firestore;
@@ -281,44 +274,31 @@ export default function CurriculumPage() {
     };
 
     return (
-        <>
-            <Card>
-                <CardHeader>
-                    <CardTitle>Kurikulum</CardTitle>
-                    <CardDescription>
-                        Kelola mata pelajaran, kelas, dan kitab yang digunakan dalam kurikulum.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex flex-col gap-2 mb-4">
-                        <div className="flex">
-                            <Select value={filterClass} onValueChange={setFilterClass}>
-                                <SelectTrigger className="w-full sm:w-[180px]">
-                                    <SelectValue placeholder="Filter per kelas" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="semua">Semua Kelas</SelectItem>
-                                    {[...Array(7).keys()].map(i => (
-                                        <SelectItem key={i} value={String(i)}>Kelas {i}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+        <div className="space-y-4">
+            <Card className="border-none shadow-sm">
+                <CardHeader className="pb-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <CardTitle className="text-xl font-headline text-primary">Kurikulum</CardTitle>
+                            <CardDescription className="text-xs">
+                                Kelola mata pelajaran, kelas, dan kitab yang digunakan dalam kurikulum madrasah.
+                            </CardDescription>
                         </div>
-                        <div className="flex justify-end items-center gap-2">
-                            <DropdownMenu>
+                        <div className="flex flex-wrap items-center gap-2">
+                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button size="xs" variant="outline" className="gap-1">
-                                    <FileUp className="h-3 w-3" />
+                                    <Button size="xs" variant="outline" className="gap-1.5 border-primary/20 h-8">
+                                    <FileUp className="h-3.5 w-3.5" />
                                     Impor
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuItem onClick={handleDownloadCurriculumTemplate}>
-                                    <Download className="mr-2 h-3 w-3" />
+                                    <Download className="mr-2 h-3.5 w-3.5" />
                                     Unduh Template
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
-                                    <Upload className="mr-2 h-3 w-3" />
+                                    <Upload className="mr-2 h-3.5 w-3.5" />
                                     Unggah Excel
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
@@ -332,80 +312,96 @@ export default function CurriculumPage() {
                             />
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button size="xs" variant="outline" className="gap-1">
-                                    <FileDown className="h-3 w-3" />
+                                    <Button size="xs" variant="outline" className="gap-1.5 border-primary/20 h-8">
+                                    <FileDown className="h-3.5 w-3.5" />
                                     Ekspor
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuItem onClick={handleExportExcel}>
-                                    <FileSpreadsheet className="mr-2 h-3 w-3" />
+                                    <FileSpreadsheet className="mr-2 h-3.5 w-3.5" />
                                     Excel
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={handleExportPdf}>
-                                    <FileText className="mr-2 h-3 w-3" />
+                                    <FileText className="mr-2 h-3.5 w-3.5" />
                                     PDF
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
-                            <Button size="xs" variant="outline" className="gap-1" onClick={handlePrintTable}>
-                                <Printer className="h-3 w-3" />
+                            <Button size="xs" variant="outline" className="gap-1.5 border-primary/20 h-8" onClick={handlePrintTable}>
+                                <Printer className="h-3.5 w-3.5" />
                                 Cetak
                             </Button>
-                            <Button size="xs" className="gap-1" onClick={handleAdd}>
-                                <PlusCircle className="h-3 w-3" />
-                                Tambah
+                            <Button size="xs" className="gap-1.5 h-8 font-bold shadow-md" onClick={handleAdd}>
+                                <PlusCircle className="h-3.5 w-3.5" />
+                                Tambah Mapel
                             </Button>
                         </div>
                     </div>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead className="w-[40px]">No.</TableHead>
-                                <TableHead>Kode Mapel</TableHead>
-                                <TableHead>Nama Mapel</TableHead>
-                                <TableHead>Kelas</TableHead>
-                                <TableHead>Nama Kitab</TableHead>
-                                <TableHead className="text-right w-[80px]">Aksi</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {loading ? (
-                                <TableRow>
-                                    <TableCell colSpan={6} className="text-center h-24">
-                                        <div className="flex justify-center items-center gap-2 text-muted-foreground">
-                                            <Loader2 className="h-4 w-4 animate-spin"/>
-                                            <span>Memuat data...</span>
+                    
+                    <div className="flex pt-4">
+                        <Select value={filterClass} onValueChange={setFilterClass}>
+                            <SelectTrigger className="w-full sm:w-[180px] h-9 text-xs font-normal bg-muted/20">
+                                <SelectValue placeholder="Filter per kelas" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="semua">Semua Kelas</SelectItem>
+                                {[...Array(7).keys()].map(i => (
+                                    <SelectItem key={i} value={String(i)}>Kelas {i === 0 ? 'Sifir' : i}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </CardHeader>
+                <CardContent className="pt-2">
+                    {loading ? (
+                        <div className="flex flex-col items-center justify-center py-20 gap-3 text-muted-foreground">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary/40"/>
+                            <span className="text-xs font-medium uppercase tracking-widest">Memuat kurikulum...</span>
+                        </div>
+                    ) : filteredData && filteredData.length > 0 ? (
+                        <div className="space-y-3">
+                            {filteredData.map((item) => (
+                                <div key={item.id} className="flex items-center justify-between p-3 rounded-xl bg-card border shadow-sm hover:border-primary/20 transition-all group">
+                                    <div className="flex items-center gap-4">
+                                        <div className="h-10 w-10 rounded-xl bg-primary/5 text-primary flex items-center justify-center shrink-0">
+                                            <BookOpen className="h-5 w-5" />
                                         </div>
-                                    </TableCell>
-                                </TableRow>
-                            ) : filteredData.length > 0 ? (
-                                filteredData.map((item, index) => (
-                                <TableRow key={item.id}>
-                                    <TableCell>{index + 1}</TableCell>
-                                    <TableCell>{item.subjectCode}</TableCell>
-                                    <TableCell className="font-medium">{item.subjectName}</TableCell>
-                                    <TableCell>Kelas {item.classLevel}</TableCell>
-                                    <TableCell>{item.bookName || '-'}</TableCell>
-                                    <TableCell className="text-right">
-                                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(item)}>
+                                        <div>
+                                            <p className="text-[12px] font-bold leading-tight uppercase text-foreground group-hover:text-primary transition-colors">
+                                                {item.subjectName}
+                                            </p>
+                                            <div className="flex items-center gap-2 mt-0.5">
+                                                <p className="text-[10px] text-muted-foreground font-mono bg-muted/50 px-1.5 rounded">KODE: {item.subjectCode}</p>
+                                                <span className="text-[10px] text-muted-foreground">•</span>
+                                                <p className="text-[10px] text-primary/70 font-medium">Kelas {item.classLevel}</p>
+                                                {item.bookName && (
+                                                    <>
+                                                        <span className="text-[10px] text-muted-foreground">•</span>
+                                                        <p className="text-[10px] italic text-muted-foreground">Kitab: {item.bookName}</p>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="flex items-center gap-1">
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-primary" onClick={() => handleEdit(item)}>
                                             <Edit className="h-4 w-4" />
                                         </Button>
-                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(item.id)}>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(item.id)}>
                                             <Trash2 className="h-4 w-4" />
                                         </Button>
-                                    </TableCell>
-                                </TableRow>
-                                ))
-                            ) : (
-                                <TableRow>
-                                    <TableCell colSpan={6} className="h-24 text-center">
-                                        Belum ada data kurikulum untuk filter ini.
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="py-20 text-center text-muted-foreground border-2 border-dashed rounded-2xl bg-muted/5">
+                            <SearchX className="h-10 w-10 mx-auto mb-3 opacity-10" />
+                            <p className="text-sm font-medium">Belum ada mata pelajaran terdaftar.</p>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
 
@@ -419,17 +415,17 @@ export default function CurriculumPage() {
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
                 <AlertDialogContent>
                 <AlertDialogHeader>
-                    <AlertDialogTitle>Anda yakin?</AlertDialogTitle>
+                    <AlertDialogTitle>Hapus Mata Pelajaran?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Tindakan ini tidak dapat dibatalkan. Ini akan menghapus data kurikulum secara permanen.
+                        Tindakan ini akan menghapus mata pelajaran dari kurikulum secara permanen. Jadwal yang menggunakan mapel ini mungkin perlu disesuaikan.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                    <AlertDialogCancel>Batal</AlertDialogCancel>
-                    <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">Hapus</AlertDialogAction>
+                    <AlertDialogCancel className="text-xs">Batal</AlertDialogCancel>
+                    <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90 text-white text-xs">Ya, Hapus</AlertDialogAction>
                 </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-        </>
+        </div>
     );
 }
