@@ -171,7 +171,7 @@ export function TeacherBottomNav() {
     <>
       <div className="fixed bottom-6 left-0 right-0 z-50 px-4 flex justify-center pointer-events-none">
         <div className="flex items-center gap-3 max-w-md w-full pointer-events-auto">
-          <nav className="flex-1 bg-black/90 backdrop-blur-md rounded-full p-1.5 flex items-center justify-around shadow-2xl border border-white/10">
+          <nav className="flex-1 bg-primary/95 backdrop-blur-md rounded-full p-1.5 flex items-center justify-around shadow-2xl border border-white/10">
             {navItems.map((item) => {
               const isActive = pathname.startsWith(item.href);
               return (
