@@ -125,7 +125,7 @@ export function StudentAttendanceCard({ selectedDate }: StudentAttendanceCardPro
                             <CardDescription className="text-[10px]">Verifikasi kehadiran harian per kelas.</CardDescription>
                         </div>
                         <Select value={selectedClass} onValueChange={setSelectedClass}>
-                            <SelectTrigger className="h-8 text-[10px] font-bold w-[90px] border-primary/20 text-primary rounded-full uppercase">
+                            <SelectTrigger className="h-8 text-[10px] font-bold w-[110px] border-primary/20 text-primary rounded-full uppercase">
                                 <Users className="h-3 w-3 mr-1" />
                                 <SelectValue placeholder="Kelas" />
                             </SelectTrigger>
