@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useRef } from "react";
@@ -67,10 +66,9 @@ import { CertificateForm } from "./components/certificate-form";
 import { TemplateUploadDialog } from "./components/template-upload-dialog";
 import { format, parseISO } from "date-fns";
 import { id as dfnsId } from "date-fns/locale";
-import jsPDF from "jspdf";
-import 'jspdf-autotable';
 import { useAcademicYear } from "@/context/academic-year-provider";
 import { useSchoolProfile } from "@/context/school-profile-provider";
+import { safePrint } from "@/lib/utils";
 import * as XLSX from 'xlsx';
 
 export default function CertificatesPage() {
@@ -153,96 +151,6 @@ export default function CertificatesPage() {
         setSelectedCertificate(null);
     };
 
-    const certificateImportColumns = {
-        nis: 'NIS Siswa (Wajib)',
-        rank: 'Juara (Pertama/Kedua/Ketiga)',
-        competitionName: 'Nama Lomba',
-        date: 'Tanggal (YYYY-MM-DD)'
-    };
-
-    const handleDownloadTemplate = () => {
-        const worksheet = XLSX.utils.json_to_sheet([{}], { header: Object.values(certificateImportColumns) });
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Template Sertifikat');
-        XLSX.writeFile(workbook, 'template_impor_sertifikat.xlsx');
-    };
-
-    const handleImportCertificates = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (!file || !firestore || !students) return;
-        
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-             try {
-                const data = new Uint8Array(e.target?.result as ArrayBuffer);
-                const workbook = XLSX.read(data, { type: 'array' });
-                const sheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[sheetName];
-                const json: any[] = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
-
-                if (json.length === 0) {
-                    toast({ variant: "destructive", title: "File Kosong", description: "File Excel yang Anda unggah tidak berisi data." });
-                    return;
-                }
-
-                toast({ title: "Mengimpor Data", description: `Mulai memproses ${json.length} data sertifikat...` });
-
-                const certsToImport: Omit<Certificate, 'id'>[] = [];
-                let errorCount = 0;
-
-                for (const item of json) {
-                    const certData: any = {};
-                    const columnKeys = Object.keys(certificateImportColumns);
-                    const columnValues = Object.values(certificateImportColumns);
-                    
-                    for(const key in item) {
-                        const columnIndex = columnValues.indexOf(key);
-                        if (columnIndex > -1) {
-                             const dataKey = columnKeys[columnIndex];
-                             certData[dataKey] = item[key] ?? '';
-                        }
-                    }
-
-                    // Validation
-                    const student = students.find(s => String(s.nis) === String(certData.nis));
-                    const validRanks = ['Pertama', 'Kedua', 'Ketiga'];
-                    
-                    if (!student || !certData.rank || !certData.competitionName || !certData.date || !validRanks.includes(certData.rank)) {
-                        errorCount++;
-                        console.error("Skipping certificate item due to invalid data:", certData);
-                        continue;
-                    }
-
-                    certsToImport.push({
-                        studentId: student.id,
-                        studentName: student.name,
-                        category: 'lomba',
-                        rank: certData.rank as any,
-                        competitionName: certData.competitionName,
-                        date: String(certData.date),
-                        academicYear: activeYear
-                    });
-                }
-
-                if (certsToImport.length > 0) {
-                    await addCertificatesBatch(firestore, certsToImport);
-                    toast({ title: "Impor Selesai", description: `${certsToImport.length} sertifikat berhasil diimpor. ${errorCount} gagal.` });
-                } else {
-                    toast({ variant: "destructive", title: "Gagal", description: "Tidak ada data valid untuk diimpor." });
-                }
-
-            } catch (error) {
-                toast({ variant: "destructive", title: "Gagal Memproses File", description: "Terjadi kesalahan saat menyimpan data. Pastikan format Excel benar." });
-                console.error(error);
-            } finally {
-                if (event.target) {
-                    event.target.value = '';
-                }
-            }
-        };
-        reader.readAsArrayBuffer(file);
-    };
-
     const handlePrintCertificate = (certificate: Certificate) => {
         const template = templates?.find(t => t.id === certificate.category);
         if (!template) {
@@ -251,20 +159,13 @@ export default function CertificatesPage() {
         }
 
         const headName = teachers?.find(t => t.jabatan === 'Kepala Madrasah')?.name || "..........................";
-
-        const printWindow = window.open('', '_blank');
-        if (!printWindow) {
-            toast({ variant: "destructive", title: "Gagal Membuka Jendela", description: "Mohon izinkan pop-up untuk mencetak sertifikat." });
-            return;
-        }
-
         const dateFormatted = format(parseISO(certificate.date), "d MMMM yyyy", { locale: dfnsId });
         const schoolName = profile?.namaMadrasah || "MADRASAH DINIYAH IBNU AHMAD";
         
         const rankText = certificate.rank.toLowerCase();
         const competitionText = "lomba " + (certificate.competitionName || "").toLowerCase();
 
-        printWindow.document.write(`
+        const finalHtml = `
             <html>
                 <head>
                     <title>Cetak Sertifikat - ${certificate.studentName}</title>
@@ -412,14 +313,8 @@ export default function CertificatesPage() {
                     </div>
                 </body>
             </html>
-        `);
-        printWindow.document.close();
-        printWindow.onload = () => {
-            setTimeout(() => {
-                printWindow.focus();
-                printWindow.print();
-            }, 500);
-        };
+        `;
+        safePrint(finalHtml);
     };
 
     const handleBulkPrint = () => {
@@ -442,12 +337,6 @@ export default function CertificatesPage() {
 
         const headName = teachers?.find(t => t.jabatan === 'Kepala Madrasah')?.name || "..........................";
         const schoolName = profile?.namaMadrasah || "MADRASAH DINIYAH IBNU AHMAD";
-
-        const printWindow = window.open('', '_blank');
-        if (!printWindow) {
-            toast({ variant: "destructive", title: "Gagal Membuka Jendela", description: "Mohon izinkan pop-up untuk mencetak sertifikat." });
-            return;
-        }
 
         let htmlContent = `
             <html>
@@ -612,49 +501,7 @@ export default function CertificatesPage() {
             </html>
         `;
 
-        printWindow.document.write(htmlContent);
-        printWindow.document.close();
-        printWindow.onload = () => {
-            setTimeout(() => {
-                printWindow.focus();
-                printWindow.print();
-            }, 500);
-        };
-    };
-
-    const handleExportExcel = () => {
-        if (!filteredCertificates.length) return;
-        const data = filteredCertificates.map((c, i) => ({
-            'No': i + 1,
-            'Nama Siswa': c.studentName,
-            'Juara': c.rank,
-            'Kategori': c.category,
-            'Lomba/Keterangan': c.category === 'lomba' ? c.competitionName : `Semester ${c.academicYear}`,
-            'Tanggal': c.date
-        }));
-        const worksheet = XLSX.utils.json_to_sheet(data);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Daftar Prestasi");
-        XLSX.writeFile(workbook, `Data_Prestasi_Siswa_${activeYear.replace('/', '-')}.xlsx`);
-    };
-
-    const handleExportPdf = () => {
-        if (!filteredCertificates.length) return;
-        const doc = new jsPDF();
-        doc.text(`Data Prestasi Siswa - TA ${activeYear}`, 14, 15);
-        (doc as any).autoTable({
-            head: [['No', 'Nama', 'Juara', 'Lomba']],
-            body: filteredCertificates.map((c, i) => [
-                i + 1,
-                c.studentName,
-                c.rank,
-                c.category === 'lomba' ? c.competitionName : `${c.category} (TA ${c.academicYear})`
-            ]),
-            startY: 20,
-            theme: 'grid',
-            headStyles: { fillColor: [46, 125, 50] }
-        });
-        doc.save(`Data_Prestasi_Siswa_${activeYear.replace('/', '-')}.pdf`);
+        safePrint(htmlContent);
     };
 
     const handlePrintTable = () => {
@@ -662,9 +509,6 @@ export default function CertificatesPage() {
             toast({ variant: "destructive", title: "Tidak Ada Data", description: "Tidak ada data prestasi untuk dicetak." });
             return;
         }
-
-        const printWindow = window.open('', '_blank');
-        if (!printWindow) return;
 
         const tableRows = filteredCertificates.map((c, i) => `
             <tr>
@@ -675,7 +519,7 @@ export default function CertificatesPage() {
             </tr>
         `).join('');
 
-        printWindow.document.write(`
+        const finalHtml = `
             <html>
                 <head>
                     <title>Cetak Daftar Prestasi</title>
@@ -704,12 +548,8 @@ export default function CertificatesPage() {
                     </table>
                 </body>
             </html>
-        `);
-        printWindow.document.close();
-        printWindow.onload = () => {
-            printWindow.focus();
-            printWindow.print();
-        };
+        `;
+        safePrint(finalHtml);
     };
 
     const getRankBadge = (rank: Certificate['rank']) => {
@@ -748,7 +588,12 @@ export default function CertificatesPage() {
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={handleDownloadTemplate}>
+                            <DropdownMenuItem onClick={() => {
+                                const worksheet = XLSX.utils.json_to_sheet([{}], { header: ['NIS Siswa (Wajib)', 'Juara (Pertama/Kedua/Ketiga)', 'Nama Lomba', 'Tanggal (YYYY-MM-DD)'] });
+                                const workbook = XLSX.utils.book_new();
+                                XLSX.utils.book_append_sheet(workbook, worksheet, 'Template Sertifikat');
+                                XLSX.writeFile(workbook, 'template_impor_sertifikat.xlsx');
+                            }}>
                                 <Download className="mr-2 h-3.5 w-3.5" />
                                 Unduh Template
                             </DropdownMenuItem>
@@ -763,7 +608,38 @@ export default function CertificatesPage() {
                         ref={fileInputRef}
                         className="hidden"
                         accept=".xlsx, .xls"
-                        onChange={handleImportCertificates}
+                        onChange={async (event) => {
+                            const file = event.target.files?.[0];
+                            if (!file || !firestore || !students) return;
+                            const reader = new FileReader();
+                            reader.onload = async (e) => {
+                                try {
+                                    const data = new Uint8Array(e.target?.result as ArrayBuffer);
+                                    const workbook = XLSX.read(data, { type: 'array' });
+                                    const sheetName = workbook.SheetNames[0];
+                                    const worksheet = workbook.Sheets[sheetName];
+                                    const json: any[] = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+                                    if (json.length === 0) return;
+                                    toast({ title: "Mengimpor Data", description: "Memproses data sertifikat..." });
+                                    const certsToImport: Omit<Certificate, 'id'>[] = [];
+                                    const cols = { nis: 'NIS Siswa (Wajib)', rank: 'Juara (Pertama/Kedua/Ketiga)', competitionName: 'Nama Lomba', date: 'Tanggal (YYYY-MM-DD)' };
+                                    for (const item of json) {
+                                        const student = students.find(s => String(s.nis) === String(item[cols.nis]));
+                                        if (student && item[cols.rank] && item[cols.competitionName]) {
+                                            certsToImport.push({
+                                                studentId: student.id, studentName: student.name, category: 'lomba', rank: item[cols.rank] as any,
+                                                competitionName: item[cols.competitionName], date: String(item[cols.date]), academicYear: activeYear
+                                            });
+                                        }
+                                    }
+                                    if (certsToImport.length > 0) {
+                                        await addCertificatesBatch(firestore, certsToImport);
+                                        toast({ title: "Impor Selesai", description: `${certsToImport.length} sertifikat berhasil diimpor.` });
+                                    }
+                                } catch (error) { toast({ variant: "destructive", title: "Gagal" }); }
+                            };
+                            reader.readAsArrayBuffer(file);
+                        }}
                     />
 
                     <DropdownMenu>
@@ -774,17 +650,20 @@ export default function CertificatesPage() {
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={handleExportExcel}>
+                            <DropdownMenuItem onClick={() => {
+                                if (!filteredCertificates.length) return;
+                                const data = filteredCertificates.map((c, i) => ({ No: i + 1, 'Nama Siswa': c.studentName, 'Juara': c.rank, 'Kategori': c.category, 'Lomba': c.competitionName, 'Tanggal': c.date }));
+                                const worksheet = XLSX.utils.json_to_sheet(data);
+                                const workbook = XLSX.utils.book_new();
+                                XLSX.utils.book_append_sheet(workbook, worksheet, "Daftar Prestasi");
+                                XLSX.writeFile(workbook, `Data_Prestasi_${activeYear.replace('/', '-')}.xlsx`);
+                            }}>
                                 <FileSpreadsheet className="mr-2 h-3.5 w-3.5" />
                                 Ekspor ke Excel
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={handleExportPdf}>
-                                <FileText className="mr-2 h-3.5 w-3.5" />
-                                Ekspor ke PDF
-                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={handlePrintTable}>
                                 <Printer className="mr-2 h-3.5 w-3.5" />
-                                Cetak
+                                Cetak Tabel
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>

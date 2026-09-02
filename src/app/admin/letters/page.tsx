@@ -30,7 +30,7 @@ import {
 import { useSchoolProfile } from "@/context/school-profile-provider";
 import { format, parseISO } from "date-fns";
 import { id as dfnsId } from "date-fns/locale";
-import { cn } from "@/lib/utils";
+import { cn, safePrint } from "@/lib/utils";
 import { useAcademicYear } from "@/context/academic-year-provider";
 
 type LetterType = 'keterangan' | 'pemberitahuan' | 'izin' | 'undangan';
@@ -160,10 +160,6 @@ export default function LettersPage() {
     };
 
     const handlePrint = () => {
-        const printWindow = window.open('', '_blank');
-        if (!printWindow) return;
-
-        // Proporsional margin: 20mm for all types to look professional
         const printMargin = '20mm';
 
         let headerHtml = `
@@ -330,7 +326,7 @@ export default function LettersPage() {
             `;
         }
 
-        printWindow.document.write(`
+        const finalHtml = `
             <html>
                 <head>
                     <title>Cetak Surat</title>
@@ -346,17 +342,10 @@ export default function LettersPage() {
                     ${bodyContent}
                 </body>
             </html>
-        `);
-        printWindow.document.close();
-        printWindow.onload = () => {
-            setTimeout(() => {
-                printWindow.print();
-            }, 500);
-        };
-    };
+        `;
 
-    // Proporsional margin for all types to look official
-    const printMargin = '20mm';
+        safePrint(finalHtml);
+    };
 
     return (
         <div className="space-y-6 pb-10">
@@ -557,7 +546,7 @@ export default function LettersPage() {
                             style={{
                                 width: '210mm',
                                 minHeight: '297mm',
-                                padding: printMargin,
+                                padding: '20mm',
                                 fontFamily: "'Times New Roman', serif",
                                 fontSize: '12pt',
                                 color: 'black',
@@ -705,13 +694,6 @@ export default function LettersPage() {
                                                     <div className="h-12"></div>
                                                     <p><strong><span className="underline">{kepalaMadrasah}</span></strong></p>
                                                 </div>
-                                            </div>
-                                        )}
-                                        
-                                        {/* NB Footer for Pemberitahuan */}
-                                        {formData.type === 'pemberitahuan' && formData.footerNote && (
-                                            <div className="absolute bottom-0 left-0 right-0 pt-2 border-t border-dashed border-black">
-                                                <p className="italic text-[11pt]"><strong>Nb:</strong> ${formData.footerNote}</p>
                                             </div>
                                         )}
                                     </div>

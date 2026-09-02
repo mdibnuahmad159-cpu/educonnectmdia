@@ -58,11 +58,9 @@ import { useSchoolProfile } from "@/context/school-profile-provider";
 import { useToast } from "@/hooks/use-toast";
 import { saveGradesBatch } from "@/lib/firebase-helpers";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn } from "@/lib/utils";
+import { cn, safePrint } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
 import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
 import { format } from "date-fns";
 import { id as dfnsId } from "date-fns/locale";
 
@@ -70,7 +68,6 @@ type GradeType = 'Ganjil' | 'Genap';
 
 const STATUS_OPTIONS: ReportSummaryStatus[] = ['Lanjut Semester', 'Naik Kelas', 'Turun Kelas'];
 
-// Helper for Terbilang (kata-kata angka)
 function terbilang(n: number): string {
     const words = ["", "Satu", "Dua", "Tiga", "Empat", "Lima", "Enam", "Tujuh", "Delapan", "Sembilan", "Sepuluh", "Sebelas"];
     if (n === 0) return "Nol";
@@ -397,41 +394,7 @@ export default function GradesPage() {
         XLSX.writeFile(workbook, `legger_nilai_kelas_${selectedClass}_${selectedGradeType}.xlsx`);
     };
 
-    const handleExportPdf = () => {
-        if (!studentsWithStats.length) return;
-        const doc = new jsPDF({ orientation: 'landscape' });
-        
-        doc.setFontSize(14);
-        doc.text(`Legger Nilai Kelas ${selectedClass === '0' ? 'Sifir' : selectedClass} - Semester ${selectedGradeType}`, 14, 15);
-        doc.setFontSize(10);
-        doc.text(`Tahun Ajaran: ${activeYear}`, 14, 22);
-
-        const tableHeaders = [['No', 'Nama', ...subjects.map(s => s.subjectName), 'Total', 'Rerata', 'Rank']];
-        const tableBody = studentsWithStats.map((student, idx) => [
-            idx + 1,
-            student.name,
-            ...subjects.map(sub => localGrades[`${student.id}_${sub.id}`] || 0),
-            student.total,
-            student.average.toFixed(1),
-            student.rank
-        ]);
-
-        (doc as any).autoTable({
-            head: tableHeaders,
-            body: tableBody,
-            startY: 30,
-            theme: 'grid',
-            styles: { fontSize: 7, cellPadding: 1 },
-            headStyles: { fillColor: [22, 163, 74] }
-        });
-
-        doc.save(`legger_nilai_kelas_${selectedClass}_${selectedGradeType}.pdf`);
-    };
-
     const handlePrint = () => {
-        const printWindow = window.open('', '_blank');
-        if (!printWindow) return;
-
         const subjectsHtml = subjects.map(s => `<th style="font-size: 8px;">${s.subjectName}</th>`).join('');
         const rowsHtml = studentsWithStats.map((s, idx) => `
             <tr>
@@ -444,7 +407,7 @@ export default function GradesPage() {
             </tr>
         `).join('');
 
-        printWindow.document.write(`
+        const finalHtml = `
             <html>
                 <head>
                     <title>Cetak Nilai Kelas ${selectedClass === '0' ? 'Sifir' : selectedClass}</title>
@@ -476,9 +439,8 @@ export default function GradesPage() {
                     </table>
                 </body>
             </html>
-        `);
-        printWindow.document.close();
-        printWindow.print();
+        `;
+        safePrint(finalHtml);
     };
 
     const getReportHtmlForStudent = (student: any) => {
@@ -613,12 +575,9 @@ export default function GradesPage() {
     const handlePrintReport = () => {
         if (!selectedStudent || !subjects.length) return;
         
-        const printWindow = window.open('', '_blank');
-        if (!printWindow) return;
-
         const reportHtml = getReportHtmlForStudent(selectedStudent);
 
-        printWindow.document.write(`
+        const finalHtml = `
             <html>
                 <head>
                     <title>Rapor - ${selectedStudent.name}</title>
@@ -664,13 +623,8 @@ export default function GradesPage() {
                     ${reportHtml}
                 </body>
             </html>
-        `);
-        printWindow.document.close();
-        printWindow.onload = () => { 
-            setTimeout(() => {
-                printWindow.print();
-            }, 500);
-        };
+        `;
+        safePrint(finalHtml);
     };
 
     const handlePrintRankingCertificate = () => {
@@ -686,14 +640,11 @@ export default function GradesPage() {
         const waliKelasName = teachers?.find(t => t.jabatan === `Wali Kelas ${selectedClass}`)?.name || "..........................";
         const schoolName = profile?.namaMadrasah || "MADRASAH DINIYAH IBNU AHMAD";
 
-        const printWindow = window.open('', '_blank');
-        if (!printWindow) return;
-
         const rankText = getRankText(selectedStudent.rank);
         const classText = getClassFullText(Number(selectedClass));
         const dateNow = format(new Date(), "dd MMMM yyyy", { locale: dfnsId });
 
-        printWindow.document.write(`
+        const finalHtml = `
             <html>
                 <head>
                     <title>Sertifikat Ranking - ${selectedStudent.name}</title>
@@ -851,14 +802,8 @@ export default function GradesPage() {
                     </div>
                 </body>
             </html>
-        `);
-        printWindow.document.close();
-        printWindow.onload = () => {
-            setTimeout(() => {
-                printWindow.focus();
-                printWindow.print();
-            }, 500);
-        };
+        `;
+        safePrint(finalHtml);
     };
 
     const handlePrintStarCertificate = () => {
@@ -874,13 +819,10 @@ export default function GradesPage() {
         const secretaryName = teachers?.find(t => t.jabatan === 'Sekretaris')?.name || "..........................";
         const schoolName = profile?.namaMadrasah || "MADRASAH DINIYAH IBNU AHMAD";
 
-        const printWindow = window.open('', '_blank');
-        if (!printWindow) return;
-
         const dateNow = format(new Date(), "d MMMM yyyy", { locale: dfnsId });
         const academicYearDisplay = activeYear.replace('/', '-');
 
-        printWindow.document.write(`
+        const finalHtml = `
             <html>
                 <head>
                     <title>Sertifikat Bintang Pelajar - ${selectedStudent.name}</title>
@@ -1029,14 +971,8 @@ export default function GradesPage() {
                     </div>
                 </body>
             </html>
-        `);
-        printWindow.document.close();
-        printWindow.onload = () => {
-            setTimeout(() => {
-                printWindow.focus();
-                printWindow.print();
-            }, 500);
-        };
+        `;
+        safePrint(finalHtml);
     };
 
     const handleBulkPrint = () => {
@@ -1045,12 +981,9 @@ export default function GradesPage() {
             return;
         }
 
-        const printWindow = window.open('', '_blank');
-        if (!printWindow) return;
-
         const allReportsHtml = studentsWithStats.map(student => getReportHtmlForStudent(student)).join('<div class="page-break"></div>');
 
-        printWindow.document.write(`
+        const finalHtml = `
             <html>
                 <head>
                     <title>Cetak Rapor Massal - Kelas ${selectedClass === '0' ? 'Sifir' : selectedClass}</title>
@@ -1099,13 +1032,8 @@ export default function GradesPage() {
                     ${allReportsHtml}
                 </body>
             </html>
-        `);
-        printWindow.document.close();
-        printWindow.onload = () => { 
-            setTimeout(() => {
-                printWindow.print();
-            }, 1000);
-        };
+        `;
+        safePrint(finalHtml);
     };
 
     const handlePrintRankings = async () => {
@@ -1156,9 +1084,6 @@ export default function GradesPage() {
                 return;
             }
 
-            const printWindow = window.open('', '_blank');
-            if (!printWindow) return;
-
             const schoolName = profile?.namaMadrasah || "MADRASAH DINIYAH IBNU AHMAD";
             const dateNow = format(new Date(), "dd MMMM yyyy", { locale: dfnsId });
 
@@ -1183,7 +1108,7 @@ export default function GradesPage() {
                 });
             });
 
-            printWindow.document.write(`
+            const finalHtml = `
                 <html>
                     <head>
                         <title>Laporan Peringkat - ${activeYear.replace('/', '-')}</title>
@@ -1256,11 +1181,8 @@ export default function GradesPage() {
                         </div>
                     </body>
                 </html>
-            `);
-            printWindow.document.close();
-            setTimeout(() => {
-                printWindow.print();
-            }, 1000);
+            `;
+            safePrint(finalHtml);
 
         } catch (error) {
             console.error(error);
@@ -1335,10 +1257,6 @@ export default function GradesPage() {
                                     <DropdownMenuItem onClick={handleExportExcel}>
                                         <FileSpreadsheet className="mr-2 h-3.5 w-3.5" />
                                         Legger (Excel)
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={handleExportPdf}>
-                                        <FileText className="mr-2 h-3.5 w-3.5" />
-                                        Legger (PDF)
                                     </DropdownMenuItem>
                                     <DropdownMenuItem onClick={handlePrint}>
                                         <Printer className="mr-2 h-3.5 w-3.5" />
