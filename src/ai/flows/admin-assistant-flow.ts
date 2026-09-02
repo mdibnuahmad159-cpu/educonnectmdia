@@ -1,72 +1,45 @@
 'use server';
 /**
- * @fileOverview AI Assistant flow for Madrasah administrative tasks.
- * Handles text queries and generates PDF document drafts upon request.
+ * @fileOverview Alur AI Assistant untuk tugas administratif Madrasah.
+ * Menangani permintaan teks dan pembuatan draf dokumen PDF.
  *
- * - adminAssistantChat - Main function to interact with the AI assistant.
- * - AdminAssistantInput - Input type for the assistant function.
- * - AdminAssistantOutput - Return type for the assistant function.
+ * - adminAssistantChat - Fungsi utama untuk interaksi asisten.
+ * - AdminAssistantInput - Tipe input untuk asisten.
+ * - AdminAssistantOutput - Tipe return untuk asisten.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
 const AdminAssistantInputSchema = z.object({
-  message: z.string().describe('The user message or request.'),
+  message: z.string().describe('Pesan atau permintaan dari admin.'),
   history: z.array(z.object({
     role: z.enum(['user', 'model']),
     content: z.array(z.object({ text: z.string() }))
-  })).optional().describe('Previous conversation history.'),
+  })).optional().describe('Riwayat percakapan sebelumnya.'),
 });
 
 export type AdminAssistantInput = z.infer<typeof AdminAssistantInputSchema>;
 
 const AdminAssistantOutputSchema = z.object({
-  text: z.string().describe('The main text response in Indonesian.'),
+  text: z.string().describe('Respon teks utama dalam Bahasa Indonesia.'),
   generatedPdf: z.object({
-    title: z.string().describe('The document title for the PDF.'),
-    content: z.string().describe('The full text content for the PDF document.'),
-    filename: z.string().describe('Suggested filename (without extension).')
-  }).optional().describe('Structured data only if the user specifically asks for a document, letter, or PDF.')
+    title: z.string().describe('Judul dokumen untuk PDF.'),
+    content: z.string().describe('Konten teks lengkap untuk isi dokumen PDF.'),
+    filename: z.string().describe('Saran nama file (tanpa ekstensi).')
+  }).optional().describe('Data terstruktur HANYA jika admin meminta pembuatan dokumen, surat, atau PDF.')
 });
 
 export type AdminAssistantOutput = z.infer<typeof AdminAssistantOutputSchema>;
 
 /**
- * Define the prompt with strict instructions.
+ * Registrasi Flow AI Assistant.
  */
-const assistantPrompt = ai.definePrompt({
-  name: 'adminAssistantPrompt',
-  input: { schema: AdminAssistantInputSchema },
-  output: { schema: AdminAssistantOutputSchema },
-  config: {
-    temperature: 0.4,
-  },
-  prompt: `Anda adalah asisten administrasi profesional untuk 'Madrasah Diniyah Ibnu Ahmad'.
-  
-Tugas Anda:
-1. Memberikan informasi administratif dan menjawab pertanyaan seputar sistem sekolah.
-2. Menyusun draf surat resmi, pengumuman, atau berita madrasah.
-3. Gunakan Bahasa Indonesia yang formal dan sopan.
+export async function adminAssistantChat(input: AdminAssistantInput): Promise<AdminAssistantOutput> {
+  return adminAssistantFlow(input);
+}
 
-ATURAN PENTING:
-- Jika pengguna HANYA bertanya atau mengobrol, berikan respon di field 'text' saja. JANGAN mengisi 'generatedPdf'.
-- Jika pengguna meminta "buatkan surat", "buatkan PDF", "draf dokumen", atau kata kunci serupa, Anda HARUS mengisi objek 'generatedPdf' dengan konten dokumen yang lengkap dan rapi.
-- Jangan pernah menawarkan pembuatan gambar karena fitur tersebut sudah ditiadakan.
-
-Riwayat Percakapan:
-{{#each history}}
-{{role}}: {{#each content}}{{{text}}}{{/each}}
-{{/each}}
-
-Pesan Terbaru:
-user: {{{message}}}`
-});
-
-/**
- * Registration of the flow.
- */
-const assistantFlow = ai.defineFlow(
+const adminAssistantFlow = ai.defineFlow(
   {
     name: 'adminAssistantFlow',
     inputSchema: AdminAssistantInputSchema,
@@ -74,28 +47,39 @@ const assistantFlow = ai.defineFlow(
   },
   async (input) => {
     try {
-      const { output } = await assistantPrompt(input, {
+      const response = await ai.generate({
         model: 'googleai/gemini-1.5-flash',
+        output: { schema: AdminAssistantOutputSchema },
+        system: `Anda adalah asisten AI profesional untuk Administrator 'Madrasah Diniyah Ibnu Ahmad'.
+        
+Tugas utama Anda:
+1. Memberikan informasi administratif dan menjawab pertanyaan seputar operasional sekolah.
+2. Menyusun draf surat resmi, pengumuman, atau dokumen madrasah lainnya.
+
+ATURAN PENTING:
+- Jika admin HANYA bertanya atau mengobrol biasa, berikan respon di field 'text' saja. JANGAN menyertakan 'generatedPdf'.
+- HANYA jika admin meminta "buatkan surat", "buatkan PDF", "draf dokumen", atau kata kunci serupa, Anda WAJIB mengisi objek 'generatedPdf' dengan konten yang lengkap dan rapi.
+- Gunakan Bahasa Indonesia yang formal, sopan, dan sesuai kaidah surat menyurat resmi.
+- Dilarang keras membuat atau menawarkan pembuatan gambar. Fokus hanya pada TEKS dan PDF.`,
+        messages: [
+          ...(input.history || []),
+          { role: 'user', content: [{ text: input.message }] }
+        ],
       });
+
+      const output = response.output;
       
       if (!output) {
-        return { text: "Maaf, saya sedang tidak dapat memproses permintaan tersebut." };
+        return { text: "Maaf, sistem sedang mengalami kendala dalam merumuskan jawaban. Mohon coba lagi." };
       }
-      
+
       return output;
-    } catch (error) {
+    } catch (error: any) {
       console.error("AI Assistant Flow Error:", error);
-      // Fallback response to avoid crash
+      // Fallback sederhana jika terjadi kegagalan pada output terstruktur
       return { 
-        text: "Maaf, terjadi kendala komunikasi dengan pusat data AI. Mohon coba lagi dalam beberapa saat." 
+        text: "Mohon maaf, terjadi gangguan koneksi ke pusat data AI. Saya tetap bisa membantu menjawab pertanyaan teks sederhana jika ada kendala pada fitur PDF." 
       };
     }
   }
 );
-
-/**
- * Wrapper for the client component.
- */
-export async function adminAssistantChat(input: AdminAssistantInput): Promise<AdminAssistantOutput> {
-  return assistantFlow(input);
-}
