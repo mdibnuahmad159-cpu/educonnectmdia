@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useSchoolProfile } from "@/context/school-profile-provider";
 import Link from "next/link";
 import { format, parseISO } from "date-fns";
 import { id as dfnsId } from "date-fns/locale";
@@ -85,6 +86,7 @@ export default function ParentDashboardPage() {
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
   const firestore = useFirestore();
   const { activeYear } = useAcademicYear();
+  const { profile } = useSchoolProfile();
 
   useEffect(() => {
     const storedNis = sessionStorage.getItem('studentNis');
@@ -119,7 +121,7 @@ export default function ParentDashboardPage() {
   const { data: allPayments } = useCollection<SPPPayment>(sppQuery);
 
   const sppStats = useMemo(() => {
-    if (!allPayments || !activeYear) return { totalPaid: 0, unpaidMonths: 0 };
+    if (!allPayments || !activeYear) return { totalPaid: 0, unpaidMonths: 0, totalArrears: 0 };
     const [startYear, endYear] = activeYear.split('/').map(Number);
     
     const currentYearPayments = allPayments.filter(p => {
@@ -132,9 +134,12 @@ export default function ParentDashboardPage() {
     const targetMonths = 10;
     const paidCount = currentYearPayments.length;
     const unpaidMonths = Math.max(0, targetMonths - paidCount);
+    
+    const defaultAmount = profile?.defaultSppAmount || 50000;
+    const totalArrears = unpaidMonths * defaultAmount;
 
-    return { totalPaid, unpaidMonths };
-  }, [allPayments, activeYear]);
+    return { totalPaid, unpaidMonths, totalArrears };
+  }, [allPayments, activeYear, profile]);
 
   // Generate QR Code
   useEffect(() => {
@@ -278,7 +283,7 @@ export default function ParentDashboardPage() {
                         "text-[8px] font-bold mt-0.5 uppercase",
                         sppStats.unpaidMonths > 0 ? "text-accent" : "text-green-400"
                     )}>
-                        {sppStats.unpaidMonths > 0 ? `${sppStats.unpaidMonths} Bulan Tunggakan` : 'Lunas Tahunan'}
+                        {sppStats.unpaidMonths > 0 ? `${sppStats.unpaidMonths} Bulan (Rp ${sppStats.totalArrears.toLocaleString()})` : 'Lunas Tahunan'}
                     </p>
                 </CardContent>
             </Card>
