@@ -74,13 +74,13 @@ const STATUS_OPTIONS = ['Hadir', 'Sakit', 'Izin', 'Alpa', 'Belum Diabsen'];
 
 function InfoField({ label, value, icon: Icon }: { label: string; value: string; icon: any }) {
     return (
-        <div className="flex items-center gap-3 py-3 border-b border-muted/60 last:border-0">
-            <div className="p-2 bg-primary/5 rounded-lg text-primary shrink-0">
-                <Icon className="h-3.5 w-3.5" />
+        <div className="flex items-center gap-3 py-2 border-b border-muted/60 last:border-0">
+            <div className="p-1.5 bg-primary/5 rounded-lg text-primary shrink-0">
+                <Icon className="h-3 w-3" />
             </div>
             <div className="flex-1 min-w-0">
-                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-0.5">{label}</p>
-                <p className="text-[11px] font-semibold text-foreground/80 leading-snug">{value || '-'}</p>
+                <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest mb-0.5">{label}</p>
+                <p className="text-[10px] font-semibold text-foreground/80 leading-snug uppercase">{value || '-'}</p>
             </div>
         </div>
     );
@@ -97,7 +97,6 @@ export default function TeacherDashboardPage() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
   
-  // Student Attendance States
   const [selectedClass, setSelectedClass] = useState<string>("");
   const [attendance, setAttendance] = useState<Record<string, string>>({});
   const [isSavingAttendance, setIsSavingAttendance] = useState(false);
@@ -115,7 +114,6 @@ export default function TeacherDashboardPage() {
 
   const { data: teacher, loading: isTeacherLoading, error: teacherError } = useDoc<Teacher>(teacherRef);
 
-  // Generate QR Code
   useEffect(() => {
       if (teacher?.nig) {
           QRCode.toDataURL(teacher.nig, {
@@ -126,7 +124,6 @@ export default function TeacherDashboardPage() {
       }
   }, [teacher]);
 
-  // Today's Self Attendance
   const attendanceQuery = useMemoFirebase(() => {
     if (!firestore || !nig || !todayStr) return null;
     return query(
@@ -137,7 +134,6 @@ export default function TeacherDashboardPage() {
   }, [firestore, nig, todayStr]);
   const { data: selfAttendanceData } = useCollection<TeacherAttendance>(attendanceQuery);
 
-  // Today's Schedules
   const scheduleQuery = useMemoFirebase(() => {
     if (!firestore || !activeYear) return null;
     return query(collection(firestore, "schedules"), where("academicYear", "==", activeYear), where("type", "==", "pelajaran"));
@@ -147,7 +143,6 @@ export default function TeacherDashboardPage() {
   const curriculumQuery = useMemoFirebase(() => firestore ? collection(firestore, "curriculum") : null, [firestore]);
   const { data: curriculum } = useCollection<Curriculum>(curriculumQuery);
 
-  // Logic for Student Attendance Classes (First Hour ONLY)
   const assignedAttendanceClasses = useMemo(() => {
     const classes = new Set<number>();
     if (allSchedules && nig) {
@@ -171,14 +166,12 @@ export default function TeacherDashboardPage() {
     }
   }, [assignedAttendanceClasses, selectedClass]);
 
-  // Fetch Students for selected class
   const studentsQuery = useMemoFirebase(() => {
     if (!firestore || !selectedClass) return null;
     return query(collection(firestore, 'students'), where('kelas', '==', Number(selectedClass)));
   }, [firestore, selectedClass]);
-  const { data: students, loading: loadingStudents } = useCollection<Student>(studentsQuery);
+  const { data: students } = useCollection<Student>(studentsQuery);
 
-  // Fetch current student attendance
   const studentAttendanceQuery = useMemoFirebase(() => {
     if (!firestore || !todayStr || !selectedClass) return null;
     return query(
@@ -187,7 +180,7 @@ export default function TeacherDashboardPage() {
         where('kelas', '==', Number(selectedClass))
     );
   }, [firestore, todayStr, selectedClass]);
-  const { data: currentStudentAttendance, loading: loadingStudentAttendance } = useCollection<StudentAttendance>(studentAttendanceQuery);
+  const { data: currentStudentAttendance } = useCollection<StudentAttendance>(studentAttendanceQuery);
 
   useEffect(() => {
     if (students) {
@@ -215,7 +208,7 @@ export default function TeacherDashboardPage() {
                 myEntries.push({
                     ...entry,
                     classLevel: schedule.classLevel,
-                    subjectName: subject?.subjectName || 'Mata Pelajaran'
+                    subjectName: subject?.subjectName || 'Mapel'
                 });
             }
         });
@@ -247,161 +240,110 @@ export default function TeacherDashboardPage() {
     }));
     try {
         await saveStudentAttendanceBatch(firestore, payload);
-        toast({ title: "Absensi Disimpan", description: `Data kehadiran Kelas ${selectedClass} berhasil diperbarui.` });
+        toast({ title: "Berhasil", description: `Absensi Kelas ${selectedClass} disimpan.` });
     } catch (e) {
-        toast({ variant: "destructive", title: "Gagal Menyimpan" });
+        toast({ variant: "destructive", title: "Gagal" });
     } finally {
         setIsSavingAttendance(false);
     }
   };
 
-  const isLoading = isUserLoading || isTeacherLoading || !nig;
-
-  if (isLoading) {
-    return (
-      <div className="flex h-[60vh] w-full items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (teacherError || !teacher) {
-    return (
-      <div className="p-4">
-        <Card className="border-destructive/20 bg-destructive/5">
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-destructive">
-                    <AlertTriangle className="h-5 w-5" /> Data Tidak Ditemukan
-                </CardTitle>
-                <CardDescription>Maaf, data profil guru Anda tidak ditemukan.</CardDescription>
-            </CardHeader>
-        </Card>
-      </div>
-    );
+  if (isUserLoading || isTeacherLoading || !nig) {
+    return <div className="flex h-[60vh] w-full items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
   }
 
   return (
-    <div className="space-y-4 pb-10">
-        {/* Profile Card */}
-        <Card className="border-none shadow-sm bg-primary text-primary-foreground overflow-hidden">
-            <CardContent className="p-5 flex items-center gap-4">
-                <Avatar className="h-16 w-16 border-2 border-white/20 shadow-lg">
+    <div className="space-y-3 pb-8">
+        {/* Profile Card (Compact) */}
+        <Card className="border-none shadow-sm bg-primary text-primary-foreground">
+            <CardContent className="p-3 flex items-center gap-3">
+                <Avatar className="h-12 w-12 border border-white/20">
                     <AvatarImage src={teacher.avatarUrl} className="object-cover" />
-                    <AvatarFallback className="bg-white/10 text-xl">{teacher.name.charAt(0)}</AvatarFallback>
+                    <AvatarFallback className="bg-white/10 text-lg">{teacher.name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-start">
-                        <div className="min-w-0 pr-2">
-                            <h2 className="text-lg font-bold truncate leading-tight uppercase">{teacher.name}</h2>
-                            <p className="text-xs opacity-90 font-medium truncate">{teacher.jabatan || 'Guru Madrasah'}</p>
+                    <div className="flex justify-between items-center">
+                        <div className="min-w-0 pr-1">
+                            <h2 className="text-sm font-bold truncate leading-tight uppercase">{teacher.name}</h2>
+                            <p className="text-[10px] opacity-70 truncate">{teacher.jabatan || 'Guru'}</p>
                         </div>
-                        <div className="flex flex-col gap-2 shrink-0">
-                            <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="h-8 gap-2 border border-white/20 text-white hover:bg-white/10"
-                                onClick={() => setIsProfileOpen(true)}
-                            >
-                                <UserCircle className="h-4 w-4" /> Detail Profil
-                            </Button>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-2 mt-1">
-                        <span className="text-[9px] font-bold bg-white/20 px-2 py-0.5 rounded uppercase tracking-tighter">NIG: {teacher.nig}</span>
+                        <Button 
+                            variant="ghost" 
+                            size="xs" 
+                            className="text-white/80 h-6 px-1.5 gap-1 text-[8px] uppercase font-bold border border-white/20"
+                            onClick={() => setIsProfileOpen(true)}
+                        >
+                            Detail
+                        </Button>
                     </div>
                 </div>
             </CardContent>
         </Card>
 
-        {/* Self Attendance Status */}
-        <Card className="border-none shadow-sm">
-            <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0">
-                <CardTitle className="text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                    <Calendar className="h-3.5 w-3.5" /> Kehadiran Saya
-                </CardTitle>
-                <Link href="/teacher/attendance-history">
-                    <Button variant="ghost" size="xs" className="h-7 gap-1 text-[10px] font-bold text-primary hover:bg-primary/5 uppercase">
-                        Lihat Riwayat <ArrowRightCircle className="h-3 w-3" />
-                    </Button>
-                </Link>
-            </CardHeader>
-            <CardContent className="p-4 pt-0">
-                <div className={cn(
-                    "flex items-center justify-between p-3 rounded-lg border transition-all",
-                    displayStatus === 'Hadir' ? "bg-green-50/50 border-green-100" : 
-                    displayStatus === 'Tidak Ada Jadwal' || displayStatus === "Libur Jum'at" || displayStatus === "Libur" ? "bg-muted/30 border-muted/50 text-muted-foreground" :
-                    displayStatus !== 'Belum Diabsen' ? "bg-orange-50/50 border-orange-100 text-orange-700" : "bg-muted/30 border-muted/50"
-                )}>
-                    <div className="flex items-center gap-3">
-                        {displayStatus === 'Hadir' ? (
-                            <CheckCircle2 className="h-5 w-5 text-green-600" />
-                        ) : displayStatus === 'Tidak Ada Jadwal' || displayStatus === "Libur Jum'at" || displayStatus === "Libur" ? (
-                            <Coffee className="h-5 w-5 opacity-40" />
-                        ) : displayStatus !== 'Belum Diabsen' ? (
-                            <Info className="h-5 w-5 text-orange-600" />
-                        ) : (
-                            <Clock className="h-5 w-5 opacity-40" />
-                        )}
-                        <div>
-                            <p className="text-xs font-bold">{displayStatus}</p>
-                            <p className="text-[10px] opacity-70">{format(new Date(), "EEEE, d MMMM yyyy", { locale: dfnsId })}</p>
-                        </div>
-                    </div>
-                </div>
-            </CardContent>
-        </Card>
-
-        {/* Teaching Schedule Today */}
-        <Card className="border-none shadow-sm overflow-hidden">
-            <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0">
-                <CardTitle className="text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                    <Clock className="h-3.5 w-3.5" /> Jadwal Mengajar
-                </CardTitle>
-                <Link href="/teacher/schedule">
-                    <Button variant="ghost" size="xs" className="h-7 gap-1 text-[10px] font-bold text-primary hover:bg-primary/5 uppercase">
-                        Lihat Semua <ArrowRightCircle className="h-3 w-3" />
-                    </Button>
-                </Link>
-            </CardHeader>
-            <CardContent className="p-4 pt-0">
-                {isScheduleLoading ? (
-                    <div className="flex justify-center py-4"><Loader2 className="h-4 w-4 animate-spin opacity-20" /></div>
-                ) : teachingScheduleToday.length > 0 ? (
-                    <div className="space-y-3 mt-2">
-                        {teachingScheduleToday.map((entry, idx) => (
-                            <div key={idx} className="flex items-start gap-3 relative pl-4 border-l-2 border-primary/20 last:border-l-0">
-                                <div className="absolute -left-1.5 top-1 w-2.5 h-2.5 rounded-full bg-primary" />
-                                <div className="flex-1">
-                                    <div className="flex justify-between items-center">
-                                        <p className="text-[11px] font-bold text-primary uppercase">{entry.subjectName}</p>
-                                        <span className="text-[9px] font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{entry.startTime} - {entry.endTime}</span>
-                                    </div>
-                                    <p className="text-[10px] text-muted-foreground mt-0.5">Kelas {entry.classLevel}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <div className="py-6 text-center text-muted-foreground bg-muted/10 rounded-lg border border-dashed mt-2">
-                        <p className="text-[10px]">Tidak ada jadwal mengajar hari ini.</p>
-                    </div>
-                )}
-            </CardContent>
-        </Card>
-
-        {/* Student Attendance Section */}
-        <Card className="border-none shadow-sm overflow-hidden">
-            <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0">
-                <div>
-                    <CardTitle className="text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                        <UserCheck className="h-3.5 w-3.5" /> Absensi Santri (Jam Ke-1)
+        {/* Self Status & Schedule (Row) */}
+        <div className="grid grid-cols-1 gap-3">
+            <Card className="border-none shadow-sm">
+                <CardHeader className="p-3 pb-1.5 flex flex-row items-center justify-between space-y-0">
+                    <CardTitle className="text-[10px] uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+                        <Calendar className="h-3 w-3" /> Kehadiran
                     </CardTitle>
-                    <CardDescription className="text-[9px]">Input kehadiran santri oleh pengajar jam pertama.</CardDescription>
-                </div>
+                    <Link href="/teacher/attendance-history">
+                        <Button variant="ghost" size="xs" className="h-5 px-1 text-[8px] font-bold text-primary uppercase">Riwayat</Button>
+                    </Link>
+                </CardHeader>
+                <CardContent className="px-3 pb-3">
+                    <div className={cn(
+                        "flex items-center justify-between p-2 rounded-lg border",
+                        displayStatus === 'Hadir' ? "bg-green-50/50 border-green-100" : "bg-muted/30 border-muted/50"
+                    )}>
+                        <div className="flex items-center gap-2">
+                            {displayStatus === 'Hadir' ? <CheckCircle2 className="h-4 w-4 text-green-600" /> : <Clock className="h-4 w-4 opacity-40" />}
+                            <div>
+                                <p className="text-[11px] font-bold">{displayStatus}</p>
+                                <p className="text-[9px] opacity-60">{format(new Date(), "d MMM yyyy", { locale: dfnsId })}</p>
+                            </div>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <Card className="border-none shadow-sm">
+                <CardHeader className="p-3 pb-1.5 flex flex-row items-center justify-between space-y-0">
+                    <CardTitle className="text-[10px] uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+                        <Clock className="h-3 w-3" /> Jadwal
+                    </CardTitle>
+                    <Link href="/teacher/schedule">
+                        <Button variant="ghost" size="xs" className="h-5 px-1 text-[8px] font-bold text-primary uppercase">Semua</Button>
+                    </Link>
+                </CardHeader>
+                <CardContent className="px-3 pb-3">
+                    {teachingScheduleToday.length > 0 ? (
+                        <div className="space-y-2">
+                            {teachingScheduleToday.map((entry, idx) => (
+                                <div key={idx} className="flex items-center justify-between text-[10px] bg-muted/20 p-2 rounded-md">
+                                    <div className="font-bold text-primary truncate max-w-[120px] uppercase">{entry.subjectName}</div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="bg-primary/10 text-primary px-1.5 rounded-sm font-bold">Kls {entry.classLevel}</span>
+                                        <span className="font-mono text-muted-foreground">{entry.startTime}</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : <p className="text-[10px] text-muted-foreground italic text-center py-2">Tidak ada jadwal hari ini.</p>}
+                </CardContent>
+            </Card>
+        </div>
+
+        {/* Student Attendance (Compact) */}
+        <Card className="border-none shadow-sm overflow-hidden">
+            <CardHeader className="p-3 pb-1.5 flex flex-row items-center justify-between space-y-0">
+                <CardTitle className="text-[10px] uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+                    <UserCheck className="h-3 w-3" /> Absensi Santri (Jam 1)
+                </CardTitle>
                 {assignedAttendanceClasses.length > 0 && (
                     <Select value={selectedClass} onValueChange={setSelectedClass}>
-                        <SelectTrigger className="h-7 w-[90px] text-[10px] font-bold uppercase">
-                            <SelectValue placeholder="Kelas" />
+                        <SelectTrigger className="h-6 w-20 text-[9px] font-bold uppercase">
+                            <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                             {assignedAttendanceClasses.map(cl => <SelectItem key={cl} value={String(cl)} className="text-[10px]">Kelas {cl}</SelectItem>)}
@@ -410,126 +352,60 @@ export default function TeacherDashboardPage() {
                 )}
             </CardHeader>
             <CardContent className="p-0">
-                {isFriday ? (
-                    <div className="py-10 text-center text-blue-600 bg-blue-50/50 flex flex-col items-center gap-2">
-                        <Coffee className="h-6 w-6 opacity-30" />
-                        <p className="text-[10px] font-bold uppercase tracking-wider">Libur Jum'at</p>
+                {students && students.length > 0 && !isFriday ? (
+                    <div className="divide-y max-h-[200px] overflow-y-auto">
+                        {students.sort((a,b) => a.name.localeCompare(b.name)).map(s => (
+                            <div key={s.id} className="flex items-center justify-between px-3 py-1.5 hover:bg-muted/10">
+                                <span className="text-[10px] font-bold uppercase truncate max-w-[150px]">{s.name}</span>
+                                <Select value={attendance[s.id]} onValueChange={(v) => setAttendance(prev => ({...prev, [s.id]: v}))}>
+                                    <SelectTrigger className={cn(
+                                        "h-6 w-24 text-[8px] font-bold uppercase",
+                                        attendance[s.id] === 'Hadir' ? "text-green-600" : attendance[s.id] === 'Alpa' ? "text-red-600" : ""
+                                    )}>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {STATUS_OPTIONS.map(opt => <SelectItem key={opt} value={opt} className="text-[10px]">{opt}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        ))}
                     </div>
-                ) : assignedAttendanceClasses.length === 0 && !isScheduleLoading ? (
-                    <div className="py-10 text-center text-muted-foreground/60 flex flex-col items-center gap-2 px-6">
-                        <Info className="h-6 w-6 opacity-20" />
-                        <p className="text-[10px] font-medium leading-relaxed italic">Anda tidak memiliki jadwal mengajar di jam pertama hari ini.</p>
-                    </div>
-                ) : students && students.length > 0 ? (
-                    <div className="divide-y max-h-[300px] overflow-y-auto">
-                        <Table>
-                            <TableBody>
-                                {students.sort((a,b) => a.name.localeCompare(b.name)).map(s => (
-                                    <TableRow key={s.id} className="h-12 hover:bg-muted/10">
-                                        <TableCell className="py-2 pl-4">
-                                            <p className="text-[11px] font-bold uppercase truncate max-w-[140px]">{s.name}</p>
-                                        </TableCell>
-                                        <TableCell className="py-2 pr-4 text-right">
-                                            <Select value={attendance[s.id]} onValueChange={(v) => setAttendance(prev => ({...prev, [s.id]: v}))}>
-                                                <SelectTrigger className={cn(
-                                                    "h-7 w-28 text-[9px] font-bold uppercase",
-                                                    attendance[s.id] === 'Hadir' ? "text-green-600" : 
-                                                    attendance[s.id] === 'Alpa' ? "text-red-600" : "text-muted-foreground"
-                                                )}>
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {STATUS_OPTIONS.map(opt => <SelectItem key={opt} value={opt} className="text-[10px]">{opt}</SelectItem>)}
-                                                </SelectContent>
-                                            </Select>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-                ) : (
-                    <div className="py-10 text-center flex justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary/30" /></div>
-                )}
+                ) : <div className="py-10 text-center text-[10px] text-muted-foreground italic px-4">Bukan jam pertama atau hari libur.</div>}
             </CardContent>
             {assignedAttendanceClasses.length > 0 && !isFriday && (
-                <CardFooter className="p-3 border-t bg-muted/5">
-                    <Button 
-                        size="sm" 
-                        className="w-full h-9 gap-2 font-bold uppercase text-[10px]" 
-                        onClick={handleSaveStudentAttendance}
-                        disabled={isSavingAttendance}
-                    >
-                        {isSavingAttendance ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-                        Simpan Absensi Kelas {selectedClass}
+                <CardFooter className="p-2 border-t">
+                    <Button size="sm" className="w-full h-8 text-[9px] font-bold uppercase" onClick={handleSaveStudentAttendance} disabled={isSavingAttendance}>
+                        {isSavingAttendance ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3 mr-1.5" />} Simpan
                     </Button>
                 </CardFooter>
             )}
         </Card>
 
-        {/* Detail Modal */}
+        {/* Profile Dialog (Compact) */}
         <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
-            <DialogContent className="sm:max-w-md p-0 overflow-hidden rounded-[32px] border-none shadow-2xl">
-                <div className="flex flex-col bg-card">
-                    <div className="bg-primary/5 p-6 pt-8 flex flex-col items-center text-center relative">
-                        <DialogHeader className="sr-only">
-                            <DialogTitle>Detail Profil Saya</DialogTitle>
-                        </DialogHeader>
-                        
-                        <div className="relative mb-4">
-                            <Avatar className="h-24 w-24 border-4 border-white shadow-xl scale-110">
-                                <AvatarImage src={teacher.avatarUrl} className="object-cover" />
-                                <AvatarFallback className="bg-primary/5 text-primary text-3xl font-bold">{teacher.name.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                        </div>
-
-                        <div className="space-y-1 mt-2">
-                            <h3 className="text-lg font-bold leading-tight uppercase text-primary tracking-tight">{teacher.name}</h3>
-                            <p className="text-xs font-semibold text-muted-foreground/80 tracking-wide">{teacher.jabatan || 'Guru Madrasah'}</p>
-                        </div>
-                        
-                        <div className="flex items-center gap-2 mt-4">
-                            <span className="text-[10px] font-bold bg-primary text-white px-4 py-1.5 rounded-full uppercase tracking-[0.1em] shadow-md shadow-primary/20">
-                                NIG: {teacher.nig}
-                            </span>
-                        </div>
+            <DialogContent className="sm:max-w-xs p-0 overflow-hidden rounded-[24px]">
+                <div className="bg-primary/5 p-4 flex flex-col items-center text-center">
+                    <Avatar className="h-16 w-16 border-2 border-white mb-2">
+                        <AvatarImage src={teacher.avatarUrl} className="object-cover" />
+                        <AvatarFallback>{teacher.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <h3 className="text-sm font-bold uppercase text-primary leading-tight">{teacher.name}</h3>
+                    <p className="text-[10px] opacity-60">NIG: {teacher.nig}</p>
+                </div>
+                <ScrollArea className="h-[250px] px-4">
+                    <div className="py-2">
+                        <InfoField label="NIK" value={teacher.nik || ""} icon={Fingerprint} />
+                        <InfoField label="WhatsApp" value={teacher.noWa || ""} icon={Phone} />
+                        <InfoField label="Alamat" value={teacher.alamat || ""} icon={MapPin} />
                     </div>
-
-                    <div className="px-6 py-2">
-                        <ScrollArea className="h-[350px] pr-2">
-                            <div className="py-2">
-                                <InfoField label="NIK (Nomor Induk Kependudukan)" value={teacher.nik || ""} icon={Fingerprint} />
-                                <InfoField label="Alamat Email" value={teacher.email || ""} icon={Mail} />
-                                <InfoField label="Nomor WhatsApp" value={teacher.noWa || ""} icon={Phone} />
-                                <InfoField label="Pendidikan Terakhir" value={teacher.pendidikan || ""} icon={GraduationCap} />
-                                <InfoField label="Latar Belakang Pondok" value={teacher.ponpes || ""} icon={BookOpen} />
-                                <InfoField label="Alamat Domisili" value={teacher.alamat || ""} icon={MapPin} />
-                            </div>
-
-                            <div className="mt-4 mb-6 p-5 rounded-[24px] bg-muted/20 border-2 border-dashed border-muted flex flex-col items-center gap-3">
-                                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">ID Barcode Absensi</p>
-                                {qrDataUrl ? (
-                                    <img src={qrDataUrl} alt="QR Code" className="w-40 h-40" />
-                                ) : (
-                                    <div className="w-40 h-40 flex items-center justify-center">
-                                        <Loader2 className="h-6 w-6 animate-spin text-primary/20" />
-                                    </div>
-                                )}
-                                <span className="text-[10px] font-mono font-bold text-primary/40 tracking-tighter">{teacher.nig}</span>
-                            </div>
-                        </ScrollArea>
-                    </div>
-
-                    <DialogFooter className="bg-muted/30 p-4 px-6 border-t flex flex-row items-center justify-center">
-                        <Button 
-                            type="button"
-                            variant="secondary"
-                            className="rounded-full px-10 h-10 text-[10px] font-bold uppercase tracking-widest bg-white shadow-sm"
-                            onClick={() => setIsProfileOpen(false)}
-                        >
-                            <X className="h-3.5 w-3.5 mr-2" /> Tutup Profil
-                        </Button>
-                    </DialogFooter>
+                    {qrDataUrl && <div className="p-3 bg-muted/20 rounded-xl flex flex-col items-center gap-1 my-3">
+                        <img src={qrDataUrl} alt="QR" className="w-24 h-24" />
+                        <span className="text-[8px] font-mono opacity-40">{teacher.nig}</span>
+                    </div>}
+                </ScrollArea>
+                <div className="p-3 border-t bg-muted/30">
+                    <Button variant="outline" className="w-full h-8 text-[10px] uppercase font-bold" onClick={() => setIsProfileOpen(false)}>Tutup</Button>
                 </div>
             </DialogContent>
         </Dialog>

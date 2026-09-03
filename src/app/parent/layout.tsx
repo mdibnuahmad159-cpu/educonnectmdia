@@ -45,7 +45,6 @@ export default function ParentLayout({ children }: { children: ReactNode }) {
     setIsClient(true);
   }, []);
 
-  // Ambil semua pengumuman untuk cek notifikasi
   const announcementsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(
@@ -57,7 +56,6 @@ export default function ParentLayout({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (allAnnouncements && allAnnouncements.length > 0) {
-      // Filter untuk wali
       const parentAnnouncements = allAnnouncements.filter(a => a.target === 'Semua' || a.target === 'Wali Murid');
       
       if (parentAnnouncements.length > 0) {
@@ -129,77 +127,77 @@ export default function ParentLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex flex-col min-h-screen bg-background overflow-x-hidden">
-      <header className="sticky top-0 z-50 w-full bg-primary text-primary-foreground shadow-lg">
+      <header className="sticky top-0 z-50 w-full bg-primary text-primary-foreground shadow-md">
         <div className="flex flex-col w-full">
-          <div className="flex h-14 items-center justify-between gap-4 px-4 border-b border-white/5">
+          <div className="flex h-12 items-center justify-between gap-4 px-4 border-b border-white/5">
             <div className="flex-1 flex justify-start">
-              <div className="flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 bg-white/10 rounded-full border border-white/10 text-white">
-                  <Calendar className="h-3 w-3 opacity-80" />
+              <div className="flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 bg-white/10 rounded-full border border-white/10 text-white">
+                  <Calendar className="h-2.5 w-2.5 opacity-80" />
                   <span>{activeYear}</span>
               </div>
             </div>
             
             <div className="flex-none text-center">
-                <h1 className="text-[10px] font-bold font-headline uppercase tracking-widest text-white/60">
+                <h1 className="text-[9px] font-bold font-headline uppercase tracking-widest text-white/50">
                     {profile?.namaMadrasah || 'EduConnect'}
                 </h1>
             </div>
 
             <div className="flex-1 flex justify-end">
-                <div className="h-9 w-9 rounded-full overflow-hidden border-2 border-white/30 flex items-center justify-center bg-white shadow-sm">
+                <div className="h-8 w-8 rounded-full overflow-hidden border border-white/30 flex items-center justify-center bg-white shadow-sm">
                   {profile?.logoMadrasahUrl ? (
                     <Image 
                       src={profile.logoMadrasahUrl} 
                       alt="Madrasah" 
-                      width={36} 
-                      height={36} 
+                      width={32} 
+                      height={32} 
                       className="h-full w-full object-contain"
                     />
                   ) : (
-                    <BookOpenCheck className="h-5 w-5 text-primary" />
+                    <BookOpenCheck className="h-4 w-4 text-primary" />
                   )}
                 </div>
             </div>
           </div>
 
-          <div className="px-4 py-2 flex items-center justify-between min-h-[48px]">
-              <div className="w-12 flex justify-start items-center gap-1">
+          <div className="px-3 py-1 flex items-center justify-between min-h-[40px]">
+              <div className="w-10 flex justify-start items-center gap-1">
                   {!isDashboard ? (
                     <button 
                       onClick={() => router.back()}
-                      className="p-1.5 text-accent hover:bg-white/10 rounded-full transition-colors active:scale-90"
+                      className="p-1 text-accent hover:bg-white/10 rounded-full transition-colors active:scale-90"
                       aria-label="Kembali"
                     >
-                      <ChevronLeft className="h-5 w-5" />
+                      <ChevronLeft className="h-4 w-4" />
                     </button>
                   ) : (
-                    <Link href="/parent/announcements" className="relative p-1.5 text-accent hover:bg-white/10 rounded-full transition-all active:scale-90">
-                      <Bell className="h-5 w-5" />
+                    <Link href="/parent/announcements" className="relative p-1 text-accent hover:bg-white/10 rounded-full transition-all active:scale-90">
+                      <Bell className="h-4 w-4" />
                       {hasNewAnnouncement && (
-                        <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-destructive rounded-full border border-primary animate-pulse" />
+                        <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-destructive rounded-full border border-primary animate-pulse" />
                       )}
                     </Link>
                   )}
               </div>
               
-              <h2 className="text-[10px] font-bold font-headline uppercase tracking-[0.25em] leading-none text-center text-accent flex-1">
+              <h2 className="text-[9px] font-bold font-headline uppercase tracking-[0.2em] leading-none text-center text-accent flex-1">
                   {currentPage.title}
               </h2>
 
-              <div className="w-12 flex justify-end">
+              <div className="w-10 flex justify-end">
                   <button 
                     onClick={handleLogout}
-                    className="p-1.5 text-white/40 hover:text-destructive-foreground hover:bg-destructive rounded-full transition-all active:scale-90"
+                    className="p-1 text-white/40 hover:text-destructive-foreground hover:bg-destructive rounded-full transition-all active:scale-90"
                     title="Log Out"
                   >
-                    <LogOut className="h-5 w-5" />
+                    <LogOut className="h-4 w-4" />
                   </button>
               </div>
           </div>
         </div>
       </header>
 
-      <main className="flex-1 p-3 pb-24 sm:px-6 relative z-10">
+      <main className="flex-1 p-2 pb-20 sm:px-4 relative z-10">
           {children}
       </main>
       

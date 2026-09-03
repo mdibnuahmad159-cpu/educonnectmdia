@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useMemo, useState } from "react";
@@ -54,7 +53,6 @@ export default function DashboardPage() {
   const { data: savings, loading: loadingSavings } = useCollection<SavingsTransaction>(savingsCollection);
   const { data: spp, loading: loadingSpp } = useCollection<SPPPayment>(sppCollection);
 
-  // For Holiday logic
   const schedulesQuery = useMemoFirebase(() => {
     if (!firestore || !activeYear) return null;
     return query(collection(firestore, 'schedules'), where('academicYear', '==', activeYear), where('type', '==', 'pelajaran'));
@@ -129,14 +127,13 @@ export default function DashboardPage() {
 
   if (hasPermissionError) {
       return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                    <AlertTriangle className="text-destructive" />
-                    Akses Ditolak
+        <Card className="m-2">
+            <CardHeader className="p-3">
+                <CardTitle className="flex items-center gap-2 text-sm">
+                    <AlertTriangle className="h-4 w-4 text-destructive" /> Akses Ditolak
                 </CardTitle>
-                <CardDescription>
-                    Anda tidak memiliki izin untuk melihat data dasbor. Silakan coba login kembali sebagai admin.
+                <CardDescription className="text-[10px]">
+                    Anda tidak memiliki izin untuk melihat data dasbor.
                 </CardDescription>
             </CardHeader>
         </Card>
@@ -144,81 +141,76 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="grid gap-4">
+    <div className="grid gap-3">
         <div className="grid gap-2 grid-cols-2 lg:grid-cols-4">
             <Card className="bg-primary text-primary-foreground border-none shadow-sm">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-4">
-                <CardTitle className="text-[10px] font-bold uppercase tracking-tight text-primary-foreground/70">Total Guru</CardTitle>
-                <Users className="h-3.5 w-3.5 text-primary-foreground/40" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-3 pt-3">
+                <CardTitle className="text-[9px] font-bold uppercase tracking-tight text-primary-foreground/70">Total Guru</CardTitle>
+                <Users className="h-3 w-3 text-primary-foreground/40" />
                 </CardHeader>
-                <CardContent className="px-4 pb-4">
-                <div className="text-lg font-bold text-white">
-                    {loadingTeachers ? <Loader2 className="h-4 w-4 animate-spin" /> : teachers?.length ?? 0}
+                <CardContent className="px-3 pb-3">
+                <div className="text-base font-bold text-white leading-none">
+                    {loadingTeachers ? <Loader2 className="h-3 w-3 animate-spin" /> : teachers?.length ?? 0}
                 </div>
-                <p className="text-[9px] text-primary-foreground/50">Guru terdaftar</p>
                 </CardContent>
             </Card>
             <Card className="bg-primary text-primary-foreground border-none shadow-sm">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-4">
-                <CardTitle className="text-[10px] font-bold uppercase tracking-tight text-primary-foreground/70">Total Siswa</CardTitle>
-                <User className="h-3.5 w-3.5 text-primary-foreground/40" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-3 pt-3">
+                <CardTitle className="text-[9px] font-bold uppercase tracking-tight text-primary-foreground/70">Total Siswa</CardTitle>
+                <User className="h-3 w-3 text-primary-foreground/40" />
                 </CardHeader>
-                <CardContent className="px-4 pb-4">
-                <div className="text-lg font-bold text-white">
-                    {loadingStudents ? <Loader2 className="h-4 w-4 animate-spin" /> : students?.length ?? 0}
+                <CardContent className="px-3 pb-3">
+                <div className="text-base font-bold text-white leading-none">
+                    {loadingStudents ? <Loader2 className="h-3 w-3 animate-spin" /> : students?.length ?? 0}
                 </div>
-                <p className="text-[9px] text-primary-foreground/50">Siswa aktif</p>
                 </CardContent>
             </Card>
             <Card className="bg-primary text-primary-foreground border-none shadow-sm">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-4">
-                <CardTitle className="text-[10px] font-bold uppercase tracking-tight text-primary-foreground/70">Total Tabungan</CardTitle>
-                <PiggyBank className="h-3.5 w-3.5 text-primary-foreground/40" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-3 pt-3">
+                <CardTitle className="text-[9px] font-bold uppercase tracking-tight text-primary-foreground/70">Tabungan</CardTitle>
+                <PiggyBank className="h-3 w-3 text-primary-foreground/40" />
                 </CardHeader>
-                <CardContent className="px-4 pb-4">
-                <div className="text-lg font-bold text-white">
-                    {loadingSavings ? <Loader2 className="h-4 w-4 animate-spin" /> : `Rp ${totalSavingsBalance.toLocaleString()}`}
+                <CardContent className="px-3 pb-3">
+                <div className="text-base font-bold text-white leading-none truncate">
+                    {loadingSavings ? <Loader2 className="h-3 w-3 animate-spin" /> : `Rp ${totalSavingsBalance.toLocaleString()}`}
                 </div>
-                <p className="text-[9px] text-primary-foreground/50">Saldo seluruh penabung</p>
                 </CardContent>
             </Card>
             <Card className="bg-primary text-primary-foreground border-none shadow-sm">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 pt-4">
-                <CardTitle className="text-[10px] font-bold uppercase tracking-tight text-primary-foreground/70">Total SPP Masuk</CardTitle>
-                <ReceiptText className="h-3.5 w-3.5 text-primary-foreground/40" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-3 pt-3">
+                <CardTitle className="text-[9px] font-bold uppercase tracking-tight text-primary-foreground/70">SPP Masuk</CardTitle>
+                <ReceiptText className="h-3 w-3 text-primary-foreground/40" />
                 </CardHeader>
-                <CardContent className="px-4 pb-4">
-                <div className="text-lg font-bold text-white">
-                    {loadingSpp ? <Loader2 className="h-4 w-4 animate-spin" /> : `Rp ${totalSppIncome.toLocaleString()}`}
+                <CardContent className="px-3 pb-3">
+                <div className="text-base font-bold text-white leading-none truncate">
+                    {loadingSpp ? <Loader2 className="h-3 w-3 animate-spin" /> : `Rp ${totalSppIncome.toLocaleString()}`}
                 </div>
-                <p className="text-[9px] text-primary-foreground/50">Akumulasi iuran bulanan</p>
                 </CardContent>
             </Card>
       </div>
 
-      <Card className="border-none shadow-sm p-4">
-          <div className="flex flex-col gap-4">
+      <Card className="border-none shadow-sm p-3">
+          <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center">
                   <div>
-                      <h3 className="text-sm font-bold uppercase tracking-tight text-primary">Monitoring Madrasah</h3>
-                      <p className="text-[10px] text-muted-foreground">Atur hari libur atau pantau kehadiran harian.</p>
+                      <h3 className="text-[11px] font-bold uppercase tracking-tight text-primary">Monitoring</h3>
                   </div>
                   <Button 
                     variant="outline" 
-                    size="sm" 
+                    size="xs" 
                     className={cn(
-                        "h-8 gap-2 border-primary/20 transition-all",
+                        "h-7 gap-1.5 border-primary/20 transition-all text-[9px] font-bold",
                         isHoliday ? "text-destructive border-destructive/20 hover:bg-destructive/5" : "text-primary hover:bg-primary/5"
                     )} 
                     onClick={handleToggleHoliday}
                     disabled={isProcessingHoliday || isFriday}
                   >
                       {isProcessingHoliday ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <Loader2 className="h-3 w-3 animate-spin" />
                       ) : isHoliday ? (
-                          <><X className="h-4 w-4" /> Batalkan Libur</>
+                          <><X className="h-3 w-3" /> Aktifkan</>
                       ) : (
-                          <><Umbrella className="h-4 w-4" /> Liburkan Madrasah</>
+                          <><Umbrella className="h-3 w-3" /> Liburkan</>
                       )}
                   </Button>
               </div>
@@ -229,25 +221,25 @@ export default function DashboardPage() {
           </div>
       </Card>
 
-      <div className="mt-2">
+      <div className="mt-1">
         <Tabs defaultValue="guru" className="w-full">
-            <div className="bg-muted/40 rounded-t-[24px] flex overflow-hidden">
+            <div className="bg-muted/40 rounded-t-2xl flex overflow-hidden">
                 <TabsList className="bg-transparent h-auto p-0 gap-0 w-full flex">
                     <TabsTrigger 
                         value="guru"
-                        className="flex-1 rounded-t-[24px] rounded-b-none py-4 data-[state=active]:bg-card data-[state=active]:shadow-none bg-transparent text-[11px] font-bold uppercase tracking-widest text-muted-foreground data-[state=active]:text-primary transition-all"
+                        className="flex-1 rounded-t-2xl rounded-b-none py-2 data-[state=active]:bg-card data-[state=active]:shadow-none bg-transparent text-[10px] font-bold uppercase tracking-wider text-muted-foreground data-[state=active]:text-primary transition-all"
                     >
-                        Absensi Guru
+                        Guru
                     </TabsTrigger>
                     <TabsTrigger 
                         value="siswa"
-                        className="flex-1 rounded-t-[24px] rounded-b-none py-4 data-[state=active]:bg-card data-[state=active]:shadow-none bg-transparent text-[11px] font-bold uppercase tracking-widest text-muted-foreground data-[state=active]:text-primary transition-all"
+                        className="flex-1 rounded-t-2xl rounded-b-none py-2 data-[state=active]:bg-card data-[state=active]:shadow-none bg-transparent text-[10px] font-bold uppercase tracking-wider text-muted-foreground data-[state=active]:text-primary transition-all"
                     >
-                        Absensi Siswa
+                        Siswa
                     </TabsTrigger>
                 </TabsList>
             </div>
-            <div className="bg-card rounded-b-[24px] border-x border-b shadow-sm overflow-hidden min-h-[400px]">
+            <div className="bg-card rounded-b-2xl border-x border-b shadow-sm overflow-hidden min-h-[300px]">
                 <TabsContent value="guru" className="m-0 p-0 border-none outline-none">
                     <TeacherAttendanceCard selectedDate={selectedDate} />
                 </TabsContent>
