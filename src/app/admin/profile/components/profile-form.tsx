@@ -1,11 +1,9 @@
-
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -20,7 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { SchoolProfile } from "@/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ImageIcon, Loader2, Calendar } from "lucide-react";
+import { ImageIcon, Calendar } from "lucide-react";
 import { AcademicYearSelector } from "@/components/shared/academic-year-selector";
 
 const formSchema = z.object({
@@ -98,21 +96,30 @@ export function ProfileForm({ profile, onSave }: ProfileFormProps) {
     reader.readAsDataURL(file);
   };
 
-  const onSubmit = (values: ProfileFormData) => {
+  const onSubmit = useCallback((values: ProfileFormData) => {
     const { logoYayasanFile, logoMadrasahFile, kopSuratFile, ...dataToSave } = values;
     onSave(dataToSave);
-  };
+  }, [onSave]);
+
+  // Listen for global save-profile event from layout header
+  useEffect(() => {
+    const handleGlobalSave = () => {
+      form.handleSubmit(onSubmit)();
+    };
+    window.addEventListener('save-profile', handleGlobalSave);
+    return () => window.removeEventListener('save-profile', handleGlobalSave);
+  }, [form, onSubmit]);
   
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        <ScrollArea className="h-[calc(100vh-20rem)] pr-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <ScrollArea className="h-[calc(100vh-14rem)] pr-4">
             <div className="space-y-6 pb-10">
                 <div className="grid gap-4 sm:grid-cols-2">
-                    <FormField control={form.control} name="namaYayasan" render={({ field }) => ( <FormItem> <FormLabel>Nama Yayasan</FormLabel> <FormControl><Input {...field} value={field.value ?? ""} /></FormControl> <FormMessage /> </FormItem> )}/>
-                    <FormField control={form.control} name="namaMadrasah" render={({ field }) => ( <FormItem> <FormLabel>Nama Madrasah</FormLabel> <FormControl><Input {...field} value={field.value ?? ""} /></FormControl> <FormMessage /> </FormItem> )}/>
+                    <FormField control={form.control} name="namaYayasan" render={({ field }) => ( <FormItem> <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Nama Yayasan</FormLabel> <FormControl><Input {...field} value={field.value ?? ""} className="bg-white" /></FormControl> <FormMessage /> </FormItem> )}/>
+                    <FormField control={form.control} name="namaMadrasah" render={({ field }) => ( <FormItem> <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Nama Madrasah</FormLabel> <FormControl><Input {...field} value={field.value ?? ""} className="bg-white" /></FormControl> <FormMessage /> </FormItem> )}/>
                 </div>
-                <FormField control={form.control} name="nsdt" render={({ field }) => ( <FormItem> <FormLabel>NSDT (Nomor Statistik Diniyah Takmiliyah)</FormLabel> <FormControl><Input {...field} value={field.value ?? ""} /></FormControl> <FormMessage /> </FormItem> )}/>
+                <FormField control={form.control} name="nsdt" render={({ field }) => ( <FormItem> <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">NSDT (Nomor Statistik)</FormLabel> <FormControl><Input {...field} value={field.value ?? ""} className="bg-white" /></FormControl> <FormMessage /> </FormItem> )}/>
                 
                 <div className="p-4 rounded-xl border bg-primary/5 space-y-3">
                   <div className="flex items-center gap-2 text-primary">
@@ -120,12 +127,12 @@ export function ProfileForm({ profile, onSave }: ProfileFormProps) {
                     <span className="text-xs font-bold uppercase tracking-wider">Tahun Ajaran Aktif</span>
                   </div>
                   <AcademicYearSelector />
-                  <p className="text-[10px] text-muted-foreground italic leading-relaxed">
-                    Mengubah tahun ajaran di sini akan mengubah periode aktif untuk seluruh sistem, termasuk jadwal, nilai, dan tagihan SPP.
+                  <p className="text-[9px] text-muted-foreground italic leading-relaxed">
+                    Mengubah tahun ajaran di sini akan mengubah periode aktif untuk seluruh sistem (jadwal, nilai, SPP).
                   </p>
                 </div>
 
-                <FormField control={form.control} name="alamat" render={({ field }) => ( <FormItem> <FormLabel>Alamat Lengkap</FormLabel> <FormControl><Textarea {...field} value={field.value ?? ""} /></FormControl> <FormMessage /> </FormItem> )}/>
+                <FormField control={form.control} name="alamat" render={({ field }) => ( <FormItem> <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Alamat Lengkap</FormLabel> <FormControl><Textarea {...field} value={field.value ?? ""} className="bg-white" /></FormControl> <FormMessage /> </FormItem> )}/>
                 
                 <div className="grid gap-6 py-4 border-y">
                     <FormField
@@ -133,7 +140,7 @@ export function ProfileForm({ profile, onSave }: ProfileFormProps) {
                     name="logoYayasanFile"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>Logo Yayasan</FormLabel>
+                        <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Logo Yayasan</FormLabel>
                         <div className="flex items-center gap-4">
                             <Avatar className="h-16 w-16 rounded-md border bg-muted/20">
                             <AvatarImage src={form.watch('logoYayasanUrl') || undefined} className="object-contain" />
@@ -144,7 +151,7 @@ export function ProfileForm({ profile, onSave }: ProfileFormProps) {
                                 <Input
                                 type="file"
                                 accept="image/*"
-                                className="h-9"
+                                className="h-9 bg-white"
                                 onChange={(e) => {
                                     const file = e.target.files?.[0];
                                     if (file) compressAndSetImage(file, 'logoYayasanUrl');
@@ -152,7 +159,6 @@ export function ProfileForm({ profile, onSave }: ProfileFormProps) {
                                 }}
                                 />
                             </FormControl>
-                            <FormDescription className="text-[10px]">Format JPG/PNG, ukuran akan dioptimalkan otomatis.</FormDescription>
                             </div>
                         </div>
                         </FormItem>
@@ -164,7 +170,7 @@ export function ProfileForm({ profile, onSave }: ProfileFormProps) {
                     name="logoMadrasahFile"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>Logo Madrasah</FormLabel>
+                        <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Logo Madrasah</FormLabel>
                         <div className="flex items-center gap-4">
                             <Avatar className="h-16 w-16 rounded-md border bg-muted/20">
                             <AvatarImage src={form.watch('logoMadrasahUrl') || undefined} className="object-contain" />
@@ -175,7 +181,7 @@ export function ProfileForm({ profile, onSave }: ProfileFormProps) {
                                 <Input
                                 type="file"
                                 accept="image/*"
-                                className="h-9"
+                                className="h-9 bg-white"
                                 onChange={(e) => {
                                     const file = e.target.files?.[0];
                                     if (file) compressAndSetImage(file, 'logoMadrasahUrl');
@@ -183,7 +189,6 @@ export function ProfileForm({ profile, onSave }: ProfileFormProps) {
                                 }}
                                 />
                             </FormControl>
-                            <FormDescription className="text-[10px]">Digunakan sebagai ikon aplikasi dan laporan.</FormDescription>
                             </div>
                         </div>
                         </FormItem>
@@ -195,7 +200,7 @@ export function ProfileForm({ profile, onSave }: ProfileFormProps) {
                     name="kopSuratFile"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>Gambar Kop Surat</FormLabel>
+                        <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Gambar Kop Surat</FormLabel>
                         <div className="space-y-3">
                             {form.watch('kopSuratUrl') && (
                                 <div className="relative w-full aspect-[4/1] rounded-md border bg-muted/10 overflow-hidden">
@@ -204,22 +209,20 @@ export function ProfileForm({ profile, onSave }: ProfileFormProps) {
                                         alt="Preview Kop Surat" 
                                         className="w-full h-full object-contain"
                                     />
-                                    <Button 
+                                    <button 
                                         type="button" 
-                                        variant="destructive" 
-                                        size="xs" 
-                                        className="absolute top-1 right-1 h-6 text-[10px]"
+                                        className="absolute top-1 right-1 p-1 bg-destructive text-white rounded-full"
                                         onClick={() => form.setValue('kopSuratUrl', '')}
                                     >
-                                        Hapus
-                                    </Button>
+                                        <ImageIcon className="h-3 w-3" />
+                                    </button>
                                 </div>
                             )}
                             <FormControl>
                                 <Input
                                 type="file"
                                 accept="image/*"
-                                className="h-9"
+                                className="h-9 bg-white"
                                 onChange={(e) => {
                                     const file = e.target.files?.[0];
                                     if (file) compressAndSetImage(file, 'kopSuratUrl');
@@ -227,7 +230,6 @@ export function ProfileForm({ profile, onSave }: ProfileFormProps) {
                                 }}
                                 />
                             </FormControl>
-                            <FormDescription className="text-[10px]">Gambar memanjang untuk bagian atas surat resmi.</FormDescription>
                         </div>
                         </FormItem>
                     )}
@@ -235,10 +237,6 @@ export function ProfileForm({ profile, onSave }: ProfileFormProps) {
                 </div>
             </div>
         </ScrollArea>
-
-        <div className="flex justify-end pt-4 border-t">
-            <Button type="submit" className="w-full sm:w-auto px-10">Simpan Perubahan</Button>
-        </div>
       </form>
     </Form>
   );

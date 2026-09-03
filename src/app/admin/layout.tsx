@@ -3,12 +3,14 @@
 import { ReactNode, useEffect, useMemo } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
-import { useUser } from "@/firebase";
+import { useUser, useAuth } from "@/firebase";
 import { BottomNav } from "./components/bottom-nav";
-import { Loader2, School, Calendar, ChevronLeft } from "lucide-react";
+import { Loader2, School, Calendar, ChevronLeft, LogOut, Save } from "lucide-react";
 import { useSchoolProfile } from "@/context/school-profile-provider";
 import { useAcademicYear } from "@/context/academic-year-provider";
 import Link from "next/link";
+import { signOut } from "firebase/auth";
+import { useToast } from "@/hooks/use-toast";
 
 const PAGE_TITLES: Record<string, { title: string; sub: string }> = {
   "/admin/dashboard": { title: "Dashboard", sub: "Monitoring data madrasah hari ini." },
@@ -40,8 +42,10 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   const { user, isUserLoading } = useUser();
   const { profile, loading: isProfileLoading } = useSchoolProfile();
   const { activeYear } = useAcademicYear();
+  const auth = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (profile?.namaMadrasah) {
@@ -59,6 +63,21 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       }
     }
   }, [user, isUserLoading, router]);
+
+  const handleLogout = async () => {
+    if (!auth) return;
+    try {
+      await signOut(auth);
+      toast({ title: "Logout Berhasil" });
+      router.push('/');
+    } catch (error) {
+      toast({ variant: "destructive", title: "Logout Gagal" });
+    }
+  };
+
+  const handleTriggerSaveProfile = () => {
+    window.dispatchEvent(new CustomEvent('save-profile'));
+  };
 
   const cleanPath = useMemo(() => {
     return pathname.endsWith('/') && pathname !== '/' ? pathname.slice(0, -1) : pathname;
@@ -80,7 +99,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex flex-col min-h-screen bg-background overflow-x-hidden">
-      <header className="sticky top-0 z-20 p-2 bg-transparent">
+      <header className="sticky top-0 z-50 p-2 bg-transparent">
         <div className="flex flex-col bg-primary text-primary-foreground rounded-2xl shadow-lg border-b border-white/5 overflow-hidden">
           {/* Top Row: Identity & Year */}
           <div className="flex h-14 items-center justify-between gap-4 px-4">
@@ -116,20 +135,42 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             </div>
           </div>
 
-          {/* Bottom Row: Title (Centered) */}
-          <div className="px-4 pb-4 pt-1 flex items-center justify-center relative border-t border-white/5 min-h-[40px]">
-              {!isDashboard && (
-                <button 
-                  onClick={() => router.back()}
-                  className="absolute left-4 p-1.5 text-accent hover:bg-white/10 rounded-full transition-colors active:scale-90"
-                  aria-label="Kembali"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
-              )}
-              <h2 className="text-xs font-bold font-headline uppercase tracking-[0.25em] leading-none text-center text-accent">
+          {/* Bottom Row: Title (Centered) & Actions */}
+          <div className="px-4 pb-4 pt-1 flex items-center justify-between border-t border-white/5 min-h-[44px]">
+              <div className="w-16 flex justify-start">
+                  {!isDashboard && (
+                    <button 
+                      onClick={() => router.back()}
+                      className="p-1.5 text-accent hover:bg-white/10 rounded-full transition-colors active:scale-90"
+                      aria-label="Kembali"
+                    >
+                      <ChevronLeft className="h-5 w-5" />
+                    </button>
+                  )}
+              </div>
+              
+              <h2 className="text-[10px] font-bold font-headline uppercase tracking-[0.25em] leading-none text-center text-accent flex-1">
                   {currentPage.title}
               </h2>
+
+              <div className="w-16 flex justify-end items-center gap-1">
+                  {cleanPath === "/admin/profile" && (
+                    <button 
+                      onClick={handleTriggerSaveProfile}
+                      className="p-1.5 text-accent hover:bg-white/10 rounded-full transition-all active:scale-90"
+                      title="Simpan Perubahan"
+                    >
+                      <Save className="h-5 w-5" />
+                    </button>
+                  )}
+                  <button 
+                    onClick={handleLogout}
+                    className="p-1.5 text-white/40 hover:text-destructive-foreground hover:bg-destructive rounded-full transition-all active:scale-90"
+                    title="Log Out"
+                  >
+                    <LogOut className="h-5 w-5" />
+                  </button>
+              </div>
           </div>
         </div>
       </header>
