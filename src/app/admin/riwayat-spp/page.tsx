@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo } from "react";
@@ -240,7 +239,7 @@ export default function RiwayatSPPPage() {
                 <div className="flex items-center gap-2">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button size="xs" variant="outline" className="gap-1.5 border-primary/30 text-primary h-9">
+                            <Button size="xs" variant="outline" className="gap-1.5 border-accent/30 hover:bg-accent/10 text-accent h-9">
                                 <FileDown className="h-4 w-4" /> Ekspor
                             </Button>
                         </DropdownMenuTrigger>

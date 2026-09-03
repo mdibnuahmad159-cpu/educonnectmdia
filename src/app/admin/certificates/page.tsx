@@ -458,7 +458,7 @@ export default function CertificatesPage() {
                 <div class="certificate-container ${index < filteredCertificates.length - 1 ? 'page-break' : ''}" style="background-image: url('${template.imageUrl}');">
                     <div class="header-text">
                         <div class="title-main">SERTIFIKAT</div>
-                        <div class="title-sub">Penghargaan</div>
+                        <div class="title-sub">PENGHARGAAN</div>
                     </div>
 
                     <div class="intro-text">Sertifikat ini dipersembahkan kepada</div>
@@ -665,12 +665,12 @@ export default function CertificatesPage() {
                             </DropdownMenuContent>
                         </DropdownMenu>
 
-                        <Button size="xs" variant="outline" className="gap-2 border-accent/30 hover:bg-accent/10 text-accent font-normal h-8" onClick={handleBulkPrint}>
+                        <Button size="xs" variant="outline" className="gap-2 border-white/20 hover:bg-white/10 text-white font-normal h-8" onClick={handleBulkPrint}>
                             <CopyCheck className="h-3.5 w-3.5" />
                             Cetak Massal
                         </Button>
 
-                        <Button size="xs" variant="outline" className="gap-2 border-accent/30 hover:bg-accent/10 text-accent font-normal h-8" onClick={() => setIsTemplateOpen(true)}>
+                        <Button size="xs" variant="outline" className="gap-2 border-white/20 hover:bg-white/10 text-white font-normal h-8" onClick={() => setIsTemplateOpen(true)}>
                             <Upload className="h-3.5 w-3.5" />
                             Upload Template
                         </Button>

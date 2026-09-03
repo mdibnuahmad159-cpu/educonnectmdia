@@ -371,7 +371,7 @@ export default function SchedulePage() {
                             </CardDescription>
                         </div>
                          <div className="flex items-center gap-2">
-                             <Button size="xs" variant="outline" className="gap-1.5 border-accent/30 hover:bg-accent/10 text-accent h-8" onClick={() => setIsTimeFormOpen(true)}>
+                             <Button size="xs" variant="outline" className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8 font-normal" onClick={() => setIsTimeFormOpen(true)}>
                                 <Edit className="h-3.5 w-3.5" />
                                 Atur Jam
                             </Button>
@@ -393,7 +393,7 @@ export default function SchedulePage() {
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
-                            <Button size="xs" variant="outline" className="gap-1.5 border-accent/30 hover:bg-accent/10 text-accent h-8" onClick={handlePrintTable}>
+                            <Button size="xs" variant="outline" className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8 font-normal" onClick={handlePrintTable}>
                                 <Printer className="h-3.5 w-3.5" />
                                 Cetak
                             </Button>

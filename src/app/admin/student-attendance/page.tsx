@@ -280,7 +280,7 @@ export default function StudentAttendancePage() {
                     <div className="flex items-center gap-2">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button size="xs" variant="outline" className="gap-1.5 h-8 border-white/20 hover:bg-white/10 text-white font-normal">
+                                <Button size="xs" variant="outline" className="gap-1.5 h-8 border-accent/30 hover:bg-accent/10 text-accent font-normal">
                                 <FileDown className="h-3.5 w-3.5" />
                                 Ekspor
                                 </Button>

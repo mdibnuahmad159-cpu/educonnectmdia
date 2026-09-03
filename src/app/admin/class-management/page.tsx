@@ -304,13 +304,13 @@ export default function ClassManagementPage() {
             </Select>
 
             <div className="flex flex-wrap items-center gap-2">
-                <Button size="xs" variant="outline" onClick={handlePromote} disabled={selectedStudents.length === 0} className="gap-1.5 border-accent/30 hover:bg-accent/10 text-accent h-8">
+                <Button size="xs" variant="outline" onClick={handlePromote} disabled={selectedStudents.length === 0} className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8 font-normal">
                 <ChevronsUp className="h-3.5 w-3.5" /> Naik
                 </Button>
-                <Button size="xs" variant="outline" onClick={handleDemote} disabled={selectedStudents.length === 0} className="gap-1.5 border-accent/30 hover:bg-accent/10 text-accent h-8">
+                <Button size="xs" variant="outline" onClick={handleDemote} disabled={selectedStudents.length === 0} className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8 font-normal">
                 <ChevronsDown className="h-3.5 w-3.5" /> Turun
                 </Button>
-                <Button size="xs" variant="outline" onClick={() => setIsMoveDialogOpen(true)} disabled={selectedStudents.length === 0} className="gap-1.5 border-accent/30 hover:bg-accent/10 text-accent h-8">
+                <Button size="xs" variant="outline" onClick={() => setIsMoveDialogOpen(true)} disabled={selectedStudents.length === 0} className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8 font-normal">
                 <ArrowRightLeft className="h-3.5 w-3.5" /> Pindah
                 </Button>
                 <Button size="xs" variant="destructive" onClick={handleGraduate} disabled={selectedStudents.length === 0} className="gap-1.5 h-8 font-bold shadow-md">
@@ -332,7 +332,7 @@ export default function ClassManagementPage() {
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
-                <Button size="xs" variant="outline" className="gap-1.5 border-accent/30 hover:bg-accent/10 text-accent h-8" onClick={handlePrintTable}>
+                <Button size="xs" variant="outline" className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8 font-normal" onClick={handlePrintTable}>
                     <Printer className="h-3.5 w-3.5" /> Cetak
                 </Button>
             </div>

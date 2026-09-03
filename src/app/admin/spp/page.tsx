@@ -370,7 +370,7 @@ export default function SppPage() {
                                             </DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
-                                    <Button variant="outline" size="xs" onClick={handlePrint} className="h-8 px-3 gap-1.5 font-normal border-accent/30 hover:bg-accent/10 text-accent">
+                                    <Button variant="outline" size="xs" onClick={handlePrint} className="h-8 px-3 gap-1.5 font-normal border-white/20 hover:bg-white/10 text-white">
                                         <Printer className="h-3.5 w-3.5" /> Cetak
                                     </Button>
                                 </>

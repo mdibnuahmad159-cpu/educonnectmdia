@@ -167,7 +167,7 @@ export default function RiwayatTabunganPage() {
                     <h1 className="text-xl font-headline text-primary">Riwayat Tabungan</h1>
                     <p className="text-xs text-muted-foreground">Catatan mutasi seluruh penabung.</p>
                 </div>
-                <Button variant="outline" size="sm" className="gap-2" onClick={handlePrint}>
+                <Button variant="outline" size="sm" className="gap-2 border-primary/30 text-primary" onClick={handlePrint}>
                     <Printer className="h-4 w-4" /> Cetak Laporan
                 </Button>
             </div>
