@@ -201,8 +201,8 @@ export function LoginForm() {
         <TabsList className="grid grid-cols-4 w-full h-12 bg-white/5 backdrop-blur-md rounded-2xl p-1 border border-white/10 mb-6">
           <TabsTrigger value="parent" className="rounded-xl data-[state=active]:bg-white data-[state=active]:text-primary text-white/50 text-[10px] font-bold uppercase transition-all"><UserCircle2 className="h-4 w-4 sm:hidden" /><span className="hidden sm:inline">Wali</span></TabsTrigger>
           <TabsTrigger value="teacher" className="rounded-xl data-[state=active]:bg-white data-[state=active]:text-primary text-white/50 text-[10px] font-bold uppercase transition-all"><GraduationCap className="h-4 w-4 sm:hidden" /><span className="hidden sm:inline">Guru</span></TabsTrigger>
-          <TabsTrigger value="admin" className="rounded-xl data-[state=active]:bg-white data-[state=active]:text-primary text-white/50 text-[10px] font-bold uppercase transition-all"><ShieldCheck className="h-4 w-4 sm:hidden" /><span className="hidden sm:inline">Admin</span></TabsTrigger>
           <TabsTrigger value="external" className="rounded-xl data-[state=active]:bg-white data-[state=active]:text-primary text-white/50 text-[10px] font-bold uppercase transition-all"><WalletCards className="h-4 w-4 sm:hidden" /><span className="hidden sm:inline">Umum</span></TabsTrigger>
+          <TabsTrigger value="admin" className="rounded-xl data-[state=active]:bg-white data-[state=active]:text-primary text-white/50 text-[10px] font-bold uppercase transition-all"><ShieldCheck className="h-4 w-4 sm:hidden" /><span className="hidden sm:inline">Admin</span></TabsTrigger>
         </TabsList>
 
         <div className="bg-white rounded-[40px] shadow-2xl overflow-hidden p-8 border border-white/20">
@@ -280,43 +280,6 @@ export function LoginForm() {
              </Form>
           </TabsContent>
 
-          <TabsContent value="admin" className="mt-0">
-             <div className="mb-8">
-               <h2 className="text-xl font-bold text-foreground tracking-tight">Login Administrator</h2>
-               <p className="text-xs text-muted-foreground mt-1">Akses khusus petugas dan staf resmi.</p>
-             </div>
-             <Form {...adminForm}>
-               <form onSubmit={adminForm.handleSubmit(handleAdminSubmit)} className="space-y-5">
-                 <FormField control={adminForm.control} name="email" render={({ field }) => (
-                   <FormItem className="space-y-1.5">
-                     <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Email Admin</FormLabel>
-                     <div className="relative">
-                       <Shield className="absolute left-4 top-3.5 h-5 w-5 text-muted-foreground/40" />
-                       <FormControl><Input type="email" placeholder="m***@gmail.com" {...field} className="h-12 pl-12 rounded-2xl bg-muted/30 border-muted/50 focus-visible:ring-primary/20" /></FormControl>
-                     </div>
-                     <FormMessage />
-                   </FormItem>
-                 )} />
-                 <FormField control={adminForm.control} name="password" render={({ field }) => (
-                   <FormItem className="space-y-1.5">
-                     <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Password</FormLabel>
-                     <div className="relative">
-                       <Lock className="absolute left-4 top-3.5 h-5 w-5 text-muted-foreground/40" />
-                       <FormControl><Input type={showPassword ? "text" : "password"} placeholder="••••••••" {...field} className="h-12 pl-12 pr-12 rounded-2xl bg-muted/30 border-muted/50 focus-visible:ring-primary/20" /></FormControl>
-                       <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-3.5 text-muted-foreground/40 hover:text-primary transition-colors">
-                         {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                       </button>
-                     </div>
-                     <FormMessage />
-                   </FormItem>
-                 )} />
-                 <Button type="submit" className="w-full h-12 rounded-2xl bg-primary hover:bg-primary/90 text-sm font-bold uppercase tracking-widest gap-2 shadow-lg shadow-emerald-900/20" disabled={isAdminLoading}>
-                   {isAdminLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <>Masuk Sistem <ArrowRight className="h-4 w-4" /></>}
-                 </Button>
-               </form>
-             </Form>
-          </TabsContent>
-
           <TabsContent value="external" className="mt-0">
              <div className="mb-8">
                <h2 className="text-xl font-bold text-foreground tracking-tight">Penabung Umum</h2>
@@ -349,6 +312,43 @@ export function LoginForm() {
                  )} />
                  <Button type="submit" className="w-full h-12 rounded-2xl bg-[#00796B] hover:bg-[#00695C] text-sm font-bold uppercase tracking-widest gap-2 shadow-lg shadow-teal-900/20" disabled={isExternalLoading}>
                    {isExternalLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <>Masuk Tabungan <ArrowRight className="h-4 w-4" /></>}
+                 </Button>
+               </form>
+             </Form>
+          </TabsContent>
+
+          <TabsContent value="admin" className="mt-0">
+             <div className="mb-8">
+               <h2 className="text-xl font-bold text-foreground tracking-tight">Login Administrator</h2>
+               <p className="text-xs text-muted-foreground mt-1">Akses khusus petugas dan staf resmi.</p>
+             </div>
+             <Form {...adminForm}>
+               <form onSubmit={adminForm.handleSubmit(handleAdminSubmit)} className="space-y-5">
+                 <FormField control={adminForm.control} name="email" render={({ field }) => (
+                   <FormItem className="space-y-1.5">
+                     <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Email Admin</FormLabel>
+                     <div className="relative">
+                       <Shield className="absolute left-4 top-3.5 h-5 w-5 text-muted-foreground/40" />
+                       <FormControl><Input type="email" placeholder="a***@madrasah.com" {...field} className="h-12 pl-12 rounded-2xl bg-muted/30 border-muted/50 focus-visible:ring-primary/20" /></FormControl>
+                     </div>
+                     <FormMessage />
+                   </FormItem>
+                 )} />
+                 <FormField control={adminForm.control} name="password" render={({ field }) => (
+                   <FormItem className="space-y-1.5">
+                     <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Password</FormLabel>
+                     <div className="relative">
+                       <Lock className="absolute left-4 top-3.5 h-5 w-5 text-muted-foreground/40" />
+                       <FormControl><Input type={showPassword ? "text" : "password"} placeholder="••••••••" {...field} className="h-12 pl-12 pr-12 rounded-2xl bg-muted/30 border-muted/50 focus-visible:ring-primary/20" /></FormControl>
+                       <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-3.5 text-muted-foreground/40 hover:text-primary transition-colors">
+                         {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                       </button>
+                     </div>
+                     <FormMessage />
+                   </FormItem>
+                 )} />
+                 <Button type="submit" className="w-full h-12 rounded-2xl bg-primary hover:bg-primary/90 text-sm font-bold uppercase tracking-widest gap-2 shadow-lg shadow-emerald-900/20" disabled={isAdminLoading}>
+                   {isAdminLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <>Masuk Sistem <ArrowRight className="h-4 w-4" /></>}
                  </Button>
                </form>
              </Form>
