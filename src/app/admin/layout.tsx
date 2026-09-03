@@ -75,46 +75,48 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex flex-col min-h-screen bg-background overflow-x-hidden">
-      <header className="sticky top-0 z-20 flex flex-col p-2 gap-2 bg-transparent">
-        {/* Top Header Card: Identity & Year */}
-        <div className="flex h-14 items-center justify-between gap-4 px-4 bg-primary text-primary-foreground rounded-2xl shadow-lg border-b border-white/5">
-          <div className="flex-1 flex justify-start">
-            <div className="flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 bg-white/10 rounded-full border border-white/10 text-white">
-                <Calendar className="h-3 w-3 opacity-80" />
-                <span>{activeYear}</span>
+      <header className="sticky top-0 z-20 p-2 bg-transparent">
+        <div className="flex flex-col bg-primary text-primary-foreground rounded-2xl shadow-lg border-b border-white/5 overflow-hidden">
+          {/* Top Row: Identity & Year */}
+          <div className="flex h-14 items-center justify-between gap-4 px-4">
+            <div className="flex-1 flex justify-start">
+              <div className="flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 bg-white/10 rounded-full border border-white/10 text-white">
+                  <Calendar className="h-3 w-3 opacity-80" />
+                  <span>{activeYear}</span>
+              </div>
+            </div>
+            
+            <div className="flex-none text-center">
+                <h1 className="text-[10px] font-bold font-headline uppercase tracking-widest text-white/60">
+                    {profile?.namaMadrasah || 'EduConnect'}
+                </h1>
+            </div>
+
+            <div className="flex-1 flex justify-end">
+              <Link href="/admin/profile">
+                <div className="h-8 w-8 rounded-full overflow-hidden border-2 border-white/20 hover:border-white/50 transition-all flex items-center justify-center bg-white/10 backdrop-blur-sm">
+                  {profile?.logoMadrasahUrl ? (
+                    <Image 
+                      src={profile.logoMadrasahUrl} 
+                      alt="Profile" 
+                      width={32} 
+                      height={32} 
+                      className="h-full w-full object-contain brightness-0 invert"
+                    />
+                  ) : (
+                    <School className="h-4 w-4 text-white/60" />
+                  )}
+                </div>
+              </Link>
             </div>
           </div>
-          
-          <div className="flex-none text-center">
-              <h1 className="text-[10px] font-bold font-headline uppercase tracking-widest text-white/60">
-                  {profile?.namaMadrasah || 'EduConnect'}
-              </h1>
-          </div>
 
-          <div className="flex-1 flex justify-end">
-            <Link href="/admin/profile">
-              <div className="h-8 w-8 rounded-full overflow-hidden border-2 border-white/20 hover:border-white/50 transition-all flex items-center justify-center bg-white/10 backdrop-blur-sm">
-                {profile?.logoMadrasahUrl ? (
-                  <Image 
-                    src={profile.logoMadrasahUrl} 
-                    alt="Profile" 
-                    width={32} 
-                    height={32} 
-                    className="h-full w-full object-contain brightness-0 invert"
-                  />
-                ) : (
-                  <School className="h-4 w-4 text-white/60" />
-                )}
-              </div>
-            </Link>
+          {/* Bottom Row: Title (Centered) */}
+          <div className="px-6 pb-4 pt-1 flex justify-center text-accent border-t border-white/5">
+              <h2 className="text-xs font-bold font-headline uppercase tracking-[0.25em] leading-none text-center">
+                  {currentPage.title}
+              </h2>
           </div>
-        </div>
-
-        {/* Title Header Card: Centered with Accent Color and Full Rounded */}
-        <div className="px-6 py-4 flex justify-center bg-primary text-accent rounded-2xl shadow-lg">
-            <h2 className="text-sm font-bold font-headline uppercase tracking-[0.2em] leading-none text-center">
-                {currentPage.title}
-            </h2>
         </div>
       </header>
 
