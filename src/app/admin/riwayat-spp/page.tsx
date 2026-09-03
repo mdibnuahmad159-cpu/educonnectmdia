@@ -229,39 +229,42 @@ export default function RiwayatSPPPage() {
 
     return (
         <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-xl font-headline text-primary flex items-center gap-2">
-                        <ReceiptText className="h-6 w-6" /> Riwayat SPP
-                    </h1>
-                    <p className="text-xs text-muted-foreground">Catatan pelunasan iuran bulanan seluruh siswa.</p>
-                </div>
-                <div className="flex items-center gap-2">
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none">
-                                <FileDown className="h-4 w-4" /> Ekspor
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={handleExportExcel} className="gap-2">
-                                <FileSpreadsheet className="h-4 w-4 text-green-600" /> Excel (.xlsx)
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={handleExportPdf} className="gap-2">
-                                <FileText className="h-4 w-4 text-red-600" /> PDF (.pdf)
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                    <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none" onClick={handlePrint}>
-                        <Printer className="h-4 w-4" /> Cetak
-                    </Button>
-                </div>
-            </div>
+            <Card className="border-none shadow-lg bg-primary text-primary-foreground">
+                <CardHeader className="p-4 flex flex-row flex-wrap items-center justify-between gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1 max-w-sm">
+                        <Input type="date" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} className="h-8 text-xs bg-white/10 border-white/20 text-white focus:ring-white/30" />
+                        <div className="relative">
+                            <Search className="absolute left-2 top-2 h-3.5 w-3.5 text-white/50" />
+                            <Input placeholder="Cari..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 h-8 text-xs bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:ring-white/30" />
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none">
+                                    <FileDown className="h-3.5 w-3.5" /> Ekspor
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={handleExportExcel} className="gap-2">
+                                    <FileSpreadsheet className="h-4 w-4 text-green-600" /> Excel
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={handleExportPdf} className="gap-2">
+                                    <FileText className="h-4 w-4 text-red-600" /> PDF
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                        <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none" onClick={handlePrint}>
+                            <Printer className="h-4 w-4" /> Cetak
+                        </Button>
+                    </div>
+                </CardHeader>
+            </Card>
 
-            <Card className="bg-blue-50 border-none shadow-sm">
+            <Card className="bg-blue-50 border-none shadow-sm mb-4">
                 <CardContent className="p-4 flex items-center justify-between">
                     <div className="space-y-1">
-                        <p className="text-[10px] uppercase font-bold text-blue-600">Total Penerimaan (Filter)</p>
+                        <p className="text-[10px] uppercase font-bold text-blue-600">Penerimaan (Filter)</p>
                         <p className="text-lg font-bold text-blue-700">Rp {totalIncome.toLocaleString()}</p>
                     </div>
                     <BadgeCheck className="h-8 w-8 text-blue-200" />
@@ -269,53 +272,6 @@ export default function RiwayatSPPPage() {
             </Card>
 
             <Card className="border-none shadow-sm overflow-hidden">
-                <CardHeader className="pb-3 border-b bg-muted/5">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div className="relative">
-                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input 
-                                placeholder="Cari nama siswa atau catatan..." 
-                                className="pl-9 h-9 text-xs bg-white"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                        </div>
-                        
-                        <div className="relative">
-                            <User className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
-                            <Select value={nameFilter} onValueChange={setNameFilter}>
-                                <SelectTrigger className="pl-9 h-9 text-xs bg-white">
-                                    <SelectValue placeholder="Pilih Nama Siswa" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">Semua Siswa</SelectItem>
-                                    {uniqueNames.map(name => (
-                                        <SelectItem key={name} value={name}>{name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                            <div className="relative flex-1">
-                                <Calendar className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
-                                <Input 
-                                    type="date" 
-                                    className="pl-9 h-9 text-xs bg-white"
-                                    value={dateFilter}
-                                    onChange={(e) => setDateFilter(e.target.value)}
-                                />
-                            </div>
-                            {(dateFilter || nameFilter !== "all" || searchTerm) && (
-                                <Button variant="ghost" size="xs" className="h-9 px-2 text-destructive" 
-                                    onClick={() => { setDateFilter(""); setNameFilter("all"); setSearchTerm(""); }}
-                                >
-                                    Reset
-                                </Button>
-                            )}
-                        </div>
-                    </div>
-                </CardHeader>
                 <CardContent className="p-0">
                     <div className="overflow-x-auto">
                         <Table>
@@ -344,10 +300,9 @@ export default function RiwayatSPPPage() {
                                             </TableCell>
                                             <TableCell className="text-[11px] font-bold">
                                                 {p.studentName}
-                                                <span className="block text-[9px] text-muted-foreground font-normal">Kelas ${p.classId}</span>
                                             </TableCell>
                                             <TableCell className="text-[11px]">
-                                                {MONTH_NAMES[p.month]} ${p.year}
+                                                {MONTH_NAMES[p.month]} {p.year}
                                             </TableCell>
                                             <TableCell className="text-[11px] font-bold text-right text-blue-700">
                                                 Rp {p.amountPaid.toLocaleString()}
@@ -359,7 +314,7 @@ export default function RiwayatSPPPage() {
                                                 <Button 
                                                     variant="ghost" 
                                                     size="icon" 
-                                                    className="h-7 w-7 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                                                    className="h-7 w-7 text-destructive"
                                                     onClick={() => handleDeleteClick(p)}
                                                 >
                                                     <Trash2 className="h-3.5 w-3.5" />
@@ -378,28 +333,17 @@ export default function RiwayatSPPPage() {
                         </Table>
                     </div>
                 </CardContent>
-                <CardFooter className="bg-muted/5 border-t py-2 flex justify-between">
-                    <span className="text-[10px] text-muted-foreground">Menampilkan {filteredPayments.length} data</span>
-                    <span className="text-[10px] text-primary font-bold uppercase tracking-tight">Madrasah Diniyah Ibnu Ahmad</span>
-                </CardFooter>
             </Card>
 
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Hapus Catatan SPP?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Tindakan ini akan menghapus catatan pembayaran SPP ini secara permanen. Status pembayaran siswa untuk bulan tersebut akan kembali menjadi "Belum Bayar".
-                        </AlertDialogDescription>
+                        <AlertDialogDescription>Tindakan ini permanen.</AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel className="text-xs">Batal</AlertDialogCancel>
-                        <AlertDialogAction 
-                            onClick={confirmDelete} 
-                            className="bg-destructive hover:bg-destructive/90 text-white text-xs"
-                        >
-                            Hapus Permanen
-                        </AlertDialogAction>
+                        <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90 text-white text-xs">Hapus</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>

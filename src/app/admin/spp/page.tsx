@@ -344,14 +344,52 @@ export default function SppPage() {
     return (
         <div className="space-y-4">
             <Card className="border-none shadow-lg bg-primary text-primary-foreground">
-                <CardHeader className="pb-6">
+                <CardHeader className="p-4">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div className="space-y-1">
-                            <CardTitle className="text-2xl font-bold font-headline">Pembayaran SPP</CardTitle>
-                            <CardDescription className="text-primary-foreground/70 text-xs">
-                                Kelola pelunasan iuran bulanan siswa untuk tahun ajaran {activeYear}.
-                            </CardDescription>
+                         <div className="flex flex-wrap items-center gap-2 flex-1">
+                            <Select value={selectedClass} onValueChange={(v) => { setSelectedClass(v); setSelectedStudentId(""); }}>
+                                <SelectTrigger className="h-8 text-xs font-normal bg-white/10 border-white/20 text-white focus:ring-white/30 w-[110px]">
+                                    <Users className="h-3 w-3 mr-1.5 opacity-70" />
+                                    <SelectValue placeholder="Kelas" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {[...Array(7).keys()].map(i => (
+                                        <SelectItem key={i} value={String(i)}>Kelas {i}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+
+                            <Select 
+                                value={selectedStudentId} 
+                                onValueChange={setSelectedStudentId}
+                                disabled={loadingStudents || !students?.length}
+                            >
+                                <SelectTrigger className="h-8 text-xs font-normal bg-white/10 border-white/20 text-white focus:ring-white/30 w-[180px]">
+                                    <User className="h-3 w-3 mr-1.5 opacity-70" />
+                                    <SelectValue placeholder={loadingStudents ? "Memuat..." : "Pilih Siswa"} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {students?.sort((a,b) => a.name.localeCompare(b.name)).map(s => (
+                                        <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+
+                            <div className="flex items-center gap-1.5 bg-white/10 px-2 py-1 rounded-md border border-white/20">
+                                <Settings2 className="h-3 w-3 text-white/60" />
+                                <input 
+                                    type="number" 
+                                    value={localDefaultAmount}
+                                    onChange={(e) => setLocalDefaultAmount(e.target.value)}
+                                    className="w-20 bg-transparent border-none text-[11px] text-white focus:outline-none placeholder:text-white/40"
+                                    placeholder="Nominal"
+                                />
+                                <Button variant="secondary" size="xs" className="h-6 px-2 bg-accent text-primary hover:bg-accent/90 border-none font-bold text-[9px]" onClick={handleUpdateDefaultBill}>
+                                    SET
+                                </Button>
+                            </div>
                         </div>
+
                         <div className="flex flex-wrap items-center gap-2">
                             {selectedStudentId && (
                                 <>
@@ -363,10 +401,10 @@ export default function SppPage() {
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
                                             <DropdownMenuItem onClick={handleExportExcel}>
-                                                <FileSpreadsheet className="mr-2 h-3.5 w-3.5" /> Excel (.xlsx)
+                                                <FileSpreadsheet className="mr-2 h-3.5 w-3.5" /> Excel
                                             </DropdownMenuItem>
                                             <DropdownMenuItem onClick={handleExportPdf}>
-                                                <FileText className="mr-2 h-3.5 w-3.5" /> PDF (.pdf)
+                                                <FileText className="mr-2 h-3.5 w-3.5" /> PDF
                                             </DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
@@ -375,63 +413,6 @@ export default function SppPage() {
                                     </Button>
                                 </>
                             )}
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-6 border-t border-white/10 mt-2">
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase font-bold text-primary-foreground/60 flex items-center gap-1.5 ml-1">
-                                <Users className="h-3 w-3" /> Pilih Kelas
-                            </label>
-                            <Select value={selectedClass} onValueChange={(v) => { setSelectedClass(v); setSelectedStudentId(""); }}>
-                                <SelectTrigger className="h-9 font-normal bg-white/10 border-white/20 text-white focus:ring-white/30">
-                                    <SelectValue placeholder="Pilih Kelas" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {[...Array(7).keys()].map(i => (
-                                        <SelectItem key={i} value={String(i)}>Kelas {i}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase font-bold text-primary-foreground/60 flex items-center gap-1.5 ml-1">
-                                <User className="h-3 w-3" /> Pilih Nama Siswa
-                            </label>
-                            <Select 
-                                value={selectedStudentId} 
-                                onValueChange={setSelectedStudentId}
-                                disabled={loadingStudents || !students?.length}
-                            >
-                                <SelectTrigger className="h-9 font-normal bg-white/10 border-white/20 text-white focus:ring-white/30">
-                                    <SelectValue placeholder={loadingStudents ? "Memuat siswa..." : "Pilih Siswa"} />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {students?.sort((a,b) => a.name.localeCompare(b.name)).map(s => (
-                                        <SelectItem key={s.id} value={s.id}>{s.name} ({s.nis})</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase font-bold text-primary-foreground/60 flex items-center gap-1.5 ml-1">
-                                <Settings2 className="h-3 w-3" /> Tagihan Bulanan (Rp)
-                            </label>
-                            <div className="flex gap-2">
-                                <Input 
-                                    type="number" 
-                                    placeholder="Contoh: 50000"
-                                    value={localDefaultAmount}
-                                    onChange={(e) => setLocalDefaultAmount(e.target.value)}
-                                    className="h-9 font-normal bg-white/10 border-white/20 text-white placeholder:text-white/40 focus-visible:ring-white/30"
-                                />
-                                <Button variant="secondary" size="xs" className="h-9 gap-1.5 px-3 bg-accent text-primary hover:bg-accent/90 border-none font-bold" onClick={handleUpdateDefaultBill}>
-                                    <Save className="h-3 w-3" />
-                                    Simpan
-                                </Button>
-                            </div>
                         </div>
                     </div>
                 </CardHeader>
@@ -463,7 +444,7 @@ export default function SppPage() {
                                 <div className="space-y-1">
                                     <p className="text-[10px] uppercase font-bold text-orange-600">Total Tunggakan</p>
                                     <p className="text-lg font-bold text-orange-700">Rp {stats.arrears.toLocaleString()}</p>
-                                    <p className="text-[9px] text-orange-600">Hingga target {stats.targetMonths} bulan</p>
+                                    <p className="text-[9px] text-orange-600">Target {stats.targetMonths} bulan</p>
                                 </div>
                                 <div className="p-3 bg-orange-100 rounded-full">
                                     <AlertCircle className="h-5 w-5 text-orange-600" />
@@ -484,7 +465,6 @@ export default function SppPage() {
                                     )}>
                                         {stats.isYearlyPaid ? "LUNAS TAHUNAN" : "BELUM LUNAS"}
                                     </p>
-                                    <p className="text-[9px] text-muted-foreground">Syarat lunas: {stats.targetMonths} bulan</p>
                                 </div>
                                 <div className={cn(
                                     "p-3 rounded-full",
@@ -531,7 +511,7 @@ export default function SppPage() {
                                         )}
                                     >
                                         <div className="flex items-center justify-between mb-2">
-                                            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{month.name}</span>
+                                            <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">{month.name}</span>
                                             {isPaid ? (
                                                 <CheckCircle2 className="h-4 w-4 text-green-600" />
                                             ) : (
@@ -555,18 +535,6 @@ export default function SppPage() {
                             })
                         )}
                     </div>
-
-                    <Card className="border-primary/10 shadow-none bg-muted/5">
-                        <CardContent className="p-4 flex items-center gap-4">
-                            <div className="p-2 rounded-full bg-primary/10">
-                                <CalendarDays className="h-5 w-5 text-primary" />
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                                <p className="font-semibold text-foreground">Kebijakan Kelunasan</p>
-                                <p>Siswa dianggap memiliki status <strong>Lunas Tahunan</strong> setelah melunasi pembayaran untuk minimal 10 bulan dalam satu tahun ajaran aktif.</p>
-                            </div>
-                        </CardContent>
-                    </Card>
                 </div>
             )}
 

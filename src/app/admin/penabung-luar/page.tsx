@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo } from "react";
@@ -9,9 +8,7 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import {
   Table,
@@ -99,20 +96,8 @@ export default function ExternalSaversPage() {
     return (
         <div className="space-y-4">
             <Card className="border-none shadow-lg bg-primary text-primary-foreground">
-                <CardHeader className="pb-6">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div className="space-y-1">
-                            <CardTitle className="text-2xl font-bold font-headline">Penabung Luar</CardTitle>
-                            <CardDescription className="text-primary-foreground/70 text-xs">
-                                Kelola data penabung non-internal. NIP & Password digunakan untuk akses portal.
-                            </CardDescription>
-                        </div>
-                        <Button variant="secondary" size="sm" className="gap-2 font-bold shadow-md bg-white text-primary hover:bg-white/90 h-9" onClick={handleAdd}>
-                            <PlusCircle className="h-4 w-4" />
-                            Tambah Penabung
-                        </Button>
-                    </div>
-                    <div className="relative mt-4 max-w-sm">
+                <CardHeader className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="relative flex-1 min-w-[200px]">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-primary-foreground/50" />
                         <Input 
                             placeholder="Cari nama, NIP atau no. HP..." 
@@ -121,6 +106,10 @@ export default function ExternalSaversPage() {
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
+                    <Button variant="secondary" size="xs" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none" onClick={handleAdd}>
+                        <PlusCircle className="h-4 w-4" />
+                        Tambah Penabung
+                    </Button>
                 </CardHeader>
             </Card>
 
@@ -169,11 +158,11 @@ export default function ExternalSaversPage() {
                                     <TableCell className="text-[11px] truncate max-w-[150px]">{item.address || '-'}</TableCell>
                                     <TableCell className="text-right px-4">
                                         <div className="flex justify-end gap-1">
-                                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(item)}>
-                                                <Edit className="h-3.5 w-3.5 text-primary" />
+                                            <Button variant="ghost" size="icon" className="h-7 w-7 text-primary" onClick={() => handleEdit(item)}>
+                                                <Edit className="h-3.5 w-3.5" />
                                             </Button>
-                                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDelete(item.id)}>
-                                                <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(item.id)}>
+                                                <Trash2 className="h-3.5 w-3.5" />
                                             </Button>
                                         </div>
                                     </TableCell>
@@ -215,4 +204,3 @@ export default function ExternalSaversPage() {
         </div>
     );
 }
-

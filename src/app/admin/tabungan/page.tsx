@@ -27,7 +27,8 @@ import {
     TrendingUp,
     CalendarDays,
     Clock,
-    SearchX
+    SearchX,
+    Save
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { addSavingsTransaction } from "@/lib/firebase-helpers";
@@ -140,48 +141,27 @@ export default function TabunganPage() {
     return (
         <div className="space-y-4 max-w-5xl mx-auto">
             <Card className="border-none shadow-lg bg-primary text-primary-foreground">
-                <CardHeader className="pb-6">
+                <CardHeader className="p-4">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                        <div className="space-y-1">
-                            <CardTitle className="text-2xl font-bold font-headline flex items-center gap-2">
-                                <PiggyBank className="h-6 w-6" /> Tabungan Madrasah
-                            </CardTitle>
-                            <CardDescription className="text-primary-foreground/70 text-xs">
-                                Kelola simpanan siswa, guru, dan penabung umum secara terpadu.
-                            </CardDescription>
-                        </div>
-                        <Link href="/admin/riwayat-tabungan">
-                            <Button size="sm" variant="secondary" className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90 h-9 font-bold shadow-md border-none">
-                                <History className="h-4 w-4" />
-                                Riwayat Mutasi
-                            </Button>
-                        </Link>
-                    </div>
+                         <div className="flex flex-wrap items-center gap-2">
+                             <div className="space-y-1">
+                                <Select value={saverType} onValueChange={(v) => { setSaverType(v as SaverType); setSelectedSaverId(""); }}>
+                                    <SelectTrigger className="h-8 text-xs font-normal bg-white/10 border-white/20 text-white focus:ring-white/30 w-[140px]">
+                                        <Wallet className="h-3 w-3 mr-1.5 opacity-70" />
+                                        <SelectValue placeholder="Kategori" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="student">Siswa Madrasah</SelectItem>
+                                        <SelectItem value="teacher">Guru / Staf</SelectItem>
+                                        <SelectItem value="external">Penabung Umum</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-6 border-t border-white/10 mt-2">
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase font-bold text-primary-foreground/60 flex items-center gap-1.5 ml-1">
-                                <Wallet className="h-3 w-3" /> Kategori Penabung
-                            </label>
-                            <Select value={saverType} onValueChange={(v) => { setSaverType(v as SaverType); setSelectedSaverId(""); }}>
-                                <SelectTrigger className="h-10 font-normal bg-white/10 border-white/20 text-white focus:ring-white/30">
-                                    <SelectValue placeholder="Pilih Kategori" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="student">Siswa Madrasah</SelectItem>
-                                    <SelectItem value="teacher">Guru / Staf</SelectItem>
-                                    <SelectItem value="external">Penabung Umum (Luar)</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        {saverType === 'student' && (
-                            <div className="space-y-1.5 animate-in slide-in-from-top-1 duration-200">
-                                <label className="text-[10px] uppercase font-bold text-primary-foreground/60 flex items-center gap-1.5 ml-1">
-                                    <Users className="h-3 w-3" /> Pilih Kelas
-                                </label>
+                            {saverType === 'student' && (
                                 <Select value={selectedClass} onValueChange={(v) => { setSelectedClass(v); setSelectedSaverId(""); }}>
-                                    <SelectTrigger className="h-10 font-normal bg-white/10 border-white/20 text-white focus:ring-white/30">
+                                    <SelectTrigger className="h-8 text-xs font-normal bg-white/10 border-white/20 text-white focus:ring-white/30 w-[110px]">
+                                        <Users className="h-3 w-3 mr-1.5 opacity-70" />
                                         <SelectValue placeholder="Kelas" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -190,24 +170,16 @@ export default function TabunganPage() {
                                         ))}
                                     </SelectContent>
                                 </Select>
-                            </div>
-                        )}
+                            )}
 
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] uppercase font-bold text-primary-foreground/60 flex items-center gap-1.5 ml-1">
-                                <User className="h-3 w-3" /> Nama Penabung
-                            </label>
-                            <Select 
-                                value={selectedSaverId} 
-                                onValueChange={setSelectedSaverId}
-                                disabled={isLoadingLists}
-                            >
-                                <SelectTrigger className="h-10 font-normal bg-white/10 border-white/20 text-white focus:ring-white/30">
-                                    <SelectValue placeholder={isLoadingLists ? "Memuat data..." : "Pilih Nama"} />
+                            <Select value={selectedSaverId} onValueChange={setSelectedSaverId} disabled={isLoadingLists}>
+                                <SelectTrigger className="h-8 text-xs font-normal bg-white/10 border-white/20 text-white focus:ring-white/30 w-[180px]">
+                                    <User className="h-3 w-3 mr-1.5 opacity-70" />
+                                    <SelectValue placeholder={isLoadingLists ? "Memuat..." : "Pilih Nama"} />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {saverType === 'student' && students?.sort((a,b) => a.name.localeCompare(b.name)).map(s => (
-                                        <SelectItem key={s.id} value={s.id}>{s.name} ({s.nis})</SelectItem>
+                                        <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                                     ))}
                                     {saverType === 'teacher' && teachers?.sort((a,b) => a.name.localeCompare(b.name)).map(t => (
                                         <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
@@ -218,6 +190,14 @@ export default function TabunganPage() {
                                 </SelectContent>
                             </Select>
                         </div>
+                        <div className="flex items-center gap-2">
+                            <Link href="/admin/riwayat-tabungan">
+                                <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none">
+                                    <History className="h-3.5 w-3.5" />
+                                    Riwayat
+                                </Button>
+                            </Link>
+                        </div>
                     </div>
                 </CardHeader>
             </Card>
@@ -227,7 +207,7 @@ export default function TabunganPage() {
                     <div className="flex flex-col items-center justify-center py-16 border-2 border-dashed rounded-xl bg-muted/5 text-muted-foreground transition-all">
                         <PiggyBank className="h-16 w-16 mb-4 opacity-5" />
                         <p className="text-sm font-medium">Silakan tentukan penabung untuk memulai transaksi.</p>
-                        <p className="text-[10px] mt-1 italic opacity-60">Gunakan filter di Header Card untuk memilih penabung.</p>
+                        <p className="text-[10px] mt-1 italic opacity-60">Gunakan filter di bagian atas untuk memilih penabung.</p>
                     </div>
                 ) : (
                     <div className="grid gap-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
@@ -360,18 +340,6 @@ export default function TabunganPage() {
                     </div>
                 )}
             </div>
-
-            <Card className="border-primary/10 shadow-none bg-muted/5 border-dashed">
-                <CardContent className="p-4 flex items-center gap-4">
-                    <div className="p-3 rounded-full bg-primary/10 text-primary">
-                        <CalendarDays className="h-6 w-6" />
-                    </div>
-                    <div className="text-xs text-muted-foreground leading-relaxed">
-                        <p className="font-bold text-primary mb-1 uppercase tracking-tight">Informasi Sinkronisasi</p>
-                        <p>Setiap transaksi disinkronkan secara real-time. Pastikan tanggal dan nominal sudah benar sebelum menekan tombol setor atau tarik.</p>
-                    </div>
-                </CardContent>
-            </Card>
         </div>
     );
 }

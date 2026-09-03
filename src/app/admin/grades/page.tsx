@@ -1203,119 +1203,109 @@ export default function GradesPage() {
 
     return (
         <div className="space-y-4 max-w-full overflow-hidden font-body">
-            <Card className="border-none shadow-none bg-transparent">
-                <CardHeader className="p-0 pb-4">
-                    <div className="space-y-4">
-                        <div className="flex justify-between items-center gap-3">
-                            <div>
-                                <CardTitle className="text-lg font-headline text-primary font-normal">Input Nilai</CardTitle>
-                                <CardDescription className="text-[10px]">
-                                    Semester {selectedGradeType} TA {activeYear}
-                                </CardDescription>
-                            </div>
-                            
-                            <Button 
-                                onClick={handleSave} 
-                                disabled={isLoading || isSaving} 
-                                size="xs" 
-                                className="h-8 gap-1.5 px-3 shadow-sm bg-primary hover:bg-primary/90 font-normal"
-                            >
-                                {isSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
-                                Simpan
-                            </Button>
-                        </div>
+            <Card className="border-none shadow-lg bg-primary text-primary-foreground">
+                <CardHeader className="p-4 flex flex-col sm:flex-row flex-wrap items-center justify-between gap-4">
+                    <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                        <Select value={selectedClass} onValueChange={setSelectedClass}>
+                            <SelectTrigger className="flex-1 sm:w-[120px] h-8 text-xs font-normal bg-white/10 border-white/20 text-white focus:ring-white/30">
+                                <Users className="h-3 w-3 mr-1.5 opacity-70" />
+                                <SelectValue placeholder="Kelas" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {[...Array(7).keys()].map(i => (
+                                    <SelectItem key={i} value={String(i)}>{i === 0 ? 'Sifir' : 'Kelas ' + i}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <Select value={selectedGradeType} onValueChange={(v) => setSelectedGradeType(v as GradeType)}>
+                            <SelectTrigger className="flex-1 sm:w-[120px] h-8 text-xs font-normal bg-white/10 border-white/20 text-white focus:ring-white/30">
+                                <BookOpen className="h-3 w-3 mr-1.5 opacity-70" />
+                                <SelectValue placeholder="Semester" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="Ganjil">Ganjil</SelectItem>
+                                <SelectItem value="Genap">Genap</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
 
-                        <div className="flex flex-wrap items-center justify-end gap-1.5">
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" size="xs" className="h-8 gap-1.5 px-3 font-normal border-primary/20">
-                                        <FileUp className="h-3.5 w-3.5" />
-                                        Impor
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={handleDownloadTemplate}>
-                                        <Download className="mr-2 h-3.5 w-3.5" />
-                                        Unduh Template
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
-                                        <Upload className="mr-2 h-3.5 w-3.5" />
-                                        Unggah Excel
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                            <input type="file" ref={fileInputRef} className="hidden" accept=".xlsx,.xls" onChange={handleImportExcel} />
+                    <div className="flex flex-wrap items-center justify-end gap-1.5">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="secondary" size="xs" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none">
+                                    <FileUp className="h-3.5 w-3.5" />
+                                    Impor
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={handleDownloadTemplate}>
+                                    <Download className="mr-2 h-3.5 w-3.5" />
+                                    Unduh Template
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
+                                    <Upload className="mr-2 h-3.5 w-3.5" />
+                                    Unggah Excel
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                        <input type="file" ref={fileInputRef} className="hidden" accept=".xlsx,.xls" onChange={handleImportExcel} />
 
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" size="xs" className="h-8 gap-1.5 px-3 font-normal border-primary/20">
-                                        <FileDown className="h-3.5 w-3.5" />
-                                        Ekspor
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={handleExportExcel}>
-                                        <FileSpreadsheet className="mr-2 h-3.5 w-3.5" />
-                                        Legger (Excel)
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={handlePrint}>
-                                        <Printer className="mr-2 h-3.5 w-3.5" />
-                                        Cetak
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="secondary" size="xs" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none">
+                                    <FileDown className="h-3.5 w-3.5" />
+                                    Ekspor
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={handleExportExcel}>
+                                    <FileSpreadsheet className="mr-2 h-3.5 w-3.5" />
+                                    Legger (Excel)
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={handlePrint}>
+                                    <Printer className="mr-2 h-3.5 w-3.5" />
+                                    Cetak Legger
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
 
-                            <Button 
-                                onClick={handleBulkPrint} 
-                                variant="outline" 
-                                size="xs" 
-                                disabled={isLoading || !studentsWithStats.length}
-                                className="h-8 gap-1.5 px-3 font-normal border-primary/20 text-primary"
-                            >
-                                <PrinterCheck className="h-3.5 w-3.5" />
-                                Cetak Rapor Massal
-                            </Button>
+                        <Button 
+                            onClick={handleBulkPrint} 
+                            variant="secondary" 
+                            size="xs" 
+                            disabled={isLoading || !studentsWithStats.length}
+                            className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none"
+                        >
+                            <PrinterCheck className="h-3.5 w-3.5" />
+                            Rapor Massal
+                        </Button>
 
-                            <Button 
-                                onClick={handlePrintRankings} 
-                                variant="outline" 
-                                size="xs" 
-                                disabled={isLoading}
-                                className="h-8 gap-1.5 px-3 font-normal border-primary/20 text-primary"
-                            >
-                                <Trophy className="h-3.5 w-3.5" />
-                                Laporan Peringkat
-                            </Button>
-                        </div>
+                        <Button 
+                            onClick={handlePrintRankings} 
+                            variant="secondary" 
+                            size="xs" 
+                            disabled={isLoading}
+                            className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none"
+                        >
+                            <Trophy className="h-3.5 w-3.5" />
+                            Laporan Rank
+                        </Button>
 
-                        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto pt-2 border-t border-primary/5">
-                            <Select value={selectedClass} onValueChange={setSelectedClass}>
-                                <SelectTrigger className="flex-1 sm:w-[120px] h-8 text-xs font-normal bg-card">
-                                    <Users className="h-3 w-3 mr-1.5 opacity-70" />
-                                    <SelectValue placeholder="Kelas" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {[...Array(7).keys()].map(i => (
-                                        <SelectItem key={i} value={String(i)}>{i === 0 ? 'Sifir' : 'Kelas ' + i}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <Select value={selectedGradeType} onValueChange={(v) => setSelectedGradeType(v as GradeType)}>
-                                <SelectTrigger className="flex-1 sm:w-[120px] h-8 text-xs font-normal bg-card">
-                                    <BookOpen className="h-3 w-3 mr-1.5 opacity-70" />
-                                    <SelectValue placeholder="Semester" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Ganjil">Ganjil</SelectItem>
-                                    <SelectItem value="Genap">Genap</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
+                        <Button 
+                            onClick={handleSave} 
+                            disabled={isLoading || isSaving} 
+                            variant="secondary" 
+                            size="xs" 
+                            className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none"
+                        >
+                            {isSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                            Simpan
+                        </Button>
                     </div>
                 </CardHeader>
             </Card>
 
-            <div className="flex flex-col md:flex-row gap-4 h-[calc(100vh-15rem)] sm:h-[calc(100vh-13rem)]">
+            <div className="flex flex-col md:flex-row gap-4 h-[calc(100vh-12rem)]">
                 <Card className={cn(
                     "w-full md:w-[350px] flex flex-col overflow-hidden shadow-sm border-primary/10 transition-all duration-300",
                     selectedStudentId ? "hidden md:flex" : "flex"

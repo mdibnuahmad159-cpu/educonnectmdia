@@ -162,15 +162,20 @@ export default function RiwayatTabunganPage() {
 
     return (
         <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-xl font-headline text-primary">Riwayat Tabungan</h1>
-                    <p className="text-xs text-muted-foreground">Catatan mutasi seluruh penabung.</p>
-                </div>
-                <Button variant="secondary" size="sm" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none" onClick={handlePrint}>
-                    <Printer className="h-4 w-4" /> Cetak Laporan
-                </Button>
-            </div>
+            <Card className="border-none shadow-lg bg-primary text-primary-foreground">
+                <CardHeader className="p-4 flex flex-row flex-wrap items-center justify-between gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1 max-w-sm">
+                        <Input type="date" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} className="h-8 text-xs bg-white/10 border-white/20 text-white focus:ring-white/30" />
+                        <div className="relative">
+                            <Search className="absolute left-2 top-2 h-3.5 w-3.5 text-white/50" />
+                            <Input placeholder="Cari catatan..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 h-8 text-xs bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:ring-white/30" />
+                        </div>
+                    </div>
+                    <Button variant="secondary" size="xs" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none" onClick={handlePrint}>
+                        <Printer className="h-4 w-4" /> Cetak
+                    </Button>
+                </CardHeader>
+            </Card>
             
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <Card className="p-4 bg-green-50"><p className="text-[10px] uppercase font-bold text-green-600">Total Setoran</p><p className="text-sm font-bold">Rp {stats.totalIn.toLocaleString()}</p></Card>
@@ -179,13 +184,6 @@ export default function RiwayatTabunganPage() {
             </div>
 
             <Card className="border-none shadow-sm overflow-hidden">
-                <CardHeader className="pb-3 bg-muted/5">
-                    <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
-                        <Input type="date" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} className="bg-white" />
-                        <Input placeholder="Cari catatan..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="bg-white" />
-                        <Button variant="ghost" onClick={() => { setDateFilter(""); setSearchTerm(""); setSaverType("all"); }}><X className="h-4 w-4" /></Button>
-                    </div>
-                </CardHeader>
                 <CardContent className="p-0">
                     <Table>
                         <TableHeader className="bg-muted/30">

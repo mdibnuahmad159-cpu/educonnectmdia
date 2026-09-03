@@ -29,13 +29,6 @@ const academicMenus = [
 export default function AkademikMenuPage() {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold font-headline text-primary flex items-center gap-2">
-          <BookOpen className="h-6 w-6" /> Kategori Akademik
-        </h1>
-        <p className="text-xs text-muted-foreground mt-1">Kelola seluruh proses belajar mengajar dan administrasi guru.</p>
-      </div>
-
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         {academicMenus.map((menu) => (
           <Link key={menu.href} href={menu.href}>

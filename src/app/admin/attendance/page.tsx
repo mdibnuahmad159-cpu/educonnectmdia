@@ -326,10 +326,10 @@ export default function AttendancePage() {
                         />
                     </div>
                     <div className="flex gap-2">
-                        <Button variant="secondary" size="xs" onClick={handleExportPdf} className="h-8 gap-2 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none">
+                        <Button variant="secondary" size="xs" onClick={handleExportPdf} className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none">
                             <FileDown className="h-3.5 w-3.5" /> Ekspor PDF
                         </Button>
-                        <Button variant="secondary" size="xs" onClick={handlePrint} className="h-8 gap-2 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none">
+                        <Button variant="secondary" size="xs" onClick={handlePrint} className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none">
                             <Printer className="h-3.5 w-3.5" /> Cetak
                         </Button>
                     </div>

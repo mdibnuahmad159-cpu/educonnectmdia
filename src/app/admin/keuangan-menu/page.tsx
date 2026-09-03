@@ -24,13 +24,6 @@ const financeMenus = [
 export default function KeuanganMenuPage() {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold font-headline text-primary flex items-center gap-2">
-          <Wallet className="h-6 w-6" /> Kategori Keuangan
-        </h1>
-        <p className="text-xs text-muted-foreground mt-1">Kelola tabungan, pembayaran SPP, dan kas madrasah.</p>
-      </div>
-
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         {financeMenus.map((menu) => (
           <Link key={menu.href} href={menu.href}>
