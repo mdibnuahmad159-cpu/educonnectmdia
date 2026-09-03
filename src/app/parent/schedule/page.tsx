@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
@@ -6,18 +5,14 @@ import { useFirestore, useDoc, useCollection, useMemoFirebase } from "@/firebase
 import { collection, query, where, doc } from "firebase/firestore";
 import type { Student, Schedule, Curriculum, Teacher } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { 
     Loader2, 
-    ArrowLeft, 
     CalendarDays, 
     Clock, 
     User,
     BookOpen
 } from "lucide-react";
-import Link from "next/link";
 import { useAcademicYear } from "@/context/academic-year-provider";
-import { cn } from "@/lib/utils";
 
 const days = [
     { key: 'monday', name: 'Senin' },
@@ -79,13 +74,6 @@ export default function ParentSchedulePage() {
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center gap-3">
-                <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
-                    <Link href="/parent/dashboard"><ArrowLeft className="h-4 w-4" /></Link>
-                </Button>
-                <h1 className="text-xl font-headline font-bold text-primary">Jadwal Pelajaran</h1>
-            </div>
-
             <Card className="border-none shadow-sm bg-muted/30">
                 <CardContent className="p-4 flex items-center gap-3">
                     <div className="p-2 bg-primary/10 text-primary rounded-lg"><CalendarDays className="h-5 w-5" /></div>

@@ -1,23 +1,19 @@
-
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
 import { useFirestore, useDoc, useCollection, useMemoFirebase } from "@/firebase";
-import { doc, collection, query, where, orderBy } from "firebase/firestore";
+import { doc, collection, query, where } from "firebase/firestore";
 import type { Student, Grade, ReportSummary, Curriculum } from "@/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
     Loader2, 
-    ArrowLeft, 
     FileText, 
     Award, 
     ExternalLink, 
-    CheckCircle2, 
     Trophy,
     TrendingUp
 } from "lucide-react";
-import Link from "next/link";
 import { useAcademicYear } from "@/context/academic-year-provider";
 import { cn } from "@/lib/utils";
 
@@ -86,13 +82,7 @@ export default function ParentReportsPage() {
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
-                        <Link href="/parent/dashboard"><ArrowLeft className="h-4 w-4" /></Link>
-                    </Button>
-                    <h1 className="text-xl font-headline font-bold text-primary">Rapor Santri</h1>
-                </div>
+            <div className="flex items-center justify-end">
                 <div className="flex bg-muted rounded-lg p-1">
                     <button 
                         onClick={() => setSelectedSemester('Ganjil')}

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
@@ -6,10 +5,8 @@ import { useFirestore, useDoc, useCollection, useMemoFirebase } from "@/firebase
 import { collection, query, where, doc } from "firebase/firestore";
 import type { Student, SPPPayment, SavingsTransaction } from "@/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { 
     Loader2, 
-    ArrowLeft, 
     Wallet, 
     PiggyBank, 
     CreditCard, 
@@ -21,7 +18,6 @@ import {
     AlertCircle,
     BadgeCheck
 } from "lucide-react";
-import Link from "next/link";
 import { format, parseISO } from "date-fns";
 import { id as dfnsId } from "date-fns/locale";
 import { useAcademicYear } from "@/context/academic-year-provider";
@@ -55,8 +51,7 @@ export default function ParentFinancePage() {
     }, [firestore, nis]);
     const { data: payments, loading: loadingSpp } = useCollection<SPPPayment>(sppQuery);
 
-    // Fetch Savings Transactions (The "Mutation Log")
-    // Note: We remove orderBy from query to avoid index issues, and sort in memory
+    // Fetch Savings Transactions
     const savingsQuery = useMemoFirebase(() => {
         if (!firestore || !nis) return null;
         return query(
@@ -66,13 +61,11 @@ export default function ParentFinancePage() {
     }, [firestore, nis]);
     const { data: rawSavings, loading: loadingSavings, error: savingsError } = useCollection<SavingsTransaction>(savingsQuery);
 
-    // Sort savings in memory to ensure synchronization with Admin view
     const savings = useMemo(() => {
         if (!rawSavings) return [];
         return [...rawSavings].sort((a, b) => b.date.localeCompare(a.date));
     }, [rawSavings]);
 
-    // Calculate Balance from all transactions history (Exact same logic as Admin)
     const balance = useMemo(() => {
         if (!rawSavings) return 0;
         return rawSavings.reduce((acc, t) => t.type === 'deposit' ? acc + t.amount : acc - t.amount, 0);
@@ -84,7 +77,6 @@ export default function ParentFinancePage() {
         return { start, end };
     }, [activeYear]);
 
-    // Map SPP status for current academic year
     const sppMap = useMemo(() => {
         const map = new Map<number, SPPPayment>();
         if (payments && academicYears.start) {
@@ -97,10 +89,9 @@ export default function ParentFinancePage() {
         return map;
     }, [payments, academicYears]);
 
-    // Calculate SPP stats with 10-month policy
     const sppStats = useMemo(() => {
         const defaultAmount = profile?.defaultSppAmount || 50000;
-        const targetMonths = 10; // Kebijakan Lunas Tahunan
+        const targetMonths = 10; 
         let totalPaid = 0;
         let paidCount = 0;
 
@@ -134,13 +125,6 @@ export default function ParentFinancePage() {
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center gap-3">
-                <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
-                    <Link href="/parent/dashboard"><ArrowLeft className="h-4 w-4" /></Link>
-                </Button>
-                <h1 className="text-xl font-headline font-bold text-primary">Keuangan Santri</h1>
-            </div>
-
             {savingsError && (
                 <Card className="border-destructive/20 bg-destructive/5">
                     <CardContent className="p-3 text-[10px] text-destructive flex items-center gap-2">
@@ -150,7 +134,6 @@ export default function ParentFinancePage() {
                 </Card>
             )}
 
-            {/* Savings Overview Card */}
             <Card className="border-none shadow-sm bg-primary text-primary-foreground overflow-hidden relative">
                 <CardContent className="p-5 flex items-center justify-between relative z-10">
                     <div className="space-y-1">
@@ -167,7 +150,6 @@ export default function ParentFinancePage() {
                 </div>
             </Card>
 
-            {/* SPP Stats Summary */}
             <div className="grid grid-cols-2 gap-3">
                 <Card className="border-none shadow-sm bg-blue-50">
                     <CardContent className="p-4 flex flex-col gap-1">
@@ -205,7 +187,6 @@ export default function ParentFinancePage() {
                 </Card>
             </div>
 
-            {/* SPP Grid Status */}
             <Card className="border-none shadow-sm overflow-hidden">
                 <CardHeader className="p-4 pb-2 border-b bg-muted/5 flex flex-row items-center justify-between space-y-0">
                     <div>
@@ -245,7 +226,6 @@ export default function ParentFinancePage() {
                 </CardContent>
             </Card>
 
-            {/* Savings Transaction History (Mutasi) */}
             <Card className="border-none shadow-sm overflow-hidden">
                 <CardHeader className="p-4 pb-2 border-b bg-muted/5">
                     <CardTitle className="text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-2">
