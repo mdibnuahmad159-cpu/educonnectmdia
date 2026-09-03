@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
@@ -30,7 +29,8 @@ import {
     MapPin,
     Calendar,
     Users,
-    X
+    X,
+    ArrowRightCircle
 } from "lucide-react";
 import {
   Dialog,
@@ -66,7 +66,7 @@ const WhatsAppIcon = () => (
 
 function InfoField({ label, value, icon: Icon }: { label: string; value: string; icon: any }) {
     return (
-        <div className="flex items-center gap-3 py-3.5 border-b border-muted/60 last:border-0">
+        <div className="flex items-center gap-3 py-3 border-b border-muted/60 last:border-0">
             <div className="p-2 bg-primary/5 rounded-lg text-primary shrink-0">
                 <Icon className="h-3.5 w-3.5" />
             </div>
@@ -231,31 +231,6 @@ export default function ParentDashboardPage() {
             </CardContent>
         </Card>
 
-        {/* Action Buttons */}
-        <div className="grid grid-cols-3 gap-3">
-            <Link href="/parent/finance" className="flex flex-col items-center gap-2 p-3 rounded-xl bg-card border shadow-sm hover:border-primary/50 transition-all text-center">
-                <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-                    <Wallet className="h-5 w-5" />
-                </div>
-                <span className="text-[10px] font-bold uppercase tracking-tight">Keuangan</span>
-            </Link>
-            <button 
-                onClick={() => setIsReportDialogOpen(true)}
-                className="flex flex-col items-center gap-2 p-3 rounded-xl bg-card border shadow-sm hover:border-primary/50 transition-all text-center"
-            >
-                <div className="p-2 bg-green-50 text-green-600 rounded-lg">
-                    <FileText className="h-5 w-5" />
-                </div>
-                <span className="text-[10px] font-bold uppercase tracking-tight">Rapor</span>
-            </button>
-            <Link href="/parent/schedule" className="flex flex-col items-center gap-2 p-3 rounded-xl bg-card border shadow-sm hover:border-primary/50 transition-all text-center">
-                <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
-                    <CalendarDays className="h-5 w-5" />
-                </div>
-                <span className="text-[10px] font-bold uppercase tracking-tight">Jadwal</span>
-            </Link>
-        </div>
-
         {/* Today's Attendance */}
         <Card className="border-none shadow-sm overflow-hidden">
             <CardHeader className="p-4 pb-2">
@@ -296,7 +271,11 @@ export default function ParentDashboardPage() {
                 <CardTitle className="text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                     <Clock className="h-3.5 w-3.5" /> Jadwal Pelajaran
                 </CardTitle>
-                <Link href="/parent/schedule" className="text-[10px] text-primary font-bold hover:underline">Lihat Semua</Link>
+                <Link href="/parent/schedule">
+                    <Button variant="ghost" size="xs" className="h-7 gap-1 text-[10px] font-bold text-primary hover:bg-primary/5 uppercase">
+                        Lihat Semua <ArrowRightCircle className="h-3 w-3" />
+                    </Button>
+                </Link>
             </CardHeader>
             <CardContent className="p-4 pt-0">
                 {isScheduleLoading ? (
