@@ -18,6 +18,7 @@ import {
     UserCircle,
     ExternalLink,
     FileSearch,
+    FileText,
     Fingerprint,
     Baby,
     HeartHandshake,
