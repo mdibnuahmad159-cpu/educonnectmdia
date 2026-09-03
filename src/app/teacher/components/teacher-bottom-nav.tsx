@@ -3,7 +3,16 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
-import { LayoutDashboard, LogOut, ScanLine, X, Camera } from "lucide-react";
+import { 
+  Home, 
+  ClipboardCheck, 
+  UserCheck, 
+  PiggyBank, 
+  LogOut, 
+  ScanLine, 
+  X, 
+  Camera 
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { signOut } from "firebase/auth";
@@ -24,7 +33,10 @@ import {
 import { Button } from "@/components/ui/button";
 
 const navItems = [
-  { href: "/teacher/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+  { href: "/teacher/dashboard", icon: Home, label: "Beranda" },
+  { href: "/teacher/grades", icon: ClipboardCheck, label: "Nilai" },
+  { href: "/teacher/student-attendance", icon: UserCheck, label: "Absen" },
+  { href: "/teacher/tabungan", icon: PiggyBank, label: "Tabungan" },
 ];
 
 function BarcodeScanner({ 
@@ -179,7 +191,7 @@ export function TeacherBottomNav() {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-200",
+                    "flex items-center gap-2 px-3 py-2 rounded-full transition-all duration-200",
                     isActive ? "bg-white/20 text-white" : "text-white/50 hover:text-white"
                   )}
                 >
@@ -194,7 +206,8 @@ export function TeacherBottomNav() {
             })}
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 rounded-full text-white/50 hover:text-white transition-all"
+              className="flex items-center gap-2 px-3 py-2 rounded-full text-white/50 hover:text-white transition-all"
+              title="Keluar"
             >
               <LogOut className="w-5 h-5" />
             </button>
