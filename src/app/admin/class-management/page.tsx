@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo } from "react";
@@ -10,15 +11,6 @@ import {
   CardContent,
   CardHeader,
 } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,8 +28,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { ChevronsUp, ChevronsDown, ArrowRightLeft, Loader2, FileDown, Printer, FileSpreadsheet, FileText, GraduationCap } from "lucide-react";
+import { ChevronsUp, ChevronsDown, ArrowRightLeft, Loader2, FileDown, Printer, FileSpreadsheet, FileText, GraduationCap, Users } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -227,60 +221,41 @@ export default function ClassManagementPage() {
 
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
-      toast({ variant: "destructive", title: "Gagal Membuka Jendela Cetak", description: "Mohon izinkan pop-up untuk situs ini." });
+      toast({ variant: "destructive", title: "Gagal Membuka Jendela Cetak" });
       return;
     }
 
     const tableRows = filteredStudents.map((student, index) => `
-      <tr style="border-bottom: 1px solid #ddd;">
-        <td style="padding: 4px; text-align: center;">${index + 1}</td>
-        <td style="padding: 4px;">${student.name}</td>
-        <td style="padding: 4px;">${student.nis}</td>
-        <td style="padding: 4px;">${student.kelas !== undefined ? `Kelas ${student.kelas}` : 'Belum diatur'}</td>
+      <tr>
+        <td style="text-align: center;">${index + 1}</td>
+        <td>${student.name}</td>
+        <td>${student.nis}</td>
+        <td>${student.kelas !== undefined ? `Kelas ${student.kelas}` : 'Belum diatur'}</td>
       </tr>
     `).join('');
 
-    const content = `
+    printWindow.document.write(`
       <html>
         <head>
-          <title>Cetak Data Manajemen Kelas</title>
+          <title>Cetak Manajemen Kelas</title>
           <style>
-            body { font-family: sans-serif; font-size: 10px; }
+            body { font-family: sans-serif; font-size: 10px; padding: 20px; }
             table { width: 100%; border-collapse: collapse; }
-            th, td { border: 1px solid #ccc; text-align: left; padding: 4px; }
+            th, td { border: 1px solid #ddd; padding: 6px; text-align: left; }
             th { background-color: #f2f2f2; }
-            h1 { font-size: 16px; }
-            @media print {
-              @page { size: A4; margin: 20mm; }
-              body { margin: 0; }
-            }
           </style>
         </head>
         <body>
           <h1>Data Manajemen Kelas</h1>
           <table>
-            <thead>
-              <tr>
-                <th style="width: 5%; text-align: center;">No.</th>
-                <th>Nama</th>
-                <th>NIS</th>
-                <th>Kelas</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${tableRows}
-            </tbody>
+            <thead><tr><th>No.</th><th>Nama</th><th>NIS</th><th>Kelas</th></tr></thead>
+            <tbody>${tableRows}</tbody>
           </table>
         </body>
       </html>
-    `;
-
-    printWindow.document.write(content);
+    `);
     printWindow.document.close();
-    printWindow.onload = () => {
-      printWindow.focus();
-      printWindow.print();
-    };
+    printWindow.onload = () => { printWindow.print(); };
   };
 
   const isAllSelected = filteredStudents.length > 0 && selectedStudents.length === filteredStudents.length;
@@ -292,6 +267,7 @@ export default function ClassManagementPage() {
         <CardHeader className="p-4 flex flex-row flex-wrap items-center gap-2">
             <Select value={filterClass} onValueChange={setFilterClass}>
                 <SelectTrigger className="w-[140px] h-8 text-xs font-normal bg-white/10 border-white/20 text-white focus:ring-white/30">
+                    <Users className="h-3.5 w-3.5 mr-2 opacity-70" />
                     <SelectValue placeholder="Pilih kelas" />
                 </SelectTrigger>
                 <SelectContent>
@@ -339,80 +315,78 @@ export default function ClassManagementPage() {
         </CardHeader>
       </Card>
 
-      <Card className="border-none shadow-sm overflow-hidden">
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader className="bg-muted/30">
-              <TableRow>
-                <TableHead className="w-[40px] px-4">
-                  <Checkbox
-                    checked={isAllSelected ? true : (isIndeterminate ? "indeterminate" : false)}
-                    onCheckedChange={handleSelectAll}
-                    className="border-primary/50 data-[state=checked]:bg-primary"
-                  />
-                </TableHead>
-                <TableHead className="w-[50px] font-bold text-[10px] uppercase">No.</TableHead>
-                <TableHead className="font-bold text-[10px] uppercase">Nama</TableHead>
-                <TableHead className="font-bold text-[10px] uppercase">NIS</TableHead>
-                <TableHead className="font-bold text-[10px] uppercase">Kelas</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center h-24">
-                     <div className="flex justify-center items-center gap-2 text-muted-foreground">
-                        <Loader2 className="h-4 w-4 animate-spin"/>
-                        <span>Memuat data...</span>
-                     </div>
-                  </TableCell>
-                </TableRow>
-              ) : filteredStudents.length > 0 ? (
-                filteredStudents.map((student, index) => (
-                  <TableRow key={student.id} className="hover:bg-muted/10 transition-colors" data-state={selectedStudents.includes(student.id) && "selected"}>
-                    <TableCell className="px-4">
-                      <Checkbox
-                        checked={selectedStudents.includes(student.id)}
-                        onCheckedChange={(checked) => handleSelectStudent(student.id, !!checked)}
-                        className="data-[state=checked]:bg-primary"
-                      />
-                    </TableCell>
-                    <TableCell className="text-[11px]">{index + 1}</TableCell>
-                    <TableCell className="font-bold text-[11px] uppercase">{student.name}</TableCell>
-                    <TableCell className="text-[11px] font-mono">{student.nis}</TableCell>
-                    <TableCell className="text-[11px]">
-                        <span className={cn(
-                            "px-2 py-0.5 rounded-full text-[10px] font-bold",
-                            student.kelas !== undefined ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
-                        )}>
-                            {student.kelas !== undefined ? `KELAS ${student.kelas}` : "BELUM DIATUR"}
-                        </span>
-                    </TableCell>
-                  </TableRow>
+      <div className="pt-2">
+          <div className="flex items-center gap-3 px-4 py-2.5 bg-muted/30 rounded-t-[20px] border-x border-t">
+            <Checkbox
+              checked={isAllSelected ? true : (isIndeterminate ? "indeterminate" : false)}
+              onCheckedChange={handleSelectAll}
+              className="border-primary/50 data-[state=checked]:bg-primary"
+            />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Pilih Semua ({selectedStudents.length} Santri Terpilih)</span>
+          </div>
+
+          <div className="space-y-2 border-x border-b p-2 rounded-b-[20px] bg-card/50">
+            {loading ? (
+                <div className="flex flex-col items-center justify-center py-20 gap-3 text-muted-foreground">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary/40"/>
+                    <span className="text-xs font-medium uppercase tracking-widest">Memuat data santri...</span>
+                </div>
+            ) : filteredStudents.length > 0 ? (
+                filteredStudents.map((student) => (
+                    <div 
+                        key={student.id} 
+                        className={cn(
+                            "flex items-center justify-between p-3 rounded-xl bg-card border shadow-sm hover:border-primary/20 transition-all group",
+                            selectedStudents.includes(student.id) && "border-primary/40 bg-primary/5"
+                        )}
+                    >
+                        <div className="flex items-center gap-4">
+                            <Checkbox
+                                checked={selectedStudents.includes(student.id)}
+                                onCheckedChange={(checked) => handleSelectStudent(student.id, !!checked)}
+                                className="data-[state=checked]:bg-primary"
+                            />
+                            <div className="flex items-center gap-3">
+                                <Avatar className="h-10 w-10 border-2 border-primary/5 group-hover:border-primary/20 transition-all">
+                                    <AvatarFallback className="bg-primary/5 text-primary text-sm font-bold">{student.name.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                    <p className="text-[12px] font-bold leading-tight uppercase text-foreground group-hover:text-primary transition-colors">{student.name}</p>
+                                    <div className="flex items-center gap-2 mt-0.5">
+                                        <p className="text-[10px] text-muted-foreground font-mono bg-muted/50 px-1.5 rounded">NIS: {student.nis}</p>
+                                        <span className="text-[10px] text-muted-foreground">•</span>
+                                        <span className={cn(
+                                            "px-2 py-0.5 rounded-full text-[9px] font-bold uppercase",
+                                            student.kelas !== undefined ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+                                        )}>
+                                            {student.kelas !== undefined ? `KELAS ${student.kelas}` : "BELUM DIATUR"}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center text-muted-foreground text-xs italic">
-                    Belum ada data siswa untuk filter ini.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+            ) : (
+                <div className="py-20 text-center text-muted-foreground border-2 border-dashed rounded-2xl bg-muted/5">
+                    <GraduationCap className="h-10 w-10 mx-auto mb-3 opacity-10" />
+                    <p className="text-sm font-medium">Belum ada data santri untuk filter ini.</p>
+                </div>
+            )}
+          </div>
+      </div>
       
       <AlertDialog open={isMoveDialogOpen} onOpenChange={setIsMoveDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-[32px]">
           <AlertDialogHeader>
-            <AlertDialogTitle>Pindah Kelas</AlertDialogTitle>
-            <AlertDialogDescription>
-              Pilih kelas tujuan untuk {selectedStudents.length} siswa yang dipilih.
+            <AlertDialogTitle className="text-sm font-bold uppercase tracking-tight">Pindah Kelas Massal</AlertDialogTitle>
+            <AlertDialogDescription className="text-xs">
+              Pilih kelas tujuan untuk {selectedStudents.length} santri yang dipilih.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="py-4">
              <Select onValueChange={(value) => setTargetClass(Number(value))}>
-                <SelectTrigger>
+                <SelectTrigger className="h-11 rounded-2xl">
                     <SelectValue placeholder="Pilih kelas tujuan" />
                 </SelectTrigger>
                 <SelectContent>
@@ -422,24 +396,24 @@ export default function ClassManagementPage() {
                 </SelectContent>
             </Select>
           </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Batal</AlertDialogCancel>
-            <AlertDialogAction onClick={handleMove} disabled={targetClass === null}>Pindahkan</AlertDialogAction>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="rounded-full h-10 text-xs">Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={handleMove} disabled={targetClass === null} className="rounded-full h-10 text-xs">Ya, Pindahkan</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
       <AlertDialog open={isGraduateDialogOpen} onOpenChange={setIsGraduateDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-[32px]">
           <AlertDialogHeader>
-            <AlertDialogTitle>Anda Yakin?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tindakan ini akan memindahkan {selectedStudents.length} siswa terpilih ke daftar alumni untuk tahun ajaran {activeYear}. Siswa akan dihapus dari daftar siswa aktif.
+            <AlertDialogTitle className="text-sm font-bold uppercase tracking-tight text-destructive">Proses Kelulusan</AlertDialogTitle>
+            <AlertDialogDescription className="text-xs">
+              Tindakan ini akan memindahkan {selectedStudents.length} santri terpilih ke daftar alumni untuk tahun ajaran {activeYear}. Santri akan dihapus dari daftar aktif.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Batal</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmGraduate} className="bg-destructive hover:bg-destructive/90">Ya, Luluskan</AlertDialogAction>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="rounded-full h-10 text-xs">Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmGraduate} className="bg-destructive hover:bg-destructive/90 text-white rounded-full h-10 text-xs">Ya, Luluskan</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
