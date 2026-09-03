@@ -28,9 +28,6 @@ const formSchema = z.object({
   namaMadrasah: z.string().optional(),
   nsdt: z.string().optional(),
   alamat: z.string().optional(),
-  visi: z.string().optional(),
-  misi: z.string().optional(),
-  sejarahSingkat: z.string().optional(),
   logoYayasanUrl: z.string().optional().or(z.literal("")),
   logoMadrasahUrl: z.string().optional().or(z.literal("")),
   kopSuratUrl: z.string().optional().or(z.literal("")),
@@ -51,9 +48,6 @@ const defaultValues = {
   namaMadrasah: "",
   nsdt: "",
   alamat: "",
-  visi: "",
-  misi: "",
-  sejarahSingkat: "",
   logoYayasanUrl: "",
   logoMadrasahUrl: "",
   kopSuratUrl: "",
@@ -120,7 +114,6 @@ export function ProfileForm({ profile, onSave }: ProfileFormProps) {
                 </div>
                 <FormField control={form.control} name="nsdt" render={({ field }) => ( <FormItem> <FormLabel>NSDT (Nomor Statistik Diniyah Takmiliyah)</FormLabel> <FormControl><Input {...field} value={field.value ?? ""} /></FormControl> <FormMessage /> </FormItem> )}/>
                 
-                {/* Academic Year Selector - Now in Profile Page */}
                 <div className="p-4 rounded-xl border bg-primary/5 space-y-3">
                   <div className="flex items-center gap-2 text-primary">
                     <Calendar className="h-4 w-4" />
@@ -239,12 +232,6 @@ export function ProfileForm({ profile, onSave }: ProfileFormProps) {
                         </FormItem>
                     )}
                     />
-                </div>
-
-                <div className="space-y-4">
-                    <FormField control={form.control} name="visi" render={({ field }) => ( <FormItem> <FormLabel>Visi</FormLabel> <FormControl><Textarea className="h-20" {...field} value={field.value ?? ""} /></FormControl> <FormMessage /> </FormItem> )}/>
-                    <FormField control={form.control} name="misi" render={({ field }) => ( <FormItem> <FormLabel>Misi</FormLabel> <FormControl><Textarea className="h-28" {...field} value={field.value ?? ""} /></FormControl> <FormMessage /> </FormItem> )}/>
-                    <FormField control={form.control} name="sejarahSingkat" render={({ field }) => ( <FormItem> <FormLabel>Sejarah Singkat</FormLabel> <FormControl><Textarea className="h-32" {...field} value={field.value ?? ""} /></FormControl> <FormMessage /> </FormItem> )}/>
                 </div>
             </div>
         </ScrollArea>
