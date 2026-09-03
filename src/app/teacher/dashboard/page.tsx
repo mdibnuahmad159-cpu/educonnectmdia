@@ -23,7 +23,12 @@ import {
     Users,
     Save,
     UserCheck,
-    Coffee
+    Coffee,
+    Fingerprint,
+    Mail,
+    Phone,
+    MapPin,
+    GraduationCap
 } from "lucide-react";
 import {
   Dialog,
@@ -31,6 +36,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -55,6 +61,7 @@ import QRCode from 'qrcode';
 import { saveStudentAttendanceBatch } from "@/lib/firebase-helpers";
 import { useToast } from "@/hooks/use-toast";
 import { useAcademicYear } from "@/context/academic-year-provider";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const dayMapping: { [key: number]: keyof Omit<Schedule, 'id' | 'classLevel' | 'academicYear' | 'type'> } = {
     0: 'sunday',
@@ -67,6 +74,20 @@ const dayMapping: { [key: number]: keyof Omit<Schedule, 'id' | 'classLevel' | 'a
 
 const STATUS_OPTIONS = ['Hadir', 'Sakit', 'Izin', 'Alpa', 'Belum Diabsen'];
 
+function InfoField({ label, value, icon: Icon }: { label: string; value: string; icon: any }) {
+    return (
+        <div className="flex items-center gap-3 py-3 border-b border-muted/60 last:border-0">
+            <div className="p-2 bg-primary/5 rounded-lg text-primary shrink-0">
+                <Icon className="h-3.5 w-3.5" />
+            </div>
+            <div className="flex-1 min-w-0">
+                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-0.5">{label}</p>
+                <p className="text-[11px] font-semibold text-foreground/80 leading-snug">{value || '-'}</p>
+            </div>
+        </div>
+    );
+}
+
 export default function TeacherDashboardPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
@@ -76,6 +97,7 @@ export default function TeacherDashboardPage() {
   const [nig, setNig] = useState<string | null>(null);
   const [todayStr, setTodayStr] = useState<string>("");
   const [isQrOpen, setIsQrOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
   
   // Student Attendance States
@@ -275,20 +297,30 @@ export default function TeacherDashboardPage() {
                 </Avatar>
                 <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-start">
-                        <div>
-                            <h2 className="text-lg font-bold truncate leading-tight">{teacher.name}</h2>
-                            <p className="text-xs opacity-90 font-medium">{teacher.jabatan || 'Guru Madrasah'}</p>
+                        <div className="min-w-0 pr-2">
+                            <h2 className="text-lg font-bold truncate leading-tight uppercase">{teacher.name}</h2>
+                            <p className="text-xs opacity-90 font-medium truncate">{teacher.jabatan || 'Guru Madrasah'}</p>
                         </div>
-                        <Button 
-                            variant="secondary" 
-                            size="sm" 
-                            className="h-8 gap-2 bg-white text-primary hover:bg-white/90"
-                            onClick={() => setIsQrOpen(true)}
-                        >
-                            <QrCode className="h-4 w-4" /> Absen
-                        </Button>
+                        <div className="flex flex-col gap-2 shrink-0">
+                            <Button 
+                                variant="secondary" 
+                                size="sm" 
+                                className="h-8 gap-2 bg-white text-primary hover:bg-white/90"
+                                onClick={() => setIsQrOpen(true)}
+                            >
+                                <QrCode className="h-4 w-4" /> Absen
+                            </Button>
+                            <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-8 gap-2 border border-white/20 text-white hover:bg-white/10"
+                                onClick={() => setIsProfileOpen(true)}
+                            >
+                                <UserCircle className="h-4 w-4" /> Detail
+                            </Button>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-2 mt-2">
+                    <div className="flex items-center gap-2 mt-1">
                         <span className="text-[9px] font-bold bg-white/20 px-2 py-0.5 rounded uppercase tracking-tighter">NIG: {teacher.nig}</span>
                     </div>
                 </div>
@@ -489,6 +521,61 @@ export default function TeacherDashboardPage() {
                     </div>
                 </div>
                 <Button variant="outline" onClick={() => setIsQrOpen(false)} className="w-full h-10 gap-2 border-primary/20"><X className="h-4 w-4" /> Tutup</Button>
+            </DialogContent>
+        </Dialog>
+
+        {/* PROFILE DETAIL DIALOG */}
+        <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
+            <DialogContent className="sm:max-w-md p-0 overflow-hidden rounded-[32px] border-none shadow-2xl">
+                <div className="flex flex-col bg-card">
+                    <div className="bg-primary/5 p-6 pt-8 flex flex-col items-center text-center relative">
+                        <DialogHeader className="sr-only">
+                            <DialogTitle>Detail Profil Saya</DialogTitle>
+                        </DialogHeader>
+                        
+                        <div className="relative mb-4">
+                            <Avatar className="h-24 w-24 border-4 border-white shadow-xl scale-110">
+                                <AvatarImage src={teacher.avatarUrl} className="object-cover" />
+                                <AvatarFallback className="bg-primary/5 text-primary text-3xl font-bold">{teacher.name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                        </div>
+
+                        <div className="space-y-1 mt-2">
+                            <h3 className="text-lg font-bold leading-tight uppercase text-primary tracking-tight">{teacher.name}</h3>
+                            <p className="text-xs font-semibold text-muted-foreground/80 tracking-wide">{teacher.jabatan || 'Guru Madrasah'}</p>
+                        </div>
+                        
+                        <div className="flex items-center gap-2 mt-4">
+                            <span className="text-[10px] font-bold bg-primary text-white px-4 py-1.5 rounded-full uppercase tracking-[0.1em] shadow-md shadow-primary/20">
+                                NIG: {teacher.nig}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div className="px-6 py-2">
+                        <ScrollArea className="h-[300px] pr-2">
+                            <div className="py-2">
+                                <InfoField label="NIK (Nomor Induk Kependudukan)" value={teacher.nik || ""} icon={Fingerprint} />
+                                <InfoField label="Alamat Email" value={teacher.email || ""} icon={Mail} />
+                                <InfoField label="Nomor WhatsApp" value={teacher.noWa || ""} icon={Phone} />
+                                <InfoField label="Pendidikan Terakhir" value={teacher.pendidikan || ""} icon={GraduationCap} />
+                                <InfoField label="Latar Belakang Pondok" value={teacher.ponpes || ""} icon={BookOpen} />
+                                <InfoField label="Alamat Domisili" value={teacher.alamat || ""} icon={MapPin} />
+                            </div>
+                        </ScrollArea>
+                    </div>
+
+                    <DialogFooter className="bg-muted/30 p-4 px-6 border-t flex flex-row items-center justify-center">
+                        <Button 
+                            type="button"
+                            variant="secondary"
+                            className="rounded-full px-10 h-10 text-[10px] font-bold uppercase tracking-widest bg-white shadow-sm"
+                            onClick={() => setIsProfileOpen(false)}
+                        >
+                            <X className="h-3.5 w-3.5 mr-2" /> Tutup Profil
+                        </Button>
+                    </DialogFooter>
+                </div>
             </DialogContent>
         </Dialog>
     </div>
