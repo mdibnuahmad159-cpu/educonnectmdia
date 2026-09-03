@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo } from "react";
@@ -263,7 +262,7 @@ export default function ClassManagementPage() {
 
   return (
     <div className="space-y-4">
-      <Card className="border-none shadow-lg bg-primary text-primary-foreground">
+      <Card className="sticky top-[106px] z-20 border-none shadow-lg bg-primary text-primary-foreground">
         <CardHeader className="p-4 flex flex-row flex-wrap items-center gap-2">
             <Select value={filterClass} onValueChange={setFilterClass}>
                 <SelectTrigger className="w-[140px] h-8 text-xs font-normal bg-white/10 border-white/20 text-white focus:ring-white/30">
@@ -301,10 +300,10 @@ export default function ClassManagementPage() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={handleExportExcel}>
-                        <FileSpreadsheet className="mr-2 h-3.5 w-3.5" /> Excel
+                        <FileSpreadsheet className="mr-2 h-4 w-4 text-green-600" /> Excel
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={handleExportPdf}>
-                        <FileText className="mr-2 h-3.5 w-3.5" /> PDF
+                        <FileText className="mr-2 h-4 w-4 text-red-600" /> PDF
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>

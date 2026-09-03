@@ -560,7 +560,7 @@ export default function CertificatesPage() {
 
     return (
         <div className="space-y-4">
-            <Card className="border-none shadow-lg bg-primary text-primary-foreground">
+            <Card className="sticky top-[106px] z-20 border-none shadow-lg bg-primary text-primary-foreground">
                 <CardHeader className="p-4 flex flex-row flex-wrap items-center gap-2">
                     <div className="relative flex-1 min-w-[200px]">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-primary-foreground/50" />
@@ -650,11 +650,11 @@ export default function CertificatesPage() {
                                     XLSX.utils.book_append_sheet(workbook, worksheet, "Daftar Prestasi");
                                     XLSX.writeFile(workbook, `Data_Prestasi_${activeYear.replace('/', '-')}.xlsx`);
                                 }}>
-                                    <FileSpreadsheet className="mr-2 h-3.5 w-3.5" />
+                                    <FileSpreadsheet className="mr-2 h-4 w-4 text-green-600" />
                                     Excel
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={handlePrintTable}>
-                                    <Printer className="mr-2 h-3.5 w-3.5" />
+                                    <Printer className="mr-2 h-4 w-4 text-blue-600" />
                                     Cetak Tabel
                                 </DropdownMenuItem>
                             </DropdownMenuContent>

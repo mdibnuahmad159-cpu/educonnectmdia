@@ -140,7 +140,7 @@ export default function TabunganPage() {
 
     return (
         <div className="space-y-4 pb-10">
-            <Card className="border-none shadow-lg bg-primary text-primary-foreground">
+            <Card className="sticky top-[106px] z-20 border-none shadow-lg bg-primary text-primary-foreground">
                 <CardHeader className="p-4">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                          <div className="flex flex-wrap items-center gap-2 flex-1">

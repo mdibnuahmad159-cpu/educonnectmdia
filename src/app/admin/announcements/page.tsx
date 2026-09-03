@@ -89,7 +89,7 @@ export default function AnnouncementsPage() {
 
     return (
         <div className="space-y-4">
-            <Card className="border-none shadow-lg bg-primary text-primary-foreground">
+            <Card className="sticky top-[106px] z-20 border-none shadow-lg bg-primary text-primary-foreground">
                 <CardHeader className="p-4 flex flex-row items-center justify-end">
                     <Button variant="secondary" size="xs" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none" onClick={handleAdd}>
                         <PlusCircle className="h-4 w-4" />

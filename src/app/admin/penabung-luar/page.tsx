@@ -103,7 +103,7 @@ export default function ExternalSaversPage() {
 
     return (
         <div className="space-y-4">
-            <Card className="border-none shadow-lg bg-primary text-primary-foreground">
+            <Card className="sticky top-[106px] z-20 border-none shadow-lg bg-primary text-primary-foreground">
                 <CardHeader className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="relative flex-1 min-w-[200px]">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-primary-foreground/50" />
@@ -171,7 +171,7 @@ export default function ExternalSaversPage() {
                                     <Button variant="ghost" size="icon" className="h-8 w-8 text-primary" onClick={() => handleEdit(item)}>
                                         <Edit className="h-4 w-4" />
                                     </Button>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(item.id)}>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(id)}>
                                         <Trash2 className="h-4 w-4" />
                                     </Button>
                                 </div>

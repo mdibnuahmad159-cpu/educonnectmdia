@@ -298,7 +298,7 @@ export default function AttendancePage() {
 
     return (
         <div className="space-y-4 pb-10">
-            <Card className="border-none shadow-lg bg-primary text-primary-foreground">
+            <Card className="sticky top-[106px] z-20 border-none shadow-lg bg-primary text-primary-foreground">
                 <CardHeader className="p-4 flex flex-row flex-wrap items-center justify-between gap-4">
                     <div className="flex items-center gap-2 flex-1 max-w-sm">
                         <Input 

@@ -1203,7 +1203,7 @@ export default function GradesPage() {
 
     return (
         <div className="space-y-4 max-w-full overflow-hidden font-body">
-            <Card className="border-none shadow-lg bg-primary text-primary-foreground">
+            <Card className="sticky top-[106px] z-20 border-none shadow-lg bg-primary text-primary-foreground">
                 <CardHeader className="p-4 flex flex-col sm:flex-row flex-wrap items-center justify-between gap-4">
                     <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                         <Select value={selectedClass} onValueChange={setSelectedClass}>
@@ -1259,11 +1259,11 @@ export default function GradesPage() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                                 <DropdownMenuItem onClick={handleExportExcel}>
-                                    <FileSpreadsheet className="mr-2 h-3.5 w-3.5" />
+                                    <FileSpreadsheet className="mr-2 h-4 w-4 text-green-600" />
                                     Legger (Excel)
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={handlePrint}>
-                                    <Printer className="mr-2 h-3.5 w-3.5" />
+                                    <Printer className="mr-2 h-4 w-4 text-blue-600" />
                                     Cetak Legger
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
