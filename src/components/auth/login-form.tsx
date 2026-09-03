@@ -42,7 +42,7 @@ const adminSchema = z.object({
 });
 
 const parentSchema = z.object({
-  nis: z.string().min(1, "NIS wajib diisi"),
+  nis: z.string().min(1, "NIS/NIK wajib diisi"),
   password: z.string().min(1, "Password wajib diisi"),
 });
 
@@ -107,26 +107,42 @@ export function LoginForm() {
     setIsParentLoading(true);
     try {
       if (auth.currentUser) await signOut(auth);
-      const rawNis = String(values.nis).trim();
-      const upperNis = rawNis.toUpperCase();
-      const prefixedNis = upperNis.startsWith('MDIA') ? upperNis : `MDIA${upperNis}`;
       await signInAnonymously(auth);
 
+      const input = String(values.nis).trim();
+      const upperInput = input.toUpperCase();
+      const prefixed = upperInput.startsWith('MDIA') ? upperInput : `MDIA${upperInput}`;
+      const unprefixed = upperInput.startsWith('MDIA') ? upperInput.slice(4) : upperInput;
+
       let studentDoc: any = null;
-      const studentRef = doc(firestore, "students", prefixedNis);
+
+      // 1. Coba cari berdasarkan ID Dokumen (MDIA-prefixed)
+      const studentRef = doc(firestore, "students", prefixed);
       const studentSnap = await getDoc(studentRef);
 
       if (studentSnap.exists()) {
         studentDoc = studentSnap;
       } else {
-        const q = query(collection(firestore, "students"), where("nis", "==", prefixedNis));
-        const qSnap = await getDocs(q);
-        if (!qSnap.empty) studentDoc = qSnap.docs[0];
+        // 2. Coba cari berdasarkan field 'nis' (handle case sensitive & prefix variations)
+        const possibleNis = Array.from(new Set([input, upperInput, prefixed, unprefixed]));
+        const qNis = query(collection(firestore, "students"), where("nis", "in", possibleNis));
+        const qNisSnap = await getDocs(qNis);
+        
+        if (!qNisSnap.empty) {
+          studentDoc = qNisSnap.docs[0];
+        } else {
+          // 3. Coba cari berdasarkan field 'nik' sebagai alternatif
+          const qNik = query(collection(firestore, "students"), where("nik", "==", input));
+          const qNikSnap = await getDocs(qNik);
+          if (!qNikSnap.empty) {
+            studentDoc = qNikSnap.docs[0];
+          }
+        }
       }
 
       if (!studentDoc || String(studentDoc.data().password) !== String(values.password)) {
         await signOut(auth);
-        toast({ variant: "destructive", title: "Gagal", description: "NIS atau password salah." });
+        toast({ variant: "destructive", title: "Gagal Masuk", description: "NIS/NIK atau password salah." });
         return;
       }
 
@@ -135,7 +151,7 @@ export function LoginForm() {
       router.push("/parent/dashboard");
     } catch (error: any) {
       console.error(error);
-      toast({ variant: "destructive", title: "Terjadi Kesalahan" });
+      toast({ variant: "destructive", title: "Terjadi Kesalahan", description: "Gagal menghubungkan ke server." });
     } finally {
       setIsParentLoading(false);
     }
@@ -148,17 +164,27 @@ export function LoginForm() {
       if (auth.currentUser) await signOut(auth);
       const rawNig = String(values.nig).trim();
       await signInAnonymously(auth);
+      
+      let teacherDoc: any = null;
       const teacherRef = doc(firestore, "teachers", rawNig);
       const teacherSnap = await getDoc(teacherRef);
 
-      if (!teacherSnap.exists() || String(teacherSnap.data().password) !== String(values.password)) {
+      if (teacherSnap.exists()) {
+        teacherDoc = teacherSnap;
+      } else {
+        const q = query(collection(firestore, "teachers"), where("nig", "==", rawNig));
+        const qSnap = await getDocs(q);
+        if (!qSnap.empty) teacherDoc = qSnap.docs[0];
+      }
+
+      if (!teacherDoc || String(teacherDoc.data().password) !== String(values.password)) {
         await signOut(auth);
-        toast({ variant: "destructive", title: "Gagal", description: "NIG atau password salah." });
+        toast({ variant: "destructive", title: "Gagal Masuk", description: "NIG atau password salah." });
         return;
       }
 
-      sessionStorage.setItem('teacherNig', teacherSnap.id);
-      toast({ title: "Selamat Datang", description: `Ust/Ustzh ${teacherSnap.data().name}` });
+      sessionStorage.setItem('teacherNig', teacherDoc.id);
+      toast({ title: "Selamat Datang", description: `Ust/Ustzh ${teacherDoc.data().name}` });
       router.push("/teacher/dashboard");
     } catch (error: any) {
       console.error(error);
@@ -175,17 +201,27 @@ export function LoginForm() {
       if (auth.currentUser) await signOut(auth);
       const rawNip = String(values.nip).trim();
       await signInAnonymously(auth);
+      
+      let saverDoc: any = null;
       const saverRef = doc(firestore, "externalSavers", rawNip);
       const saverSnap = await getDoc(saverRef);
 
-      if (!saverSnap.exists() || String(saverSnap.data().password) !== String(values.password)) {
+      if (saverSnap.exists()) {
+        saverDoc = saverSnap;
+      } else {
+        const q = query(collection(firestore, "externalSavers"), where("nip", "==", rawNip));
+        const qSnap = await getDocs(q);
+        if (!qSnap.empty) saverDoc = qSnap.docs[0];
+      }
+
+      if (!saverDoc || String(saverDoc.data().password) !== String(values.password)) {
         await signOut(auth);
-        toast({ variant: "destructive", title: "Gagal", description: "NIP atau password salah." });
+        toast({ variant: "destructive", title: "Gagal Masuk", description: "NIP atau password salah." });
         return;
       }
 
-      sessionStorage.setItem('externalNip', saverSnap.id);
-      toast({ title: "Selamat Datang", description: saverSnap.data().name });
+      sessionStorage.setItem('externalNip', saverDoc.id);
+      toast({ title: "Selamat Datang", description: saverDoc.data().name });
       router.push("/external/dashboard");
     } catch (error: any) {
       console.error(error);
@@ -209,16 +245,16 @@ export function LoginForm() {
           <TabsContent value="parent" className="mt-0">
              <div className="mb-8">
                <h2 className="text-xl font-bold text-foreground tracking-tight">Masuk Wali Murid</h2>
-               <p className="text-xs text-muted-foreground mt-1">Gunakan NIS santri sebagai username.</p>
+               <p className="text-xs text-muted-foreground mt-1">Gunakan NIS atau NIK santri sebagai username.</p>
              </div>
              <Form {...parentForm}>
                <form onSubmit={parentForm.handleSubmit(handleParentSubmit)} className="space-y-5">
                  <FormField control={parentForm.control} name="nis" render={({ field }) => (
                    <FormItem className="space-y-1.5">
-                     <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Nomor Induk Siswa (NIS)</FormLabel>
+                     <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Nomor Induk Siswa (NIS/NIK)</FormLabel>
                      <div className="relative">
                        <User className="absolute left-4 top-3.5 h-5 w-5 text-muted-foreground/40" />
-                       <FormControl><Input placeholder="Masukkan NIS..." {...field} className="h-12 pl-12 rounded-2xl bg-muted/30 border-muted/50 focus-visible:ring-primary/20" /></FormControl>
+                       <FormControl><Input placeholder="Masukkan NIS atau NIK..." {...field} className="h-12 pl-12 rounded-2xl bg-muted/30 border-muted/50 focus-visible:ring-primary/20" /></FormControl>
                      </div>
                      <FormMessage />
                    </FormItem>
