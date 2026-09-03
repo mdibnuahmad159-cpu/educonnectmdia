@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useRef } from "react";
-import { PlusCircle, AlertTriangle, Download, Upload, FileDown, FileUp, FileSpreadsheet, FileText, Printer, Loader2, Wand2, Edit, Trash2 } from "lucide-react";
+import { PlusCircle, AlertTriangle, Download, Upload, FileDown, FileUp, FileSpreadsheet, FileText, Printer, Loader2, Wand2, UserCircle, Trash2 } from "lucide-react";
 import { useCollection, useFirestore, useMemoFirebase, useUser } from "@/firebase";
 import { addTeacher, updateTeacher, deleteTeacher, addTeachersBatch, normalizeTeacherNIGs } from "@/lib/firebase-helpers";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { TeacherForm } from "./teacher-form";
+import { TeacherDetail } from "./teacher-detail";
 import type { Teacher } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { collection, Firestore } from "firebase/firestore";
@@ -42,6 +43,7 @@ export function TeacherManagement() {
   const { data: teachers, loading, error } = useCollection<Teacher>(teachersCollection);
   const { user } = useUser();
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -81,9 +83,15 @@ export function TeacherManagement() {
     setIsFormOpen(true);
   };
 
-  const handleEdit = (teacher: Teacher) => {
+  const handleDetail = (teacher: Teacher) => {
     setSelectedTeacher(teacher);
-    setIsFormOpen(true);
+    setIsDetailOpen(true);
+  };
+
+  const handleEditFromDetail = (teacher: Teacher) => {
+    // This is called when internal save happens in detail
+    // or if we needed to trigger the main form
+    setSelectedTeacher(teacher);
   };
 
   const handleDelete = (id: string) => {
@@ -96,6 +104,7 @@ export function TeacherManagement() {
     deleteTeacher(firestore, teacherToDelete);
     toast({ title: "Guru Dihapus", description: "Data guru berhasil dihapus dari daftar." });
     setIsDeleteDialogOpen(false);
+    setIsDetailOpen(false);
     setTeacherToDelete(null);
   };
   
@@ -447,10 +456,10 @@ export function TeacherManagement() {
                                   variant="outline" 
                                   size="sm" 
                                   className="h-8 gap-2 border-primary/10 hover:bg-primary/5 text-[11px] font-bold uppercase tracking-tight text-primary"
-                                  onClick={() => handleEdit(teacher)}
+                                  onClick={() => handleDetail(teacher)}
                               >
-                                  <Edit className="h-3.5 w-3.5" />
-                                  Edit
+                                  <UserCircle className="h-3.5 w-3.5" />
+                                  Detail
                               </Button>
                               <Button 
                                   variant="ghost" 
@@ -477,6 +486,14 @@ export function TeacherManagement() {
         setIsOpen={setIsFormOpen} 
         teacher={selectedTeacher}
         onSave={handleSave}
+      />
+      
+      <TeacherDetail
+        isOpen={isDetailOpen}
+        setIsOpen={setIsDetailOpen}
+        teacher={selectedTeacher}
+        onEdit={handleEditFromDetail}
+        onDelete={handleDelete}
       />
       
        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
