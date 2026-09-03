@@ -4,7 +4,6 @@ import { usePathname } from "next/navigation";
 import { 
   Home, 
   Wallet, 
-  CalendarDays, 
   FileText 
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -12,7 +11,6 @@ import { cn } from "@/lib/utils";
 const navItems = [
   { href: "/parent/dashboard", icon: Home, label: "Beranda" },
   { href: "/parent/finance", icon: Wallet, label: "Keuangan" },
-  { href: "/parent/schedule", icon: CalendarDays, label: "Jadwal" },
   { href: "/parent/reports", icon: FileText, label: "Rapor" },
 ];
 
