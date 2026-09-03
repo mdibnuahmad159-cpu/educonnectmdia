@@ -96,7 +96,6 @@ export default function TeacherDashboardPage() {
 
   const [nig, setNig] = useState<string | null>(null);
   const [todayStr, setTodayStr] = useState<string>("");
-  const [isQrOpen, setIsQrOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
   
@@ -303,20 +302,12 @@ export default function TeacherDashboardPage() {
                         </div>
                         <div className="flex flex-col gap-2 shrink-0">
                             <Button 
-                                variant="secondary" 
-                                size="sm" 
-                                className="h-8 gap-2 bg-white text-primary hover:bg-white/90"
-                                onClick={() => setIsQrOpen(true)}
-                            >
-                                <QrCode className="h-4 w-4" /> Absen
-                            </Button>
-                            <Button 
                                 variant="ghost" 
                                 size="sm" 
                                 className="h-8 gap-2 border border-white/20 text-white hover:bg-white/10"
                                 onClick={() => setIsProfileOpen(true)}
                             >
-                                <UserCircle className="h-4 w-4" /> Detail
+                                <UserCircle className="h-4 w-4" /> Detail Profil
                             </Button>
                         </div>
                     </div>
@@ -504,27 +495,7 @@ export default function TeacherDashboardPage() {
             </CardContent>
         </Card>
 
-        {/* QR CODE DIALOG */}
-        <Dialog open={isQrOpen} onOpenChange={setIsQrOpen}>
-            <DialogContent className="sm:max-w-xs p-6">
-                <DialogHeader>
-                    <DialogTitle className="text-center font-headline text-primary">Absen Sekarang</DialogTitle>
-                    <DialogDescription className="text-center text-[10px]">Tunjukkan QR Code ini kepada petugas absen.</DialogDescription>
-                </DialogHeader>
-                <div className="flex flex-col items-center justify-center gap-4 py-4">
-                    <div className="p-4 bg-white rounded-2xl shadow-xl border-4 border-primary/10">
-                        {qrDataUrl ? <img src={qrDataUrl} alt="My QR Code" className="w-48 h-48" /> : <div className="w-48 h-48 flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary/20" /></div>}
-                    </div>
-                    <div className="text-center">
-                        <p className="text-sm font-bold text-primary uppercase tracking-wider">{teacher.name}</p>
-                        <p className="text-[10px] font-mono font-bold text-muted-foreground mt-1">NIG: {teacher.nig}</p>
-                    </div>
-                </div>
-                <Button variant="outline" onClick={() => setIsQrOpen(false)} className="w-full h-10 gap-2 border-primary/20"><X className="h-4 w-4" /> Tutup</Button>
-            </DialogContent>
-        </Dialog>
-
-        {/* PROFILE DETAIL DIALOG */}
+        {/* PROFILE DETAIL DIALOG WITH INTEGRATED BARCODE */}
         <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
             <DialogContent className="sm:max-w-md p-0 overflow-hidden rounded-[32px] border-none shadow-2xl">
                 <div className="flex flex-col bg-card">
@@ -553,7 +524,7 @@ export default function TeacherDashboardPage() {
                     </div>
 
                     <div className="px-6 py-2">
-                        <ScrollArea className="h-[300px] pr-2">
+                        <ScrollArea className="h-[350px] pr-2">
                             <div className="py-2">
                                 <InfoField label="NIK (Nomor Induk Kependudukan)" value={teacher.nik || ""} icon={Fingerprint} />
                                 <InfoField label="Alamat Email" value={teacher.email || ""} icon={Mail} />
@@ -561,6 +532,19 @@ export default function TeacherDashboardPage() {
                                 <InfoField label="Pendidikan Terakhir" value={teacher.pendidikan || ""} icon={GraduationCap} />
                                 <InfoField label="Latar Belakang Pondok" value={teacher.ponpes || ""} icon={BookOpen} />
                                 <InfoField label="Alamat Domisili" value={teacher.alamat || ""} icon={MapPin} />
+                            </div>
+
+                            {/* INTEGRATED QR CODE AT THE BOTTOM */}
+                            <div className="mt-4 mb-6 p-5 rounded-[24px] bg-muted/20 border-2 border-dashed border-muted flex flex-col items-center gap-3">
+                                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">ID Barcode Absensi</p>
+                                {qrDataUrl ? (
+                                    <img src={qrDataUrl} alt="QR Code" className="w-40 h-40" />
+                                ) : (
+                                    <div className="w-40 h-40 flex items-center justify-center">
+                                        <Loader2 className="h-6 w-6 animate-spin text-primary/20" />
+                                    </div>
+                                )}
+                                <span className="text-[10px] font-mono font-bold text-primary/40 tracking-tighter">{teacher.nig}</span>
                             </div>
                         </ScrollArea>
                     </div>
