@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useFirestore, useDoc, useCollection, useMemoFirebase } from "@/firebase";
 import { doc, collection, query, where } from "firebase/firestore";
-import type { Student, StudentAttendance, Schedule, Curriculum, Teacher } from "@/types";
+import type { Student, StudentAttendance, Schedule, Curriculum, Teacher, SavingsTransaction, SPPPayment } from "@/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
@@ -27,7 +27,9 @@ import {
     Calendar,
     Users,
     X,
-    ArrowRightCircle
+    ArrowRightCircle,
+    PiggyBank,
+    ReceiptText
 } from "lucide-react";
 import {
   Dialog,
@@ -96,6 +98,43 @@ export default function ParentDashboardPage() {
     return doc(firestore, "students", nis);
   }, [firestore, nis]);
   const { data: student, loading: isStudentLoading, error: studentError } = useDoc<Student>(studentRef);
+
+  // Fetch Savings Transactions
+  const savingsQuery = useMemoFirebase(() => {
+    if (!firestore || !nis) return null;
+    return query(collection(firestore, "savingsTransactions"), where("saverId", "==", nis));
+  }, [firestore, nis]);
+  const { data: rawSavings } = useCollection<SavingsTransaction>(savingsQuery);
+
+  const savingsBalance = useMemo(() => {
+    if (!rawSavings) return 0;
+    return rawSavings.reduce((acc, t) => t.type === 'deposit' ? acc + t.amount : acc - t.amount, 0);
+  }, [rawSavings]);
+
+  // Fetch SPP Payments
+  const sppQuery = useMemoFirebase(() => {
+    if (!firestore || !nis) return null;
+    return query(collection(firestore, "sppPayments"), where("studentId", "==", nis));
+  }, [firestore, nis]);
+  const { data: allPayments } = useCollection<SPPPayment>(sppQuery);
+
+  const sppStats = useMemo(() => {
+    if (!allPayments || !activeYear) return { totalPaid: 0, unpaidMonths: 0 };
+    const [startYear, endYear] = activeYear.split('/').map(Number);
+    
+    const currentYearPayments = allPayments.filter(p => {
+        if (p.month >= 7) return p.year === startYear;
+        if (p.month <= 6) return p.year === endYear;
+        return false;
+    });
+
+    const totalPaid = currentYearPayments.reduce((sum, p) => sum + p.amountPaid, 0);
+    const targetMonths = 10;
+    const paidCount = currentYearPayments.length;
+    const unpaidMonths = Math.max(0, targetMonths - paidCount);
+
+    return { totalPaid, unpaidMonths };
+  }, [allPayments, activeYear]);
 
   // Generate QR Code
   useEffect(() => {
@@ -215,6 +254,35 @@ export default function ParentDashboardPage() {
                 </div>
             </CardContent>
         </Card>
+
+        {/* Finance Stats Grid */}
+        <div className="grid grid-cols-2 gap-3">
+            <Card className="bg-primary border-none shadow-sm text-primary-foreground">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1.5 p-4">
+                    <CardTitle className="text-[10px] font-bold uppercase tracking-tight opacity-70">Total Tabungan</CardTitle>
+                    <PiggyBank className="h-3.5 w-3.5 opacity-40" />
+                </CardHeader>
+                <CardContent className="p-4 pt-0">
+                    <div className="text-lg font-bold">Rp {savingsBalance.toLocaleString()}</div>
+                    <p className="text-[8px] opacity-50 mt-0.5 uppercase font-medium">Saldo Tersedia</p>
+                </CardContent>
+            </Card>
+            <Card className="bg-primary border-none shadow-sm text-primary-foreground">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1.5 p-4">
+                    <CardTitle className="text-[10px] font-bold uppercase tracking-tight opacity-70">SPP Terbayar</CardTitle>
+                    <ReceiptText className="h-3.5 w-3.5 opacity-40" />
+                </CardHeader>
+                <CardContent className="p-4 pt-0">
+                    <div className="text-lg font-bold">Rp {sppStats.totalPaid.toLocaleString()}</div>
+                    <p className={cn(
+                        "text-[8px] font-bold mt-0.5 uppercase",
+                        sppStats.unpaidMonths > 0 ? "text-accent" : "text-green-400"
+                    )}>
+                        {sppStats.unpaidMonths > 0 ? `${sppStats.unpaidMonths} Bulan Tunggakan` : 'Lunas Tahunan'}
+                    </p>
+                </CardContent>
+            </Card>
+        </div>
 
         {/* Today's Attendance */}
         <Card className="border-none shadow-sm overflow-hidden">
