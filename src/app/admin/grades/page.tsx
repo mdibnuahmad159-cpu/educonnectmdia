@@ -1203,7 +1203,7 @@ export default function GradesPage() {
 
     return (
         <div className="space-y-4 max-w-full overflow-hidden font-body">
-            <Card className="sticky top-[106px] z-20 border-none shadow-lg bg-primary text-primary-foreground">
+            <Card className="border-none shadow-lg bg-primary text-primary-foreground">
                 <CardHeader className="p-4 flex flex-col sm:flex-row flex-wrap items-center justify-between gap-4">
                     <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                         <Select value={selectedClass} onValueChange={setSelectedClass}>
