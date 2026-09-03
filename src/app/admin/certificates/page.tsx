@@ -83,7 +83,7 @@ export default function CertificatesPage() {
     const { data: templates } = useCollection<CertificateTemplate>(templatesCollection);
 
     const teachersCollection = useMemoFirebase(() => firestore ? collection(firestore, "teachers") : null, [firestore]);
-    const { data: teachers } = useCollection<Teacher>(teachersCollection);
+    const { data: teachers } = useCollection<Teacher>(teachersQuery);
     
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isTemplateOpen, setIsTemplateOpen] = useState(false);
@@ -579,7 +579,7 @@ export default function CertificatesPage() {
                     <div className="flex flex-wrap gap-2">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none">
+                                <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90 border-none">
                                     <FileUp className="h-3.5 w-3.5" />
                                     Impor
                                 </Button>
@@ -641,7 +641,7 @@ export default function CertificatesPage() {
 
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none">
+                                <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90 border-none">
                                     <FileDown className="h-3.5 w-3.5" />
                                     Ekspor
                                 </Button>
@@ -665,12 +665,12 @@ export default function CertificatesPage() {
                             </DropdownMenuContent>
                         </DropdownMenu>
 
-                        <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none" onClick={handleBulkPrint}>
+                        <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90 border-none" onClick={handleBulkPrint}>
                             <CopyCheck className="h-3.5 w-3.5" />
                             Cetak Massal
                         </Button>
 
-                        <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none" onClick={() => setIsTemplateOpen(true)}>
+                        <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90 border-none" onClick={() => setIsTemplateOpen(true)}>
                             <Upload className="h-3.5 w-3.5" />
                             Upload Template
                         </Button>

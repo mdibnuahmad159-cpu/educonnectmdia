@@ -342,7 +342,7 @@ export default function SppPage() {
     };
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-4 pb-10">
             <Card className="border-none shadow-lg bg-primary text-primary-foreground">
                 <CardHeader className="p-4">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -395,7 +395,7 @@ export default function SppPage() {
                                 <>
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
-                                            <Button variant="secondary" size="xs" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none">
+                                            <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90 border-none">
                                                 <FileDown className="h-3.5 w-3.5" /> Ekspor
                                             </Button>
                                         </DropdownMenuTrigger>
@@ -408,7 +408,7 @@ export default function SppPage() {
                                             </DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
-                                    <Button variant="secondary" size="xs" onClick={handlePrint} className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none">
+                                    <Button variant="secondary" size="xs" onClick={handlePrint} className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90 border-none">
                                         <Printer className="h-3.5 w-3.5" /> Cetak
                                     </Button>
                                 </>
@@ -480,7 +480,7 @@ export default function SppPage() {
                     </div>
 
                     <Card className="border-none shadow-sm">
-                        <CardHeader className="py-3 px-4 flex flex-row items-center gap-3 space-y-0">
+                        <CardContent className="py-3 px-4 flex flex-row items-center gap-3 space-y-0">
                             <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
                                 {selectedStudent?.name.charAt(0)}
                             </div>
@@ -488,7 +488,7 @@ export default function SppPage() {
                                 <h3 className="font-bold text-sm uppercase">{selectedStudent?.name}</h3>
                                 <p className="text-[10px] text-muted-foreground font-mono">NIS: {selectedStudent?.nis} • KELAS {selectedStudent?.kelas}</p>
                             </div>
-                        </CardHeader>
+                        </CardContent>
                     </Card>
 
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">

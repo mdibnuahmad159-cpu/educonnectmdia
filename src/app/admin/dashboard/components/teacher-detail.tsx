@@ -123,7 +123,6 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
     },
   });
 
-  // Handle initialization: only reset when first opened or when teacher ID changes
   useEffect(() => {
     if (isOpen && teacher && !isEditing) {
       form.reset({
@@ -151,7 +150,6 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
     }
   }, [isOpen, teacher, form, isEditing]);
 
-  // Reset editing state when closing
   useEffect(() => {
     if (!isOpen) {
       setIsEditing(false);
@@ -217,18 +215,18 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="sm:max-w-sm p-0 overflow-hidden rounded-[32px] border-none shadow-2xl animate-in zoom-in-95 duration-300">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSaveSubmit)} className="flex flex-col bg-card">
-            <div className="bg-primary/5 p-6 pt-8 flex flex-col items-center text-center relative">
-              <DialogTitle className="sr-only">Profil {teacher.name}</DialogTitle>
-              
-              <div className="relative mb-4">
-                  <Avatar className="h-28 w-28 border-4 border-white shadow-xl scale-110">
-                      <AvatarImage src={form.watch('avatarUrl') || teacher.avatarUrl} className="object-cover" />
-                      <AvatarFallback className="bg-primary/5 text-primary text-3xl font-bold">{teacher.name.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  {isEditing && (
-                     <label className="absolute bottom-0 right-0 p-2 bg-primary text-white rounded-full cursor-pointer shadow-lg hover:scale-110 transition-transform flex items-center justify-center">
+        {isEditing ? (
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleSaveSubmit)} className="flex flex-col bg-card">
+              <div className="bg-primary/5 p-6 pt-8 flex flex-col items-center text-center relative">
+                <DialogTitle className="sr-only">Edit Profil {teacher.name}</DialogTitle>
+                
+                <div className="relative mb-4">
+                    <Avatar className="h-28 w-28 border-4 border-white shadow-xl scale-110">
+                        <AvatarImage src={form.watch('avatarUrl') || teacher.avatarUrl} className="object-cover" />
+                        <AvatarFallback className="bg-primary/5 text-primary text-3xl font-bold">{teacher.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <label className="absolute bottom-0 right-0 p-2 bg-primary text-white rounded-full cursor-pointer shadow-lg hover:scale-110 transition-transform flex items-center justify-center">
                         <Camera className="h-3.5 w-3.5" />
                         <input 
                           type="file" 
@@ -256,12 +254,10 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
                               }
                           }}
                         />
-                     </label>
-                  )}
-              </div>
+                    </label>
+                </div>
 
-              {isEditing ? (
-                <div className="w-full space-y-2">
+                <div className="w-full space-y-2 px-6">
                   <FormField control={form.control} name="name" render={({ field }) => (
                     <FormItem><FormControl><Input {...field} className="text-center font-bold bg-white h-9" placeholder="Nama Lengkap" /></FormControl><FormMessage /></FormItem>
                   )} />
@@ -274,16 +270,76 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
                     </FormItem>
                   )} />
                 </div>
-              ) : (
-                <div className="space-y-1 mt-2">
-                    <h3 className="text-lg font-bold leading-tight uppercase text-primary tracking-tight">{teacher.name}</h3>
-                    <p className="text-xs font-semibold text-muted-foreground/80 tracking-wide">{teacher.jabatan || 'Guru Madrasah'}</p>
+                
+                <div className="flex items-center gap-2 mt-4">
+                    <span className="text-[10px] font-bold bg-primary text-white px-4 py-1.5 rounded-full uppercase tracking-[0.1em] shadow-md shadow-primary/20">
+                        NIG: {form.watch('nig')}
+                    </span>
                 </div>
-              )}
+              </div>
+
+              <div className="px-6 py-2">
+                <ScrollArea className="h-[320px] pr-2">
+                    <div className="space-y-4 py-4">
+                        <FormField control={form.control} name="nig" render={({ field }) => (
+                          <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">NIG (Nomor Induk Guru)</FormLabel><FormControl><Input {...field} className="bg-white h-9" /></FormControl><FormMessage /></FormItem>
+                        )} />
+                        <FormField control={form.control} name="nik" render={({ field }) => (
+                          <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Nomor Induk Kependudukan (NIK)</FormLabel><FormControl><Input {...field} value={field.value || ""} className="bg-white h-9" /></FormControl><FormMessage /></FormItem>
+                        )} />
+                        <FormField control={form.control} name="email" render={({ field }) => (
+                          <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Alamat Email</FormLabel><FormControl><Input type="email" {...field} value={field.value || ""} className="bg-white h-9" /></FormControl><FormMessage /></FormItem>
+                        )} />
+                        <FormField control={form.control} name="noWa" render={({ field }) => (
+                          <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Nomor WhatsApp</FormLabel><FormControl><Input {...field} value={field.value || ""} className="bg-white h-9" /></FormControl><FormMessage /></FormItem>
+                        )} />
+                        <FormField control={form.control} name="pendidikan" render={({ field }) => (
+                          <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Pendidikan Terakhir</FormLabel><FormControl><Input {...field} value={field.value || ""} className="bg-white h-9" /></FormControl><FormMessage /></FormItem>
+                        )} />
+                        <FormField control={form.control} name="ponpes" render={({ field }) => (
+                          <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Latar Belakang Pondok</FormLabel><FormControl><Input {...field} value={field.value || ""} className="bg-white h-9" /></FormControl><FormMessage /></FormItem>
+                        )} />
+                        <FormField control={form.control} name="alamat" render={({ field }) => (
+                          <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Alamat Domisili</FormLabel><FormControl><Textarea {...field} value={field.value || ""} className="bg-white min-h-[80px]" /></FormControl><FormMessage /></FormItem>
+                        )} />
+                        <FormField control={form.control} name="password" render={({ field }) => (
+                          <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Password Baru (Opsional)</FormLabel><FormControl><Input type="password" {...field} value={field.value || ""} placeholder="Isi untuk mengubah password" className="bg-white h-9" /></FormControl><FormDescription className="text-[9px]">Minimal 6 karakter jika ingin mengganti.</FormDescription><FormMessage /></FormItem>
+                        )} />
+                    </div>
+                </ScrollArea>
+              </div>
+
+              <DialogFooter className="bg-muted/30 p-4 px-6 border-t flex flex-row items-center justify-between sm:justify-between gap-3">
+                  <Button type="button" variant="ghost" className="rounded-full px-6 text-xs font-bold uppercase tracking-widest h-10" onClick={() => setIsEditing(false)} disabled={isSaving}>
+                    <X className="h-3.5 w-3.5 mr-2" /> Batal
+                  </Button>
+                  <Button type="submit" className="h-10 rounded-full px-8 bg-green-600 hover:bg-green-700 text-xs font-bold uppercase tracking-widest shadow-lg shadow-green-600/20 text-white" disabled={isSaving}>
+                    {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" /> : <Save className="h-3.5 w-3.5 mr-2" />}
+                    Simpan Perubahan
+                  </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        ) : (
+          <div className="flex flex-col bg-card">
+            <div className="bg-primary/5 p-6 pt-8 flex flex-col items-center text-center relative">
+              <DialogTitle className="sr-only">Profil {teacher.name}</DialogTitle>
+              
+              <div className="relative mb-4">
+                  <Avatar className="h-28 w-28 border-4 border-white shadow-xl scale-110">
+                      <AvatarImage src={teacher.avatarUrl} className="object-cover" />
+                      <AvatarFallback className="bg-primary/5 text-primary text-3xl font-bold">{teacher.name.charAt(0)}</AvatarFallback>
+                  </Avatar>
+              </div>
+
+              <div className="space-y-1 mt-2">
+                  <h3 className="text-lg font-bold leading-tight uppercase text-primary tracking-tight">{teacher.name}</h3>
+                  <p className="text-xs font-semibold text-muted-foreground/80 tracking-wide">{teacher.jabatan || 'Guru Madrasah'}</p>
+              </div>
               
               <div className="flex items-center gap-2 mt-4">
                   <span className="text-[10px] font-bold bg-primary text-white px-4 py-1.5 rounded-full uppercase tracking-[0.1em] shadow-md shadow-primary/20">
-                      NIG: {isEditing ? form.watch('nig') : teacher.nig}
+                      NIG: {teacher.nig}
                   </span>
               </div>
             </div>
@@ -291,47 +347,16 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
             <div className="px-6 py-2">
               <ScrollArea className="h-[320px] pr-2">
                   <div className="py-2">
-                      {isEditing ? (
-                         <div className="space-y-4 py-2">
-                            <FormField control={form.control} name="nig" render={({ field }) => (
-                              <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">NIG (Nomor Induk Guru)</FormLabel><FormControl><Input {...field} className="bg-white h-9" /></FormControl><FormMessage /></FormItem>
-                            )} />
-                            <FormField control={form.control} name="nik" render={({ field }) => (
-                              <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Nomor Induk Kependudukan (NIK)</FormLabel><FormControl><Input {...field} value={field.value || ""} className="bg-white h-9" /></FormControl><FormMessage /></FormItem>
-                            )} />
-                            <FormField control={form.control} name="email" render={({ field }) => (
-                              <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Alamat Email</FormLabel><FormControl><Input type="email" {...field} value={field.value || ""} className="bg-white h-9" /></FormControl><FormMessage /></FormItem>
-                            )} />
-                            <FormField control={form.control} name="noWa" render={({ field }) => (
-                              <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Nomor WhatsApp</FormLabel><FormControl><Input {...field} value={field.value || ""} className="bg-white h-9" /></FormControl><FormMessage /></FormItem>
-                            )} />
-                            <FormField control={form.control} name="pendidikan" render={({ field }) => (
-                              <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Pendidikan Terakhir</FormLabel><FormControl><Input {...field} value={field.value || ""} className="bg-white h-9" /></FormControl><FormMessage /></FormItem>
-                            )} />
-                            <FormField control={form.control} name="ponpes" render={({ field }) => (
-                              <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Latar Belakang Pondok</FormLabel><FormControl><Input {...field} value={field.value || ""} className="bg-white h-9" /></FormControl><FormMessage /></FormItem>
-                            )} />
-                            <FormField control={form.control} name="alamat" render={({ field }) => (
-                              <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Alamat Domisili</FormLabel><FormControl><Textarea {...field} value={field.value || ""} className="bg-white min-h-[80px]" /></FormControl><FormMessage /></FormItem>
-                            )} />
-                            <FormField control={form.control} name="password" render={({ field }) => (
-                              <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Password Baru (Opsional)</FormLabel><FormControl><Input type="password" {...field} value={field.value || ""} placeholder="Isi untuk mengubah password" className="bg-white h-9" /></FormControl><FormDescription className="text-[9px]">Minimal 6 karakter jika ingin mengganti.</FormDescription><FormMessage /></FormItem>
-                            )} />
-                         </div>
-                      ) : (
-                        <>
-                          <InfoField label="Nomor Induk Kependudukan (NIK)" value={teacher.nik || ""} icon={UserCircle} />
-                          <InfoField label="Alamat Email" value={teacher.email || ""} icon={Mail} />
-                          <InfoField label="Nomor WhatsApp" value={teacher.noWa || ""} icon={Phone} />
-                          <InfoField label="Pendidikan Terakhir" value={teacher.pendidikan || ""} icon={GraduationCap} />
-                          <InfoField label="Latar Belakang Pondok" value={teacher.ponpes || ""} icon={BookOpen} />
-                          <InfoField label="Alamat Domisili" value={teacher.alamat || ""} icon={MapPin} />
-                          <InfoField label="Password Portal" value="••••••••" icon={Fingerprint} />
-                        </>
-                      )}
+                      <InfoField label="Nomor Induk Kependudukan (NIK)" value={teacher.nik || ""} icon={UserCircle} />
+                      <InfoField label="Alamat Email" value={teacher.email || ""} icon={Mail} />
+                      <InfoField label="Nomor WhatsApp" value={teacher.noWa || ""} icon={Phone} />
+                      <InfoField label="Pendidikan Terakhir" value={teacher.pendidikan || ""} icon={GraduationCap} />
+                      <InfoField label="Latar Belakang Pondok" value={teacher.ponpes || ""} icon={BookOpen} />
+                      <InfoField label="Alamat Domisili" value={teacher.alamat || ""} icon={MapPin} />
+                      <InfoField label="Password Portal" value="••••••••" icon={Fingerprint} />
                   </div>
                   
-                  {!isEditing && qrDataUrl && (
+                  {qrDataUrl && (
                       <div className="mt-4 mb-6 p-5 rounded-[24px] bg-muted/20 border-2 border-dashed border-muted flex flex-col items-center gap-3">
                           <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">ID Barcode Absensi</p>
                           <img src={qrDataUrl} alt="QR Code" className="w-32 h-32" />
@@ -342,39 +367,25 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
             </div>
 
             <DialogFooter className="bg-muted/30 p-4 px-6 border-t flex flex-row items-center justify-between sm:justify-between gap-3">
-              {isEditing ? (
-                <>
-                  <Button type="button" variant="ghost" className="rounded-full px-6 text-xs font-bold uppercase tracking-widest h-10" onClick={() => setIsEditing(false)} disabled={isSaving}>
-                    <X className="h-3.5 w-3.5 mr-2" /> Batal
+                <div className="flex gap-2">
+                  <Button type="button" variant="ghost" size="icon" className="text-destructive h-10 w-10 rounded-full hover:bg-destructive/10" onClick={() => onDelete(teacher.id)}>
+                      <Trash2 className="h-4.5 w-4.5" />
                   </Button>
-                  <Button type="submit" className="h-10 rounded-full px-8 bg-green-600 hover:bg-green-700 text-xs font-bold uppercase tracking-widest shadow-lg shadow-green-600/20 text-white" disabled={isSaving}>
-                    {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" /> : <Save className="h-3.5 w-3.5 mr-2" />}
-                    Simpan Perubahan
+                  <Button type="button" variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-primary/5 text-primary" onClick={handlePrint}>
+                      <Printer className="h-4.5 w-4.5" />
                   </Button>
-                </>
-              ) : (
-                <>
-                  <div className="flex gap-2">
-                    <Button type="button" variant="ghost" size="icon" className="text-destructive h-10 w-10 rounded-full hover:bg-destructive/10" onClick={() => onDelete(teacher.id)}>
-                        <Trash2 className="h-4.5 w-4.5" />
-                    </Button>
-                    <Button type="button" variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-primary/5 text-primary" onClick={handlePrint}>
-                        <Printer className="h-4.5 w-4.5" />
-                    </Button>
-                  </div>
-                  <Button 
-                    type="button"
-                    size="sm" 
-                    className="h-10 rounded-full px-8 bg-primary hover:bg-primary/90 text-xs font-bold uppercase tracking-widest shadow-lg shadow-primary/20 text-white"
-                    onClick={() => setIsEditing(true)}
-                  >
-                    <Edit className="h-3.5 w-3.5 mr-2" /> Edit Profil
-                  </Button>
-                </>
-              )}
+                </div>
+                <Button 
+                  type="button"
+                  size="sm" 
+                  className="h-10 rounded-full px-8 bg-primary hover:bg-primary/90 text-xs font-bold uppercase tracking-widest shadow-lg shadow-primary/20 text-white"
+                  onClick={() => setIsEditing(true)}
+                >
+                  <Edit className="h-3.5 w-3.5 mr-2" /> Edit Profil
+                </Button>
             </DialogFooter>
-          </form>
-        </Form>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

@@ -256,7 +256,7 @@ export default function StudentAttendancePage() {
     };
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-4 pb-10">
             <Card className="border-none shadow-lg bg-primary text-primary-foreground">
                 <CardHeader className="p-4 flex flex-row flex-wrap items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
@@ -280,7 +280,7 @@ export default function StudentAttendancePage() {
                     <div className="flex items-center gap-2">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none">
+                                <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90 border-none">
                                 <FileDown className="h-3.5 w-3.5" />
                                 Ekspor
                                 </Button>
@@ -296,7 +296,7 @@ export default function StudentAttendancePage() {
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
-                        <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none" onClick={handlePrint}>
+                        <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90 border-none" onClick={handlePrint}>
                             <Printer className="h-3.5 w-3.5" />
                             Cetak
                         </Button>
@@ -388,14 +388,11 @@ export default function StudentAttendancePage() {
             </Card>
 
             <Card>
-                <CardHeader className="py-3">
-                    <CardTitle className="text-sm">Ringkasan Absensi Siswa</CardTitle>
-                </CardHeader>
-                <CardContent className="px-3 pb-3">
+                <CardContent className="p-0">
                     <Table>
-                        <TableHeader>
+                        <TableHeader className="bg-muted/30">
                             <TableRow className="h-8">
-                                <TableHead className="text-xs">Nama Siswa</TableHead>
+                                <TableHead className="text-xs px-4">Nama Siswa</TableHead>
                                 <TableHead className="text-center text-xs w-[60px]">Hadir</TableHead>
                                 <TableHead className="text-center text-xs w-[60px]">Sakit</TableHead>
                                 <TableHead className="text-center text-xs w-[60px]">Izin</TableHead>
@@ -406,7 +403,7 @@ export default function StudentAttendancePage() {
                             {!isLoading && attendanceSummary.length > 0 ? (
                                 attendanceSummary.map(item => (
                                     <TableRow key={item.studentId} className="h-8">
-                                        <TableCell className="font-medium text-xs py-1">
+                                        <TableCell className="font-medium text-xs py-1 px-4">
                                             {item.studentName}
                                             <span className="block text-[9px] text-muted-foreground">{item.nis}</span>
                                         </TableCell>

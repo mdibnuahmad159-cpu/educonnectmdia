@@ -161,7 +161,7 @@ export default function RiwayatTabunganPage() {
     };
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-4 pb-10">
             <Card className="border-none shadow-lg bg-primary text-primary-foreground">
                 <CardHeader className="p-4 flex flex-row flex-wrap items-center justify-between gap-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1 max-w-sm">
@@ -171,7 +171,7 @@ export default function RiwayatTabunganPage() {
                             <Input placeholder="Cari catatan..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 h-8 text-xs bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:ring-white/30" />
                         </div>
                     </div>
-                    <Button variant="secondary" size="xs" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none" onClick={handlePrint}>
+                    <Button variant="secondary" size="xs" className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90 border-none" onClick={handlePrint}>
                         <Printer className="h-4 w-4" /> Cetak
                     </Button>
                 </CardHeader>
@@ -188,25 +188,29 @@ export default function RiwayatTabunganPage() {
                     <Table>
                         <TableHeader className="bg-muted/30">
                             <TableRow>
-                                <TableHead className="px-4">Waktu</TableHead>
-                                <TableHead>Nama</TableHead>
-                                <TableHead className="text-right">Nominal</TableHead>
-                                <TableHead>Jenis</TableHead>
-                                <TableHead className="text-right px-4">Aksi</TableHead>
+                                <TableHead className="px-4 font-bold text-[10px] uppercase">Waktu</TableHead>
+                                <TableHead className="font-bold text-[10px] uppercase">Nama</TableHead>
+                                <TableHead className="text-right font-bold text-[10px] uppercase">Nominal</TableHead>
+                                <TableHead className="font-bold text-[10px] uppercase">Jenis</TableHead>
+                                <TableHead className="text-right px-4 font-bold text-[10px] uppercase">Aksi</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {loading ? <TableRow><TableCell colSpan={5} className="text-center h-24"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></TableCell></TableRow> : (
+                            {loading ? <TableRow><TableCell colSpan={5} className="text-center h-24"><Loader2 className="h-6 w-6 animate-spin mx-auto text-primary/30" /></TableCell></TableRow> : (
                                 filteredTransactions.map(t => (
-                                    <TableRow key={t.id}>
-                                        <TableCell className="px-4 text-[11px]">{format(parseISO(t.date), "dd/MM/yy HH:mm")}</TableCell>
-                                        <TableCell className="text-[11px] font-bold">{t.saverName}</TableCell>
+                                    <TableRow key={t.id} className="hover:bg-muted/10">
+                                        <TableCell className="px-4 text-[11px] font-mono">{format(parseISO(t.date), "dd/MM/yy HH:mm")}</TableCell>
+                                        <TableCell className="text-[11px] font-bold uppercase">{t.saverName}</TableCell>
                                         <TableCell className={cn("text-[11px] font-bold text-right", t.type === 'deposit' ? "text-green-600" : "text-red-600")}>
                                             Rp {t.amount.toLocaleString()}
                                         </TableCell>
-                                        <TableCell className="text-[10px] uppercase font-bold">{t.type}</TableCell>
+                                        <TableCell className="text-[9px] uppercase font-bold">
+                                            <span className={cn("px-2 py-0.5 rounded-full", t.type === 'deposit' ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700")}>
+                                                {t.type}
+                                            </span>
+                                        </TableCell>
                                         <TableCell className="text-right px-4">
-                                            <Button variant="ghost" size="icon" onClick={() => { setTransactionToDelete(t); setIsDeleteDialogOpen(true); }}><Trash2 className="h-3.5 w-3.5" /></Button>
+                                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => { setTransactionToDelete(t); setIsDeleteDialogOpen(true); }}><Trash2 className="h-3.5 w-3.5" /></Button>
                                         </TableCell>
                                     </TableRow>
                                 ))
@@ -219,11 +223,13 @@ export default function RiwayatTabunganPage() {
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader><AlertDialogTitle>Hapus Data?</AlertDialogTitle><AlertDialogDescription>Tindakan ini permanen.</AlertDialogDescription></AlertDialogHeader>
-                    <AlertDialogFooter><AlertDialogCancel>Batal</AlertDialogCancel><AlertDialogAction onClick={async () => {
+                    <AlertDialogFooter>
+                        <AlertDialogCancel className="text-xs">Batal</AlertDialogCancel>
+                        <AlertDialogAction onClick={async () => {
                         if (!firestore || !transactionToDelete) return;
                         await deleteDoc(doc(firestore, 'savingsTransactions', transactionToDelete.id));
                         setIsDeleteDialogOpen(false);
-                    }}>Hapus</AlertDialogAction></AlertDialogFooter>
+                    }} className="bg-destructive hover:bg-destructive/90 text-white text-xs">Hapus</AlertDialogAction></AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
         </div>

@@ -139,11 +139,11 @@ export default function TabunganPage() {
     const isLoadingLists = loadingStudents || loadingTeachers || loadingExternals;
 
     return (
-        <div className="space-y-4 max-w-5xl mx-auto">
+        <div className="space-y-4 pb-10">
             <Card className="border-none shadow-lg bg-primary text-primary-foreground">
                 <CardHeader className="p-4">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                         <div className="flex flex-wrap items-center gap-2">
+                         <div className="flex flex-wrap items-center gap-2 flex-1">
                              <div className="space-y-1">
                                 <Select value={saverType} onValueChange={(v) => { setSaverType(v as SaverType); setSelectedSaverId(""); }}>
                                     <SelectTrigger className="h-8 text-xs font-normal bg-white/10 border-white/20 text-white focus:ring-white/30 w-[140px]">
@@ -192,7 +192,7 @@ export default function TabunganPage() {
                         </div>
                         <div className="flex items-center gap-2">
                             <Link href="/admin/riwayat-tabungan">
-                                <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none">
+                                <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90 border-none">
                                     <History className="h-3.5 w-3.5" />
                                     Riwayat
                                 </Button>
@@ -212,8 +212,8 @@ export default function TabunganPage() {
                 ) : (
                     <div className="grid gap-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <Card className="border-none shadow-md bg-primary text-primary-foreground overflow-hidden">
-                                <CardContent className="p-6 flex items-center justify-between relative">
+                            <Card className="border-none shadow-md bg-primary text-primary-foreground overflow-hidden relative">
+                                <CardContent className="p-6 flex items-center justify-between relative z-10">
                                     <div className="space-y-1 relative z-10">
                                         <p className="text-[10px] uppercase font-bold opacity-80 tracking-widest">Saldo Tabungan Saat Ini</p>
                                         <p className="text-3xl font-bold">
@@ -285,7 +285,6 @@ export default function TabunganPage() {
                             </Card>
                         </div>
 
-                        {/* List of transactions for the SELECTED DATE */}
                         <Card className="border-none shadow-sm overflow-hidden">
                             <CardHeader className="py-3 bg-muted/20 border-b">
                                 <CardTitle className="text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-2">

@@ -308,7 +308,7 @@ export default function AttendancePage() {
     const isLoading = loadingTeachers || loadingAttendance || !fromDate;
 
     return (
-        <div className="space-y-6 pb-10">
+        <div className="space-y-4 pb-10">
             <Card className="border-none shadow-lg bg-primary text-primary-foreground">
                 <CardHeader className="p-4 flex flex-row flex-wrap items-center justify-between gap-4">
                     <div className="grid grid-cols-2 gap-2 flex-1 max-w-sm">
@@ -326,10 +326,10 @@ export default function AttendancePage() {
                         />
                     </div>
                     <div className="flex gap-2">
-                        <Button variant="secondary" size="xs" onClick={handleExportPdf} className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none">
+                        <Button variant="secondary" size="xs" onClick={handleExportPdf} className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90 border-none">
                             <FileDown className="h-3.5 w-3.5" /> Ekspor PDF
                         </Button>
-                        <Button variant="secondary" size="xs" onClick={handlePrint} className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none">
+                        <Button variant="secondary" size="xs" onClick={handlePrint} className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90 border-none">
                             <Printer className="h-3.5 w-3.5" /> Cetak
                         </Button>
                     </div>
@@ -375,7 +375,7 @@ export default function AttendancePage() {
             </Card>
 
             {!isLoading && globalStats && (
-                <div className="space-y-6">
+                <div className="space-y-4">
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                         <Card className="bg-primary/5 border-primary/10">
                             <CardContent className="p-3">
@@ -425,11 +425,6 @@ export default function AttendancePage() {
                     </div>
 
                     <Card>
-                        <CardHeader className="pb-3 border-b bg-muted/5">
-                            <CardTitle className="text-sm flex items-center gap-2">
-                                <Users className="h-4 w-4" /> Ringkasan Per Guru
-                            </CardTitle>
-                        </CardHeader>
                         <CardContent className="p-0">
                             <Table>
                                 <TableHeader className="bg-muted/30">

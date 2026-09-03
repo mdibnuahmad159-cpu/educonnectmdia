@@ -131,15 +131,6 @@ export default function RiwayatTransaksiPage() {
         return result.sort((a, b) => b.date.localeCompare(a.date));
     }, [savings, spp]);
 
-    // Unique Names for Filter
-    const uniqueNames = useMemo(() => {
-        const names = new Set<string>();
-        unifiedTransactions.forEach(t => {
-            if (t.name) names.add(t.name);
-        });
-        return Array.from(names).sort();
-    }, [unifiedTransactions]);
-
     const filteredTransactions = useMemo(() => {
         return unifiedTransactions.filter(t => {
             const matchesSearch = t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -284,7 +275,7 @@ export default function RiwayatTransaksiPage() {
     const isLoading = loadingSavings || loadingSpp;
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-4 pb-10">
             <Card className="border-none shadow-lg bg-primary text-primary-foreground">
                 <CardHeader className="p-4 flex flex-row flex-wrap items-center justify-between gap-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1 max-w-sm">
@@ -307,7 +298,7 @@ export default function RiwayatTransaksiPage() {
                     <div className="flex items-center gap-2">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none">
+                                <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90 border-none">
                                     <FileDown className="h-3.5 w-3.5" /> Ekspor
                                 </Button>
                             </DropdownMenuTrigger>
@@ -320,7 +311,7 @@ export default function RiwayatTransaksiPage() {
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
-                        <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none" onClick={handlePrint}>
+                        <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90 border-none" onClick={handlePrint}>
                             <Printer className="h-3.5 w-3.5" /> Cetak
                         </Button>
                     </div>
@@ -375,7 +366,7 @@ export default function RiwayatTransaksiPage() {
                                             <TableCell className="text-[11px] font-mono px-4">
                                                 {format(parseISO(t.date), "dd/MM/yy HH:mm")}
                                             </TableCell>
-                                            <TableCell className="text-[11px] font-bold">
+                                            <TableCell className="text-[11px] font-bold uppercase">
                                                 {t.name}
                                             </TableCell>
                                             <TableCell>
