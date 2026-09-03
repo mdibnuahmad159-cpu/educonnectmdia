@@ -84,10 +84,10 @@ export default function TeacherLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex flex-col min-h-screen bg-background overflow-x-hidden">
-      <header className="sticky top-0 z-50 p-2 bg-transparent">
-        <div className="flex flex-col bg-primary text-primary-foreground rounded-2xl shadow-lg border-b border-white/5 overflow-hidden">
+      <header className="sticky top-0 z-50 w-full bg-primary text-primary-foreground shadow-lg">
+        <div className="flex flex-col w-full">
           {/* Baris Atas: Identitas & Tahun */}
-          <div className="flex h-14 items-center justify-between gap-4 px-4">
+          <div className="flex h-14 items-center justify-between gap-4 px-4 border-b border-white/5">
             <div className="flex-1 flex justify-start">
               <div className="flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 bg-white/10 rounded-full border border-white/10 text-white">
                   <Calendar className="h-3 w-3 opacity-80" />
@@ -119,8 +119,8 @@ export default function TeacherLayout({ children }: { children: ReactNode }) {
           </div>
 
           {/* Baris Bawah: Judul & Aksi */}
-          <div className="px-4 pb-4 pt-1 flex items-center justify-between border-t border-white/5 min-h-[44px]">
-              <div className="w-16 flex justify-start">
+          <div className="px-4 py-2 flex items-center justify-between min-h-[48px]">
+              <div className="w-12 flex justify-start">
                   {!isDashboard && (
                     <button 
                       onClick={() => router.back()}
@@ -136,7 +136,7 @@ export default function TeacherLayout({ children }: { children: ReactNode }) {
                   {currentPage.title}
               </h2>
 
-              <div className="w-16 flex justify-end">
+              <div className="w-12 flex justify-end">
                   <button 
                     onClick={handleLogout}
                     className="p-1.5 text-white/40 hover:text-destructive-foreground hover:bg-destructive rounded-full transition-all active:scale-90"

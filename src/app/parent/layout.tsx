@@ -1,4 +1,3 @@
-
 "use client";
 
 import { ReactNode, useEffect, useState } from "react";
@@ -54,20 +53,22 @@ export default function ParentLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      <header className="sticky top-0 z-10 flex h-14 items-center justify-between gap-4 bg-primary px-3 shadow-md text-primary-foreground">
-        <div className="flex items-center gap-2">
-            {profile?.logoMadrasahUrl ? (
-                <Image src={profile.logoMadrasahUrl} alt="Logo" width={24} height={24} className="h-6 w-6 object-contain brightness-0 invert"/>
-            ) : (
-                <BookOpenCheck className="h-5 w-5 text-white" />
-            )}
-            <h1 className="text-sm font-bold font-headline tracking-tight text-white">
-                {profile?.namaMadrasah || 'EduConnect'}
-            </h1>
-        </div>
-        <div className="flex items-center gap-1.5 text-[9px] font-bold px-2.5 py-1 bg-white/10 rounded-full border border-white/10 text-white">
-            <Calendar className="h-3 w-3 opacity-80" />
-            <span>{activeYear}</span>
+      <header className="sticky top-0 z-50 w-full bg-primary text-primary-foreground shadow-lg">
+        <div className="flex h-14 items-center justify-between gap-4 px-3">
+          <div className="flex items-center gap-2">
+              {profile?.logoMadrasahUrl ? (
+                  <Image src={profile.logoMadrasahUrl} alt="Logo" width={24} height={24} className="h-6 w-6 object-contain brightness-0 invert"/>
+              ) : (
+                  <BookOpenCheck className="h-5 w-5 text-white" />
+              )}
+              <h1 className="text-sm font-bold font-headline tracking-tight text-white">
+                  {profile?.namaMadrasah || 'EduConnect'}
+              </h1>
+          </div>
+          <div className="flex items-center gap-1.5 text-[9px] font-bold px-2.5 py-1 bg-white/10 rounded-full border border-white/10 text-white">
+              <Calendar className="h-3 w-3 opacity-80" />
+              <span>{activeYear}</span>
+          </div>
         </div>
       </header>
       <main className="flex-1 p-3 pb-24 sm:px-6">

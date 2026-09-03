@@ -342,24 +342,24 @@ export default function TeacherDashboardPage() {
             </CardHeader>
             <CardContent className="p-4 pt-0">
                 <div className={cn(
-                    "flex items-center justify-between p-3 rounded-lg border",
+                    "flex items-center justify-between p-3 rounded-lg border transition-all",
                     displayStatus === 'Hadir' ? "bg-green-50/50 border-green-100" : 
-                    displayStatus === 'Tidak Ada Jadwal' || displayStatus === "Libur Jum'at" ? "bg-muted/30 border-muted/50" :
-                    displayStatus !== 'Belum Diabsen' ? "bg-orange-50/50 border-orange-100" : "bg-muted/30 border-muted/50"
+                    displayStatus === 'Tidak Ada Jadwal' || displayStatus === "Libur Jum'at" || displayStatus === "Libur" ? "bg-muted/30 border-muted/50 text-muted-foreground" :
+                    displayStatus !== 'Belum Diabsen' ? "bg-orange-50/50 border-orange-100 text-orange-700" : "bg-muted/30 border-muted/50"
                 )}>
                     <div className="flex items-center gap-3">
                         {displayStatus === 'Hadir' ? (
                             <CheckCircle2 className="h-5 w-5 text-green-600" />
-                        ) : displayStatus === 'Tidak Ada Jadwal' || displayStatus === "Libur Jum'at" ? (
-                            <Coffee className="h-5 w-5 text-muted-foreground/40" />
+                        ) : displayStatus === 'Tidak Ada Jadwal' || displayStatus === "Libur Jum'at" || displayStatus === "Libur" ? (
+                            <Coffee className="h-5 w-5 opacity-40" />
                         ) : displayStatus !== 'Belum Diabsen' ? (
                             <Info className="h-5 w-5 text-orange-600" />
                         ) : (
-                            <Clock className="h-5 w-5 text-muted-foreground/50" />
+                            <Clock className="h-5 w-5 opacity-40" />
                         )}
                         <div>
                             <p className="text-xs font-bold">{displayStatus}</p>
-                            <p className="text-[10px] text-muted-foreground">{format(new Date(), "EEEE, d MMMM yyyy", { locale: dfnsId })}</p>
+                            <p className="text-[10px] opacity-70">{format(new Date(), "EEEE, d MMMM yyyy", { locale: dfnsId })}</p>
                         </div>
                     </div>
                 </div>
@@ -518,7 +518,7 @@ export default function TeacherDashboardPage() {
             </CardContent>
         </Card>
 
-        {/* PROFILE DETAIL DIALOG WITH INTEGRATED BARCODE */}
+        {/* Profile Detail Dialog */}
         <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
             <DialogContent className="sm:max-w-md p-0 overflow-hidden rounded-[32px] border-none shadow-2xl">
                 <div className="flex flex-col bg-card">
@@ -557,7 +557,6 @@ export default function TeacherDashboardPage() {
                                 <InfoField label="Alamat Domisili" value={teacher.alamat || ""} icon={MapPin} />
                             </div>
 
-                            {/* INTEGRATED QR CODE AT THE BOTTOM */}
                             <div className="mt-4 mb-6 p-5 rounded-[24px] bg-muted/20 border-2 border-dashed border-muted flex flex-col items-center gap-3">
                                 <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">ID Barcode Absensi</p>
                                 {qrDataUrl ? (
