@@ -200,15 +200,39 @@ export function BottomNav() {
     setIsProcessing(false);
   };
 
+  const isCategoryActive = (href: string) => {
+    const normalizedPath = pathname.endsWith('/') ? pathname : `${pathname}/`;
+    const normalizedHref = href.endsWith('/') ? href : `${href}/`;
+    
+    // Check if direct match
+    if (normalizedPath.startsWith(normalizedHref)) return true;
+
+    // Check mapping for sub-pages
+    const categoryMapping: Record<string, string[]> = {
+      "/admin/akademik": [
+        "/admin/teachers", "/admin/curriculum", "/admin/schedule", "/admin/grades",
+        "/admin/reports", "/admin/attendance", "/admin/announcements", "/admin/certificates"
+      ],
+      "/admin/siswa-menu": [
+        "/admin/students", "/admin/class-management", "/admin/alumni", "/admin/student-attendance"
+      ],
+      "/admin/keuangan-menu": [
+        "/admin/penabung-luar", "/admin/tabungan", "/admin/riwayat-tabungan",
+        "/admin/spp", "/admin/riwayat-spp", "/admin/riwayat-transaksi"
+      ]
+    };
+
+    const subPaths = categoryMapping[href] || [];
+    return subPaths.some(subPath => normalizedPath.startsWith(subPath.endsWith('/') ? subPath : `${subPath}/`));
+  };
+
   return (
     <>
       <div className="fixed bottom-6 left-0 right-0 z-50 px-4 flex justify-center pointer-events-none">
         <div className="flex items-center gap-3 max-w-md w-full pointer-events-auto">
           <nav className="flex-1 bg-primary/95 backdrop-blur-md rounded-full p-1.5 flex items-center justify-around shadow-2xl border border-white/10">
             {navItems.map((item) => {
-              const normalizedPath = pathname.endsWith('/') ? pathname : `${pathname}/`;
-              const normalizedHref = item.href.endsWith('/') ? item.href : `${item.href}/`;
-              const isActive = normalizedPath.startsWith(normalizedHref);
+              const isActive = isCategoryActive(item.href);
               
               return (
                 <Link
