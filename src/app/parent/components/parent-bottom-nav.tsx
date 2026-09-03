@@ -1,4 +1,3 @@
-
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -7,7 +6,7 @@ import {
   Home, 
   Wallet, 
   FileText,
-  UserCheck,
+  ScanLine,
   X,
   Loader2
 } from "lucide-react";
@@ -80,9 +79,9 @@ export function ParentBottomNav() {
           <button
             onClick={() => setIsQrOpen(true)}
             className="w-14 h-14 bg-accent text-accent-foreground rounded-full flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95 transition-all"
-            aria-label="Tampilkan QR Absen"
+            aria-label="Tampilkan Barcode Absen"
           >
-            <UserCheck className="w-6 h-6" />
+            <ScanLine className="w-6 h-6" />
           </button>
         </div>
       </div>
