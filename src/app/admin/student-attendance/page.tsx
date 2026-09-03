@@ -358,7 +358,6 @@ export default function StudentAttendancePage() {
                                     <TableHeader>
                                         <TableRow className="bg-muted/30">
                                             <TableHead className="sticky left-0 z-10 bg-muted/50 min-w-[150px] border-r font-bold text-[10px] uppercase">Nama Santri</TableHead>
-                                            <TableHead className="text-center border-r min-w-[80px] font-bold text-[10px] uppercase">NIS</TableHead>
                                             {daysInRange.map(day => (
                                                 <TableHead key={day.toISOString()} className={cn(
                                                     "text-center border-r min-w-[35px] px-1 text-[10px] font-bold",
@@ -373,7 +372,6 @@ export default function StudentAttendancePage() {
                                         {sortedStudents && sortedStudents.length > 0 ? sortedStudents.map(student => (
                                             <TableRow key={student.id}>
                                                 <TableCell className="sticky left-0 z-10 bg-card font-bold border-r text-[11px] py-2 uppercase">{student.name}</TableCell>
-                                                <TableCell className="text-center border-r text-[10px] font-mono">{student.nis}</TableCell>
                                                 {daysInRange.map(day => {
                                                     const isFri = day.getDay() === 5;
                                                     const dateStr = format(day, 'yyyy-MM-dd');
@@ -394,7 +392,7 @@ export default function StudentAttendancePage() {
                                             </TableRow>
                                         )) : (
                                             <TableRow>
-                                                <TableCell colSpan={daysInRange.length + 2} className="text-center h-48 italic text-muted-foreground text-xs">
+                                                <TableCell colSpan={daysInRange.length + 1} className="text-center h-48 italic text-muted-foreground text-xs">
                                                     Belum ada data siswa di kelas {selectedClass}.
                                                 </TableCell>
                                             </TableRow>
