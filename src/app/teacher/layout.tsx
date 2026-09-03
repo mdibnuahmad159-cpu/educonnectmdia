@@ -1,16 +1,18 @@
+
 "use client";
 
 import { ReactNode, useEffect, useState, useMemo } from "react";
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
-import { useUser, useAuth } from "@/firebase";
+import { useUser, useAuth, useCollection, useMemoFirebase, useFirestore } from "@/firebase";
 import { TeacherBottomNav } from "./components/teacher-bottom-nav";
-import { BookOpenCheck, Loader2, Calendar, ChevronLeft, LogOut } from "lucide-react";
+import { BookOpenCheck, Loader2, Calendar, ChevronLeft, LogOut, Bell } from "lucide-react";
 import { useSchoolProfile } from "@/context/school-profile-provider";
 import { useAcademicYear } from "@/context/academic-year-provider";
 import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
+import { collection, query, where, orderBy, limit } from "firebase/firestore";
 
 const PAGE_TITLES: Record<string, { title: string; sub: string }> = {
   "/teacher/dashboard": { title: "Beranda Guru", sub: "Ringkasan jadwal dan tugas harian." },
@@ -19,6 +21,7 @@ const PAGE_TITLES: Record<string, { title: string; sub: string }> = {
   "/teacher/tabungan": { title: "Tabungan Saya", sub: "Riwayat simpanan pribadi." },
   "/teacher/attendance-history": { title: "Riwayat Absensi", sub: "Laporan jurnal dan rekap kehadiran pribadi." },
   "/teacher/schedule": { title: "Jadwal Mengajar", sub: "Daftar jam mengajar dan kurikulum mingguan." },
+  "/teacher/announcements": { title: "Pengumuman", sub: "Informasi dan berita madrasah." },
 };
 
 export default function TeacherLayout({ children }: { children: ReactNode }) {
@@ -26,14 +29,41 @@ export default function TeacherLayout({ children }: { children: ReactNode }) {
   const { profile, loading: isProfileLoading } = useSchoolProfile();
   const { activeYear } = useAcademicYear();
   const auth = useAuth();
+  const firestore = useFirestore();
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
   const [isClient, setIsClient] = useState(false);
+  const [hasNewAnnouncement, setHasNewAnnouncement] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  // Check for new announcements
+  const announcementsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(
+      collection(firestore, "announcements"),
+      where("target", "in", ["Semua", "Guru"]),
+      orderBy("createdAt", "desc"),
+      limit(1)
+    );
+  }, [firestore]);
+  const { data: latestAnnouncements } = useCollection(announcementsQuery);
+
+  useEffect(() => {
+    if (latestAnnouncements && latestAnnouncements.length > 0) {
+      const latestId = latestAnnouncements[0].id;
+      const lastReadId = localStorage.getItem('last_read_announcement_teacher');
+      if (latestId !== lastReadId && pathname !== "/teacher/announcements") {
+        setHasNewAnnouncement(true);
+      } else if (pathname === "/teacher/announcements") {
+        setHasNewAnnouncement(false);
+        localStorage.setItem('last_read_announcement_teacher', latestId);
+      }
+    }
+  }, [latestAnnouncements, pathname]);
 
   useEffect(() => {
     if (isUserLoading || !isClient) return;
@@ -120,8 +150,8 @@ export default function TeacherLayout({ children }: { children: ReactNode }) {
 
           {/* Baris Bawah: Judul & Aksi */}
           <div className="px-4 py-2 flex items-center justify-between min-h-[48px]">
-              <div className="w-12 flex justify-start">
-                  {!isDashboard && (
+              <div className="w-12 flex justify-start items-center gap-1">
+                  {!isDashboard ? (
                     <button 
                       onClick={() => router.back()}
                       className="p-1.5 text-accent hover:bg-white/10 rounded-full transition-colors active:scale-90"
@@ -129,6 +159,13 @@ export default function TeacherLayout({ children }: { children: ReactNode }) {
                     >
                       <ChevronLeft className="h-5 w-5" />
                     </button>
+                  ) : (
+                    <Link href="/teacher/announcements" className="relative p-1.5 text-accent hover:bg-white/10 rounded-full transition-all active:scale-90">
+                      <Bell className="h-5 w-5" />
+                      {hasNewAnnouncement && (
+                        <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-destructive rounded-full border border-primary animate-pulse" />
+                      )}
+                    </Link>
                   )}
               </div>
               

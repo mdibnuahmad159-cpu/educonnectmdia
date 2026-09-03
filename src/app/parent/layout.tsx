@@ -1,22 +1,25 @@
+
 "use client";
 
 import { ReactNode, useEffect, useState, useMemo } from "react";
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
-import { useUser, useAuth } from "@/firebase";
+import { useUser, useAuth, useFirestore, useMemoFirebase, useCollection } from "@/firebase";
 import { ParentBottomNav } from "./components/parent-bottom-nav";
 import { 
   BookOpenCheck, 
   Loader2, 
   Calendar, 
   ChevronLeft, 
-  LogOut 
+  LogOut,
+  Bell
 } from "lucide-react";
 import { useSchoolProfile } from "@/context/school-profile-provider";
 import { useAcademicYear } from "@/context/academic-year-provider";
 import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
+import { collection, query, where, orderBy, limit } from "firebase/firestore";
 
 const PAGE_TITLES: Record<string, { title: string; sub: string }> = {
   "/parent/dashboard": { title: "Beranda Wali", sub: "Informasi perkembangan santri." },
@@ -24,6 +27,7 @@ const PAGE_TITLES: Record<string, { title: string; sub: string }> = {
   "/parent/schedule": { title: "Jadwal Pelajaran", sub: "Agenda harian kegiatan belajar." },
   "/parent/reports": { title: "Rapor Digital", sub: "Hasil capaian kompetensi santri." },
   "/parent/attendance": { title: "Riwayat Absensi", sub: "Jurnal kehadiran santri harian." },
+  "/parent/announcements": { title: "Pengumuman", sub: "Berita dan informasi penting madrasah." },
 };
 
 export default function ParentLayout({ children }: { children: ReactNode }) {
@@ -31,14 +35,41 @@ export default function ParentLayout({ children }: { children: ReactNode }) {
   const { profile, loading: isProfileLoading } = useSchoolProfile();
   const { activeYear } = useAcademicYear();
   const auth = useAuth();
+  const firestore = useFirestore();
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
   const [isClient, setIsClient] = useState(false);
+  const [hasNewAnnouncement, setHasNewAnnouncement] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  // Check for new announcements
+  const announcementsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(
+      collection(firestore, "announcements"),
+      where("target", "in", ["Semua", "Wali Murid"]),
+      orderBy("createdAt", "desc"),
+      limit(1)
+    );
+  }, [firestore]);
+  const { data: latestAnnouncements } = useCollection(announcementsQuery);
+
+  useEffect(() => {
+    if (latestAnnouncements && latestAnnouncements.length > 0) {
+      const latestId = latestAnnouncements[0].id;
+      const lastReadId = localStorage.getItem('last_read_announcement_parent');
+      if (latestId !== lastReadId && pathname !== "/parent/announcements") {
+        setHasNewAnnouncement(true);
+      } else if (pathname === "/parent/announcements") {
+        setHasNewAnnouncement(false);
+        localStorage.setItem('last_read_announcement_parent', latestId);
+      }
+    }
+  }, [latestAnnouncements, pathname]);
 
   useEffect(() => {
     if (profile?.namaMadrasah) {
@@ -131,8 +162,8 @@ export default function ParentLayout({ children }: { children: ReactNode }) {
 
           {/* Baris Bawah: Judul & Aksi */}
           <div className="px-4 py-2 flex items-center justify-between min-h-[48px]">
-              <div className="w-12 flex justify-start">
-                  {!isDashboard && (
+              <div className="w-12 flex justify-start items-center gap-1">
+                  {!isDashboard ? (
                     <button 
                       onClick={() => router.back()}
                       className="p-1.5 text-accent hover:bg-white/10 rounded-full transition-colors active:scale-90"
@@ -140,6 +171,13 @@ export default function ParentLayout({ children }: { children: ReactNode }) {
                     >
                       <ChevronLeft className="h-5 w-5" />
                     </button>
+                  ) : (
+                    <Link href="/parent/announcements" className="relative p-1.5 text-accent hover:bg-white/10 rounded-full transition-all active:scale-90">
+                      <Bell className="h-5 w-5" />
+                      {hasNewAnnouncement && (
+                        <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-destructive rounded-full border border-primary animate-pulse" />
+                      )}
+                    </Link>
                   )}
               </div>
               
