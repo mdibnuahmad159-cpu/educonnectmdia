@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useRef } from "react";
-import { PlusCircle, AlertTriangle, Download, Upload, FileDown, FileUp, FileSpreadsheet, FileText, Printer, Loader2, Wand2, UserCircle, Trash2 } from "lucide-react";
+import { PlusCircle, AlertTriangle, Download, Upload, FileDown, FileUp, FileSpreadsheet, FileText, Printer, Loader2, Wand2, UserCircle } from "lucide-react";
 import { useCollection, useFirestore, useMemoFirebase, useUser } from "@/firebase";
 import { addTeacher, updateTeacher, deleteTeacher, addTeachersBatch, normalizeTeacherNIGs } from "@/lib/firebase-helpers";
 import { Button } from "@/components/ui/button";
@@ -449,14 +449,6 @@ export function TeacherManagement() {
                               >
                                   <UserCircle className="h-3.5 w-3.5" />
                                   Detail
-                              </Button>
-                              <Button 
-                                  variant="ghost" 
-                                  size="icon" 
-                                  className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                                  onClick={() => handleDelete(teacher.id)}
-                              >
-                                  <Trash2 className="h-4 w-4" />
                               </Button>
                           </div>
                       </div>
