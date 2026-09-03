@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useRef } from "react";
-import { PlusCircle, AlertTriangle, Download, Upload, FileDown, FileUp, FileSpreadsheet, FileText, Printer, Loader2, Wand2, UserCircle } from "lucide-react";
+import { PlusCircle, AlertTriangle, Download, Upload, FileDown, FileUp, FileSpreadsheet, FileText, Printer, Loader2, Wand2, Edit, Trash2 } from "lucide-react";
 import { useCollection, useFirestore, useMemoFirebase, useUser } from "@/firebase";
 import { addTeacher, updateTeacher, deleteTeacher, addTeachersBatch, normalizeTeacherNIGs } from "@/lib/firebase-helpers";
 import { Button } from "@/components/ui/button";
@@ -27,7 +27,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { TeacherForm } from "./teacher-form";
-import { TeacherDetail } from "./teacher-detail"; 
 import type { Teacher } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { collection, Firestore } from "firebase/firestore";
@@ -43,7 +42,6 @@ export function TeacherManagement() {
   const { data: teachers, loading, error } = useCollection<Teacher>(teachersCollection);
   const { user } = useUser();
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -86,11 +84,6 @@ export function TeacherManagement() {
   const handleEdit = (teacher: Teacher) => {
     setSelectedTeacher(teacher);
     setIsFormOpen(true);
-  };
-
-  const handleDetail = (teacher: Teacher) => {
-    setSelectedTeacher(teacher);
-    setIsDetailOpen(true);
   };
 
   const handleDelete = (id: string) => {
@@ -449,15 +442,25 @@ export function TeacherManagement() {
                               </div>
                           </div>
                           
-                          <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="h-8 gap-2 border-primary/10 hover:bg-primary/5 text-[11px] font-bold uppercase tracking-tight"
-                              onClick={() => handleDetail(teacher)}
-                          >
-                              <UserCircle className="h-3.5 w-3.5" />
-                              Detail
-                          </Button>
+                          <div className="flex items-center gap-1">
+                              <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="h-8 gap-2 border-primary/10 hover:bg-primary/5 text-[11px] font-bold uppercase tracking-tight text-primary"
+                                  onClick={() => handleEdit(teacher)}
+                              >
+                                  <Edit className="h-3.5 w-3.5" />
+                                  Edit
+                              </Button>
+                              <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                                  onClick={() => handleDelete(teacher.id)}
+                              >
+                                  <Trash2 className="h-4 w-4" />
+                              </Button>
+                          </div>
                       </div>
                   ))}
               </div>
@@ -476,13 +479,6 @@ export function TeacherManagement() {
         onSave={handleSave}
       />
       
-      <TeacherDetail
-        isOpen={isDetailOpen}
-        setIsOpen={setIsDetailOpen}
-        teacher={selectedTeacher}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-      />
        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
