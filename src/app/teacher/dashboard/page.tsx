@@ -233,6 +233,17 @@ export default function TeacherDashboardPage() {
     return myEntries.sort((a, b) => a.startTime.localeCompare(b.startTime));
   }, [allSchedules, nig, curriculum]);
 
+  const isFriday = new Date().getDay() === 5;
+  const isScheduledToday = teachingScheduleToday.length > 0;
+  const currentSelfStatus = selfAttendanceData?.[0]?.status;
+
+  const displayStatus = useMemo(() => {
+      if (currentSelfStatus) return currentSelfStatus;
+      if (isFriday) return "Libur Jum'at";
+      if (!isScheduledToday) return "Tidak Ada Jadwal";
+      return "Belum Diabsen";
+  }, [currentSelfStatus, isFriday, isScheduledToday]);
+
   const handleSaveStudentAttendance = async () => {
     if (!firestore || !students?.length || !selectedClass || !todayStr) return;
     setIsSavingAttendance(true);
@@ -284,8 +295,6 @@ export default function TeacherDashboardPage() {
     );
   }
 
-  const isFriday = new Date().getDay() === 5;
-
   return (
     <div className="space-y-4 pb-10">
         {/* Profile Card */}
@@ -334,19 +343,22 @@ export default function TeacherDashboardPage() {
             <CardContent className="p-4 pt-0">
                 <div className={cn(
                     "flex items-center justify-between p-3 rounded-lg border",
-                    selfAttendanceData?.[0]?.status === 'Hadir' ? "bg-green-50/50 border-green-100" : 
-                    selfAttendanceData?.[0]?.status ? "bg-orange-50/50 border-orange-100" : "bg-muted/30 border-muted/50"
+                    displayStatus === 'Hadir' ? "bg-green-50/50 border-green-100" : 
+                    displayStatus === 'Tidak Ada Jadwal' || displayStatus === "Libur Jum'at" ? "bg-muted/30 border-muted/50" :
+                    displayStatus !== 'Belum Diabsen' ? "bg-orange-50/50 border-orange-100" : "bg-muted/30 border-muted/50"
                 )}>
                     <div className="flex items-center gap-3">
-                        {selfAttendanceData?.[0]?.status === 'Hadir' ? (
+                        {displayStatus === 'Hadir' ? (
                             <CheckCircle2 className="h-5 w-5 text-green-600" />
-                        ) : selfAttendanceData?.[0]?.status ? (
+                        ) : displayStatus === 'Tidak Ada Jadwal' || displayStatus === "Libur Jum'at" ? (
+                            <Coffee className="h-5 w-5 text-muted-foreground/40" />
+                        ) : displayStatus !== 'Belum Diabsen' ? (
                             <Info className="h-5 w-5 text-orange-600" />
                         ) : (
                             <Clock className="h-5 w-5 text-muted-foreground/50" />
                         )}
                         <div>
-                            <p className="text-xs font-bold">{selfAttendanceData?.[0]?.status || "Belum Absen"}</p>
+                            <p className="text-xs font-bold">{displayStatus}</p>
                             <p className="text-[10px] text-muted-foreground">{format(new Date(), "EEEE, d MMMM yyyy", { locale: dfnsId })}</p>
                         </div>
                     </div>
