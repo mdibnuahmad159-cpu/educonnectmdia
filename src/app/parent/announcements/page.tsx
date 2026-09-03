@@ -119,11 +119,13 @@ export default function ParentAnnouncementsPage() {
                         >
                             <X className="h-6 w-6" />
                         </button>
-                        <img 
-                            src={viewImage || ""} 
-                            alt="Full Preview" 
-                            className="w-full h-auto max-h-[85vh] object-contain rounded-2xl shadow-2xl"
-                        />
+                        {viewImage && (
+                            <img 
+                                src={viewImage} 
+                                alt="Full Preview" 
+                                className="w-full h-auto max-h-[85vh] object-contain rounded-2xl shadow-2xl"
+                            />
+                        )}
                     </div>
                 </DialogContent>
             </Dialog>
