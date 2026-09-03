@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, parseISO } from 'date-fns';
 import { id as dfnsId } from 'date-fns/locale';
 import { cn, safePrint } from '@/lib/utils';
-import { Loader2, Printer, FileDown, CheckCircle2, UserX, AlertCircle, Info, Users, Calendar, ClipboardList } from 'lucide-react';
+import { Loader2, Printer, FileDown, Calendar, ClipboardList } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAcademicYear } from '@/context/academic-year-provider';
 import jsPDF from 'jspdf';
@@ -145,20 +145,8 @@ export default function AttendancePage() {
         });
     }, [sortedTeachers, daysInRange, attendanceMap, scheduledTeachersByDay]);
 
-    const globalStats = useMemo(() => {
-        if (!teacherSummaries.length) return null;
-        
-        return teacherSummaries.reduce((acc, curr) => ({
-            totalScheduled: acc.totalScheduled + curr.totalScheduled,
-            totalHadir: acc.totalHadir + curr.hadir,
-            totalSakit: acc.totalSakit + curr.sakit,
-            totalIzin: acc.totalIzin + curr.izin,
-            totalAlpa: acc.totalAlpa + curr.alpa,
-        }), { totalScheduled: 0, totalHadir: 0, totalSakit: 0, totalIzin: 0, totalAlpa: 0 });
-    }, [teacherSummaries]);
-
     const handleExportPdf = () => {
-        if (!sortedTeachers.length || !fromDate || !toDate || !globalStats) return;
+        if (!sortedTeachers.length || !fromDate || !toDate) return;
         
         const doc = new jsPDF({ orientation: 'landscape' });
         const start = parseISO(fromDate);
@@ -396,56 +384,8 @@ export default function AttendancePage() {
                     </TabsContent>
 
                     <TabsContent value="rekap" className="m-0 p-4 border-none outline-none">
-                        {!isLoading && globalStats && (
+                        {!isLoading && (
                             <div className="space-y-6">
-                                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                                    <Card className="bg-primary/5 border-primary/10 shadow-none rounded-2xl">
-                                        <CardContent className="p-4">
-                                            <p className="text-[9px] font-bold uppercase text-muted-foreground mb-1">Total Jadwal</p>
-                                            <div className="flex items-center gap-2">
-                                                <Info className="h-3.5 w-3.5 text-primary" />
-                                                <span className="text-xl font-bold">{globalStats.totalScheduled}</span>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                    <Card className="bg-green-50 border-green-100 shadow-none rounded-2xl">
-                                        <CardContent className="p-4">
-                                            <p className="text-[9px] font-bold uppercase text-green-700 mb-1">Hadir</p>
-                                            <div className="flex items-center gap-2 text-green-700">
-                                                <CheckCircle2 className="h-3.5 w-3.5" />
-                                                <span className="text-xl font-bold">{globalStats.totalHadir}</span>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                    <Card className="bg-yellow-50 border-yellow-100 shadow-none rounded-2xl">
-                                        <CardContent className="p-4">
-                                            <p className="text-[9px] font-bold uppercase text-yellow-700 mb-1">Sakit</p>
-                                            <div className="flex items-center gap-2 text-yellow-700">
-                                                <AlertCircle className="h-3.5 w-3.5" />
-                                                <span className="text-xl font-bold">{globalStats.totalSakit}</span>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                    <Card className="bg-blue-50 border-blue-100 shadow-none rounded-2xl">
-                                        <CardContent className="p-4">
-                                            <p className="text-[9px] font-bold uppercase text-blue-700 mb-1">Izin</p>
-                                            <div className="flex items-center gap-2 text-blue-700">
-                                                <Info className="h-3.5 w-3.5" />
-                                                <span className="text-xl font-bold">{globalStats.totalIzin}</span>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                    <Card className="bg-red-50 border-red-100 shadow-none rounded-2xl">
-                                        <CardContent className="p-4">
-                                            <p className="text-[9px] font-bold uppercase text-red-700 mb-1">Alpa</p>
-                                            <div className="flex items-center gap-2 text-red-700">
-                                                <UserX className="h-3.5 w-3.5" />
-                                                <span className="text-xl font-bold">{globalStats.totalAlpa}</span>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                </div>
-
                                 <div className="border rounded-2xl overflow-hidden bg-card">
                                     <Table>
                                         <TableHeader className="bg-muted/30">
