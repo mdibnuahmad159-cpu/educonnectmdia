@@ -22,7 +22,15 @@ import {
     Info,
     UserCircle,
     ExternalLink,
-    FileSearch
+    FileSearch,
+    Fingerprint,
+    Baby,
+    HeartHandshake,
+    Phone,
+    MapPin,
+    Calendar,
+    Users,
+    X
 } from "lucide-react";
 import {
   Dialog,
@@ -33,11 +41,13 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import Link from "next/link";
 import { format, parseISO } from "date-fns";
 import { id as dfnsId } from "date-fns/locale";
 import { useAcademicYear } from "@/context/academic-year-provider";
 import { cn } from "@/lib/utils";
+import QRCode from 'qrcode';
 
 const dayMapping: { [key: number]: keyof Omit<Schedule, 'id' | 'classLevel' | 'academicYear' | 'type'> } = {
     0: 'sunday',
@@ -48,11 +58,22 @@ const dayMapping: { [key: number]: keyof Omit<Schedule, 'id' | 'classLevel' | 'a
     6: 'saturday',
 };
 
-function DetailItem({ label, value }: { label: string; value: string | number }) {
+const WhatsAppIcon = () => (
+    <svg viewBox="0 0 24 24" className="h-3 w-3 fill-current" xmlns="http://www.w3.org/2000/svg">
+        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.353-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.87 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.87 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+    </svg>
+);
+
+function InfoField({ label, value, icon: Icon }: { label: string; value: string; icon: any }) {
     return (
-        <div className="grid grid-cols-3 gap-2 py-2 border-b border-muted last:border-0">
-            <span className="text-muted-foreground font-medium">{label}</span>
-            <span className="col-span-2 font-semibold text-right">{value}</span>
+        <div className="flex items-center gap-3 py-3.5 border-b border-muted/60 last:border-0">
+            <div className="p-2 bg-primary/5 rounded-lg text-primary shrink-0">
+                <Icon className="h-3.5 w-3.5" />
+            </div>
+            <div className="flex-1 min-w-0">
+                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-0.5">{label}</p>
+                <p className="text-[11px] font-semibold text-foreground/80 leading-snug uppercase">{value || '-'}</p>
+            </div>
         </div>
     );
 }
@@ -62,6 +83,7 @@ export default function ParentDashboardPage() {
   const [todayStr, setTodayStr] = useState<string>("");
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
+  const [qrDataUrl, setQrDataUrl] = useState<string>("");
   const firestore = useFirestore();
   const { activeYear } = useAcademicYear();
 
@@ -78,6 +100,17 @@ export default function ParentDashboardPage() {
   }, [firestore, nis]);
   const { data: student, loading: isStudentLoading, error: studentError } = useDoc<Student>(studentRef);
 
+  // Generate QR Code
+  useEffect(() => {
+      if (student?.nis) {
+          QRCode.toDataURL(student.nis, {
+              width: 512,
+              margin: 2,
+              color: { dark: '#000000', light: '#ffffff' }
+          }).then(setQrDataUrl).catch(err => console.error(err));
+      }
+  }, [student]);
+
   // Today's Attendance
   const attendanceQuery = useMemoFirebase(() => {
     if (!firestore || !nis || !todayStr) return null;
@@ -89,7 +122,7 @@ export default function ParentDashboardPage() {
   }, [firestore, nis, todayStr]);
   const { data: attendanceData, loading: isAttendanceLoading } = useCollection<StudentAttendance>(attendanceQuery);
 
-  // Fetch Schedule (Inherited logic: fetch all and pick latest if active year is empty)
+  // Fetch Schedule
   const scheduleQuery = useMemoFirebase(() => {
     if (!firestore || student?.kelas === undefined) return null;
     return query(
@@ -100,7 +133,6 @@ export default function ParentDashboardPage() {
   }, [firestore, student?.kelas]);
   const { data: allSchedules, loading: isScheduleLoading } = useCollection<Schedule>(scheduleQuery);
 
-  // Fetch Data for Schedule Mapping
   const curriculumQuery = useMemoFirebase(() => firestore ? collection(firestore, "curriculum") : null, [firestore]);
   const { data: curriculum } = useCollection<Curriculum>(curriculumQuery);
 
@@ -119,7 +151,6 @@ export default function ParentDashboardPage() {
   const todayScheduleEntries = useMemo(() => {
     if (!allSchedules || !curriculum || !teachers) return [];
     
-    // Pick the best schedule: active year first, then latest year
     const activeYearSchedule = allSchedules.find(s => s.academicYear === activeYear);
     const fallbackSchedule = [...allSchedules].sort((a,b) => b.academicYear.localeCompare(a.academicYear))[0];
     const scheduleToUse = activeYearSchedule || fallbackSchedule;
@@ -182,7 +213,7 @@ export default function ParentDashboardPage() {
                 </Avatar>
                 <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between">
-                        <h2 className="text-lg font-bold truncate leading-tight pr-2">{student.name}</h2>
+                        <h2 className="text-lg font-bold truncate leading-tight pr-2 uppercase">{student.name}</h2>
                         <Button 
                             variant="ghost" 
                             size="xs" 
@@ -193,8 +224,8 @@ export default function ParentDashboardPage() {
                         </Button>
                     </div>
                     <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1">
-                        <span className="text-[10px] font-medium bg-white/20 px-2 py-0.5 rounded">NIS: {student.nis}</span>
-                        <span className="text-[10px] font-medium bg-white/20 px-2 py-0.5 rounded">KELAS: {student.kelas}</span>
+                        <span className="text-[10px] font-medium bg-white/20 px-2 py-0.5 rounded uppercase tracking-tighter">NIS: {student.nis.replace('MDIA', '')}</span>
+                        <span className="text-[10px] font-medium bg-white/20 px-2 py-0.5 rounded uppercase tracking-tighter">KELAS: {student.kelas}</span>
                     </div>
                 </div>
             </CardContent>
@@ -255,9 +286,6 @@ export default function ParentDashboardPage() {
                             </p>
                         </div>
                     </div>
-                    {todayAttendance?.status === 'Hadir' && (
-                        <span className="text-[9px] font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded uppercase">Tercatat</span>
-                    )}
                 </div>
             </CardContent>
         </Card>
@@ -342,44 +370,68 @@ export default function ParentDashboardPage() {
 
         {/* Detail Modal */}
         <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-            <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
-                        <UserCircle className="h-5 w-5 text-primary" /> Profil Santri
-                    </DialogTitle>
-                    <DialogDescription>Data identitas lengkap santri Madrasah.</DialogDescription>
-                </DialogHeader>
-                
-                <div className="flex flex-col items-center py-4">
-                    <Avatar className="h-24 w-24 border-4 border-primary/10 shadow-md">
-                        <AvatarImage src={student.avatarUrl} className="object-cover" />
-                        <AvatarFallback className="text-3xl font-bold bg-primary/5 text-primary">
-                            {student.name.charAt(0)}
-                        </AvatarFallback>
-                    </Avatar>
-                    <div className="text-center mt-3">
-                        <h3 className="font-bold text-lg">{student.name}</h3>
-                        <p className="text-xs text-muted-foreground font-mono">NIS: {student.nis}</p>
+            <DialogContent className="sm:max-w-sm p-0 overflow-hidden rounded-[32px] border-none shadow-2xl">
+                <div className="flex flex-col bg-card">
+                    <div className="bg-primary/5 p-6 pt-8 flex flex-col items-center text-center relative">
+                        <DialogHeader className="sr-only">
+                            <DialogTitle>Profil Santri</DialogTitle>
+                        </DialogHeader>
+                        
+                        <div className="relative mb-4">
+                            <Avatar className="h-28 w-28 border-4 border-white shadow-xl scale-110">
+                                <AvatarImage src={student.avatarUrl} className="object-cover" />
+                                <AvatarFallback className="bg-primary/5 text-primary text-3xl font-bold">{student.name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                        </div>
+
+                        <div className="space-y-1 mt-2">
+                            <h3 className="text-lg font-bold leading-tight uppercase text-primary tracking-tight">{student.name}</h3>
+                            <div className="flex items-center justify-center gap-2 text-xs font-semibold text-muted-foreground/80 tracking-wide">
+                                <Users className="h-3 w-3" />
+                                Kelas {student.kelas !== undefined ? student.kelas : '-'}
+                            </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-2 mt-4">
+                            <span className="text-[10px] font-bold bg-primary text-white px-4 py-1.5 rounded-full uppercase tracking-[0.1em] shadow-md shadow-primary/20">
+                                NIS: {student.nis}
+                            </span>
+                        </div>
                     </div>
-                </div>
 
-                <div className="space-y-1 mt-2">
-                    <DetailItem label="Nama Lengkap" value={student.name} />
-                    <DetailItem label="NIS" value={student.nis} />
-                    <DetailItem label="NIK" value={student.nik || '-'} />
-                    <DetailItem label="Jenis Kelamin" value={student.gender} />
-                    <DetailItem label="Tempat Lahir" value={student.tempatLahir || '-'} />
-                    <DetailItem label="Tanggal Lahir" value={student.dateOfBirth} />
-                    <DetailItem label="Nama Ayah" value={student.namaAyah || '-'} />
-                    <DetailItem label="Nama Ibu" value={student.namaIbu || '-'} />
-                    <DetailItem label="Alamat" value={student.address} />
-                    <DetailItem label="No. WhatsApp" value={student.noWa || '-'} />
-                    <DetailItem label="Kelas Aktif" value={student.kelas !== undefined ? `Kelas ${student.kelas}` : '-'} />
-                </div>
+                    <div className="px-6 py-2">
+                        <ScrollArea className="h-[350px] pr-2">
+                            <div className="py-2">
+                                <InfoField label="Nomor Induk Kependudukan (NIK)" value={student.nik || ""} icon={Fingerprint} />
+                                <InfoField label="Jenis Kelamin" value={student.gender} icon={Baby} />
+                                <InfoField label="Tempat, Tanggal Lahir" value={`${student.tempatLahir || '-'}, ${student.dateOfBirth}`} icon={Calendar} />
+                                <InfoField label="Nama Ayah" value={student.namaAyah || ""} icon={HeartHandshake} />
+                                <InfoField label="Nama Ibu" value={student.namaIbu || ""} icon={HeartHandshake} />
+                                <InfoField label="Nomor WhatsApp Wali" value={student.noWa || ""} icon={Phone} />
+                                <InfoField label="Alamat Domisili" value={student.address || ""} icon={MapPin} />
+                            </div>
+                            
+                            {qrDataUrl && (
+                                <div className="mt-4 mb-6 p-5 rounded-[24px] bg-muted/20 border-2 border-dashed border-muted flex flex-col items-center gap-3">
+                                    <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">ID Barcode Absensi</p>
+                                    <img src={qrDataUrl} alt="QR Code" className="w-40 h-40" />
+                                    <span className="text-[10px] font-mono font-bold text-primary/40 tracking-tighter">{student.nis}</span>
+                                </div>
+                            )}
+                        </ScrollArea>
+                    </div>
 
-                <DialogFooter className="mt-6">
-                    <Button onClick={() => setIsDetailOpen(false)} className="w-full">Tutup</Button>
-                </DialogFooter>
+                    <DialogFooter className="bg-muted/30 p-4 px-6 border-t flex flex-row items-center justify-center">
+                        <Button 
+                            type="button"
+                            variant="secondary"
+                            className="rounded-full px-10 h-10 text-[10px] font-bold uppercase tracking-widest bg-white shadow-sm"
+                            onClick={() => setIsDetailOpen(false)}
+                        >
+                            <X className="h-3.5 w-3.5 mr-2" /> Tutup Profil
+                        </Button>
+                    </DialogFooter>
+                </div>
             </DialogContent>
         </Dialog>
 
