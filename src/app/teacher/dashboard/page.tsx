@@ -3,8 +3,8 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from "@/firebase";
-import { doc, collection, query, where, orderBy, limit } from "firebase/firestore";
-import type { Teacher, TeacherAttendance, Schedule, Announcement, Curriculum, Student, StudentAttendance } from "@/types";
+import { doc, collection, query, where, orderBy } from "firebase/firestore";
+import type { Teacher, TeacherAttendance, Schedule, Curriculum, Student, StudentAttendance } from "@/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
@@ -12,13 +12,10 @@ import {
     AlertTriangle, 
     Calendar, 
     Clock, 
-    Megaphone,
-    ArrowRight,
-    CheckCircle2,
+    CheckCircle2, 
     Info,
     UserCircle,
     BookOpen,
-    QrCode,
     X,
     Users,
     Save,
@@ -150,13 +147,6 @@ export default function TeacherDashboardPage() {
   const curriculumQuery = useMemoFirebase(() => firestore ? collection(firestore, "curriculum") : null, [firestore]);
   const { data: curriculum } = useCollection<Curriculum>(curriculumQuery);
 
-  // Announcements
-  const announcementsQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return query(collection(firestore, "announcements"), orderBy("createdAt", "desc"), limit(5));
-  }, [firestore]);
-  const { data: announcements, loading: isAnnouncementsLoading } = useCollection<Announcement>(announcementsQuery);
-
   // Logic for Student Attendance Classes (First Hour ONLY)
   const assignedAttendanceClasses = useMemo(() => {
     const classes = new Set<number>();
@@ -264,11 +254,6 @@ export default function TeacherDashboardPage() {
         setIsSavingAttendance(false);
     }
   };
-
-  const filteredAnnouncements = useMemo(() => {
-    if (!announcements) return [];
-    return announcements.filter(a => a.target === 'Semua' || a.target === 'Guru');
-  }, [announcements]);
 
   const isLoading = isUserLoading || isTeacherLoading || !nig;
 
@@ -482,43 +467,7 @@ export default function TeacherDashboardPage() {
             )}
         </Card>
 
-        {/* Announcements */}
-        <Card className="border-none shadow-sm overflow-hidden">
-            <CardHeader className="p-4 pb-2">
-                <CardTitle className="text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                    <Megaphone className="h-3.5 w-3.5" /> Info & Pengumuman
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 pt-0 space-y-3">
-                {isAnnouncementsLoading ? (
-                    <div className="flex justify-center py-4"><Loader2 className="h-4 w-4 animate-spin opacity-20" /></div>
-                ) : filteredAnnouncements.length > 0 ? (
-                    filteredAnnouncements.map((item) => (
-                        <div key={item.id} className="group p-3 rounded-lg bg-muted/30 border border-transparent hover:border-primary/20 transition-all">
-                            {item.imageUrl && (
-                                <div className="mb-2 rounded-md overflow-hidden bg-muted/50 border">
-                                    <img src={item.imageUrl} alt={item.title} className="w-full h-auto max-h-[300px] object-contain" />
-                                </div>
-                            )}
-                            <div className="flex justify-between items-start gap-2">
-                                <h4 className="text-[11px] font-bold leading-tight line-clamp-1">{item.title}</h4>
-                                <span className="text-[8px] whitespace-nowrap text-muted-foreground font-mono">{format(parseISO(item.createdAt), "dd MMM")}</span>
-                            </div>
-                            <p className="text-[10px] text-muted-foreground line-clamp-2 mt-1 leading-relaxed">{item.content}</p>
-                            {item.linkUrl && (
-                                <a href={item.linkUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[9px] text-primary font-bold mt-2 hover:underline">
-                                    Lihat Selengkapnya <ArrowRight className="h-2.5 w-2.5" />
-                                </a>
-                            )}
-                        </div>
-                    ))
-                ) : (
-                    <p className="py-4 text-center text-[10px] text-muted-foreground italic">Belum ada pengumuman terbaru.</p>
-                )}
-            </CardContent>
-        </Card>
-
-        {/* Profile Detail Dialog */}
+        {/* Detail Modal */}
         <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
             <DialogContent className="sm:max-w-md p-0 overflow-hidden rounded-[32px] border-none shadow-2xl">
                 <div className="flex flex-col bg-card">
