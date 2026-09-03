@@ -13,7 +13,8 @@ import {
     ExternalLink, 
     Trophy,
     TrendingUp,
-    Calendar
+    Calendar,
+    Users
 } from "lucide-react";
 import { useAcademicYear } from "@/context/academic-year-provider";
 import { cn } from "@/lib/utils";
@@ -24,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 
 export default function ParentReportsPage() {
     const [nis, setNis] = useState<string | null>(null);
@@ -73,9 +75,25 @@ export default function ParentReportsPage() {
         if (!grades || !curriculum) return [];
         return grades.map(g => {
             const subject = curriculum.find(c => c.id === g.subjectId);
-            return { ...g, subjectName: subject?.subjectName || 'Mata Pelajaran' };
+            return { 
+                ...g, 
+                subjectName: subject?.subjectName || 'Mata Pelajaran',
+                classLevel: subject?.classLevel 
+            };
         }).sort((a,b) => a.subjectName.localeCompare(b.subjectName));
     }, [grades, curriculum]);
+
+    // Derived class level for the selected academic year
+    const classAtYear = useMemo(() => {
+        if (processedGrades.length > 0) {
+            // Find the class level from the first valid subject grade
+            const gradeWithClass = processedGrades.find(g => g.classLevel !== undefined);
+            if (gradeWithClass) return gradeWithClass.classLevel;
+        }
+        // Fallback if no grades but looking at current year
+        if (displayYear === activeYear) return student?.kelas;
+        return null;
+    }, [processedGrades, student, displayYear, activeYear]);
 
     const stats = useMemo(() => {
         if (!processedGrades.length) return { total: 0, avg: 0 };
@@ -128,22 +146,38 @@ export default function ParentReportsPage() {
                 </div>
             </div>
 
-            {/* External Report Link (If exists for current year) */}
-            {student?.reportUrl && (
-                <Card className="border-none shadow-sm bg-blue-600 text-white overflow-hidden">
-                    <CardContent className="p-4 flex items-center justify-between">
-                        <div className="space-y-1">
-                            <p className="text-[10px] font-bold uppercase opacity-80">Rapor Digital PDF</p>
-                            <p className="text-sm font-bold">Unduh Dokumen Resmi</p>
+            {/* Class Info & Rapor PDF */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Card className="border-none shadow-sm bg-primary/5 flex items-center p-4">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 text-primary rounded-lg">
+                            <Users className="h-4 w-4" />
                         </div>
-                        <Button size="sm" variant="secondary" className="gap-2 h-8 text-[10px] font-bold rounded-full" asChild>
-                            <a href={student.reportUrl} target="_blank" rel="noopener noreferrer">
-                                <ExternalLink className="h-3 w-3" /> BUKA
-                            </a>
-                        </Button>
-                    </CardContent>
+                        <div>
+                            <p className="text-[9px] font-bold text-muted-foreground uppercase">Kelas Pada TA Ini</p>
+                            <p className="text-sm font-bold text-primary">
+                                {classAtYear !== null ? `KELAS ${classAtYear}` : 'TIDAK TERDETEKSI'}
+                            </p>
+                        </div>
+                    </div>
                 </Card>
-            )}
+
+                {student?.reportUrl && (
+                    <Card className="border-none shadow-sm bg-blue-600 text-white overflow-hidden">
+                        <CardContent className="p-4 flex items-center justify-between">
+                            <div className="space-y-0.5">
+                                <p className="text-[9px] font-bold uppercase opacity-80">Berkas Digital</p>
+                                <p className="text-xs font-bold">Rapor PDF Resmi</p>
+                            </div>
+                            <Button size="sm" variant="secondary" className="gap-2 h-8 text-[10px] font-bold rounded-full" asChild>
+                                <a href={student.reportUrl} target="_blank" rel="noopener noreferrer">
+                                    <ExternalLink className="h-3 w-3" /> BUKA
+                                </a>
+                            </Button>
+                        </CardContent>
+                    </Card>
+                )}
+            </div>
 
             {/* Stats Cards */}
             <div className="grid grid-cols-2 gap-3">
@@ -177,23 +211,31 @@ export default function ParentReportsPage() {
                 <CardContent className="p-0">
                     <div className="divide-y">
                         {processedGrades.length > 0 ? (
-                            processedGrades.map((g) => (
-                                <div key={g.id} className="flex items-center justify-between p-4 hover:bg-muted/10 transition-colors">
-                                    <div className="space-y-0.5">
-                                        <p className="text-[11px] font-bold text-primary uppercase">{g.subjectName}</p>
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-[9px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground uppercase">Kognitif</span>
+                            processedGrades.map((g) => {
+                                const isPassed = g.score >= 60;
+                                return (
+                                    <div key={g.id} className="flex items-center justify-between p-4 hover:bg-muted/10 transition-colors">
+                                        <div className="space-y-0.5">
+                                            <p className="text-[11px] font-bold text-primary uppercase">{g.subjectName}</p>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-[9px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground uppercase">Kognitif</span>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className={cn(
+                                                "text-lg font-bold",
+                                                isPassed ? "text-green-600" : "text-destructive"
+                                            )}>{g.score}</p>
+                                            <p className={cn(
+                                                "text-[8px] uppercase font-bold opacity-70",
+                                                isPassed ? "text-green-700" : "text-destructive"
+                                            )}>
+                                                {isPassed ? 'Tuntas' : 'Remedi'}
+                                            </p>
                                         </div>
                                     </div>
-                                    <div className="text-right">
-                                        <p className={cn(
-                                            "text-lg font-bold",
-                                            g.score >= 75 ? "text-green-600" : "text-orange-600"
-                                        )}>{g.score}</p>
-                                        <p className="text-[8px] uppercase font-bold opacity-40">{g.score >= 75 ? 'Tuntas' : 'Remedi'}</p>
-                                    </div>
-                                </div>
-                            ))
+                                );
+                            })
                         ) : (
                             <div className="py-16 text-center text-muted-foreground italic text-[10px] flex flex-col items-center">
                                 <FileText className="h-8 w-8 mb-2 opacity-10" />
@@ -243,6 +285,13 @@ export default function ParentReportsPage() {
                     </CardContent>
                 </Card>
             )}
+            
+            <div className="p-4 bg-muted/10 border-t border-dashed rounded-xl">
+                <p className="text-[9px] text-muted-foreground leading-relaxed italic text-center">
+                    * Kriteria Ketuntasan Minimal (KKM) Madrasah adalah 60. <br/>
+                    Nilai di bawah 60 akan ditandai dengan warna merah (Remedi).
+                </p>
+            </div>
         </div>
     );
 }
