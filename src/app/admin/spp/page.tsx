@@ -357,7 +357,7 @@ export default function SppPage() {
                                 <>
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
-                                            <Button variant="outline" size="xs" className="h-8 px-3 gap-1.5 font-normal border-accent/30 hover:bg-accent/10 text-accent">
+                                            <Button variant="secondary" size="xs" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none">
                                                 <FileDown className="h-3.5 w-3.5" /> Ekspor
                                             </Button>
                                         </DropdownMenuTrigger>
@@ -370,7 +370,7 @@ export default function SppPage() {
                                             </DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
-                                    <Button variant="outline" size="xs" onClick={handlePrint} className="h-8 px-3 gap-1.5 font-normal border-white/20 hover:bg-white/10 text-white">
+                                    <Button variant="secondary" size="xs" onClick={handlePrint} className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none">
                                         <Printer className="h-3.5 w-3.5" /> Cetak
                                     </Button>
                                 </>
@@ -427,7 +427,7 @@ export default function SppPage() {
                                     onChange={(e) => setLocalDefaultAmount(e.target.value)}
                                     className="h-9 font-normal bg-white/10 border-white/20 text-white placeholder:text-white/40 focus-visible:ring-white/30"
                                 />
-                                <Button variant="secondary" size="xs" className="h-9 gap-1.5 px-3 bg-accent text-accent-foreground hover:bg-accent/90" onClick={handleUpdateDefaultBill}>
+                                <Button variant="secondary" size="xs" className="h-9 gap-1.5 px-3 bg-accent text-primary hover:bg-accent/90 border-none font-bold" onClick={handleUpdateDefaultBill}>
                                     <Save className="h-3 w-3" />
                                     Simpan
                                 </Button>

@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import type { Teacher, TeacherAttendance, Schedule, ScheduleEntry } from '@/types';
-import { Card, CardHeader, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -326,10 +326,10 @@ export default function AttendancePage() {
                         />
                     </div>
                     <div className="flex gap-2">
-                        <Button variant="outline" size="xs" onClick={handleExportPdf} className="h-8 gap-2 border-white/20 hover:bg-white/10 text-white font-normal">
+                        <Button variant="secondary" size="xs" onClick={handleExportPdf} className="h-8 gap-2 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none">
                             <FileDown className="h-3.5 w-3.5" /> Ekspor PDF
                         </Button>
-                        <Button variant="outline" size="xs" onClick={handlePrint} className="h-8 gap-2 border-white/20 hover:bg-white/10 text-white font-normal">
+                        <Button variant="secondary" size="xs" onClick={handlePrint} className="h-8 gap-2 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none">
                             <Printer className="h-3.5 w-3.5" /> Cetak
                         </Button>
                     </div>

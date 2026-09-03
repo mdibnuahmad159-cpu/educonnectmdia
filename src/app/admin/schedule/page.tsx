@@ -371,13 +371,13 @@ export default function SchedulePage() {
                             </CardDescription>
                         </div>
                          <div className="flex items-center gap-2">
-                             <Button size="xs" variant="outline" className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8 font-normal" onClick={() => setIsTimeFormOpen(true)}>
+                             <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none" onClick={() => setIsTimeFormOpen(true)}>
                                 <Edit className="h-3.5 w-3.5" />
                                 Atur Jam
                             </Button>
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button size="xs" variant="outline" className="gap-1.5 border-accent/30 hover:bg-accent/10 text-accent h-8">
+                                    <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none">
                                     <FileDown className="h-3.5 w-3.5" />
                                     Ekspor
                                     </Button>
@@ -393,7 +393,7 @@ export default function SchedulePage() {
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
-                            <Button size="xs" variant="outline" className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8 font-normal" onClick={handlePrintTable}>
+                            <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none" onClick={handlePrintTable}>
                                 <Printer className="h-3.5 w-3.5" />
                                 Cetak
                             </Button>

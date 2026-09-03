@@ -304,22 +304,22 @@ export default function ClassManagementPage() {
             </Select>
 
             <div className="flex flex-wrap items-center gap-2">
-                <Button size="xs" variant="outline" onClick={handlePromote} disabled={selectedStudents.length === 0} className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8 font-normal">
+                <Button size="xs" variant="secondary" onClick={handlePromote} disabled={selectedStudents.length === 0} className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none">
                 <ChevronsUp className="h-3.5 w-3.5" /> Naik
                 </Button>
-                <Button size="xs" variant="outline" onClick={handleDemote} disabled={selectedStudents.length === 0} className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8 font-normal">
+                <Button size="xs" variant="secondary" onClick={handleDemote} disabled={selectedStudents.length === 0} className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none">
                 <ChevronsDown className="h-3.5 w-3.5" /> Turun
                 </Button>
-                <Button size="xs" variant="outline" onClick={() => setIsMoveDialogOpen(true)} disabled={selectedStudents.length === 0} className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8 font-normal">
+                <Button size="xs" variant="secondary" onClick={() => setIsMoveDialogOpen(true)} disabled={selectedStudents.length === 0} className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none">
                 <ArrowRightLeft className="h-3.5 w-3.5" /> Pindah
                 </Button>
-                <Button size="xs" variant="destructive" onClick={handleGraduate} disabled={selectedStudents.length === 0} className="gap-1.5 h-8 font-bold shadow-md">
+                <Button size="xs" variant="secondary" onClick={handleGraduate} disabled={selectedStudents.length === 0} className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none">
                   <GraduationCap className="h-3.5 w-3.5" /> Luluskan
                 </Button>
                 
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button size="xs" variant="outline" className="gap-1.5 border-accent/30 hover:bg-accent/10 text-accent h-8">
+                        <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none">
                         <FileDown className="h-3.5 w-3.5" /> Ekspor
                         </Button>
                     </DropdownMenuTrigger>
@@ -332,7 +332,7 @@ export default function ClassManagementPage() {
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
-                <Button size="xs" variant="outline" className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8 font-normal" onClick={handlePrintTable}>
+                <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none" onClick={handlePrintTable}>
                     <Printer className="h-3.5 w-3.5" /> Cetak
                 </Button>
             </div>

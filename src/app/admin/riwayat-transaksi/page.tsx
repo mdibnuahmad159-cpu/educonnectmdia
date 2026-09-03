@@ -307,7 +307,7 @@ export default function RiwayatTransaksiPage() {
                     <div className="flex items-center gap-2">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button size="xs" variant="outline" className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8 font-normal">
+                                <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none">
                                     <FileDown className="h-3.5 w-3.5" /> Ekspor
                                 </Button>
                             </DropdownMenuTrigger>
@@ -320,7 +320,7 @@ export default function RiwayatTransaksiPage() {
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
-                        <Button size="xs" variant="outline" className="gap-1.5 border-white/20 hover:bg-white/10 text-white h-8 font-normal" onClick={handlePrint}>
+                        <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none" onClick={handlePrint}>
                             <Printer className="h-3.5 w-3.5" /> Cetak
                         </Button>
                     </div>
