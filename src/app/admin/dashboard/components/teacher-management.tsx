@@ -371,7 +371,7 @@ export function TeacherManagement() {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none">
+                <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90 border-none">
                   <FileUp className="h-3.5 w-3.5" />
                   Impor
                 </Button>
@@ -397,7 +397,7 @@ export function TeacherManagement() {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none">
+                <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90 border-none">
                   <FileDown className="h-3.5 w-3.5" />
                   Ekspor
                 </Button>
@@ -413,7 +413,7 @@ export function TeacherManagement() {
                   </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none" onClick={handlePrintTable}>
+            <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90 border-none" onClick={handlePrintTable}>
                 <Printer className="h-3.5 w-3.5" />
                 Cetak Data
             </Button>
