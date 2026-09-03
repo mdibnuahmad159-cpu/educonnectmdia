@@ -6,7 +6,6 @@ import type { SchoolProfile } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { updateSchoolProfile } from "@/lib/firebase-helpers";
 import { ProfileForm } from "./components/profile-form";
-import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, AlertTriangle } from "lucide-react";
 
 export default function ProfilePage() {
@@ -23,34 +22,40 @@ export default function ProfilePage() {
     const handleSave = (profileData: Partial<Omit<SchoolProfile, 'id'>>) => {
         if (!firestore) return;
         updateSchoolProfile(firestore, profileData);
-        toast({ title: "Profil Diperbarui", description: "Data profil madrasah berhasil disimpan." });
+        toast({ 
+            title: "Profil Diperbarui", 
+            description: "Informasi identitas madrasah telah berhasil disimpan.",
+        });
     };
 
     if (loading) {
         return (
-          <div className="flex h-full w-full items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="flex h-[70vh] w-full items-center justify-center">
+            <div className="flex flex-col items-center gap-3 text-muted-foreground">
+                <Loader2 className="h-10 w-10 animate-spin text-primary/30" />
+                <span className="text-[10px] font-bold uppercase tracking-widest">Sinkronisasi Data...</span>
+            </div>
           </div>
         );
     }
     
     if (error) {
         return (
-          <Card className="border-destructive/20 bg-destructive/5 p-6 text-destructive flex items-center gap-3">
-             <AlertTriangle className="h-6 w-6" />
-             <div className="text-xs">
-                <p className="font-bold">Gagal Memuat Data</p>
-                <p>Terjadi kesalahan saat mengambil data profil. Silakan coba lagi.</p>
+          <div className="p-8 flex flex-col items-center justify-center text-center gap-4 bg-destructive/5 rounded-[32px] border border-destructive/20 mt-10">
+             <div className="p-4 bg-destructive/10 rounded-full">
+                <AlertTriangle className="h-8 w-8 text-destructive" />
              </div>
-          </Card>
+             <div className="space-y-1">
+                <p className="font-bold text-destructive">Gagal Memuat Profil</p>
+                <p className="text-xs text-muted-foreground">Terjadi kendala saat menghubungi basis data. Harap muat ulang halaman.</p>
+             </div>
+          </div>
         );
     }
 
     return (
-        <Card className="border-none shadow-sm">
-            <CardContent className="pt-6">
-                <ProfileForm profile={profile} onSave={handleSave} />
-            </CardContent>
-        </Card>
+        <div className="animate-in fade-in duration-500 max-w-4xl mx-auto">
+            <ProfileForm profile={profile} onSave={handleSave} />
+        </div>
     );
 }

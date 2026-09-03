@@ -18,7 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { SchoolProfile } from "@/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ImageIcon, Calendar } from "lucide-react";
+import { ImageIcon, Calendar, School, Shield, MapPin, UploadCloud } from "lucide-react";
 import { AcademicYearSelector } from "@/components/shared/academic-year-selector";
 
 const formSchema = z.object({
@@ -101,7 +101,6 @@ export function ProfileForm({ profile, onSave }: ProfileFormProps) {
     onSave(dataToSave);
   }, [onSave]);
 
-  // Listen for global save-profile event from layout header
   useEffect(() => {
     const handleGlobalSave = () => {
       form.handleSubmit(onSubmit)();
@@ -112,132 +111,189 @@ export function ProfileForm({ profile, onSave }: ProfileFormProps) {
   
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <ScrollArea className="h-[calc(100vh-14rem)] pr-4">
-            <div className="space-y-6 pb-10">
-                <div className="grid gap-4 sm:grid-cols-2">
-                    <FormField control={form.control} name="namaYayasan" render={({ field }) => ( <FormItem> <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Nama Yayasan</FormLabel> <FormControl><Input {...field} value={field.value ?? ""} className="bg-white" /></FormControl> <FormMessage /> </FormItem> )}/>
-                    <FormField control={form.control} name="namaMadrasah" render={({ field }) => ( <FormItem> <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Nama Madrasah</FormLabel> <FormControl><Input {...field} value={field.value ?? ""} className="bg-white" /></FormControl> <FormMessage /> </FormItem> )}/>
-                </div>
-                <FormField control={form.control} name="nsdt" render={({ field }) => ( <FormItem> <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">NSDT (Nomor Statistik)</FormLabel> <FormControl><Input {...field} value={field.value ?? ""} className="bg-white" /></FormControl> <FormMessage /> </FormItem> )}/>
-                
-                <div className="p-4 rounded-xl border bg-primary/5 space-y-3">
-                  <div className="flex items-center gap-2 text-primary">
-                    <Calendar className="h-4 w-4" />
-                    <span className="text-xs font-bold uppercase tracking-wider">Tahun Ajaran Aktif</span>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <ScrollArea className="h-[calc(100vh-12rem)] pr-4">
+            <div className="space-y-10 pb-10">
+                {/* Section 1: Identity */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-primary/60 mb-2">
+                    <School className="h-4 w-4" />
+                    <h3 className="text-[10px] font-bold uppercase tracking-[0.2em]">Identitas Lembaga</h3>
                   </div>
-                  <AcademicYearSelector />
-                  <p className="text-[9px] text-muted-foreground italic leading-relaxed">
-                    Mengubah tahun ajaran di sini akan mengubah periode aktif untuk seluruh sistem (jadwal, nilai, SPP).
-                  </p>
+                  <div className="grid gap-6 sm:grid-cols-2 bg-muted/20 p-6 rounded-[24px] border border-muted/50">
+                      <FormField control={form.control} name="namaYayasan" render={({ field }) => ( 
+                        <FormItem> 
+                          <FormLabel className="text-[9px] font-bold uppercase text-muted-foreground ml-1">Nama Yayasan</FormLabel> 
+                          <FormControl><Input {...field} value={field.value ?? ""} className="bg-white rounded-xl h-10" placeholder="Masukkan nama yayasan..." /></FormControl> 
+                          <FormMessage /> 
+                        </FormItem> 
+                      )}/>
+                      <FormField control={form.control} name="namaMadrasah" render={({ field }) => ( 
+                        <FormItem> 
+                          <FormLabel className="text-[9px] font-bold uppercase text-muted-foreground ml-1">Nama Madrasah</FormLabel> 
+                          <FormControl><Input {...field} value={field.value ?? ""} className="bg-white rounded-xl h-10" placeholder="Masukkan nama madrasah..." /></FormControl> 
+                          <FormMessage /> 
+                        </FormItem> 
+                      )}/>
+                      <FormField control={form.control} name="nsdt" render={({ field }) => ( 
+                        <FormItem className="sm:col-span-2"> 
+                          <FormLabel className="text-[9px] font-bold uppercase text-muted-foreground ml-1">NSDT / Nomor Statistik</FormLabel> 
+                          <div className="relative">
+                            <Shield className="absolute left-3 top-3 h-4 w-4 text-muted-foreground/40" />
+                            <FormControl><Input {...field} value={field.value ?? ""} className="bg-white rounded-xl h-10 pl-10" placeholder="Contoh: 111232010045" /></FormControl> 
+                          </div>
+                          <FormMessage /> 
+                        </FormItem> 
+                      )}/>
+                      <FormField control={form.control} name="alamat" render={({ field }) => ( 
+                        <FormItem className="sm:col-span-2"> 
+                          <FormLabel className="text-[9px] font-bold uppercase text-muted-foreground ml-1">Alamat Lengkap</FormLabel> 
+                          <div className="relative">
+                            <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground/40" />
+                            <FormControl><Textarea {...field} value={field.value ?? ""} className="bg-white rounded-xl min-h-[80px] pl-10 pt-2.5" placeholder="Jl. Raya Nomor, Desa, Kecamatan, Kabupaten..." /></FormControl> 
+                          </div>
+                          <FormMessage /> 
+                        </FormItem> 
+                      )}/>
+                  </div>
                 </div>
 
-                <FormField control={form.control} name="alamat" render={({ field }) => ( <FormItem> <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Alamat Lengkap</FormLabel> <FormControl><Textarea {...field} value={field.value ?? ""} className="bg-white" /></FormControl> <FormMessage /> </FormItem> )}/>
+                {/* Section 2: Active Period */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-primary/60 mb-2">
+                    <Calendar className="h-4 w-4" />
+                    <h3 className="text-[10px] font-bold uppercase tracking-[0.2em]">Periode Aktif</h3>
+                  </div>
+                  <div className="p-6 rounded-[24px] border-2 border-dashed border-primary/20 bg-primary/5 flex flex-col sm:flex-row items-center justify-between gap-6">
+                    <div className="space-y-1 text-center sm:text-left">
+                      <p className="text-sm font-bold text-primary">Tahun Ajaran Aktif</p>
+                      <p className="text-[10px] text-muted-foreground leading-relaxed">
+                        Tahun ajaran ini berlaku secara global untuk seluruh<br/>modul akademik, keuangan, dan laporan.
+                      </p>
+                    </div>
+                    <div className="bg-white p-1 rounded-full shadow-sm">
+                      <AcademicYearSelector />
+                    </div>
+                  </div>
+                </div>
                 
-                <div className="grid gap-6 py-4 border-y">
-                    <FormField
-                    control={form.control}
-                    name="logoYayasanFile"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Logo Yayasan</FormLabel>
-                        <div className="flex items-center gap-4">
-                            <Avatar className="h-16 w-16 rounded-md border bg-muted/20">
-                            <AvatarImage src={form.watch('logoYayasanUrl') || undefined} className="object-contain" />
-                            <AvatarFallback className="rounded-md"><ImageIcon className="h-6 w-6 text-muted-foreground/40" /></AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1">
-                            <FormControl>
-                                <Input
+                {/* Section 3: Visuals */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-primary/60 mb-2">
+                    <ImageIcon className="h-4 w-4" />
+                    <h3 className="text-[10px] font-bold uppercase tracking-[0.2em]">Atribut Visual</h3>
+                  </div>
+                  
+                  <div className="grid gap-6 sm:grid-cols-2">
+                      {/* Logo Yayasan */}
+                      <div className="bg-card p-6 rounded-[24px] border border-muted/50 shadow-sm flex flex-col items-center gap-4 text-center">
+                          <FormLabel className="text-[9px] font-bold uppercase text-muted-foreground">Logo Yayasan</FormLabel>
+                          <Avatar className="h-24 w-24 rounded-2xl border-4 border-white shadow-xl bg-muted/20">
+                            <AvatarImage src={form.watch('logoYayasanUrl') || undefined} className="object-contain p-2" />
+                            <AvatarFallback className="rounded-2xl bg-muted/10"><ImageIcon className="h-8 w-8 text-muted-foreground/20" /></AvatarFallback>
+                          </Avatar>
+                          <div className="relative w-full">
+                            <Input
                                 type="file"
                                 accept="image/*"
-                                className="h-9 bg-white"
+                                className="opacity-0 absolute inset-0 cursor-pointer h-9"
                                 onChange={(e) => {
                                     const file = e.target.files?.[0];
                                     if (file) compressAndSetImage(file, 'logoYayasanUrl');
-                                    field.onChange(file ?? null);
                                 }}
-                                />
-                            </FormControl>
-                            </div>
-                        </div>
-                        </FormItem>
-                    )}
-                    />
+                            />
+                            <Button type="button" variant="outline" size="sm" className="w-full h-9 rounded-xl gap-2 text-[10px] font-bold uppercase border-muted/50">
+                              <UploadCloud className="h-3.5 w-3.5" /> Ganti Logo
+                            </Button>
+                          </div>
+                      </div>
 
-                    <FormField
-                    control={form.control}
-                    name="logoMadrasahFile"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Logo Madrasah</FormLabel>
-                        <div className="flex items-center gap-4">
-                            <Avatar className="h-16 w-16 rounded-md border bg-muted/20">
-                            <AvatarImage src={form.watch('logoMadrasahUrl') || undefined} className="object-contain" />
-                            <AvatarFallback className="rounded-md"><ImageIcon className="h-6 w-6 text-muted-foreground/40" /></AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1">
-                            <FormControl>
-                                <Input
+                      {/* Logo Madrasah */}
+                      <div className="bg-card p-6 rounded-[24px] border border-muted/50 shadow-sm flex flex-col items-center gap-4 text-center">
+                          <FormLabel className="text-[9px] font-bold uppercase text-muted-foreground">Logo Madrasah</FormLabel>
+                          <Avatar className="h-24 w-24 rounded-2xl border-4 border-white shadow-xl bg-muted/20">
+                            <AvatarImage src={form.watch('logoMadrasahUrl') || undefined} className="object-contain p-2" />
+                            <AvatarFallback className="rounded-2xl bg-muted/10"><ImageIcon className="h-8 w-8 text-muted-foreground/20" /></AvatarFallback>
+                          </Avatar>
+                          <div className="relative w-full">
+                            <Input
                                 type="file"
                                 accept="image/*"
-                                className="h-9 bg-white"
+                                className="opacity-0 absolute inset-0 cursor-pointer h-9"
                                 onChange={(e) => {
                                     const file = e.target.files?.[0];
                                     if (file) compressAndSetImage(file, 'logoMadrasahUrl');
-                                    field.onChange(file ?? null);
                                 }}
-                                />
-                            </FormControl>
-                            </div>
-                        </div>
-                        </FormItem>
-                    )}
-                    />
+                            />
+                            <Button type="button" variant="outline" size="sm" className="w-full h-9 rounded-xl gap-2 text-[10px] font-bold uppercase border-muted/50">
+                              <UploadCloud className="h-3.5 w-3.5" /> Ganti Logo
+                            </Button>
+                          </div>
+                      </div>
 
-                    <FormField
-                    control={form.control}
-                    name="kopSuratFile"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Gambar Kop Surat</FormLabel>
-                        <div className="space-y-3">
+                      {/* Kop Surat */}
+                      <div className="sm:col-span-2 bg-card p-6 rounded-[24px] border border-muted/50 shadow-sm space-y-4">
+                          <div className="flex items-center justify-between">
+                            <FormLabel className="text-[9px] font-bold uppercase text-muted-foreground">Gambar Kop Surat Resmi</FormLabel>
                             {form.watch('kopSuratUrl') && (
-                                <div className="relative w-full aspect-[4/1] rounded-md border bg-muted/10 overflow-hidden">
-                                    <img 
-                                        src={form.watch('kopSuratUrl')!} 
-                                        alt="Preview Kop Surat" 
-                                        className="w-full h-full object-contain"
-                                    />
-                                    <button 
-                                        type="button" 
-                                        className="absolute top-1 right-1 p-1 bg-destructive text-white rounded-full"
-                                        onClick={() => form.setValue('kopSuratUrl', '')}
-                                    >
-                                        <ImageIcon className="h-3 w-3" />
-                                    </button>
-                                </div>
+                              <button 
+                                type="button" 
+                                className="text-[9px] font-bold text-destructive uppercase hover:underline"
+                                onClick={() => form.setValue('kopSuratUrl', '')}
+                              >
+                                Hapus Kop
+                              </button>
                             )}
-                            <FormControl>
-                                <Input
-                                type="file"
-                                accept="image/*"
-                                className="h-9 bg-white"
-                                onChange={(e) => {
-                                    const file = e.target.files?.[0];
-                                    if (file) compressAndSetImage(file, 'kopSuratUrl');
-                                    field.onChange(file ?? null);
-                                }}
-                                />
-                            </FormControl>
-                        </div>
-                        </FormItem>
-                    )}
-                    />
+                          </div>
+                          
+                          <div className="relative group">
+                              <div className={cn(
+                                "relative w-full aspect-[5/1] rounded-2xl border-2 border-dashed transition-all flex items-center justify-center overflow-hidden",
+                                form.watch('kopSuratUrl') ? "border-muted bg-white" : "border-muted-foreground/20 bg-muted/5"
+                              )}>
+                                  {form.watch('kopSuratUrl') ? (
+                                      <img 
+                                          src={form.watch('kopSuratUrl')!} 
+                                          alt="Preview Kop Surat" 
+                                          className="w-full h-full object-contain p-4"
+                                      />
+                                  ) : (
+                                      <div className="flex flex-col items-center gap-2 text-muted-foreground/40">
+                                          <ImageIcon className="h-10 w-10" />
+                                          <p className="text-[10px] font-medium italic">Klik untuk unggah desain kop surat</p>
+                                      </div>
+                                  )}
+                                  <Input
+                                    type="file"
+                                    accept="image/*"
+                                    className="opacity-0 absolute inset-0 cursor-pointer h-full"
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) compressAndSetImage(file, 'kopSuratUrl');
+                                    }}
+                                  />
+                              </div>
+                              <div className="mt-3 flex items-center gap-2">
+                                <InfoIcon className="h-3 w-3 text-muted-foreground" />
+                                <p className="text-[9px] text-muted-foreground leading-relaxed italic">
+                                  Gunakan gambar landscape dengan rasio minimal 4:1. Disarankan resolusi 1200x300 px.
+                                </p>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
                 </div>
             </div>
         </ScrollArea>
       </form>
     </Form>
   );
+}
+
+function InfoIcon({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+            <circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" />
+        </svg>
+    )
 }
