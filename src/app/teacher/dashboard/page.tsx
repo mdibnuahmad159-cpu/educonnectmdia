@@ -28,7 +28,8 @@ import {
     Mail,
     Phone,
     MapPin,
-    GraduationCap
+    GraduationCap,
+    ArrowRightCircle
 } from "lucide-react";
 import {
   Dialog,
@@ -320,10 +321,15 @@ export default function TeacherDashboardPage() {
 
         {/* Self Attendance Status */}
         <Card className="border-none shadow-sm">
-            <CardHeader className="p-4 pb-2">
+            <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0">
                 <CardTitle className="text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                     <Calendar className="h-3.5 w-3.5" /> Kehadiran Saya
                 </CardTitle>
+                <Link href="/teacher/attendance-history">
+                    <Button variant="ghost" size="xs" className="h-7 gap-1 text-[10px] font-bold text-primary hover:bg-primary/5 uppercase">
+                        Lihat Riwayat <ArrowRightCircle className="h-3 w-3" />
+                    </Button>
+                </Link>
             </CardHeader>
             <CardContent className="p-4 pt-0">
                 <div className={cn(

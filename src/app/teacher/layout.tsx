@@ -1,4 +1,3 @@
-
 "use client";
 
 import { ReactNode, useEffect, useState, useMemo } from "react";
@@ -18,6 +17,7 @@ const PAGE_TITLES: Record<string, { title: string; sub: string }> = {
   "/teacher/grades": { title: "Input Nilai", sub: "Pengelolaan hasil belajar santri." },
   "/teacher/student-attendance": { title: "Absensi Santri", sub: "Verifikasi kehadiran harian kelas." },
   "/teacher/tabungan": { title: "Tabungan Saya", sub: "Riwayat simpanan pribadi." },
+  "/teacher/attendance-history": { title: "Riwayat Absensi", sub: "Laporan jurnal dan rekap kehadiran pribadi." },
 };
 
 export default function TeacherLayout({ children }: { children: ReactNode }) {
