@@ -89,8 +89,6 @@ export function TeacherManagement() {
   };
 
   const handleEditFromDetail = (teacher: Teacher) => {
-    // This is called when internal save happens in detail
-    // or if we needed to trigger the main form
     setSelectedTeacher(teacher);
   };
 
@@ -371,24 +369,15 @@ export function TeacherManagement() {
               Normalisasi NIG
             </Button>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90 border-none">
-                  <FileUp className="h-3.5 w-3.5" />
-                  Impor
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={handleDownloadTeacherTemplate}>
-                    <Download className="mr-2 h-3.5 w-3.5" />
-                    Unduh Template
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
-                    <Upload className="mr-2 h-3.5 w-3.5" />
-                    Unggah Excel
-                  </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90 border-none" onClick={handleDownloadTeacherTemplate}>
+                <FileUp className="h-3.5 w-3.5" />
+                Template
+            </Button>
+
+            <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90 border-none" onClick={() => fileInputRef.current?.click()}>
+                <Upload className="h-3.5 w-3.5" />
+                Unggah
+            </Button>
             <input
                 type="file"
                 ref={fileInputRef}
@@ -417,7 +406,7 @@ export function TeacherManagement() {
             </DropdownMenu>
             <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90 border-none" onClick={handlePrintTable}>
                 <Printer className="h-3.5 w-3.5" />
-                Cetak Data
+                Cetak
             </Button>
             <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none" onClick={handleAdd}>
               <PlusCircle className="h-3.5 w-3.5" />

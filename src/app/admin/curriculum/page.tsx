@@ -286,24 +286,12 @@ export default function CurriculumPage() {
                         </SelectContent>
                     </Select>
 
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none">
-                            <FileUp className="h-3.5 w-3.5" />
-                            Impor
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={handleDownloadCurriculumTemplate}>
-                            <Download className="mr-2 h-3.5 w-3.5" />
-                            Unduh Template
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
-                            <Upload className="mr-2 h-3.5 w-3.5" />
-                            Unggah Excel
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                    <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90 border-none" onClick={handleDownloadCurriculumTemplate}>
+                        <FileUp className="h-3.5 w-3.5" /> Template
+                    </Button>
+                    <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90 border-none" onClick={() => fileInputRef.current?.click()}>
+                        <Upload className="h-3.5 w-3.5" /> Unggah
+                    </Button>
                     <input
                         type="file"
                         ref={fileInputRef}
@@ -313,29 +301,24 @@ export default function CurriculumPage() {
                     />
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none">
-                            <FileDown className="h-3.5 w-3.5" />
-                            Ekspor
+                            <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90 border-none">
+                            <FileDown className="h-3.5 w-3.5" /> Ekspor
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={handleExportExcel}>
-                            <FileSpreadsheet className="mr-2 h-3.5 w-3.5" />
-                            Excel
+                            <FileSpreadsheet className="mr-2 h-3.5 w-3.5" /> Excel
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={handleExportPdf}>
-                            <FileText className="mr-2 h-3.5 w-3.5" />
-                            PDF
+                            <FileText className="mr-2 h-3.5 w-3.5" /> PDF
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
-                    <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none" onClick={handlePrintTable}>
-                        <Printer className="h-3.5 w-3.5" />
-                        Cetak
+                    <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90 border-none" onClick={handlePrintTable}>
+                        <Printer className="h-3.5 w-3.5" /> Cetak
                     </Button>
                     <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none" onClick={handleAdd}>
-                        <PlusCircle className="h-3.5 w-3.5" />
-                        Tambah Mapel
+                        <PlusCircle className="h-3.5 w-3.5" /> Tambah Mapel
                     </Button>
                 </CardHeader>
             </Card>
@@ -403,7 +386,7 @@ export default function CurriculumPage() {
                 <AlertDialogHeader>
                     <AlertDialogTitle>Hapus Mata Pelajaran?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Tindakan ini akan menghapus mata pelajaran dari kurikulum secara permanen. Jadwal yang menggunakan mapel ini mungkin perlu disesuaikan.
+                        Tindakan ini akan menghapus mata pelajaran dari kurikulum secara permanen.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

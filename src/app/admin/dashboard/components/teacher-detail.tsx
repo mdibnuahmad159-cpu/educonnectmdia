@@ -51,8 +51,6 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn, safePrint } from "@/lib/utils";
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
 import QRCode from 'qrcode';
 import { format } from "date-fns";
 import { id as dfnsId } from "date-fns/locale";
@@ -125,10 +123,9 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
     },
   });
 
-  // Handle initialization and reset
+  // Handle initialization: only reset when first opened or when teacher ID changes
   useEffect(() => {
-    if (isOpen && teacher) {
-      setIsEditing(false);
+    if (isOpen && teacher && !isEditing) {
       form.reset({
         nig: teacher.nig || "",
         name: teacher.name,
@@ -152,15 +149,22 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
         }).then(setQrDataUrl).catch(err => console.error(err));
       }
     }
-  }, [isOpen, teacher?.id, form]);
+  }, [isOpen, teacher, form, isEditing]);
+
+  // Reset editing state when closing
+  useEffect(() => {
+    if (!isOpen) {
+      setIsEditing(false);
+    }
+  }, [isOpen]);
 
   if (!teacher) return null;
 
-  const handleSave = async (values: z.infer<typeof formSchema>) => {
+  const handleSaveSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!firestore || !teacher) return;
     setIsSaving(true);
     try {
-      const { ...dataToUpdate } = values;
+      const dataToUpdate = { ...values };
       if (!dataToUpdate.password) delete dataToUpdate.password;
       
       await updateTeacher(firestore, teacher.id, dataToUpdate);
@@ -214,8 +218,7 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="sm:max-w-sm p-0 overflow-hidden rounded-[32px] border-none shadow-2xl animate-in zoom-in-95 duration-300">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSave)} className="flex flex-col bg-card">
-            {/* Top Section */}
+          <form onSubmit={form.handleSubmit(handleSaveSubmit)} className="flex flex-col bg-card">
             <div className="bg-primary/5 p-6 pt-8 flex flex-col items-center text-center relative">
               <DialogTitle className="sr-only">Profil {teacher.name}</DialogTitle>
               
@@ -260,7 +263,7 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
               {isEditing ? (
                 <div className="w-full space-y-2">
                   <FormField control={form.control} name="name" render={({ field }) => (
-                    <FormItem><FormControl><Input {...field} className="text-center font-bold bg-white" placeholder="Nama Lengkap" /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormControl><Input {...field} className="text-center font-bold bg-white h-9" placeholder="Nama Lengkap" /></FormControl><FormMessage /></FormItem>
                   )} />
                   <FormField control={form.control} name="jabatan" render={({ field }) => (
                     <FormItem>
@@ -285,35 +288,34 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
               </div>
             </div>
 
-            {/* Bottom Section */}
             <div className="px-6 py-2">
               <ScrollArea className="h-[320px] pr-2">
                   <div className="py-2">
                       {isEditing ? (
                          <div className="space-y-4 py-2">
                             <FormField control={form.control} name="nig" render={({ field }) => (
-                              <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">NIG (Nomor Induk Guru)</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>
+                              <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">NIG (Nomor Induk Guru)</FormLabel><FormControl><Input {...field} className="bg-white h-9" /></FormControl><FormMessage /></FormItem>
                             )} />
                             <FormField control={form.control} name="nik" render={({ field }) => (
-                              <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Nomor Induk Kependudukan (NIK)</FormLabel><FormControl><Input {...field} value={field.value || ""} className="bg-white" /></FormControl><FormMessage /></FormItem>
+                              <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Nomor Induk Kependudukan (NIK)</FormLabel><FormControl><Input {...field} value={field.value || ""} className="bg-white h-9" /></FormControl><FormMessage /></FormItem>
                             )} />
                             <FormField control={form.control} name="email" render={({ field }) => (
-                              <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Alamat Email</FormLabel><FormControl><Input type="email" {...field} value={field.value || ""} className="bg-white" /></FormControl><FormMessage /></FormItem>
+                              <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Alamat Email</FormLabel><FormControl><Input type="email" {...field} value={field.value || ""} className="bg-white h-9" /></FormControl><FormMessage /></FormItem>
                             )} />
                             <FormField control={form.control} name="noWa" render={({ field }) => (
-                              <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Nomor WhatsApp</FormLabel><FormControl><Input {...field} value={field.value || ""} className="bg-white" /></FormControl><FormMessage /></FormItem>
+                              <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Nomor WhatsApp</FormLabel><FormControl><Input {...field} value={field.value || ""} className="bg-white h-9" /></FormControl><FormMessage /></FormItem>
                             )} />
                             <FormField control={form.control} name="pendidikan" render={({ field }) => (
-                              <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Pendidikan Terakhir</FormLabel><FormControl><Input {...field} value={field.value || ""} className="bg-white" /></FormControl><FormMessage /></FormItem>
+                              <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Pendidikan Terakhir</FormLabel><FormControl><Input {...field} value={field.value || ""} className="bg-white h-9" /></FormControl><FormMessage /></FormItem>
                             )} />
                             <FormField control={form.control} name="ponpes" render={({ field }) => (
-                              <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Latar Belakang Pondok</FormLabel><FormControl><Input {...field} value={field.value || ""} className="bg-white" /></FormControl><FormMessage /></FormItem>
+                              <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Latar Belakang Pondok</FormLabel><FormControl><Input {...field} value={field.value || ""} className="bg-white h-9" /></FormControl><FormMessage /></FormItem>
                             )} />
                             <FormField control={form.control} name="alamat" render={({ field }) => (
                               <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Alamat Domisili</FormLabel><FormControl><Textarea {...field} value={field.value || ""} className="bg-white min-h-[80px]" /></FormControl><FormMessage /></FormItem>
                             )} />
                             <FormField control={form.control} name="password" render={({ field }) => (
-                              <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Password Baru (Opsional)</FormLabel><FormControl><Input type="password" {...field} value={field.value || ""} placeholder="Isi untuk mengubah password" className="bg-white" /></FormControl><FormDescription className="text-[9px]">Minimal 6 karakter jika ingin mengganti.</FormDescription><FormMessage /></FormItem>
+                              <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Password Baru (Opsional)</FormLabel><FormControl><Input type="password" {...field} value={field.value || ""} placeholder="Isi untuk mengubah password" className="bg-white h-9" /></FormControl><FormDescription className="text-[9px]">Minimal 6 karakter jika ingin mengganti.</FormDescription><FormMessage /></FormItem>
                             )} />
                          </div>
                       ) : (
@@ -339,11 +341,10 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
               </ScrollArea>
             </div>
 
-            {/* Footer with actions */}
             <DialogFooter className="bg-muted/30 p-4 px-6 border-t flex flex-row items-center justify-between sm:justify-between gap-3">
               {isEditing ? (
                 <>
-                  <Button type="button" variant="ghost" className="rounded-full px-6 text-xs font-bold uppercase tracking-widest" onClick={() => setIsEditing(false)} disabled={isSaving}>
+                  <Button type="button" variant="ghost" className="rounded-full px-6 text-xs font-bold uppercase tracking-widest h-10" onClick={() => setIsEditing(false)} disabled={isSaving}>
                     <X className="h-3.5 w-3.5 mr-2" /> Batal
                   </Button>
                   <Button type="submit" className="h-10 rounded-full px-8 bg-green-600 hover:bg-green-700 text-xs font-bold uppercase tracking-widest shadow-lg shadow-green-600/20 text-white" disabled={isSaving}>

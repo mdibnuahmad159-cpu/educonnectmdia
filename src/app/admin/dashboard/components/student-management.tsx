@@ -1,16 +1,14 @@
 "use client";
 
 import { useState, useRef, useMemo } from "react";
-import { PlusCircle, AlertTriangle, Download, Upload, FileDown, FileUp, FileSpreadsheet, FileText, Printer, Loader2, UserCircle, Search } from "lucide-react";
+import { PlusCircle, Download, Upload, FileDown, FileUp, FileSpreadsheet, FileText, Printer, Loader2, UserCircle, Search } from "lucide-react";
 import { useCollection, useFirestore, useMemoFirebase, useUser } from "@/firebase";
 import { addStudent, updateStudent, deleteStudent, addStudentsBatch } from "@/lib/firebase-helpers";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import {
   DropdownMenu,
@@ -293,22 +291,6 @@ export function StudentManagement() {
     };
   };
 
-  if (error && error.message.includes("Missing or insufficient permissions")) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-primary">
-            <AlertTriangle className="text-destructive" />
-            Akses Terbatas
-          </CardTitle>
-          <CardDescription>
-            Anda memerlukan izin Administrator untuk melihat data siswa.
-          </CardDescription>
-        </CardHeader>
-      </Card>
-    );
-  }
-
   return (
     <div className="space-y-4">
       <Card className="border-none shadow-lg bg-primary text-primary-foreground">
@@ -316,31 +298,19 @@ export function StudentManagement() {
             <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-primary-foreground/50" />
             <Input 
-                placeholder="Cari nama atau NIS santri..." 
+                placeholder="Cari nama atau NIS..." 
                 className="pl-9 h-9 text-xs bg-white/10 border-white/20 text-white placeholder:text-white/40 focus-visible:ring-white/30"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
             />
             </div>
             <div className="flex flex-wrap items-center gap-2">
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none">
-                        <FileUp className="h-3.5 w-3.5" />
-                        Impor
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={handleDownloadStudentTemplate}>
-                        <Download className="mr-2 h-3.5 w-3.5" />
-                        Unduh Template
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
-                        <Upload className="mr-2 h-3.5 w-3.5" />
-                        Unggah Excel
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90 border-none" onClick={handleDownloadStudentTemplate}>
+                    <FileUp className="h-3.5 w-3.5" /> Template
+                </Button>
+                <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90 border-none" onClick={() => fileInputRef.current?.click()}>
+                    <Upload className="h-3.5 w-3.5" /> Unggah
+                </Button>
                 <input
                     type="file"
                     ref={fileInputRef}
@@ -350,29 +320,24 @@ export function StudentManagement() {
                 />
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none">
-                        <FileDown className="h-3.5 w-3.5" />
-                        Ekspor
+                        <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90 border-none">
+                        <FileDown className="h-3.5 w-3.5" /> Ekspor
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={handleExportStudentsExcel}>
-                        <FileSpreadsheet className="mr-2 h-3.5 w-3.5" />
-                        Excel
+                        <FileSpreadsheet className="mr-2 h-3.5 w-3.5" /> Excel
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={handleExportStudentsPdf}>
-                        <FileText className="mr-2 h-3.5 w-3.5" />
-                        PDF
+                        <FileText className="mr-2 h-3.5 w-3.5" /> PDF
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
-                <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none" onClick={handlePrintTable}>
-                    <Printer className="h-3.5 w-3.5" />
-                    Cetak
+                <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90 border-none" onClick={handlePrintTable}>
+                    <Printer className="h-3.5 w-3.5" /> Cetak
                 </Button>
                 <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none" onClick={handleAdd}>
-                    <PlusCircle className="h-3.5 w-3.5" />
-                    Tambah Siswa
+                    <PlusCircle className="h-3.5 w-3.5" /> Tambah Siswa
                 </Button>
             </div>
         </CardHeader>
@@ -406,11 +371,10 @@ export function StudentManagement() {
                           <Button 
                               variant="outline" 
                               size="sm" 
-                              className="h-8 gap-2 border-primary/10 hover:bg-primary/5 text-[11px] font-bold uppercase tracking-tight"
+                              className="h-8 gap-2 border-primary/10 hover:bg-primary/5 text-[11px] font-bold uppercase tracking-tight text-primary"
                               onClick={() => handleDetail(student)}
                           >
-                              <UserCircle className="h-3.5 w-3.5" />
-                              Detail
+                              <UserCircle className="h-3.5 w-3.5" /> Detail
                           </Button>
                       </div>
                   ))}
