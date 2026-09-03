@@ -3,12 +3,12 @@
 import { ReactNode, useEffect, useMemo } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
-import Link from "next/link";
 import { useUser } from "@/firebase";
 import { BottomNav } from "./components/bottom-nav";
-import { Loader2, School, Calendar } from "lucide-react";
+import { Loader2, School, Calendar, ChevronLeft } from "lucide-react";
 import { useSchoolProfile } from "@/context/school-profile-provider";
 import { useAcademicYear } from "@/context/academic-year-provider";
+import Link from "next/link";
 
 const PAGE_TITLES: Record<string, { title: string; sub: string }> = {
   "/admin/dashboard": { title: "Dashboard", sub: "Monitoring data madrasah hari ini." },
@@ -60,10 +60,15 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     }
   }, [user, isUserLoading, router]);
 
-  const currentPage = useMemo(() => {
-    const cleanPath = pathname.endsWith('/') && pathname !== '/' ? pathname.slice(0, -1) : pathname;
-    return PAGE_TITLES[cleanPath] || { title: "Administrator", sub: "Manajemen sistem terpadu." };
+  const cleanPath = useMemo(() => {
+    return pathname.endsWith('/') && pathname !== '/' ? pathname.slice(0, -1) : pathname;
   }, [pathname]);
+
+  const currentPage = useMemo(() => {
+    return PAGE_TITLES[cleanPath] || { title: "Administrator", sub: "Manajemen sistem terpadu." };
+  }, [cleanPath]);
+
+  const isDashboard = cleanPath === "/admin/dashboard";
 
   if (isUserLoading || !user || user.email !== 'mdibnuahmad159@gmail.com' || isProfileLoading) {
     return (
@@ -112,8 +117,17 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           </div>
 
           {/* Bottom Row: Title (Centered) */}
-          <div className="px-6 pb-4 pt-1 flex justify-center text-accent border-t border-white/5">
-              <h2 className="text-xs font-bold font-headline uppercase tracking-[0.25em] leading-none text-center">
+          <div className="px-4 pb-4 pt-1 flex items-center justify-center relative border-t border-white/5 min-h-[40px]">
+              {!isDashboard && (
+                <button 
+                  onClick={() => router.back()}
+                  className="absolute left-4 p-1.5 text-accent hover:bg-white/10 rounded-full transition-colors active:scale-90"
+                  aria-label="Kembali"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+              )}
+              <h2 className="text-xs font-bold font-headline uppercase tracking-[0.25em] leading-none text-center text-accent">
                   {currentPage.title}
               </h2>
           </div>
