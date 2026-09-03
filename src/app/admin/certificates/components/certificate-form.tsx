@@ -33,6 +33,7 @@ import {
 import type { Certificate, Student } from "@/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAcademicYear } from "@/context/academic-year-provider";
+import { Award, X, Save } from "lucide-react";
 
 const formSchema = z.object({
   studentId: z.string().min(1, "Siswa harus dipilih"),
@@ -94,93 +95,113 @@ export function CertificateForm({ isOpen, setIsOpen, certificate, students, onSa
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>{certificate ? "Edit Sertifikat Lomba" : "Tambah Sertifikat Lomba"}</DialogTitle>
-          <DialogDescription>
-            Input prestasi lomba siswa secara manual. Untuk Ranking dan Bintang Pelajar, gunakan fitur "Tarik Data Nilai".
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-md p-0 overflow-hidden rounded-[32px] border-none shadow-2xl">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
-            <ScrollArea className="max-h-[60vh] pr-4">
-                <div className="space-y-4 py-4">
-                    <FormField
-                    control={form.control}
-                    name="studentId"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Pilih Siswa</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                            <SelectTrigger className="font-normal">
-                                <SelectValue placeholder="Pilih siswa" />
-                            </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                                {students.map((student) => (
-                                    <SelectItem key={student.id} value={student.id}>
-                                        {student.name} ({student.nis})
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                    <FormField
-                    control={form.control}
-                    name="rank"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Juara</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                            <SelectTrigger className="font-normal">
-                                <SelectValue placeholder="Pilih juara" />
-                            </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                                <SelectItem value="Pertama">Juara Pertama</SelectItem>
-                                <SelectItem value="Kedua">Juara Kedua</SelectItem>
-                                <SelectItem value="Ketiga">Juara Ketiga</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                    <FormField
-                    control={form.control}
-                    name="competitionName"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Nama Lomba</FormLabel>
-                        <FormControl>
-                            <Input placeholder="Contoh: Lomba MTQ Tingkat Kabupaten" {...field} className="font-normal" />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                    <FormField
-                    control={form.control}
-                    name="date"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Tanggal Pelaksanaan</FormLabel>
-                        <FormControl>
-                            <Input type="date" {...field} className="font-normal" />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col bg-card">
+            <div className="bg-primary/5 p-6 pt-8 flex flex-col items-center text-center relative">
+                <DialogHeader className="sr-only">
+                    <DialogTitle>{certificate ? "Edit Sertifikat" : "Tambah Sertifikat"}</DialogTitle>
+                    <DialogDescription>Input prestasi lomba siswa secara manual.</DialogDescription>
+                </DialogHeader>
+
+                <div className="p-3 bg-primary/10 rounded-full mb-4">
+                    <Award className="h-8 w-8 text-primary" />
                 </div>
-            </ScrollArea>
-            <DialogFooter className="pt-4">
-              <Button type="submit" className="font-normal">Simpan Prestasi</Button>
+
+                <div className="w-full space-y-1">
+                    <h3 className="text-sm font-bold uppercase tracking-widest text-primary">
+                        {certificate ? "Edit Prestasi Lomba" : "Tambah Prestasi Lomba"}
+                    </h3>
+                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-tight">Madrasah Diniyah Ibnu Ahmad</p>
+                </div>
+            </div>
+
+            <div className="px-6 py-2">
+                <ScrollArea className="h-[350px] pr-2">
+                    <div className="space-y-4 py-4">
+                        <FormField
+                        control={form.control}
+                        name="studentId"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Pilih Siswa</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                <SelectTrigger className="h-9 text-xs bg-white">
+                                    <SelectValue placeholder="Cari nama siswa" />
+                                </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    {students.map((student) => (
+                                        <SelectItem key={student.id} value={student.id} className="text-xs">
+                                            {student.name} ({student.nis})
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                        <FormField
+                        control={form.control}
+                        name="rank"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Juara</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                <SelectTrigger className="h-9 text-xs bg-white">
+                                    <SelectValue placeholder="Pilih tingkat juara" />
+                                </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    <SelectItem value="Pertama">Juara Pertama</SelectItem>
+                                    <SelectItem value="Kedua">Juara Kedua</SelectItem>
+                                    <SelectItem value="Ketiga">Juara Ketiga</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                        <FormField
+                        control={form.control}
+                        name="competitionName"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Nama Lomba / Kompetisi</FormLabel>
+                            <FormControl>
+                                <Input placeholder="Contoh: Lomba MTQ Tingkat Kecamatan" {...field} className="bg-white h-9" />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                        <FormField
+                        control={form.control}
+                        name="date"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Tanggal Pelaksanaan</FormLabel>
+                            <FormControl>
+                                <Input type="date" {...field} className="bg-white h-9" />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                    </div>
+                </ScrollArea>
+            </div>
+
+            <DialogFooter className="bg-muted/30 p-4 px-6 border-t flex flex-row items-center justify-between sm:justify-between gap-3 mt-2">
+                <Button type="button" variant="ghost" className="rounded-full px-6 text-xs font-bold uppercase tracking-widest h-10" onClick={() => setIsOpen(false)}>
+                  <X className="h-3.5 w-3.5 mr-2" /> Batal
+                </Button>
+                <Button type="submit" className="h-10 rounded-full px-8 bg-accent text-primary hover:bg-accent/90 text-xs font-bold uppercase tracking-widest shadow-lg shadow-accent/20">
+                  <Save className="h-3.5 w-3.5 mr-2" /> Simpan Sertifikat
+                </Button>
             </DialogFooter>
           </form>
         </Form>

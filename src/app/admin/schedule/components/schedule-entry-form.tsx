@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useMemo } from "react";
@@ -28,6 +29,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { CalendarRange, X, Save, Trash2 } from "lucide-react";
 import type { Curriculum, Teacher } from "@/types";
 import type { EditContext } from "../page";
 
@@ -111,70 +114,98 @@ export function ScheduleEntryForm({
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-xs">
-        <DialogHeader>
-          <DialogTitle>Edit Jadwal</DialogTitle>
-          <DialogDescription>
-            Kelas {context.classLevel} - {dayName}, {periodName}
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-sm p-0 overflow-hidden rounded-[32px] border-none shadow-2xl">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
-            <div className="space-y-4 py-4">
-              <FormField
-                control={form.control}
-                name="subjectId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Mata Pelajaran</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Pilih Mapel" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="clear">-- Kosongkan --</SelectItem>
-                        {filteredCurriculum.map(item => (
-                          <SelectItem key={item.id} value={item.id}>
-                            {item.subjectName}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="teacherId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Guru</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Pilih Guru" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="clear">-- Kosongkan --</SelectItem>
-                        {teachers.map(teacher => (
-                          <SelectItem key={teacher.id} value={teacher.id}>
-                            {teacher.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col bg-card">
+            <div className="bg-primary/5 p-6 pt-8 flex flex-col items-center text-center relative">
+                <DialogHeader className="sr-only">
+                    <DialogTitle>Edit Jadwal</DialogTitle>
+                    <DialogDescription>Pengaturan mata pelajaran per jam.</DialogDescription>
+                </DialogHeader>
+
+                <div className="p-3 bg-primary/10 rounded-full mb-4">
+                    <CalendarRange className="h-8 w-8 text-primary" />
+                </div>
+
+                <div className="w-full space-y-1">
+                    <h3 className="text-sm font-bold uppercase tracking-widest text-primary">
+                        Atur Detail Jadwal
+                    </h3>
+                    <p className="text-[10px] text-muted-foreground font-bold uppercase px-4 truncate">
+                        Kelas {context.classLevel} • {dayName}, {periodName}
+                    </p>
+                </div>
             </div>
-            <DialogFooter className="pt-4 justify-between">
-              <Button type="button" variant="destructive" size="xs" onClick={handleClear}>Hapus</Button>
-              <Button type="submit" size="xs">Simpan</Button>
+
+            <div className="px-6 py-2">
+                <ScrollArea className="h-auto max-h-[300px] pr-2">
+                    <div className="space-y-4 py-4">
+                        <FormField
+                            control={form.control}
+                            name="subjectId"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Mata Pelajaran</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                    <SelectTrigger className="h-10 bg-white text-xs">
+                                        <SelectValue placeholder="Pilih Mata Pelajaran" />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    <SelectItem value="clear">-- Kosongkan --</SelectItem>
+                                    {filteredCurriculum.map(item => (
+                                    <SelectItem key={item.id} value={item.id} className="text-xs">
+                                        {item.subjectName}
+                                    </SelectItem>
+                                    ))}
+                                </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="teacherId"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Guru Pengajar</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                    <SelectTrigger className="h-10 bg-white text-xs">
+                                        <SelectValue placeholder="Pilih Guru" />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    <SelectItem value="clear">-- Kosongkan --</SelectItem>
+                                    {teachers.map(teacher => (
+                                    <SelectItem key={teacher.id} value={teacher.id} className="text-xs">
+                                        {teacher.name}
+                                    </SelectItem>
+                                    ))}
+                                </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                    </div>
+                </ScrollArea>
+            </div>
+
+            <DialogFooter className="bg-muted/30 p-4 px-6 border-t flex flex-row items-center justify-between sm:justify-between gap-3 mt-2">
+                <div className="flex gap-2">
+                    <Button type="button" variant="ghost" className="rounded-full px-4 text-xs font-bold uppercase tracking-widest h-10" onClick={() => setIsOpen(false)}>
+                        <X className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button type="button" variant="destructive" className="rounded-full px-4 h-10 shadow-lg shadow-destructive/20" onClick={handleClear}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                </div>
+                <Button type="submit" className="h-10 rounded-full px-8 bg-accent text-primary hover:bg-accent/90 text-xs font-bold uppercase tracking-widest shadow-lg shadow-accent/20">
+                  <Save className="h-3.5 w-3.5 mr-2" /> Simpan Jadwal
+                </Button>
             </DialogFooter>
           </form>
         </Form>
