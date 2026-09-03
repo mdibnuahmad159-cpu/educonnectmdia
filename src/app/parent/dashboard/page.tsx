@@ -220,7 +220,7 @@ export default function ParentDashboardPage() {
                             className="text-white/80 hover:text-white hover:bg-white/10 h-7 px-2 gap-1 text-[9px] uppercase font-bold border border-white/20"
                             onClick={() => setIsDetailOpen(true)}
                         >
-                            <UserCircle className="h-3 w-3" /> Detail
+                            <UserCircle className="h-3 w-3" /> Detail Profil
                         </Button>
                     </div>
                     <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1">
@@ -233,10 +233,15 @@ export default function ParentDashboardPage() {
 
         {/* Today's Attendance */}
         <Card className="border-none shadow-sm overflow-hidden">
-            <CardHeader className="p-4 pb-2">
+            <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0">
                 <CardTitle className="text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                     <UserCheck className="h-3.5 w-3.5" /> Absensi Hari Ini
                 </CardTitle>
+                <Link href="/parent/attendance">
+                    <Button variant="ghost" size="xs" className="h-7 gap-1 text-[10px] font-bold text-primary hover:bg-primary/5 uppercase">
+                        Lihat Riwayat <ArrowRightCircle className="h-3 w-3" />
+                    </Button>
+                </Link>
             </CardHeader>
             <CardContent className="p-4 pt-0">
                 <div className={cn(
@@ -250,7 +255,7 @@ export default function ParentDashboardPage() {
                         ) : todayAttendance?.status && todayAttendance?.status !== 'Belum Diabsen' ? (
                             <Info className="h-5 w-5 text-orange-600" />
                         ) : (
-                            <Clock className="h-5 w-5 text-muted-foreground/50" />
+                            <Clock className="h-5 w-5 opacity-40" />
                         )}
                         <div>
                             <p className="text-xs font-bold">

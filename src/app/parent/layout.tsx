@@ -23,6 +23,7 @@ const PAGE_TITLES: Record<string, { title: string; sub: string }> = {
   "/parent/finance": { title: "Keuangan Santri", sub: "Status tabungan dan pelunasan SPP." },
   "/parent/schedule": { title: "Jadwal Pelajaran", sub: "Agenda harian kegiatan belajar." },
   "/parent/reports": { title: "Rapor Digital", sub: "Hasil capaian kompetensi santri." },
+  "/parent/attendance": { title: "Riwayat Absensi", sub: "Jurnal kehadiran santri harian." },
 };
 
 export default function ParentLayout({ children }: { children: ReactNode }) {
