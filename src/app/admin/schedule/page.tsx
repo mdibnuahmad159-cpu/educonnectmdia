@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, FileDown, Printer, FileSpreadsheet, FileText, Edit, Info, CalendarRange } from "lucide-react";
+import { Loader2, FileDown, Printer, FileSpreadsheet, FileText, Edit, Info, CalendarRange, Clock } from "lucide-react";
 import {
     DropdownMenu,
     DropdownMenuContent,

@@ -22,7 +22,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, Users, Coffee, Edit2, Save } from 'lucide-react';
+import { Loader2, Users, Coffee, Edit2, Save, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { saveStudentAttendanceBatch } from '@/lib/firebase-helpers';
 import { cn } from '@/lib/utils';

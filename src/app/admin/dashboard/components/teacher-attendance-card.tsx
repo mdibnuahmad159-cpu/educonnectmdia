@@ -15,7 +15,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, Edit2, Save, Coffee } from 'lucide-react';
+import { Loader2, Edit2, Save, Coffee, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { saveTeacherAttendanceBatch } from '@/lib/firebase-helpers';
 import { useAcademicYear } from '@/context/academic-year-provider';
