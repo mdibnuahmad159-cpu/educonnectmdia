@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
@@ -11,17 +10,13 @@ import {
     Calendar, 
     ExternalLink, 
     Megaphone,
-    BellOff,
-    Info,
-    ArrowRight
+    BellOff
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { id as dfnsId } from "date-fns/locale";
-import { useToast } from "@/hooks/use-toast";
 
 export default function ParentAnnouncementsPage() {
     const firestore = useFirestore();
-    const { toast } = useToast();
 
     const announcementsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -34,43 +29,8 @@ export default function ParentAnnouncementsPage() {
 
     const { data: announcements, loading } = useCollection<Announcement>(announcementsQuery);
 
-    const requestNotificationPermission = async () => {
-        if (!("Notification" in window)) {
-            toast({ variant: "destructive", title: "Tidak Didukung", description: "Perangkat Anda tidak mendukung notifikasi sistem." });
-            return;
-        }
-
-        const permission = await Notification.requestPermission();
-        if (permission === "granted") {
-            toast({ title: "Notifikasi Aktif", description: "Pemberitahuan resmi akan dikirimkan ke layar kunci HP Anda." });
-        } else {
-            toast({ variant: "destructive", title: "Izin Ditolak", description: "Silakan aktifkan notifikasi di pengaturan aplikasi/browser Anda." });
-        }
-    };
-
     return (
         <div className="space-y-4 pb-10 max-w-2xl mx-auto">
-            <Card className="border-none shadow-sm bg-accent/10 rounded-[28px]">
-                <CardContent className="p-5 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                        <div className="h-10 w-10 rounded-full bg-accent/20 flex items-center justify-center text-primary">
-                            <Info className="h-5 w-5" />
-                        </div>
-                        <div className="space-y-0.5">
-                            <p className="text-xs font-bold text-primary">Aktifkan Notifikasi HP</p>
-                            <p className="text-[10px] text-muted-foreground">Terima pengumuman penting wali murid secara instan.</p>
-                        </div>
-                    </div>
-                    <Button 
-                        size="xs" 
-                        className="bg-primary text-white hover:bg-primary/90 h-8 rounded-full px-4 text-[10px] font-bold uppercase tracking-wider"
-                        onClick={requestNotificationPermission}
-                    >
-                        Aktifkan
-                    </Button>
-                </CardContent>
-            </Card>
-
             <div className="pt-2 space-y-4">
                 {loading ? (
                     <div className="flex flex-col items-center justify-center py-20 gap-3 text-muted-foreground">
