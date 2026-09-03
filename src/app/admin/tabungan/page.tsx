@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
@@ -152,7 +151,7 @@ export default function TabunganPage() {
                             </CardDescription>
                         </div>
                         <Link href="/admin/riwayat-tabungan">
-                            <Button size="sm" variant="secondary" className="gap-2 bg-white text-primary hover:bg-white/90 h-9 font-bold shadow-md">
+                            <Button size="sm" variant="secondary" className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90 h-9 font-bold shadow-md border-none">
                                 <History className="h-4 w-4" />
                                 Riwayat Mutasi
                             </Button>
@@ -376,4 +375,3 @@ export default function TabunganPage() {
         </div>
     );
 }
-

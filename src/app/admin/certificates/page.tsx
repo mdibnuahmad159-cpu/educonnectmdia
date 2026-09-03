@@ -392,7 +392,7 @@ export default function CertificatesPage() {
                         }
                         .student-name {
                             font-family: 'Dancing Script', cursive;
-                            font-size: 48pt;
+                            font-size: 42pt;
                             color: #9c27b0;
                             display: inline-block;
                             padding: 0 50px;
@@ -579,7 +579,7 @@ export default function CertificatesPage() {
                     <div className="flex flex-wrap gap-2">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button size="xs" variant="outline" className="gap-2 border-white/20 hover:bg-white/10 text-white font-normal h-8">
+                                <Button size="xs" variant="outline" className="gap-2 border-accent/30 hover:bg-accent/10 text-accent font-normal h-8">
                                     <FileUp className="h-3.5 w-3.5" />
                                     Impor
                                 </Button>
@@ -641,7 +641,7 @@ export default function CertificatesPage() {
 
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button size="xs" variant="outline" className="gap-2 border-white/20 hover:bg-white/10 text-white font-normal h-8">
+                                <Button size="xs" variant="outline" className="gap-2 border-accent/30 hover:bg-accent/10 text-accent font-normal h-8">
                                     <FileDown className="h-3.5 w-3.5" />
                                     Ekspor
                                 </Button>
@@ -665,16 +665,16 @@ export default function CertificatesPage() {
                             </DropdownMenuContent>
                         </DropdownMenu>
 
-                        <Button size="xs" variant="outline" className="gap-2 border-white/20 hover:bg-white/10 text-white font-normal h-8" onClick={handleBulkPrint}>
+                        <Button size="xs" variant="outline" className="gap-2 border-accent/30 hover:bg-accent/10 text-accent font-normal h-8" onClick={handleBulkPrint}>
                             <CopyCheck className="h-3.5 w-3.5" />
                             Cetak Massal
                         </Button>
 
-                        <Button size="xs" variant="outline" className="gap-2 border-white/20 hover:bg-white/10 text-white font-normal h-8" onClick={() => setIsTemplateOpen(true)}>
+                        <Button size="xs" variant="outline" className="gap-2 border-accent/30 hover:bg-accent/10 text-accent font-normal h-8" onClick={() => setIsTemplateOpen(true)}>
                             <Upload className="h-3.5 w-3.5" />
                             Upload Template
                         </Button>
-                        <Button size="xs" variant="secondary" className="gap-2 font-bold shadow-md bg-white text-primary hover:bg-white/90 h-8" onClick={handleAdd}>
+                        <Button size="xs" variant="secondary" className="gap-2 font-bold shadow-md bg-accent text-accent-foreground hover:bg-accent/90 h-8" onClick={handleAdd}>
                             <PlusCircle className="h-3.5 w-3.5" />
                             Tambah Lomba
                         </Button>

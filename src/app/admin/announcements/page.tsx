@@ -91,7 +91,7 @@ export default function AnnouncementsPage() {
         <div className="space-y-4">
             <Card className="border-none shadow-lg bg-primary text-primary-foreground">
                 <CardHeader className="p-4 flex flex-row items-center justify-end">
-                    <Button variant="secondary" size="sm" className="gap-2 font-bold shadow-md bg-white text-primary hover:bg-white/90 h-9" onClick={handleAdd}>
+                    <Button variant="secondary" size="sm" className="gap-2 font-bold shadow-md bg-accent text-accent-foreground hover:bg-accent/90 h-9" onClick={handleAdd}>
                         <PlusCircle className="h-4 w-4" />
                         Buat Pengumuman
                     </Button>
