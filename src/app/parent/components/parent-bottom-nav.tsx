@@ -1,61 +1,51 @@
-
 "use client";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, LogOut } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { 
+  Home, 
+  Wallet, 
+  CalendarDays, 
+  FileText 
+} from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/firebase";
-import { signOut } from "firebase/auth";
-import { useToast } from "@/hooks/use-toast";
 
 const navItems = [
-  { href: "/parent/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+  { href: "/parent/dashboard", icon: Home, label: "Beranda" },
+  { href: "/parent/finance", icon: Wallet, label: "Keuangan" },
+  { href: "/parent/schedule", icon: CalendarDays, label: "Jadwal" },
+  { href: "/parent/reports", icon: FileText, label: "Rapor" },
 ];
 
 export function ParentBottomNav() {
   const pathname = usePathname();
-  const router = useRouter();
-  const auth = useAuth();
-  const { toast } = useToast();
-
-  const handleLogout = async () => {
-    if (!auth) return;
-    try {
-      // Clear session storage on logout
-      sessionStorage.removeItem('studentNis');
-      await signOut(auth);
-      toast({ title: "Logout Berhasil" });
-      router.push('/');
-    } catch (error) {
-      toast({ variant: "destructive", title: "Logout Gagal" });
-    }
-  };
 
   return (
-    <footer className="fixed bottom-0 left-0 z-50 w-full h-14 bg-card border-t">
-      <div className="grid h-full grid-cols-2 max-w-lg mx-auto font-medium">
-        {navItems.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={cn(
-              "inline-flex flex-col items-center justify-center px-5 hover:bg-muted group",
-              pathname.startsWith(item.href) ? "text-primary" : "text-muted-foreground"
-            )}
-          >
-            <item.icon className="w-4 h-4 mb-1" />
-            <span className="text-xs">{item.label}</span>
-          </Link>
-        ))}
-         <button
-            type="button"
-            onClick={handleLogout}
-            className="inline-flex flex-col items-center justify-center px-5 text-muted-foreground hover:bg-muted group"
-          >
-            <LogOut className="w-4 h-4 mb-1" />
-            <span className="text-xs">Keluar</span>
-          </button>
+    <div className="fixed bottom-6 left-0 right-0 z-50 px-4 flex justify-center pointer-events-none">
+      <div className="max-w-md w-full pointer-events-auto">
+        <nav className="bg-primary/95 backdrop-blur-md rounded-full p-1.5 flex items-center justify-around shadow-2xl border border-white/10">
+          {navItems.map((item) => {
+            const isActive = pathname.startsWith(item.href);
+            
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-200",
+                  isActive ? "bg-white/20 text-white" : "text-white/50 hover:text-white"
+                )}
+              >
+                <item.icon className="w-5 h-5" />
+                {isActive && (
+                  <span className="text-[10px] font-bold uppercase tracking-wider animate-in fade-in zoom-in-95 duration-200">
+                    {item.label}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
+        </nav>
       </div>
-    </footer>
+    </div>
   );
 }
