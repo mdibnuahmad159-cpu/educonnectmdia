@@ -11,14 +11,6 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
     AlertDialog,
     AlertDialogAction,
     AlertDialogCancel,
@@ -49,9 +41,12 @@ import {
     FileText,
     CopyCheck,
     FileUp,
-    Download
+    Download,
+    Trophy,
+    SearchX
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { addCertificate, updateCertificate, deleteCertificate, addCertificatesBatch } from "@/lib/firebase-helpers";
 import { CertificateForm } from "./components/certificate-form";
 import { TemplateUploadDialog } from "./components/template-upload-dialog";
@@ -545,10 +540,10 @@ export default function CertificatesPage() {
 
     const getRankBadge = (rank: Certificate['rank']) => {
         switch (rank) {
-            case 'Pertama': return <Badge className="bg-yellow-500 hover:bg-yellow-600 border-none font-normal">Juara 1</Badge>;
-            case 'Kedua': return <Badge className="bg-slate-400 hover:bg-slate-500 border-none font-normal">Juara 2</Badge>;
-            case 'Ketiga': return <Badge className="bg-amber-700 hover:bg-amber-800 border-none font-normal">Juara 3</Badge>;
-            default: return <Badge variant="outline" className="font-normal">{rank}</Badge>;
+            case 'Pertama': return <Badge className="bg-yellow-500 hover:bg-yellow-600 border-none font-bold text-[9px] uppercase tracking-tighter">Juara 1</Badge>;
+            case 'Kedua': return <Badge className="bg-slate-400 hover:bg-slate-500 border-none font-bold text-[9px] uppercase tracking-tighter">Juara 2</Badge>;
+            case 'Ketiga': return <Badge className="bg-amber-700 hover:bg-amber-800 border-none font-bold text-[9px] uppercase tracking-tighter">Juara 3</Badge>;
+            default: return <Badge variant="outline" className="font-bold text-[9px] uppercase">{rank}</Badge>;
         }
     };
 
@@ -656,7 +651,7 @@ export default function CertificatesPage() {
                                     XLSX.writeFile(workbook, `Data_Prestasi_${activeYear.replace('/', '-')}.xlsx`);
                                 }}>
                                     <FileSpreadsheet className="mr-2 h-3.5 w-3.5" />
-                                    Ekspor ke Excel
+                                    Excel
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={handlePrintTable}>
                                     <Printer className="mr-2 h-3.5 w-3.5" />
@@ -672,7 +667,7 @@ export default function CertificatesPage() {
 
                         <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90 border-none" onClick={() => setIsTemplateOpen(true)}>
                             <Upload className="h-3.5 w-3.5" />
-                            Upload Template
+                            Template
                         </Button>
                         <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none" onClick={handleAdd}>
                             <PlusCircle className="h-3.5 w-3.5" />
@@ -683,65 +678,56 @@ export default function CertificatesPage() {
             </Card>
 
             <div className="pt-2">
-                <Card className="border-none shadow-sm overflow-hidden">
-                    <CardContent className="p-0">
-                        <Table>
-                            <TableHeader>
-                                <TableRow className="bg-muted/30">
-                                    <TableHead className="w-[50px] font-normal px-4">No.</TableHead>
-                                    <TableHead className="font-normal">Nama</TableHead>
-                                    <TableHead className="font-normal">Juara</TableHead>
-                                    <TableHead className="font-normal">Lomba</TableHead>
-                                    <TableHead className="text-right w-[120px] font-normal px-4">Aksi</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {isLoading ? (
-                                    <TableRow>
-                                        <TableCell colSpan={5} className="text-center h-24">
-                                            <div className="flex justify-center items-center gap-2 text-muted-foreground">
-                                                <Loader2 className="h-4 w-4 animate-spin"/>
-                                                <span className="text-xs">Memuat data prestasi...</span>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ) : filteredCertificates.length > 0 ? (
-                                    filteredCertificates.map((item, index) => (
-                                    <TableRow key={item.id} className="hover:bg-muted/10">
-                                        <TableCell className="text-xs px-4">{index + 1}</TableCell>
-                                        <TableCell className="text-xs font-normal">{item.studentName}</TableCell>
-                                        <TableCell>{getRankBadge(item.rank)}</TableCell>
-                                        <TableCell className="text-xs font-normal">
-                                            {item.category === 'lomba' ? item.competitionName : `${getCategoryLabel(item.category)} (TA ${item.academicYear})`}
-                                        </TableCell>
-                                        <TableCell className="text-right px-4">
-                                            <div className="flex justify-end gap-1">
-                                                <Button variant="ghost" size="icon" className="h-7 w-7 text-blue-600" onClick={() => handlePrintCertificate(item)}>
-                                                    <Printer className="h-3.5 w-3.5" />
-                                                </Button>
-                                                {item.category === 'lomba' && (
-                                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(item)}>
-                                                        <Edit className="h-3.5 w-3.5" />
-                                                    </Button>
-                                                )}
-                                                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(item.id)}>
-                                                    <Trash2 className="h-3.5 w-3.5" />
-                                                </Button>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                    ))
-                                ) : (
-                                    <TableRow>
-                                        <TableCell colSpan={5} className="h-24 text-center text-xs text-muted-foreground italic">
-                                            {searchTerm ? "Tidak ada hasil pencarian." : "Belum ada data sertifikat yang dicatat."}
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </CardContent>
-                </Card>
+                {isLoading ? (
+                    <div className="flex flex-col items-center justify-center py-20 gap-3 text-muted-foreground">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary/40"/>
+                        <span className="text-xs font-medium uppercase tracking-widest">Memuat data prestasi...</span>
+                    </div>
+                ) : filteredCertificates.length > 0 ? (
+                    <div className="space-y-3">
+                        {filteredCertificates.map((item) => (
+                            <div key={item.id} className="flex items-center justify-between p-3 rounded-xl bg-card border shadow-sm hover:border-primary/20 transition-all group">
+                                <div className="flex items-center gap-4">
+                                    <Avatar className="h-10 w-10 border-2 border-primary/5 group-hover:border-primary/20 transition-all">
+                                        <AvatarFallback className="bg-primary/5 text-primary text-sm font-bold">{item.studentName.charAt(0)}</AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                        <div className="flex items-center gap-2">
+                                            <p className="text-[12px] font-bold leading-tight uppercase text-foreground group-hover:text-primary transition-colors">{item.studentName}</p>
+                                            {getRankBadge(item.rank)}
+                                        </div>
+                                        <div className="flex items-center gap-2 mt-0.5">
+                                            <p className="text-[10px] text-muted-foreground font-medium uppercase bg-muted/50 px-1.5 rounded">
+                                                {item.category === 'lomba' ? item.competitionName : `${getCategoryLabel(item.category)}`}
+                                            </p>
+                                            <span className="text-[10px] text-muted-foreground">•</span>
+                                            <p className="text-[10px] text-primary/70 font-medium italic">TA {item.academicYear}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div className="flex items-center gap-1">
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:bg-blue-50" title="Cetak Sertifikat" onClick={() => handlePrintCertificate(item)}>
+                                        <Printer className="h-4 w-4" />
+                                    </Button>
+                                    {item.category === 'lomba' && (
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-primary" title="Edit Data" onClick={() => handleEdit(item)}>
+                                            <Edit className="h-4 w-4" />
+                                        </Button>
+                                    )}
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/5" title="Hapus Data" onClick={() => handleDelete(item.id)}>
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="py-20 text-center text-muted-foreground border-2 border-dashed rounded-2xl bg-muted/5">
+                        {searchTerm ? <SearchX className="h-10 w-10 mx-auto mb-3 opacity-10" /> : <Trophy className="h-10 w-10 mx-auto mb-3 opacity-10" />}
+                        <p className="text-sm font-medium">{searchTerm ? "Tidak ada hasil pencarian." : "Belum ada data sertifikat yang dicatat."}</p>
+                    </div>
+                )}
             </div>
 
             <CertificateForm 
@@ -759,16 +745,16 @@ export default function CertificatesPage() {
             />
             
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-                <AlertDialogContent>
+                <AlertDialogContent className="rounded-[28px]">
                 <AlertDialogHeader>
-                    <AlertDialogTitle>Hapus Sertifikat?</AlertDialogTitle>
-                    <AlertDialogDescription>
+                    <AlertDialogTitle className="text-sm font-bold uppercase tracking-tight">Hapus Sertifikat?</AlertDialogTitle>
+                    <AlertDialogDescription className="text-xs">
                         Tindakan ini akan menghapus catatan prestasi siswa secara permanen.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                    <AlertDialogCancel className="font-normal">Batal</AlertDialogCancel>
-                    <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90 text-white font-normal">Hapus</AlertDialogAction>
+                    <AlertDialogCancel className="rounded-full h-9 text-xs">Batal</AlertDialogCancel>
+                    <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90 text-white rounded-full h-9 text-xs">Ya, Hapus</AlertDialogAction>
                 </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
