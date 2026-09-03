@@ -15,10 +15,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, parseISO } from 'date-fns';
 import { id as dfnsId } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { Loader2, Printer, FileSpreadsheet, FileText, FileDown, Users, AlertTriangle, ExternalLink } from 'lucide-react';
+import { Loader2, Printer, FileSpreadsheet, FileText, FileDown, Users, AlertTriangle, ExternalLink, Calendar, ClipboardList } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -74,7 +75,7 @@ export default function StudentAttendancePage() {
     const { data: students, isLoading: loadingStudents } = useCollection<Student>(studentsQuery);
     
     const attendanceQuery = useMemoFirebase(() => {
-        if (!firestore || !fromDate || !toDate) return null;
+        if (!firestore || !fromDate || !toDate || !selectedClass) return null;
         return query(
             collection(firestore, 'student_attendances'),
             where('kelas', '==', Number(selectedClass)),
@@ -304,126 +305,150 @@ export default function StudentAttendancePage() {
                 </CardHeader>
             </Card>
 
-            <Card className="border-none shadow-sm overflow-hidden">
-                <CardContent className="p-4 pt-6">
-                    {attendanceError && (
-                        <div className="mb-4 p-4 rounded-md bg-destructive/10 text-destructive flex flex-col gap-3">
-                            <div className="flex items-center gap-3">
-                                <AlertTriangle className="h-5 w-5" />
-                                <div className="text-xs">
-                                    <p className="font-bold">Gagal memuat data absensi</p>
-                                    <p>{attendanceError.message.split('\n')[0]}</p>
+            <Tabs defaultValue="jurnal" className="w-full">
+                <div className="bg-muted/40 rounded-t-[24px] flex overflow-hidden">
+                    <TabsList className="bg-transparent h-auto p-0 gap-0 w-full flex">
+                        <TabsTrigger 
+                            value="jurnal"
+                            className="flex-1 rounded-t-[24px] rounded-b-none py-4 data-[state=active]:bg-card data-[state=active]:shadow-none bg-transparent text-[11px] font-bold uppercase tracking-widest text-muted-foreground data-[state=active]:text-primary transition-all"
+                        >
+                            <Calendar className="h-4 w-4 mr-2" /> Jurnal Harian
+                        </TabsTrigger>
+                        <TabsTrigger 
+                            value="rekap"
+                            className="flex-1 rounded-t-[24px] rounded-b-none py-4 data-[state=active]:bg-card data-[state=active]:shadow-none bg-transparent text-[11px] font-bold uppercase tracking-widest text-muted-foreground data-[state=active]:text-primary transition-all"
+                        >
+                            <ClipboardList className="h-4 w-4 mr-2" /> Rekapitulasi
+                        </TabsTrigger>
+                    </TabsList>
+                </div>
+
+                <div className="bg-card rounded-b-[24px] border-x border-b shadow-sm overflow-hidden min-h-[400px]">
+                    <TabsContent value="jurnal" className="m-0 p-4 border-none outline-none">
+                        {attendanceError && (
+                            <div className="mb-4 p-4 rounded-md bg-destructive/10 text-destructive flex flex-col gap-3">
+                                <div className="flex items-center gap-3">
+                                    <AlertTriangle className="h-5 w-5" />
+                                    <div className="text-xs">
+                                        <p className="font-bold">Gagal memuat data absensi</p>
+                                        <p>{attendanceError.message.split('\n')[0]}</p>
+                                    </div>
                                 </div>
+                                {indexLink && (
+                                    <div className="mt-2 p-3 bg-destructive/20 rounded border border-destructive/30">
+                                        <p className="text-[11px] mb-3">Kueri ini memerlukan indeks komposit. Silakan klik tombol di bawah untuk membuatnya di Konsol Firebase Anda.</p>
+                                        <Button variant="destructive" size="xs" className="h-8 gap-2 font-bold" asChild>
+                                            <a href={indexLink} target="_blank" rel="noopener noreferrer">
+                                                <ExternalLink className="h-3.5 w-3.5" />
+                                                BUAT INDEKS SEKARANG
+                                            </a>
+                                        </Button>
+                                    </div>
+                                )}
                             </div>
-                            {indexLink && (
-                                <div className="mt-2 p-3 bg-destructive/20 rounded border border-destructive/30">
-                                    <p className="text-[11px] mb-3">Kueri ini memerlukan indeks komposit. Silakan klik tombol di bawah untuk membuatnya di Konsol Firebase Anda.</p>
-                                    <Button variant="destructive" size="xs" className="h-8 gap-2 font-bold" asChild>
-                                        <a href={indexLink} target="_blank" rel="noopener noreferrer">
-                                            <ExternalLink className="h-3.5 w-3.5" />
-                                            BUAT INDEKS SEKARANG
-                                        </a>
-                                    </Button>
-                                </div>
-                            )}
-                        </div>
-                    )}
+                        )}
 
-                    {isLoading ? (
-                        <div className="flex justify-center items-center h-64">
-                            <Loader2 className="h-8 w-8 animate-spin text-primary/30" />
-                        </div>
-                    ) : (
-                        <div className="overflow-x-auto border rounded-lg">
-                            <Table className="min-w-full border-collapse">
-                                <TableHeader>
-                                    <TableRow className="bg-muted/50">
-                                        <TableHead className="sticky left-0 z-10 bg-muted/50 min-w-[150px] border-r font-bold">Nama Siswa</TableHead>
-                                        <TableHead className="text-center border-r min-w-[80px] font-bold">NIS</TableHead>
-                                        {daysInRange.map(day => (
-                                            <TableHead key={day.toISOString()} className={cn(
-                                                "text-center border-r min-w-[35px] px-1 text-[10px] font-bold",
-                                                day.getDay() === 5 && "text-blue-600 bg-blue-50/50"
-                                            )}>
-                                                {format(day, 'd')}
-                                            </TableHead>
-                                        ))}
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {sortedStudents && sortedStudents.length > 0 ? sortedStudents.map(student => (
-                                        <TableRow key={student.id}>
-                                            <TableCell className="sticky left-0 z-10 bg-card font-medium border-r text-xs py-2">{student.name}</TableCell>
-                                            <TableCell className="text-center border-r text-[10px]">{student.nis}</TableCell>
-                                            {daysInRange.map(day => {
-                                                const isFri = day.getDay() === 5;
-                                                const dateStr = format(day, 'yyyy-MM-dd');
-                                                const status = attendanceMap.get(`${student.id}-${dateStr}`);
-
-                                                return (
-                                                    <TableCell 
-                                                        key={dateStr} 
-                                                        className={cn(
-                                                            "text-center text-[10px] p-0 border-r h-8 font-mono",
-                                                            isFri ? 'bg-blue-50/50 text-blue-600 font-bold' : status ? getStatusColor(status) : 'bg-muted/10'
-                                                        )}
-                                                    >
-                                                        {isFri ? 'L' : status ? status.charAt(0) : '-'}
-                                                    </TableCell>
-                                                );
-                                            })}
+                        {isLoading ? (
+                            <div className="flex justify-center items-center h-64">
+                                <Loader2 className="h-8 w-8 animate-spin text-primary/30" />
+                            </div>
+                        ) : (
+                            <div className="overflow-x-auto border rounded-xl">
+                                <Table className="min-w-full border-collapse">
+                                    <TableHeader>
+                                        <TableRow className="bg-muted/30">
+                                            <TableHead className="sticky left-0 z-10 bg-muted/50 min-w-[150px] border-r font-bold text-[10px] uppercase">Nama Santri</TableHead>
+                                            <TableHead className="text-center border-r min-w-[80px] font-bold text-[10px] uppercase">NIS</TableHead>
+                                            {daysInRange.map(day => (
+                                                <TableHead key={day.toISOString()} className={cn(
+                                                    "text-center border-r min-w-[35px] px-1 text-[10px] font-bold",
+                                                    day.getDay() === 5 && "text-blue-600 bg-blue-50/50"
+                                                )}>
+                                                    {format(day, 'd')}
+                                                </TableHead>
+                                            ))}
                                         </TableRow>
-                                    )) : (
+                                    </TableHeader>
+                                    <TableBody>
+                                        {sortedStudents && sortedStudents.length > 0 ? sortedStudents.map(student => (
+                                            <TableRow key={student.id}>
+                                                <TableCell className="sticky left-0 z-10 bg-card font-bold border-r text-[11px] py-2 uppercase">{student.name}</TableCell>
+                                                <TableCell className="text-center border-r text-[10px] font-mono">{student.nis}</TableCell>
+                                                {daysInRange.map(day => {
+                                                    const isFri = day.getDay() === 5;
+                                                    const dateStr = format(day, 'yyyy-MM-dd');
+                                                    const status = attendanceMap.get(`${student.id}-${dateStr}`);
+
+                                                    return (
+                                                        <TableCell 
+                                                            key={dateStr} 
+                                                            className={cn(
+                                                                "text-center text-[10px] p-0 border-r h-8 font-mono",
+                                                                isFri ? 'bg-blue-50/50 text-blue-600 font-bold' : status ? getStatusColor(status) : 'bg-muted/10'
+                                                            )}
+                                                        >
+                                                            {isFri ? 'L' : status ? status.charAt(0) : '-'}
+                                                        </TableCell>
+                                                    );
+                                                })}
+                                            </TableRow>
+                                        )) : (
+                                            <TableRow>
+                                                <TableCell colSpan={daysInRange.length + 2} className="text-center h-48 italic text-muted-foreground text-xs">
+                                                    Belum ada data siswa di kelas {selectedClass}.
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        )}
+                    </TabsContent>
+
+                    <TabsContent value="rekap" className="m-0 p-4 border-none outline-none">
+                        {!isLoading && (
+                            <div className="border rounded-2xl overflow-hidden bg-card">
+                                <Table>
+                                    <TableHeader className="bg-muted/30">
                                         <TableRow>
-                                            <TableCell colSpan={daysInRange.length + 2} className="text-center h-24">
-                                                Belum ada data siswa di kelas {selectedClass}.
-                                            </TableCell>
+                                            <TableHead className="px-4 font-bold text-[10px] uppercase">Nama Santri</TableHead>
+                                            <TableHead className="text-center font-bold text-[10px] uppercase text-green-700">Hadir</TableHead>
+                                            <TableHead className="text-center font-bold text-[10px] uppercase text-yellow-700">Sakit</TableHead>
+                                            <TableHead className="text-center font-bold text-[10px] uppercase text-blue-700">Izin</TableHead>
+                                            <TableHead className="text-center font-bold text-[10px] uppercase text-red-700">Alpa</TableHead>
                                         </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
-
-            <Card>
-                <CardContent className="p-0">
-                    <Table>
-                        <TableHeader className="bg-muted/30">
-                            <TableRow className="h-8">
-                                <TableHead className="text-xs px-4">Nama Siswa</TableHead>
-                                <TableHead className="text-center text-xs w-[60px]">Hadir</TableHead>
-                                <TableHead className="text-center text-xs w-[60px]">Sakit</TableHead>
-                                <TableHead className="text-center text-xs w-[60px]">Izin</TableHead>
-                                <TableHead className="text-center text-xs w-[60px]">Alpa</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {!isLoading && attendanceSummary.length > 0 ? (
-                                attendanceSummary.map(item => (
-                                    <TableRow key={item.studentId} className="h-8">
-                                        <TableCell className="font-medium text-xs py-1 px-4">
-                                            {item.studentName}
-                                            <span className="block text-[9px] text-muted-foreground">{item.nis}</span>
-                                        </TableCell>
-                                        <TableCell className="text-center text-xs py-1 text-green-600 font-bold">{item.summary.Hadir}</TableCell>
-                                        <TableCell className="text-center text-xs py-1 text-yellow-600 font-bold">{item.summary.Sakit}</TableCell>
-                                        <TableCell className="text-center text-xs py-1 text-blue-600 font-bold">{item.summary.Izin}</TableCell>
-                                        <TableCell className="text-center text-xs py-1 text-red-600 font-bold">{item.summary.Alpa}</TableCell>
-                                    </TableRow>
-                                ))
-                            ) : (
-                                <TableRow>
-                                    <TableCell colSpan={5} className="text-center h-24 text-xs italic text-muted-foreground">
-                                        {isLoading ? 'Memuat ringkasan...' : 'Tidak ada data ringkasan.'}
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {attendanceSummary.length > 0 ? (
+                                            attendanceSummary.map(item => (
+                                                <TableRow key={item.studentId} className="hover:bg-muted/5 transition-colors">
+                                                    <TableCell className="px-4 py-3">
+                                                        <p className="font-bold text-[11px] uppercase">{item.studentName}</p>
+                                                        <p className="text-[9px] text-muted-foreground font-mono">{item.nis}</p>
+                                                    </TableCell>
+                                                    <TableCell className="text-center text-[11px] font-bold text-green-600">{item.summary.Hadir}</TableCell>
+                                                    <TableCell className="text-center text-[11px] font-medium">{item.summary.Sakit}</TableCell>
+                                                    <TableCell className="text-center text-[11px] font-medium">{item.summary.Izin}</TableCell>
+                                                    <TableCell className="text-center text-[11px] font-bold text-red-600">{item.summary.Alpa}</TableCell>
+                                                </TableRow>
+                                            ))
+                                        ) : (
+                                            <TableRow>
+                                                <TableCell colSpan={5} className="h-48 text-center text-muted-foreground text-xs italic">
+                                                    Tidak ada data ringkasan untuk ditampilkan.
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        )}
+                        {isLoading && (
+                            <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary/30" /></div>
+                        )}
+                    </TabsContent>
+                </div>
+            </Tabs>
         </div>
     );
 }
