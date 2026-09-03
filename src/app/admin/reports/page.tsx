@@ -11,14 +11,6 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -26,7 +18,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Link as LinkIcon, FileDown, Printer, FileSpreadsheet, FileText, Edit, Search } from "lucide-react";
+import { Loader2, Link as LinkIcon, FileDown, Printer, FileSpreadsheet, FileText, Edit, Search, UserCircle, FileSearch } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -195,63 +188,53 @@ export default function ReportsPage() {
             </Card>
 
             <div className="pt-2">
-                <Card className="border-none shadow-sm overflow-hidden">
-                    <CardContent className="p-0">
-                        <Table>
-                            <TableHeader>
-                                <TableRow className="bg-muted/30">
-                                    <TableHead className="w-[50px] px-4 font-bold text-[10px] uppercase">No.</TableHead>
-                                    <TableHead className="font-bold text-[10px] uppercase">Nama</TableHead>
-                                    <TableHead className="font-bold text-[10px] uppercase">NIS</TableHead>
-                                    <TableHead className="font-bold text-[10px] uppercase">Link Dokumen Rapor</TableHead>
-                                    <TableHead className="text-right w-[100px] px-4 font-bold text-[10px] uppercase">Aksi</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {loading ? (
-                                    <TableRow>
-                                        <TableCell colSpan={5} className="text-center h-24">
-                                            <div className="flex justify-center items-center gap-2 text-muted-foreground">
-                                                <Loader2 className="h-4 w-4 animate-spin"/>
-                                                <span className="text-xs">Memuat data siswa...</span>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ) : filteredData.length > 0 ? (
-                                    filteredData.map((student, index) => (
-                                    <TableRow key={student.id} className="hover:bg-muted/10 transition-colors">
-                                        <TableCell className="px-4 text-[11px]">{index + 1}</TableCell>
-                                        <TableCell className="font-bold text-[11px] uppercase">{student.name}</TableCell>
-                                        <TableCell className="text-[11px] font-mono">{student.nis}</TableCell>
-                                        <TableCell>
+                {loading ? (
+                    <div className="flex flex-col items-center justify-center py-20 gap-3 text-muted-foreground">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary/40"/>
+                        <span className="text-xs font-medium uppercase tracking-widest">Memuat data rapor...</span>
+                    </div>
+                ) : filteredData && filteredData.length > 0 ? (
+                    <div className="space-y-3">
+                        {filteredData.map((student) => (
+                            <div key={student.id} className="flex items-center justify-between p-3 rounded-xl bg-card border shadow-sm hover:border-primary/20 transition-all group">
+                                <div className="flex items-center gap-4">
+                                    <Avatar className="h-10 w-10 border-2 border-primary/5 group-hover:border-primary/20 transition-all">
+                                        <AvatarImage src={student.avatarUrl || undefined} alt={student.name} className="object-cover" />
+                                        <AvatarFallback className="bg-primary/5 text-primary text-sm font-bold">{student.name.charAt(0)}</AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                        <p className="text-[12px] font-bold leading-tight uppercase text-foreground group-hover:text-primary transition-colors">{student.name}</p>
+                                        <div className="flex items-center gap-2 mt-0.5">
+                                            <p className="text-[10px] text-muted-foreground font-mono bg-muted/50 px-1.5 rounded">NIS: {student.nis}</p>
+                                            <span className="text-[10px] text-muted-foreground">•</span>
                                             {student.reportUrl ? (
-                                                <a href={student.reportUrl} target="_blank" rel="noopener noreferrer" className="text-primary font-bold text-[10px] uppercase underline flex items-center gap-1.5">
-                                                    <LinkIcon className="h-3 w-3" />
-                                                    Buka Dokumen
+                                                <a href={student.reportUrl} target="_blank" rel="noopener noreferrer" className="text-primary font-bold text-[9px] uppercase underline flex items-center gap-1">
+                                                    <LinkIcon className="h-2.5 w-2.5" /> Dokumen Ready
                                                 </a>
                                             ) : (
-                                                <span className="text-muted-foreground text-[10px] italic">Belum tersedia</span>
+                                                <span className="text-muted-foreground text-[9px] italic font-medium uppercase">Belum Diatur</span>
                                             )}
-                                        </TableCell>
-                                        <TableCell className="text-right px-4">
-                                            <Button variant="ghost" size="sm" className="h-7 gap-1 text-[10px] font-bold uppercase text-primary hover:bg-primary/5" onClick={() => handleEditLink(student)}>
-                                                <Edit className="h-3 w-3" />
-                                                Edit Link
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                    ))
-                                ) : (
-                                    <TableRow>
-                                        <TableCell colSpan={5} className="h-24 text-center text-xs text-muted-foreground italic">
-                                            {searchTerm ? `Tidak ada siswa dengan kata kunci "${searchTerm}".` : "Belum ada data siswa terdaftar."}
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </CardContent>
-                </Card>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className="h-8 gap-2 border-primary/10 hover:bg-primary/5 text-[11px] font-bold uppercase tracking-tight text-primary"
+                                    onClick={() => handleEditLink(student)}
+                                >
+                                    <Edit className="h-3.5 w-3.5" /> Edit Link
+                                </Button>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="py-20 text-center text-muted-foreground border-2 border-dashed rounded-2xl bg-muted/5">
+                        <FileSearch className="h-10 w-10 mx-auto mb-3 opacity-10" />
+                        <p className="text-sm font-medium">Belum ada data rapor santri.</p>
+                    </div>
+                )}
             </div>
 
             <ReportLinkForm
