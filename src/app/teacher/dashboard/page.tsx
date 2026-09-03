@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -11,9 +10,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
     Loader2, 
     AlertTriangle, 
-    ClipboardCheck, 
-    UserCheck, 
-    PiggyBank, 
     Calendar, 
     Clock, 
     Megaphone,
@@ -25,7 +21,9 @@ import {
     QrCode,
     X,
     Users,
-    Save
+    Save,
+    UserCheck,
+    Coffee
 } from "lucide-react";
 import {
   Dialog,
@@ -297,28 +295,6 @@ export default function TeacherDashboardPage() {
             </CardContent>
         </Card>
 
-        {/* Quick Action Buttons */}
-        <div className="grid grid-cols-3 gap-3">
-            <Link href="/teacher/grades" className="flex flex-col items-center gap-2 p-3 rounded-xl bg-card border shadow-sm hover:border-primary/50 transition-all text-center group">
-                <div className="p-2 bg-blue-50 text-blue-600 rounded-lg group-hover:scale-110 transition-transform">
-                    <ClipboardCheck className="h-5 w-5" />
-                </div>
-                <span className="text-[10px] font-bold uppercase tracking-tight">Nilai</span>
-            </Link>
-            <Link href="/teacher/student-attendance" className="flex flex-col items-center gap-2 p-3 rounded-xl bg-card border shadow-sm hover:border-primary/50 transition-all text-center group">
-                <div className="p-2 bg-green-50 text-green-600 rounded-lg group-hover:scale-110 transition-transform">
-                    <UserCheck className="h-5 w-5" />
-                </div>
-                <span className="text-[10px] font-bold uppercase tracking-tight">Laporan</span>
-            </Link>
-            <Link href="/teacher/tabungan" className="flex flex-col items-center gap-2 p-3 rounded-xl bg-card border shadow-sm hover:border-primary/50 transition-all text-center group">
-                <div className="p-2 bg-purple-50 text-purple-600 rounded-lg group-hover:scale-110 transition-transform">
-                    <PiggyBank className="h-5 w-5" />
-                </div>
-                <span className="text-[10px] font-bold uppercase tracking-tight">Tabungan</span>
-            </Link>
-        </div>
-
         {/* Self Attendance Status */}
         <Card className="border-none shadow-sm">
             <CardHeader className="p-4 pb-2">
@@ -382,7 +358,7 @@ export default function TeacherDashboardPage() {
             </CardContent>
         </Card>
 
-        {/* Student Attendance Section (New) */}
+        {/* Student Attendance Section */}
         <Card className="border-none shadow-sm overflow-hidden">
             <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0">
                 <div>
