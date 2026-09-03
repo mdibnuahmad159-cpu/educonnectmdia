@@ -1,4 +1,3 @@
-
 "use client";
 
 import { ReactNode, useEffect, useState, useMemo } from "react";
@@ -12,7 +11,7 @@ import { useAcademicYear } from "@/context/academic-year-provider";
 import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
-import { collection, query, where, orderBy, limit } from "firebase/firestore";
+import { collection, query, orderBy } from "firebase/firestore";
 
 const PAGE_TITLES: Record<string, { title: string; sub: string }> = {
   "/teacher/dashboard": { title: "Beranda Guru", sub: "Ringkasan jadwal dan tugas harian." },
@@ -40,30 +39,39 @@ export default function TeacherLayout({ children }: { children: ReactNode }) {
     setIsClient(true);
   }, []);
 
-  // Check for new announcements
+  // Cek pengumuman baru untuk guru
   const announcementsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(
       collection(firestore, "announcements"),
-      where("target", "in", ["Semua", "Guru"]),
-      orderBy("createdAt", "desc"),
-      limit(1)
+      orderBy("createdAt", "desc")
     );
   }, [firestore]);
-  const { data: latestAnnouncements } = useCollection(announcementsQuery);
+  const { data: allAnnouncements } = useCollection(announcementsQuery);
 
   useEffect(() => {
-    if (latestAnnouncements && latestAnnouncements.length > 0) {
-      const latestId = latestAnnouncements[0].id;
-      const lastReadId = localStorage.getItem('last_read_announcement_teacher');
-      if (latestId !== lastReadId && pathname !== "/teacher/announcements") {
-        setHasNewAnnouncement(true);
-      } else if (pathname === "/teacher/announcements") {
-        setHasNewAnnouncement(false);
-        localStorage.setItem('last_read_announcement_teacher', latestId);
+    if (allAnnouncements && allAnnouncements.length > 0) {
+      const teacherAnnouncements = allAnnouncements.filter(a => a.target === 'Semua' || a.target === 'Guru');
+      
+      if (teacherAnnouncements.length > 0) {
+        const latestId = teacherAnnouncements[0].id;
+        const lastReadId = localStorage.getItem('last_read_announcement_teacher');
+        
+        if (latestId !== lastReadId && pathname !== "/teacher/announcements") {
+          setHasNewAnnouncement(true);
+        } else if (pathname === "/teacher/announcements") {
+          setHasNewAnnouncement(false);
+          localStorage.setItem('last_read_announcement_teacher', latestId);
+        }
       }
     }
-  }, [latestAnnouncements, pathname]);
+  }, [allAnnouncements, pathname]);
+
+  useEffect(() => {
+    if (profile?.namaMadrasah) {
+      document.title = profile.namaMadrasah;
+    }
+  }, [profile]);
 
   useEffect(() => {
     if (isUserLoading || !isClient) return;
@@ -116,7 +124,6 @@ export default function TeacherLayout({ children }: { children: ReactNode }) {
     <div className="flex flex-col min-h-screen bg-background overflow-x-hidden">
       <header className="sticky top-0 z-50 w-full bg-primary text-primary-foreground shadow-lg">
         <div className="flex flex-col w-full">
-          {/* Baris Atas: Identitas & Tahun */}
           <div className="flex h-14 items-center justify-between gap-4 px-4 border-b border-white/5">
             <div className="flex-1 flex justify-start">
               <div className="flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 bg-white/10 rounded-full border border-white/10 text-white">
@@ -148,7 +155,6 @@ export default function TeacherLayout({ children }: { children: ReactNode }) {
             </div>
           </div>
 
-          {/* Baris Bawah: Judul & Aksi */}
           <div className="px-4 py-2 flex items-center justify-between min-h-[48px]">
               <div className="w-12 flex justify-start items-center gap-1">
                   {!isDashboard ? (

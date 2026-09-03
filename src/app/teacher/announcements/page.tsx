@@ -1,7 +1,8 @@
 "use client";
 
+import { useMemo } from "react";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
-import { collection, query, where, orderBy } from "firebase/firestore";
+import { collection, query, orderBy } from "firebase/firestore";
 import type { Announcement } from "@/types";
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,12 +23,16 @@ export default function TeacherAnnouncementsPage() {
         if (!firestore) return null;
         return query(
             collection(firestore, "announcements"),
-            where("target", "in", ["Semua", "Guru"]),
             orderBy("createdAt", "desc")
         );
     }, [firestore]);
 
-    const { data: announcements, loading } = useCollection<Announcement>(announcementsQuery);
+    const { data: allAnnouncements, loading } = useCollection<Announcement>(announcementsQuery);
+
+    const filteredAnnouncements = useMemo(() => {
+        if (!allAnnouncements) return [];
+        return allAnnouncements.filter(a => a.target === 'Semua' || a.target === 'Guru');
+    }, [allAnnouncements]);
 
     return (
         <div className="space-y-4 pb-10 max-w-2xl mx-auto">
@@ -37,8 +42,8 @@ export default function TeacherAnnouncementsPage() {
                         <Loader2 className="h-8 w-8 animate-spin text-primary/40"/>
                         <span className="text-xs font-medium uppercase tracking-widest">Memuat pengumuman...</span>
                     </div>
-                ) : announcements && announcements.length > 0 ? (
-                    announcements.map((item) => (
+                ) : filteredAnnouncements.length > 0 ? (
+                    filteredAnnouncements.map((item) => (
                         <Card key={item.id} className="border-none shadow-sm overflow-hidden rounded-[24px]">
                             {item.imageUrl && (
                                 <div className="relative w-full aspect-video bg-muted/30">

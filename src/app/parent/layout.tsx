@@ -1,4 +1,3 @@
-
 "use client";
 
 import { ReactNode, useEffect, useState, useMemo } from "react";
@@ -19,7 +18,7 @@ import { useAcademicYear } from "@/context/academic-year-provider";
 import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
-import { collection, query, where, orderBy, limit } from "firebase/firestore";
+import { collection, query, orderBy } from "firebase/firestore";
 
 const PAGE_TITLES: Record<string, { title: string; sub: string }> = {
   "/parent/dashboard": { title: "Beranda Wali", sub: "Informasi perkembangan santri." },
@@ -46,30 +45,34 @@ export default function ParentLayout({ children }: { children: ReactNode }) {
     setIsClient(true);
   }, []);
 
-  // Check for new announcements
+  // Ambil semua pengumuman untuk cek notifikasi
   const announcementsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(
       collection(firestore, "announcements"),
-      where("target", "in", ["Semua", "Wali Murid"]),
-      orderBy("createdAt", "desc"),
-      limit(1)
+      orderBy("createdAt", "desc")
     );
   }, [firestore]);
-  const { data: latestAnnouncements } = useCollection(announcementsQuery);
+  const { data: allAnnouncements } = useCollection(announcementsQuery);
 
   useEffect(() => {
-    if (latestAnnouncements && latestAnnouncements.length > 0) {
-      const latestId = latestAnnouncements[0].id;
-      const lastReadId = localStorage.getItem('last_read_announcement_parent');
-      if (latestId !== lastReadId && pathname !== "/parent/announcements") {
-        setHasNewAnnouncement(true);
-      } else if (pathname === "/parent/announcements") {
-        setHasNewAnnouncement(false);
-        localStorage.setItem('last_read_announcement_parent', latestId);
+    if (allAnnouncements && allAnnouncements.length > 0) {
+      // Filter untuk wali
+      const parentAnnouncements = allAnnouncements.filter(a => a.target === 'Semua' || a.target === 'Wali Murid');
+      
+      if (parentAnnouncements.length > 0) {
+        const latestId = parentAnnouncements[0].id;
+        const lastReadId = localStorage.getItem('last_read_announcement_parent');
+        
+        if (latestId !== lastReadId && pathname !== "/parent/announcements") {
+          setHasNewAnnouncement(true);
+        } else if (pathname === "/parent/announcements") {
+          setHasNewAnnouncement(false);
+          localStorage.setItem('last_read_announcement_parent', latestId);
+        }
       }
     }
-  }, [latestAnnouncements, pathname]);
+  }, [allAnnouncements, pathname]);
 
   useEffect(() => {
     if (profile?.namaMadrasah) {
@@ -128,7 +131,6 @@ export default function ParentLayout({ children }: { children: ReactNode }) {
     <div className="flex flex-col min-h-screen bg-background overflow-x-hidden">
       <header className="sticky top-0 z-50 w-full bg-primary text-primary-foreground shadow-lg">
         <div className="flex flex-col w-full">
-          {/* Baris Atas: Identitas & Tahun */}
           <div className="flex h-14 items-center justify-between gap-4 px-4 border-b border-white/5">
             <div className="flex-1 flex justify-start">
               <div className="flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 bg-white/10 rounded-full border border-white/10 text-white">
@@ -160,7 +162,6 @@ export default function ParentLayout({ children }: { children: ReactNode }) {
             </div>
           </div>
 
-          {/* Baris Bawah: Judul & Aksi */}
           <div className="px-4 py-2 flex items-center justify-between min-h-[48px]">
               <div className="w-12 flex justify-start items-center gap-1">
                   {!isDashboard ? (
