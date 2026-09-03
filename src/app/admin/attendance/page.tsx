@@ -4,14 +4,15 @@ import { useState, useMemo, useEffect } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import type { Teacher, TeacherAttendance, Schedule, ScheduleEntry } from '@/types';
-import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, parseISO } from 'date-fns';
 import { id as dfnsId } from 'date-fns/locale';
 import { cn, safePrint } from '@/lib/utils';
-import { Loader2, Printer, FileDown, CheckCircle2, UserX, AlertCircle, Info, Users } from 'lucide-react';
+import { Loader2, Printer, FileDown, CheckCircle2, UserX, AlertCircle, Info, Users, Calendar, ClipboardList } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAcademicYear } from '@/context/academic-year-provider';
 import jsPDF from 'jspdf';
@@ -23,7 +24,7 @@ const getStatusColor = (status: TeacherAttendance['status']) => {
         case 'Sakit': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300';
         case 'Izin': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300';
         case 'Alpa': return 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300';
-        default: return 'bg-muted/50';
+        default: return 'bg-muted/10';
     }
 };
 
@@ -186,7 +187,7 @@ export default function AttendancePage() {
             startY: 28,
             theme: 'grid',
             styles: { fontSize: 7, cellPadding: 1 },
-            headStyles: { fillColor: [46, 125, 50] },
+            headStyles: { fillColor: [22, 101, 52] },
             didParseCell: (data: any) => {
                 if (data.section === 'body' && data.column.index > 0) {
                     if (data.cell.text[0] === 'L') data.cell.styles.fillColor = [239, 246, 255];
@@ -311,13 +312,14 @@ export default function AttendancePage() {
         <div className="space-y-4 pb-10">
             <Card className="border-none shadow-lg bg-primary text-primary-foreground">
                 <CardHeader className="p-4 flex flex-row flex-wrap items-center justify-between gap-4">
-                    <div className="grid grid-cols-2 gap-2 flex-1 max-w-sm">
+                    <div className="flex items-center gap-2 flex-1 max-w-sm">
                         <Input 
                             type="date" 
                             value={fromDate} 
                             onChange={(e) => setFromDate(e.target.value)} 
                             className="h-8 text-xs bg-white/10 border-white/20 text-white focus:ring-white/30"
                         />
+                        <span className="text-white/40">-</span>
                         <Input 
                             type="date" 
                             value={toDate} 
@@ -327,7 +329,7 @@ export default function AttendancePage() {
                     </div>
                     <div className="flex gap-2">
                         <Button variant="secondary" size="xs" onClick={handleExportPdf} className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90 border-none">
-                            <FileDown className="h-3.5 w-3.5" /> Ekspor PDF
+                            <FileDown className="h-3.5 w-3.5" /> PDF
                         </Button>
                         <Button variant="secondary" size="xs" onClick={handlePrint} className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90 border-none">
                             <Printer className="h-3.5 w-3.5" /> Cetak
@@ -336,124 +338,148 @@ export default function AttendancePage() {
                 </CardHeader>
             </Card>
 
-            <Card className="border-none shadow-sm overflow-hidden">
-                <CardContent className="p-4">
-                    {isLoading ? <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary/30" /></div> : (
-                        <div className="overflow-x-auto border rounded-md">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow className="bg-muted/30">
-                                        <TableHead className="sticky left-0 bg-muted/50 z-10 min-w-[150px] font-bold border-r">Nama Guru</TableHead>
-                                        {daysInRange.map(day => (
-                                            <TableHead key={day.toISOString()} className={cn(
-                                                "text-center px-1 text-[10px] font-bold border-r",
-                                                day.getDay() === 5 && "text-blue-600 bg-blue-50"
-                                            )}>{format(day, 'd')}</TableHead>
-                                        ))}
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {sortedTeachers.map(teacher => (
-                                        <TableRow key={teacher.id}>
-                                            <TableCell className="sticky left-0 bg-card text-xs font-medium border-r">{teacher.name}</TableCell>
-                                            {daysInRange.map(day => {
-                                                const isFri = day.getDay() === 5;
-                                                const status = attendanceMap.get(`${teacher.id}-${format(day, 'yyyy-MM-dd')}`);
-                                                return (
-                                                    <TableCell key={day.toISOString()} className={cn("text-center text-[10px] p-0 h-8 border-r last:border-r-0 font-mono", isFri ? 'bg-blue-50 text-blue-600 font-bold' : status ? getStatusColor(status) : 'bg-muted/10')}>
-                                                        {isFri ? 'L' : status ? status.charAt(0) : '-'}
-                                                    </TableCell>
-                                                );
-                                            })}
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
-
-            {!isLoading && globalStats && (
-                <div className="space-y-4">
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                        <Card className="bg-primary/5 border-primary/10">
-                            <CardContent className="p-3">
-                                <p className="text-[9px] font-bold uppercase text-muted-foreground mb-1">Total Jadwal</p>
-                                <div className="flex items-center gap-2">
-                                    <Info className="h-3.5 w-3.5 text-primary" />
-                                    <span className="text-lg font-bold">{globalStats.totalScheduled}</span>
-                                </div>
-                            </CardContent>
-                        </Card>
-                        <Card className="bg-green-50 border-green-100">
-                            <CardContent className="p-3">
-                                <p className="text-[9px] font-bold uppercase text-green-700 mb-1">Hadir</p>
-                                <div className="flex items-center gap-2 text-green-700">
-                                    <CheckCircle2 className="h-3.5 w-3.5" />
-                                    <span className="text-lg font-bold">{globalStats.totalHadir}</span>
-                                </div>
-                            </CardContent>
-                        </Card>
-                        <Card className="bg-yellow-50 border-yellow-100">
-                            <CardContent className="p-3">
-                                <p className="text-[9px] font-bold uppercase text-yellow-700 mb-1">Sakit</p>
-                                <div className="flex items-center gap-2 text-yellow-700">
-                                    <AlertCircle className="h-3.5 w-3.5" />
-                                    <span className="text-lg font-bold">{globalStats.totalSakit}</span>
-                                </div>
-                            </CardContent>
-                        </Card>
-                        <Card className="bg-blue-50 border-blue-100">
-                            <CardContent className="p-3">
-                                <p className="text-[9px] font-bold uppercase text-blue-700 mb-1">Izin</p>
-                                <div className="flex items-center gap-2 text-blue-700">
-                                    <Info className="h-3.5 w-3.5" />
-                                    <span className="text-lg font-bold">{globalStats.totalIzin}</span>
-                                </div>
-                            </CardContent>
-                        </Card>
-                        <Card className="bg-red-50 border-red-100">
-                            <CardContent className="p-3">
-                                <p className="text-[9px] font-bold uppercase text-red-700 mb-1">Alpa</p>
-                                <div className="flex items-center gap-2 text-red-700">
-                                    <UserX className="h-3.5 w-3.5" />
-                                    <span className="text-lg font-bold">{globalStats.totalAlpa}</span>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
-
-                    <Card>
-                        <CardContent className="p-0">
-                            <Table>
-                                <TableHeader className="bg-muted/30">
-                                    <TableRow>
-                                        <TableHead className="px-4 font-bold text-[10px] uppercase">Nama Guru</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase">Jadwal</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase text-green-700">Hadir</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase text-yellow-700">Sakit</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase text-blue-700">Izin</TableHead>
-                                        <TableHead className="text-center font-bold text-[10px] uppercase text-red-700">Alpa</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {teacherSummaries.map(s => (
-                                        <TableRow key={s.id} className="hover:bg-muted/5 transition-colors">
-                                            <TableCell className="px-4 font-medium text-xs py-2">{s.name}</TableCell>
-                                            <TableCell className="text-center text-xs font-mono">{s.totalScheduled}</TableCell>
-                                            <TableCell className="text-center text-xs font-bold text-green-600">{s.hadir}</TableCell>
-                                            <TableCell className="text-center text-xs font-medium">{s.sakit}</TableCell>
-                                            <TableCell className="text-center text-xs font-medium">{s.izin}</TableCell>
-                                            <TableCell className="text-center text-xs font-bold text-red-600">{s.alpa}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
+            <Tabs defaultValue="jurnal" className="w-full">
+                <div className="bg-muted/40 rounded-t-[24px] flex overflow-hidden">
+                    <TabsList className="bg-transparent h-auto p-0 gap-0 w-full flex">
+                        <TabsTrigger 
+                            value="jurnal"
+                            className="flex-1 rounded-t-[24px] rounded-b-none py-4 data-[state=active]:bg-card data-[state=active]:shadow-none bg-transparent text-[11px] font-bold uppercase tracking-widest text-muted-foreground data-[state=active]:text-primary transition-all"
+                        >
+                            <Calendar className="h-4 w-4 mr-2" /> Jurnal Harian
+                        </TabsTrigger>
+                        <TabsTrigger 
+                            value="rekap"
+                            className="flex-1 rounded-t-[24px] rounded-b-none py-4 data-[state=active]:bg-card data-[state=active]:shadow-none bg-transparent text-[11px] font-bold uppercase tracking-widest text-muted-foreground data-[state=active]:text-primary transition-all"
+                        >
+                            <ClipboardList className="h-4 w-4 mr-2" /> Rekapitulasi
+                        </TabsTrigger>
+                    </TabsList>
                 </div>
-            )}
+
+                <div className="bg-card rounded-b-[24px] border-x border-b shadow-sm overflow-hidden min-h-[400px]">
+                    <TabsContent value="jurnal" className="m-0 p-4 border-none outline-none">
+                        {isLoading ? (
+                            <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary/30" /></div>
+                        ) : (
+                            <div className="overflow-x-auto border rounded-xl">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow className="bg-muted/30">
+                                            <TableHead className="sticky left-0 bg-muted/50 z-10 min-w-[150px] font-bold border-r text-[10px] uppercase">Nama Guru</TableHead>
+                                            {daysInRange.map(day => (
+                                                <TableHead key={day.toISOString()} className={cn(
+                                                    "text-center px-1 text-[10px] font-bold border-r",
+                                                    day.getDay() === 5 && "text-blue-600 bg-blue-50"
+                                                )}>{format(day, 'd')}</TableHead>
+                                            ))}
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {sortedTeachers.map(teacher => (
+                                            <TableRow key={teacher.id}>
+                                                <TableCell className="sticky left-0 bg-card text-[11px] font-bold border-r uppercase">{teacher.name}</TableCell>
+                                                {daysInRange.map(day => {
+                                                    const isFri = day.getDay() === 5;
+                                                    const status = attendanceMap.get(`${teacher.id}-${format(day, 'yyyy-MM-dd')}`);
+                                                    return (
+                                                        <TableCell key={day.toISOString()} className={cn("text-center text-[10px] p-0 h-8 border-r last:border-r-0 font-mono", isFri ? 'bg-blue-50 text-blue-600 font-bold' : status ? getStatusColor(status) : 'bg-muted/5')}>
+                                                            {isFri ? 'L' : status ? status.charAt(0) : '-'}
+                                                        </TableCell>
+                                                    );
+                                                })}
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        )}
+                    </TabsContent>
+
+                    <TabsContent value="rekap" className="m-0 p-4 border-none outline-none">
+                        {!isLoading && globalStats && (
+                            <div className="space-y-6">
+                                <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                                    <Card className="bg-primary/5 border-primary/10 shadow-none rounded-2xl">
+                                        <CardContent className="p-4">
+                                            <p className="text-[9px] font-bold uppercase text-muted-foreground mb-1">Total Jadwal</p>
+                                            <div className="flex items-center gap-2">
+                                                <Info className="h-3.5 w-3.5 text-primary" />
+                                                <span className="text-xl font-bold">{globalStats.totalScheduled}</span>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                    <Card className="bg-green-50 border-green-100 shadow-none rounded-2xl">
+                                        <CardContent className="p-4">
+                                            <p className="text-[9px] font-bold uppercase text-green-700 mb-1">Hadir</p>
+                                            <div className="flex items-center gap-2 text-green-700">
+                                                <CheckCircle2 className="h-3.5 w-3.5" />
+                                                <span className="text-xl font-bold">{globalStats.totalHadir}</span>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                    <Card className="bg-yellow-50 border-yellow-100 shadow-none rounded-2xl">
+                                        <CardContent className="p-4">
+                                            <p className="text-[9px] font-bold uppercase text-yellow-700 mb-1">Sakit</p>
+                                            <div className="flex items-center gap-2 text-yellow-700">
+                                                <AlertCircle className="h-3.5 w-3.5" />
+                                                <span className="text-xl font-bold">{globalStats.totalSakit}</span>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                    <Card className="bg-blue-50 border-blue-100 shadow-none rounded-2xl">
+                                        <CardContent className="p-4">
+                                            <p className="text-[9px] font-bold uppercase text-blue-700 mb-1">Izin</p>
+                                            <div className="flex items-center gap-2 text-blue-700">
+                                                <Info className="h-3.5 w-3.5" />
+                                                <span className="text-xl font-bold">{globalStats.totalIzin}</span>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                    <Card className="bg-red-50 border-red-100 shadow-none rounded-2xl">
+                                        <CardContent className="p-4">
+                                            <p className="text-[9px] font-bold uppercase text-red-700 mb-1">Alpa</p>
+                                            <div className="flex items-center gap-2 text-red-700">
+                                                <UserX className="h-3.5 w-3.5" />
+                                                <span className="text-xl font-bold">{globalStats.totalAlpa}</span>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                </div>
+
+                                <div className="border rounded-2xl overflow-hidden bg-card">
+                                    <Table>
+                                        <TableHeader className="bg-muted/30">
+                                            <TableRow>
+                                                <TableHead className="px-4 font-bold text-[10px] uppercase">Nama Guru</TableHead>
+                                                <TableHead className="text-center font-bold text-[10px] uppercase">Jadwal</TableHead>
+                                                <TableHead className="text-center font-bold text-[10px] uppercase text-green-700">Hadir</TableHead>
+                                                <TableHead className="text-center font-bold text-[10px] uppercase text-yellow-700">Sakit</TableHead>
+                                                <TableHead className="text-center font-bold text-[10px] uppercase text-blue-700">Izin</TableHead>
+                                                <TableHead className="text-center font-bold text-[10px] uppercase text-red-700">Alpa</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {teacherSummaries.map(s => (
+                                                <TableRow key={s.id} className="hover:bg-muted/5 transition-colors">
+                                                    <TableCell className="px-4 font-bold text-[11px] py-3 uppercase">{s.name}</TableCell>
+                                                    <TableCell className="text-center text-[11px] font-mono">{s.totalScheduled}</TableCell>
+                                                    <TableCell className="text-center text-[11px] font-bold text-green-600">{s.hadir}</TableCell>
+                                                    <TableCell className="text-center text-[11px] font-medium">{s.sakit}</TableCell>
+                                                    <TableCell className="text-center text-[11px] font-medium">{s.izin}</TableCell>
+                                                    <TableCell className="text-center text-[11px] font-bold text-red-600">{s.alpa}</TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+                            </div>
+                        )}
+                        {isLoading && (
+                            <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary/30" /></div>
+                        )}
+                    </TabsContent>
+                </div>
+            </Tabs>
         </div>
     );
 }
