@@ -18,6 +18,7 @@ const PAGE_TITLES: Record<string, { title: string; sub: string }> = {
   "/teacher/student-attendance": { title: "Absensi Santri", sub: "Verifikasi kehadiran harian kelas." },
   "/teacher/tabungan": { title: "Tabungan Saya", sub: "Riwayat simpanan pribadi." },
   "/teacher/attendance-history": { title: "Riwayat Absensi", sub: "Laporan jurnal dan rekap kehadiran pribadi." },
+  "/teacher/schedule": { title: "Jadwal Mengajar", sub: "Daftar jam mengajar dan kurikulum mingguan." },
 };
 
 export default function TeacherLayout({ children }: { children: ReactNode }) {

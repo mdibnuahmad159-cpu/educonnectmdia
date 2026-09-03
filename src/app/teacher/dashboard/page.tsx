@@ -356,10 +356,15 @@ export default function TeacherDashboardPage() {
 
         {/* Teaching Schedule Today */}
         <Card className="border-none shadow-sm overflow-hidden">
-            <CardHeader className="p-4 pb-2">
+            <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0">
                 <CardTitle className="text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                     <Clock className="h-3.5 w-3.5" /> Jadwal Mengajar
                 </CardTitle>
+                <Link href="/teacher/schedule">
+                    <Button variant="ghost" size="xs" className="h-7 gap-1 text-[10px] font-bold text-primary hover:bg-primary/5 uppercase">
+                        Lihat Semua <ArrowRightCircle className="h-3 w-3" />
+                    </Button>
+                </Link>
             </CardHeader>
             <CardContent className="p-4 pt-0">
                 {isScheduleLoading ? (
