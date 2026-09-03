@@ -118,17 +118,17 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
             <div className="flex-1 flex justify-end">
               <Link href="/admin/profile">
-                <div className="h-8 w-8 rounded-full overflow-hidden border-2 border-white/20 hover:border-white/50 transition-all flex items-center justify-center bg-white/10 backdrop-blur-sm">
+                <div className="h-9 w-9 rounded-full overflow-hidden border-2 border-white/30 hover:border-white transition-all flex items-center justify-center bg-white shadow-sm">
                   {profile?.logoMadrasahUrl ? (
                     <Image 
                       src={profile.logoMadrasahUrl} 
                       alt="Profile" 
-                      width={32} 
-                      height={32} 
-                      className="h-full w-full object-contain brightness-0 invert"
+                      width={36} 
+                      height={36} 
+                      className="h-full w-full object-contain"
                     />
                   ) : (
-                    <School className="h-4 w-4 text-white/60" />
+                    <School className="h-5 w-5 text-primary" />
                   )}
                 </div>
               </Link>
