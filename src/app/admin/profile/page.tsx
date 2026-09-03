@@ -6,7 +6,7 @@ import type { SchoolProfile } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { updateSchoolProfile } from "@/lib/firebase-helpers";
 import { ProfileForm } from "./components/profile-form";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, AlertTriangle } from "lucide-react";
 
 export default function ProfilePage() {
@@ -36,29 +36,19 @@ export default function ProfilePage() {
     
     if (error) {
         return (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertTriangle className="text-destructive" />
-                Gagal Memuat Data
-              </CardTitle>
-              <CardDescription>
-                Terjadi kesalahan saat mengambil data profil. Silakan coba lagi.
-              </CardDescription>
-            </CardHeader>
+          <Card className="border-destructive/20 bg-destructive/5 p-6 text-destructive flex items-center gap-3">
+             <AlertTriangle className="h-6 w-6" />
+             <div className="text-xs">
+                <p className="font-bold">Gagal Memuat Data</p>
+                <p>Terjadi kesalahan saat mengambil data profil. Silakan coba lagi.</p>
+             </div>
           </Card>
         );
     }
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Profil Madrasah</CardTitle>
-                <CardDescription>
-                    Kelola informasi umum, visi, misi, dan logo madrasah Anda.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
+        <Card className="border-none shadow-sm">
+            <CardContent className="pt-6">
                 <ProfileForm profile={profile} onSave={handleSave} />
             </CardContent>
         </Card>

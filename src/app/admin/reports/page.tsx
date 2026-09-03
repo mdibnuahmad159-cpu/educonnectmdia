@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo } from "react";
@@ -9,9 +8,7 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import {
   Table,
@@ -29,7 +26,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Link as LinkIcon, FileDown, Printer, FileSpreadsheet, FileText, Edit } from "lucide-react";
+import { Loader2, Link as LinkIcon, FileDown, Printer, FileSpreadsheet, FileText, Edit, Search } from "lucide-react";
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -158,102 +155,104 @@ export default function ReportsPage() {
     };
 
     return (
-        <>
-            <Card>
-                <CardHeader>
-                    <CardTitle>Rapor Siswa</CardTitle>
-                    <CardDescription>
-                        Lihat dan kelola tautan rapor untuk setiap siswa.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex flex-col sm:flex-row justify-between items-center gap-2 mb-4">
-                        <Input
-                            placeholder="Cari berdasarkan nama atau NIS..."
+        <div className="space-y-4">
+            <Card className="border-none shadow-lg bg-primary text-primary-foreground">
+                <CardHeader className="p-4 flex flex-row flex-wrap items-center gap-2">
+                    <div className="relative flex-1 min-w-[200px]">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-primary-foreground/50" />
+                        <Input 
+                            placeholder="Cari nama atau NIS..." 
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full sm:max-w-xs"
+                            className="pl-9 h-9 text-xs bg-white/10 border-white/20 text-white placeholder:text-white/40 focus-visible:ring-white/30"
                         />
-                        <div className="flex items-center gap-2">
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button size="xs" variant="outline" className="gap-1">
-                                    <FileDown className="h-3 w-3" />
-                                    Ekspor
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={handleExportExcel}>
-                                    <FileSpreadsheet className="mr-2 h-3 w-3" />
-                                    Excel
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={handleExportPdf}>
-                                    <FileText className="mr-2 h-3 w-3" />
-                                    PDF
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                            <Button size="xs" variant="outline" className="gap-1" onClick={handlePrintTable}>
-                                <Printer className="h-3 w-3" />
-                                Cetak
-                            </Button>
-                        </div>
                     </div>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead className="w-[40px]">No.</TableHead>
-                                <TableHead>Nama</TableHead>
-                                <TableHead>NIS</TableHead>
-                                <TableHead>Link Rapor</TableHead>
-                                <TableHead className="text-right w-[80px]">Aksi</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {loading ? (
-                                <TableRow>
-                                    <TableCell colSpan={5} className="text-center h-24">
-                                        <div className="flex justify-center items-center gap-2 text-muted-foreground">
-                                            <Loader2 className="h-4 w-4 animate-spin"/>
-                                            <span>Memuat data siswa...</span>
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            ) : filteredData.length > 0 ? (
-                                filteredData.map((student, index) => (
-                                <TableRow key={student.id}>
-                                    <TableCell>{index + 1}</TableCell>
-                                    <TableCell className="font-medium">{student.name}</TableCell>
-                                    <TableCell>{student.nis}</TableCell>
-                                    <TableCell>
-                                        {student.reportUrl ? (
-                                            <a href={student.reportUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline hover:text-primary/80 flex items-center gap-1">
-                                                <LinkIcon className="h-3 w-3" />
-                                                Buka Link
-                                            </a>
-                                        ) : (
-                                            <span className="text-muted-foreground">Belum diatur</span>
-                                        )}
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <Button variant="outline" size="xs" onClick={() => handleEditLink(student)}>
-                                            <Edit className="mr-1 h-3 w-3" />
-                                            Edit
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                                ))
-                            ) : (
-                                <TableRow>
-                                    <TableCell colSpan={5} className="h-24 text-center">
-                                        {searchTerm ? `Tidak ada siswa dengan nama atau NIS "${searchTerm}".` : "Belum ada data siswa."}
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </CardContent>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90 border-none">
+                                <FileDown className="h-3.5 w-3.5" />
+                                Ekspor
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={handleExportExcel}>
+                                <FileSpreadsheet className="mr-2 h-3.5 w-3.5" />
+                                Excel
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={handleExportPdf}>
+                                <FileText className="mr-2 h-3.5 w-3.5" />
+                                PDF
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                        <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90 border-none" onClick={handlePrintTable}>
+                            <Printer className="h-3.5 w-3.5" />
+                            Cetak
+                        </Button>
+                    </div>
+                </CardHeader>
             </Card>
+
+            <div className="pt-2">
+                <Card className="border-none shadow-sm overflow-hidden">
+                    <CardContent className="p-0">
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="bg-muted/30">
+                                    <TableHead className="w-[50px] px-4 font-bold text-[10px] uppercase">No.</TableHead>
+                                    <TableHead className="font-bold text-[10px] uppercase">Nama</TableHead>
+                                    <TableHead className="font-bold text-[10px] uppercase">NIS</TableHead>
+                                    <TableHead className="font-bold text-[10px] uppercase">Link Dokumen Rapor</TableHead>
+                                    <TableHead className="text-right w-[100px] px-4 font-bold text-[10px] uppercase">Aksi</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {loading ? (
+                                    <TableRow>
+                                        <TableCell colSpan={5} className="text-center h-24">
+                                            <div className="flex justify-center items-center gap-2 text-muted-foreground">
+                                                <Loader2 className="h-4 w-4 animate-spin"/>
+                                                <span className="text-xs">Memuat data siswa...</span>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ) : filteredData.length > 0 ? (
+                                    filteredData.map((student, index) => (
+                                    <TableRow key={student.id} className="hover:bg-muted/10 transition-colors">
+                                        <TableCell className="px-4 text-[11px]">{index + 1}</TableCell>
+                                        <TableCell className="font-bold text-[11px] uppercase">{student.name}</TableCell>
+                                        <TableCell className="text-[11px] font-mono">{student.nis}</TableCell>
+                                        <TableCell>
+                                            {student.reportUrl ? (
+                                                <a href={student.reportUrl} target="_blank" rel="noopener noreferrer" className="text-primary font-bold text-[10px] uppercase underline flex items-center gap-1.5">
+                                                    <LinkIcon className="h-3 w-3" />
+                                                    Buka Dokumen
+                                                </a>
+                                            ) : (
+                                                <span className="text-muted-foreground text-[10px] italic">Belum tersedia</span>
+                                            )}
+                                        </TableCell>
+                                        <TableCell className="text-right px-4">
+                                            <Button variant="ghost" size="sm" className="h-7 gap-1 text-[10px] font-bold uppercase text-primary hover:bg-primary/5" onClick={() => handleEditLink(student)}>
+                                                <Edit className="h-3 w-3" />
+                                                Edit Link
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                    ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={5} className="h-24 text-center text-xs text-muted-foreground italic">
+                                            {searchTerm ? `Tidak ada siswa dengan kata kunci "${searchTerm}".` : "Belum ada data siswa terdaftar."}
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+            </div>
 
             <ReportLinkForm
                 isOpen={isFormOpen}
@@ -261,6 +260,6 @@ export default function ReportsPage() {
                 student={selectedStudent}
                 onSave={handleSaveLink}
             />
-        </>
+        </div>
     );
 }

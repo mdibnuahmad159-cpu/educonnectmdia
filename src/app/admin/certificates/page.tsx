@@ -83,7 +83,7 @@ export default function CertificatesPage() {
     const { data: templates } = useCollection<CertificateTemplate>(templatesCollection);
 
     const teachersCollection = useMemoFirebase(() => firestore ? collection(firestore, "teachers") : null, [firestore]);
-    const { data: teachers } = useCollection<Teacher>(teachersQuery);
+    const { data: teachers } = useCollection<Teacher>(teachersCollection);
     
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isTemplateOpen, setIsTemplateOpen] = useState(false);

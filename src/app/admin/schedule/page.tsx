@@ -362,51 +362,43 @@ export default function SchedulePage() {
     return (
         <div className="space-y-4">
             <Card className="border-none shadow-lg bg-primary text-primary-foreground">
-                <CardHeader className="pb-6">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                        <div className="space-y-1">
-                            <CardTitle className="text-2xl font-bold font-headline">Jadwal</CardTitle>
-                            <CardDescription className="text-primary-foreground/70 text-xs">
-                                Kelola jadwal pelajaran/ujian. Jadwal tetap berlaku lintas tahun ajaran kecuali diubah.
-                            </CardDescription>
-                        </div>
-                         <div className="flex items-center gap-2">
-                             <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none" onClick={() => setIsTimeFormOpen(true)}>
-                                <Edit className="h-3.5 w-3.5" />
-                                Atur Jam
-                            </Button>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none">
-                                    <FileDown className="h-3.5 w-3.5" />
-                                    Ekspor
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={() => handleExport('excel')}>
-                                    <FileSpreadsheet className="mr-2 h-3.5 w-3.5" />
-                                    Excel
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleExport('pdf')}>
-                                    <FileText className="mr-2 h-3.5 w-3.5" />
-                                    PDF
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                            <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none" onClick={handlePrintTable}>
-                                <Printer className="h-3.5 w-3.5" />
-                                Cetak
-                            </Button>
-                        </div>
-                    </div>
-                    
-                    <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                         <Tabs value={scheduleType} onValueChange={(value) => setScheduleType(value as 'pelajaran' | 'ujian')} className="w-full sm:w-auto">
-                            <TabsList className="grid grid-cols-2 w-full sm:w-fit bg-white/10 border-white/20">
+                <CardHeader className="p-4 flex flex-row flex-wrap items-center justify-between gap-4">
+                     <div className="flex flex-wrap items-center gap-2">
+                        <Tabs value={scheduleType} onValueChange={(value) => setScheduleType(value as 'pelajaran' | 'ujian')} className="w-full sm:w-auto">
+                            <TabsList className="grid grid-cols-2 w-[180px] bg-white/10 border-white/20">
                                 <TabsTrigger value="pelajaran" className="data-[state=active]:bg-white data-[state=active]:text-primary text-white">Pelajaran</TabsTrigger>
                                 <TabsTrigger value="ujian" className="data-[state=active]:bg-white data-[state=active]:text-primary text-white">Ujian</TabsTrigger>
                             </TabsList>
                         </Tabs>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                         <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90 border-none" onClick={() => setIsTimeFormOpen(true)}>
+                            <Clock className="h-3.5 w-3.5" />
+                            Atur Jam
+                        </Button>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90 border-none">
+                                <FileDown className="h-3.5 w-3.5" />
+                                Ekspor
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleExport('excel')}>
+                                <FileSpreadsheet className="mr-2 h-3.5 w-3.5" />
+                                Excel
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleExport('pdf')}>
+                                <FileText className="mr-2 h-3.5 w-3.5" />
+                                PDF
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                        <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90 border-none" onClick={handlePrintTable}>
+                            <Printer className="h-3.5 w-3.5" />
+                            Cetak
+                        </Button>
                     </div>
                 </CardHeader>
             </Card>

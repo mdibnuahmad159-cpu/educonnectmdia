@@ -69,7 +69,7 @@ type GradeType = 'Ganjil' | 'Genap';
 const STATUS_OPTIONS: ReportSummaryStatus[] = ['Lanjut Semester', 'Naik Kelas', 'Turun Kelas'];
 
 function terbilang(n: number): string {
-    const words = ["", "Satu", "Dua", "Tiga", "Empat", "Lima", "Enam", "Tujuh", "Delapan", "Sembilan", "Sepuluh", "Sebelas"];
+    const words = ["", "Satu", "Dua", "Tiga", "Empat", "Lima", "Enam", "Tujuh", "Delapan", "Sembilan", "Sebelas"];
     if (n === 0) return "Nol";
     if (n < 12) return words[n];
     if (n < 20) return words[n - 10] + " Belas";
@@ -1232,7 +1232,7 @@ export default function GradesPage() {
                     <div className="flex flex-wrap items-center justify-end gap-1.5">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="secondary" size="xs" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none">
+                                <Button variant="secondary" size="xs" className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90 border-none">
                                     <FileUp className="h-3.5 w-3.5" />
                                     Impor
                                 </Button>
@@ -1252,7 +1252,7 @@ export default function GradesPage() {
 
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="secondary" size="xs" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none">
+                                <Button variant="secondary" size="xs" className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90 border-none">
                                     <FileDown className="h-3.5 w-3.5" />
                                     Ekspor
                                 </Button>
@@ -1274,7 +1274,7 @@ export default function GradesPage() {
                             variant="secondary" 
                             size="xs" 
                             disabled={isLoading || !studentsWithStats.length}
-                            className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none"
+                            className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90 border-none"
                         >
                             <PrinterCheck className="h-3.5 w-3.5" />
                             Rapor Massal
@@ -1285,7 +1285,7 @@ export default function GradesPage() {
                             variant="secondary" 
                             size="xs" 
                             disabled={isLoading}
-                            className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none"
+                            className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90 border-none"
                         >
                             <Trophy className="h-3.5 w-3.5" />
                             Laporan Rank
@@ -1298,7 +1298,7 @@ export default function GradesPage() {
                             size="xs" 
                             className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none"
                         >
-                            {isSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                            {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
                             Simpan
                         </Button>
                     </div>

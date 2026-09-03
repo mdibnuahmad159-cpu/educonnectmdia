@@ -319,7 +319,7 @@ export default function ClassManagementPage() {
                 
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none">
+                        <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90 border-none">
                         <FileDown className="h-3.5 w-3.5" /> Ekspor
                         </Button>
                     </DropdownMenuTrigger>
@@ -332,7 +332,7 @@ export default function ClassManagementPage() {
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
-                <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-accent text-primary hover:bg-accent/90 border-none" onClick={handlePrintTable}>
+                <Button size="xs" variant="secondary" className="gap-1.5 h-8 font-bold shadow-md bg-white text-primary hover:bg-white/90 border-none" onClick={handlePrintTable}>
                     <Printer className="h-3.5 w-3.5" /> Cetak
                 </Button>
             </div>
