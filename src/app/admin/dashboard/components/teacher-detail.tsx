@@ -46,7 +46,8 @@ import {
   Loader2,
   Save,
   X,
-  Camera
+  Camera,
+  FileDown
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -57,6 +58,8 @@ import { id as dfnsId } from "date-fns/locale";
 import { useFirestore } from "@/firebase";
 import { updateTeacher } from "@/lib/firebase-helpers";
 import { useToast } from "@/hooks/use-toast";
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 const jabatanOptions = [
   "Pengasuh",
@@ -210,6 +213,49 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
       </html>
     `;
     safePrint(content);
+  };
+
+  const handleExportPdf = () => {
+    if (!teacher) return;
+    const doc = new jsPDF();
+    const dateNow = format(new Date(), "dd MMMM yyyy", { locale: dfnsId });
+
+    doc.setFontSize(18);
+    doc.setTextColor(22, 101, 52); // primary color
+    doc.text("BIODATA GURU MADRASAH", 105, 20, { align: 'center' });
+    
+    doc.setFontSize(8);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Dicetak pada: ${dateNow}`, 195, 10, { align: 'right' });
+
+    (doc as any).autoTable({
+      startY: 30,
+      head: [['Informasi', 'Detail Data']],
+      body: [
+        ['NIG (ID Login)', teacher.nig],
+        ['Nama Lengkap', teacher.name],
+        ['NIK', teacher.nik || '-'],
+        ['Jabatan', teacher.jabatan || '-'],
+        ['Email', teacher.email || '-'],
+        ['WhatsApp', teacher.noWa || '-'],
+        ['Pendidikan Terakhir', teacher.pendidikan || '-'],
+        ['Asal Ponpes', teacher.ponpes || '-'],
+        ['Alamat Domisili', teacher.alamat || '-'],
+      ],
+      theme: 'striped',
+      headStyles: { fillColor: [22, 101, 52] },
+      styles: { fontSize: 10 },
+      columnStyles: { 0: { fontStyle: 'bold', width: 50 } }
+    });
+
+    if (qrDataUrl) {
+      const finalY = (doc as any).lastAutoTable.finalY + 20;
+      doc.addImage(qrDataUrl, 'PNG', 85, finalY, 40, 40);
+      doc.setFontSize(9);
+      doc.text("ID Absensi (Scan Barcode)", 105, finalY + 45, { align: 'center' });
+    }
+
+    doc.save(`Biodata_Guru_${teacher.name.replace(/\s+/g, '_')}.pdf`);
   };
 
   return (
@@ -367,12 +413,15 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
             </div>
 
             <DialogFooter className="bg-muted/30 p-4 px-6 border-t flex flex-row items-center justify-between sm:justify-between gap-3">
-                <div className="flex gap-2">
+                <div className="flex gap-1">
                   <Button type="button" variant="ghost" size="icon" className="text-destructive h-10 w-10 rounded-full hover:bg-destructive/10" onClick={() => onDelete(teacher.id)}>
-                      <Trash2 className="h-4.5 w-4.5" />
+                      <Trash2 className="h-4 w-4" />
                   </Button>
                   <Button type="button" variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-primary/5 text-primary" onClick={handlePrint}>
-                      <Printer className="h-4.5 w-4.5" />
+                      <Printer className="h-4 w-4" />
+                  </Button>
+                  <Button type="button" variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-primary/5 text-primary" onClick={handleExportPdf}>
+                      <FileDown className="h-4 w-4" />
                   </Button>
                 </div>
                 <Button 
