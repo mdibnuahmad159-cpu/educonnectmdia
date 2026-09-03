@@ -5,15 +5,32 @@ import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import type { TeacherAttendance, Schedule, ScheduleEntry } from '@/types';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, parseISO } from 'date-fns';
+import { 
+    format, 
+    startOfMonth, 
+    endOfMonth, 
+    eachDayOfInterval, 
+    parseISO, 
+    setMonth, 
+    setYear, 
+    getYear, 
+    getMonth 
+} from 'date-fns';
 import { id as dfnsId } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { Loader2, Calendar, ClipboardList, AlertCircle, Info } from 'lucide-react';
+import { Loader2, Calendar, ClipboardList, AlertCircle, Info, ChevronRight, TrendingUp } from 'lucide-react';
 import { useAcademicYear } from '@/context/academic-year-provider';
+import { Progress } from '@/components/ui/progress';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const getStatusColor = (status: TeacherAttendance['status']) => {
     switch (status) {
@@ -21,6 +38,7 @@ const getStatusColor = (status: TeacherAttendance['status']) => {
         case 'Sakit': return 'bg-yellow-100 text-yellow-800';
         case 'Izin': return 'bg-blue-100 text-blue-800';
         case 'Alpa': return 'bg-red-100 text-red-800';
+        case 'Libur': return 'bg-purple-100 text-purple-800';
         default: return 'bg-muted/10';
     }
 };
@@ -34,6 +52,13 @@ const dayMapping: { [key: number]: keyof Omit<Schedule, 'id' | 'classLevel' | 'a
     6: 'saturday',
 };
 
+const MONTHS = [
+    { id: 0, name: "Januari" }, { id: 1, name: "Februari" }, { id: 2, name: "Maret" },
+    { id: 3, name: "April" }, { id: 4, name: "Mei" }, { id: 5, name: "Juni" },
+    { id: 6, name: "Juli" }, { id: 7, name: "Agustus" }, { id: 8, name: "September" },
+    { id: 9, name: "Oktober" }, { id: 10, name: "November" }, { id: 11, name: "Desember" },
+];
+
 export default function TeacherAttendanceHistoryPage() {
     const firestore = useFirestore();
     const { activeYear } = useAcademicYear();
@@ -41,12 +66,27 @@ export default function TeacherAttendanceHistoryPage() {
     const [nig, setNig] = useState<string | null>(null);
     const [fromDate, setFromDate] = useState<string>("");
     const [toDate, setToDate] = useState<string>("");
+    
+    // Quick month selection
+    const [selectedMonth, setSelectedMonth] = useState<string>(String(getMonth(new Date())));
+    const [selectedYear, setSelectedYear] = useState<string>(String(getYear(new Date())));
 
     useEffect(() => {
         setNig(sessionStorage.getItem('teacherNig'));
-        setFromDate(format(startOfMonth(new Date()), 'yyyy-MM-dd'));
-        setToDate(format(endOfMonth(new Date()), 'yyyy-MM-dd'));
+        const start = format(startOfMonth(new Date()), 'yyyy-MM-dd');
+        const end = format(endOfMonth(new Date()), 'yyyy-MM-dd');
+        setFromDate(start);
+        setToDate(end);
     }, []);
+
+    // Effect to update dates when month/year changes
+    useEffect(() => {
+        if (selectedMonth !== "" && selectedYear !== "") {
+            const baseDate = setYear(setMonth(new Date(), Number(selectedMonth)), Number(selectedYear));
+            setFromDate(format(startOfMonth(baseDate), 'yyyy-MM-dd'));
+            setToDate(format(endOfMonth(baseDate), 'yyyy-MM-dd'));
+        }
+    }, [selectedMonth, selectedYear]);
     
     const daysInRange = useMemo(() => {
         if (fromDate && toDate) {
@@ -105,6 +145,7 @@ export default function TeacherAttendanceHistoryPage() {
         let sakit = 0;
         let izin = 0;
         let alpa = 0;
+        let libur = 0;
         let totalScheduled = 0;
 
         daysInRange.forEach(day => {
@@ -123,31 +164,50 @@ export default function TeacherAttendanceHistoryPage() {
             else if (status === 'Sakit') sakit++;
             else if (status === 'Izin') izin++;
             else if (status === 'Alpa') alpa++;
+            else if (status === 'Libur') libur++;
         });
 
-        return { hadir, sakit, izin, alpa, totalScheduled };
+        const attendanceRate = totalScheduled > 0 ? Math.round((hadir / totalScheduled) * 100) : 0;
+
+        return { hadir, sakit, izin, alpa, libur, totalScheduled, attendanceRate };
     }, [daysInRange, attendanceMap, scheduledTeacherIdsByDay, nig]);
 
     const isLoading = loadingAttendance || !fromDate || !nig;
 
     return (
         <div className="space-y-4 pb-10">
+            {/* Filter Card */}
             <Card className="sticky top-[106px] z-20 border-none shadow-lg bg-primary text-primary-foreground">
-                <CardHeader className="p-4 flex flex-row flex-wrap items-center justify-between gap-4">
-                    <div className="flex items-center gap-2 flex-1 max-w-sm">
-                        <Input 
-                            type="date" 
-                            value={fromDate} 
-                            onChange={(e) => setFromDate(e.target.value)} 
-                            className="h-8 text-xs bg-white/10 border-white/20 text-white focus:ring-white/30"
-                        />
-                        <span className="text-white/40">-</span>
-                        <Input 
-                            type="date" 
-                            value={toDate} 
-                            onChange={(e) => setToDate(e.target.value)} 
-                            className="h-8 text-xs bg-white/10 border-white/20 text-white focus:ring-white/30"
-                        />
+                <CardHeader className="p-4 flex flex-col gap-3">
+                    <div className="flex flex-row items-center justify-between">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/60">Filter Periode</p>
+                        <div className="flex items-center gap-1 text-[10px] font-mono opacity-40">
+                             <span>{fromDate}</span>
+                             <span>/</span>
+                             <span>{toDate}</span>
+                        </div>
+                    </div>
+                    <div className="flex flex-row gap-2">
+                        <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                            <SelectTrigger className="flex-1 h-9 text-xs bg-white/10 border-white/20 text-white focus:ring-white/30">
+                                <SelectValue placeholder="Pilih Bulan" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {MONTHS.map(m => (
+                                    <SelectItem key={m.id} value={String(m.id)}>{m.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <Select value={selectedYear} onValueChange={setSelectedYear}>
+                            <SelectTrigger className="w-[100px] h-9 text-xs bg-white/10 border-white/20 text-white focus:ring-white/30">
+                                <SelectValue placeholder="Tahun" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {[2024, 2025, 2026].map(y => (
+                                    <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
                 </CardHeader>
             </Card>
@@ -179,7 +239,7 @@ export default function TeacherAttendanceHistoryPage() {
                                 <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl flex items-start gap-3">
                                     <Info className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
                                     <p className="text-[11px] text-blue-700 leading-relaxed">
-                                        Halaman ini menampilkan riwayat kehadiran Anda berdasarkan jadwal mengajar jam pertama atau verifikasi manual oleh Admin.
+                                        Data di bawah adalah log harian mengajar Anda. Status "Belum Diabsen" berarti belum ada verifikasi kehadiran oleh sistem atau Admin.
                                     </p>
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -190,6 +250,7 @@ export default function TeacherAttendanceHistoryPage() {
                                         const dayKey = dayMapping[day.getDay()];
                                         const isScheduled = dayKey ? scheduledTeacherIdsByDay.get(dayKey)?.has(nig || "") : false;
 
+                                        // Skip displaying days that are neither scheduled nor have an existing attendance record
                                         if (!isScheduled && !isFri && !status) return null;
 
                                         return (
@@ -202,7 +263,7 @@ export default function TeacherAttendanceHistoryPage() {
                                                             isFri ? "bg-blue-100 text-blue-700" :
                                                             status === 'Hadir' ? "bg-green-100 text-green-700" :
                                                             status === 'Alpa' ? "bg-red-100 text-red-700" :
-                                                            status ? "bg-orange-100 text-orange-700" : "bg-muted text-muted-foreground/60"
+                                                            status ? getStatusColor(status) : "bg-muted text-muted-foreground/60"
                                                         )}>
                                                             {isFri ? 'Libur Jum\'at' : status || 'Belum Diabsen'}
                                                         </span>
@@ -211,6 +272,7 @@ export default function TeacherAttendanceHistoryPage() {
                                                         )}
                                                     </div>
                                                 </div>
+                                                {!isFri && status === 'Hadir' && <CheckCircle2 className="h-4 w-4 text-green-500" />}
                                             </div>
                                         );
                                     })}
@@ -224,7 +286,7 @@ export default function TeacherAttendanceHistoryPage() {
                             <div className="max-w-md mx-auto space-y-8 py-4">
                                 <div className="text-center space-y-1">
                                     <h3 className="text-sm font-bold uppercase tracking-widest text-primary">Rekapitulasi Kehadiran</h3>
-                                    <p className="text-[10px] text-muted-foreground">Tahun Ajaran {activeYear}</p>
+                                    <p className="text-[10px] text-muted-foreground">Periode: {MONTHS[Number(selectedMonth)].name} {selectedYear}</p>
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4">
@@ -247,25 +309,44 @@ export default function TeacherAttendanceHistoryPage() {
                                 </div>
 
                                 <Card className="border-none shadow-sm bg-muted/20 rounded-[28px] overflow-hidden">
-                                    <CardContent className="p-6 space-y-3">
-                                        <div className="flex justify-between items-center text-[11px]">
-                                            <span className="text-muted-foreground">Total Jadwal Mengajar</span>
-                                            <span className="font-bold">{summary.totalScheduled} Hari</span>
+                                    <CardContent className="p-6 space-y-5">
+                                        <div className="space-y-3">
+                                            <div className="flex justify-between items-center text-[11px]">
+                                                <span className="text-muted-foreground font-medium uppercase tracking-wider">Tingkat Kehadiran</span>
+                                                <span className="font-bold text-primary">{summary.attendanceRate}%</span>
+                                            </div>
+                                            <Progress value={summary.attendanceRate} className="h-2" />
                                         </div>
-                                        <div className="flex justify-between items-center text-[11px]">
-                                            <span className="text-muted-foreground">Persentase Kehadiran</span>
-                                            <span className="font-bold text-primary">
-                                                {summary.totalScheduled > 0 
-                                                    ? Math.round((summary.hadir / summary.totalScheduled) * 100) 
-                                                    : 0}%
-                                            </span>
+
+                                        <div className="space-y-2 border-t border-muted-foreground/10 pt-4">
+                                            <div className="flex justify-between items-center text-[11px]">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                                                    <span className="text-muted-foreground">Jadwal Seharusnya</span>
+                                                </div>
+                                                <span className="font-bold">{summary.totalScheduled} Hari</span>
+                                            </div>
+                                            <div className="flex justify-between items-center text-[11px]">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                                                    <span className="text-muted-foreground">Total Hari Hadir</span>
+                                                </div>
+                                                <span className="font-bold">{summary.hadir} Hari</span>
+                                            </div>
+                                            <div className="flex justify-between items-center text-[11px]">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-purple-500" />
+                                                    <span className="text-muted-foreground">Total Hari Libur</span>
+                                                </div>
+                                                <span className="font-bold">{summary.libur} Hari</span>
+                                            </div>
                                         </div>
                                     </CardContent>
                                 </Card>
 
-                                <div className="flex items-center gap-2 justify-center text-[10px] text-muted-foreground italic px-6 text-center">
-                                    <AlertCircle className="h-3 w-3" />
-                                    Data ini digunakan sebagai salah satu dasar evaluasi kinerja pendidik.
+                                <div className="flex items-center gap-3 justify-center p-4 rounded-2xl bg-primary/5 text-[10px] text-primary font-medium italic border border-primary/10">
+                                    <TrendingUp className="h-4 w-4" />
+                                    Data ini dihitung berdasarkan jadwal aktif Tahun Ajaran {activeYear}.
                                 </div>
                             </div>
                         ) : (
@@ -277,3 +358,4 @@ export default function TeacherAttendanceHistoryPage() {
         </div>
     );
 }
+
