@@ -70,7 +70,7 @@ export function LoginForm() {
 
   const adminForm = useForm<z.infer<typeof adminSchema>>({
     resolver: zodResolver(adminSchema),
-    defaultValues: { email: "mdibnuahmad159@gmail.com", password: "" },
+    defaultValues: { email: "", password: "" },
   });
 
   const parentForm = useForm<z.infer<typeof parentSchema>>({
@@ -292,7 +292,7 @@ export function LoginForm() {
                      <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Email Admin</FormLabel>
                      <div className="relative">
                        <Shield className="absolute left-4 top-3.5 h-5 w-5 text-muted-foreground/40" />
-                       <FormControl><Input type="email" placeholder="admin@madrasah.com" {...field} className="h-12 pl-12 rounded-2xl bg-muted/30 border-muted/50 focus-visible:ring-primary/20" /></FormControl>
+                       <FormControl><Input type="email" placeholder="m***@gmail.com" {...field} className="h-12 pl-12 rounded-2xl bg-muted/30 border-muted/50 focus-visible:ring-primary/20" /></FormControl>
                      </div>
                      <FormMessage />
                    </FormItem>
