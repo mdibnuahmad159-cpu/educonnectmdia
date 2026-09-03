@@ -11,14 +11,6 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
     AlertDialog,
     AlertDialogAction,
     AlertDialogCancel,
@@ -42,8 +34,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, Loader2, FileDown, Printer, FileSpreadsheet, FileText, PlusCircle, Edit, FileUp, Upload, Download, Search } from "lucide-react";
+import { Trash2, Loader2, FileDown, Printer, FileSpreadsheet, FileText, PlusCircle, Edit, FileUp, Upload, Download, Search, GraduationCap } from "lucide-react";
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -385,66 +378,50 @@ export default function AlumniPage() {
                 </CardHeader>
             </Card>
 
-            <CardContent className="px-0 pt-2">
-                <div className="overflow-x-auto border rounded-xl bg-card">
-                    <Table>
-                        <TableHeader>
-                            <TableRow className="bg-muted/30">
-                                <TableHead className="w-[40px] px-4 font-bold text-[10px] uppercase">No.</TableHead>
-                                <TableHead className="font-bold text-[10px] uppercase">Nama</TableHead>
-                                <TableHead className="font-bold text-[10px] uppercase">NIS</TableHead>
-                                <TableHead className="font-bold text-[10px] uppercase">Tahun Lulus</TableHead>
-                                <TableHead className="font-bold text-[10px] uppercase">Alamat</TableHead>
-                                <TableHead className="font-bold text-[10px] uppercase">No. WA</TableHead>
-                                <TableHead className="text-right w-[80px] font-bold text-[10px] uppercase px-4">Aksi</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {loading ? (
-                                <TableRow>
-                                    <TableCell colSpan={7} className="text-center h-24">
-                                        <div className="flex justify-center items-center gap-2 text-muted-foreground">
-                                            <Loader2 className="h-4 w-4 animate-spin"/>
-                                            <span>Memuat data...</span>
+            <div className="pt-2">
+                {loading ? (
+                    <div className="flex flex-col items-center justify-center py-20 gap-3 text-muted-foreground">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary/40"/>
+                        <span className="text-xs font-medium uppercase tracking-widest">Memuat data alumni...</span>
+                    </div>
+                ) : filteredData.length > 0 ? (
+                    <div className="space-y-3">
+                        {filteredData.map((item) => (
+                            <div key={item.id} className="flex items-center justify-between p-3 rounded-xl bg-card border shadow-sm hover:border-primary/20 transition-all group">
+                                <div className="flex items-center gap-4">
+                                    <Avatar className="h-10 w-10 border-2 border-primary/5 group-hover:border-primary/20 transition-all">
+                                        <AvatarFallback className="bg-primary/5 text-primary text-sm font-bold">{item.name.charAt(0)}</AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                        <p className="text-[12px] font-bold leading-tight uppercase text-foreground group-hover:text-primary transition-colors">{item.name}</p>
+                                        <div className="flex items-center gap-2 mt-0.5">
+                                            <p className="text-[10px] text-muted-foreground font-mono bg-muted/50 px-1.5 rounded">
+                                                NIS: {item.nis.replace('MDIA', '')}
+                                            </p>
+                                            <span className="text-[10px] text-muted-foreground">•</span>
+                                            <p className="text-[10px] text-primary/70 font-medium italic">Lulus TA {item.tahunLulus}</p>
                                         </div>
-                                    </TableCell>
-                                </TableRow>
-                            ) : filteredData.length > 0 ? (
-                                filteredData.map((item, index) => (
-                                <TableRow key={item.id} className="hover:bg-muted/10 transition-colors">
-                                    <TableCell className="px-4 text-[11px]">{index + 1}</TableCell>
-                                    <TableCell className="font-bold text-[11px] uppercase">{item.name}</TableCell>
-                                    <TableCell className="text-[11px] font-mono">
-                                        <span className={item.nis.startsWith('AL') ? "text-muted-foreground italic text-[10px]" : ""}>
-                                            {item.nis}
-                                        </span>
-                                    </TableCell>
-                                    <TableCell className="text-[11px]">{item.tahunLulus}</TableCell>
-                                    <TableCell className="text-[11px] truncate max-w-[150px]">{item.address || '-'}</TableCell>
-                                    <TableCell className="text-[11px]">{item.noWa || '-'}</TableCell>
-                                    <TableCell className="text-right px-4">
-                                        <div className="flex justify-end gap-1">
-                                            <Button variant="ghost" size="icon" className="h-7 w-7 text-primary" onClick={() => handleEdit(item)}>
-                                                <Edit className="h-4 w-4" />
-                                            </Button>
-                                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDelete(item.id)}>
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                                ))
-                            ) : (
-                                <TableRow>
-                                    <TableCell colSpan={7} className="h-24 text-center text-xs text-muted-foreground italic">
-                                        Belum ada data alumni untuk filter ini.
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </div>
-            </CardContent>
+                                    </div>
+                                </div>
+                                
+                                <div className="flex items-center gap-1">
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-primary" onClick={() => handleEdit(item)}>
+                                        <Edit className="h-4 w-4" />
+                                    </Button>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(item.id)}>
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="py-20 text-center text-muted-foreground border-2 border-dashed rounded-2xl bg-muted/5">
+                        <GraduationCap className="h-10 w-10 mx-auto mb-3 opacity-10" />
+                        <p className="text-sm font-medium">Belum ada data alumni untuk filter ini.</p>
+                    </div>
+                )}
+            </div>
 
             <AlumniForm 
                 isOpen={isFormOpen}
@@ -454,16 +431,16 @@ export default function AlumniPage() {
             />
             
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-                <AlertDialogContent>
+                <AlertDialogContent className="rounded-[28px]">
                 <AlertDialogHeader>
-                    <AlertDialogTitle>Anda yakin?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        Tindakan ini tidak dapat dibatalkan. Ini akan menghapus data alumni secara permanen.
+                    <AlertDialogTitle className="text-sm font-bold uppercase tracking-tight">Hapus Alumni?</AlertDialogTitle>
+                    <AlertDialogDescription className="text-xs">
+                        Tindakan ini akan menghapus data alumni secara permanen dari sistem.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                    <AlertDialogCancel>Batal</AlertDialogCancel>
-                    <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">Hapus</AlertDialogAction>
+                    <AlertDialogCancel className="rounded-full h-9 text-xs">Batal</AlertDialogCancel>
+                    <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90 text-white rounded-full h-9 text-xs">Ya, Hapus</AlertDialogAction>
                 </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
