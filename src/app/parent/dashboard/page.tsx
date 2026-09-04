@@ -260,7 +260,7 @@ export default function ParentDashboardPage() {
                     <div className="text-sm font-bold truncate">Rp {sppStats.totalPaid.toLocaleString()}</div>
                     <p className="text-[7px] font-bold mt-0.5 truncate uppercase">Tunggakan: Rp {sppStats.totalArrears.toLocaleString()}</p>
                 </CardContent>
-            </div >
+            </Card>
         </div>
 
         {/* Today's Attendance (Compact) */}
