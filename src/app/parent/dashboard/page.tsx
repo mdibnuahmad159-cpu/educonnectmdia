@@ -183,6 +183,23 @@ export default function ParentDashboardPage() {
     return <div className="flex h-[60vh] w-full items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
   }
 
+  if (studentError || !student) {
+      return (
+          <div className="p-8 flex flex-col items-center justify-center text-center gap-4 bg-destructive/5 rounded-[32px] border border-destructive/20 mt-10">
+             <div className="p-4 bg-destructive/10 rounded-full">
+                <AlertTriangle className="h-8 w-8 text-destructive" />
+             </div>
+             <div className="space-y-1">
+                <p className="font-bold text-destructive">Data Santri Tidak Ditemukan</p>
+                <p className="text-xs text-muted-foreground">Profil santri tidak ditemukan di sistem. Harap periksa kembali NIS Anda atau hubungi Admin Madrasah.</p>
+             </div>
+             <Button variant="outline" className="rounded-full h-10 px-6 mt-2" onClick={() => window.location.reload()}>
+                Muat Ulang
+             </Button>
+          </div>
+      );
+  }
+
   return (
     <div className="space-y-3 pb-8">
         {/* Profile Card (Compact) */}
@@ -190,7 +207,7 @@ export default function ParentDashboardPage() {
             <CardContent className="p-3 flex items-center gap-3">
                 <Avatar className="h-12 w-12 border border-white/20">
                     <AvatarImage src={student.avatarUrl} className="object-cover" />
-                    <AvatarFallback className="bg-white/10 text-lg">{student.name.charAt(0)}</AvatarFallback>
+                    <AvatarFallback className="bg-white/10 text-lg">{student.name?.charAt(0) || "?"}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-start">
@@ -293,7 +310,7 @@ export default function ParentDashboardPage() {
                 <div className="bg-primary/5 p-4 flex flex-col items-center text-center">
                     <Avatar className="h-16 w-16 border-2 border-white mb-2">
                         <AvatarImage src={student.avatarUrl} className="object-cover" />
-                        <AvatarFallback>{student.name.charAt(0)}</AvatarFallback>
+                        <AvatarFallback>{student.name?.charAt(0) || "?"}</AvatarFallback>
                     </Avatar>
                     <h3 className="text-sm font-bold uppercase text-primary leading-tight">{student.name}</h3>
                     <p className="text-[10px] opacity-60">NIS: {student.nis}</p>
