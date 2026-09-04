@@ -29,7 +29,8 @@ import {
     X,
     ArrowRightCircle,
     PiggyBank,
-    ReceiptText
+    ReceiptText,
+    WifiOff
 } from "lucide-react";
 import {
   Dialog,
@@ -183,15 +184,23 @@ export default function ParentDashboardPage() {
     return <div className="flex h-[60vh] w-full items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
   }
 
+  const isOffline = studentError?.message?.toLowerCase().includes('offline');
+
   if (studentError || !student) {
       return (
           <div className="p-8 flex flex-col items-center justify-center text-center gap-4 bg-destructive/5 rounded-[32px] border border-destructive/20 mt-10">
              <div className="p-4 bg-destructive/10 rounded-full">
-                <AlertTriangle className="h-8 w-8 text-destructive" />
+                {isOffline ? <WifiOff className="h-8 w-8 text-destructive" /> : <AlertTriangle className="h-8 w-8 text-destructive" />}
              </div>
              <div className="space-y-1">
-                <p className="font-bold text-destructive">Data Santri Tidak Ditemukan</p>
-                <p className="text-xs text-muted-foreground">Profil santri tidak ditemukan di sistem. Harap periksa kembali NIS Anda atau hubungi Admin Madrasah.</p>
+                <p className="font-bold text-destructive">
+                    {isOffline ? "Koneksi Terputus" : "Data Santri Tidak Ditemukan"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                    {isOffline 
+                        ? "Gagal memuat data karena Anda sedang offline. Silakan periksa koneksi internet Anda." 
+                        : "Profil santri tidak ditemukan di sistem. Harap periksa kembali NIS Anda atau hubungi Admin Madrasah."}
+                </p>
              </div>
              <Button variant="outline" className="rounded-full h-10 px-6 mt-2" onClick={() => window.location.reload()}>
                 Muat Ulang
@@ -206,16 +215,16 @@ export default function ParentDashboardPage() {
         <Card className="border-none shadow-sm bg-primary text-primary-foreground">
             <CardContent className="p-3 flex items-center gap-3">
                 <Avatar className="h-12 w-12 border border-white/20">
-                    <AvatarImage src={student.avatarUrl} className="object-cover" />
-                    <AvatarFallback className="bg-white/10 text-lg">{student.name?.charAt(0) || "?"}</AvatarFallback>
+                    <AvatarImage src={student?.avatarUrl} className="object-cover" />
+                    <AvatarFallback className="bg-white/10 text-lg">{student?.name?.charAt(0) || "?"}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-start">
                         <div className="min-w-0 pr-1">
-                            <h2 className="text-sm font-bold truncate leading-tight uppercase">{student.name}</h2>
+                            <h2 className="text-sm font-bold truncate leading-tight uppercase">{student?.name}</h2>
                             <div className="flex items-center gap-2 mt-0.5 opacity-70">
-                                <span className="text-[8px] font-bold bg-white/20 px-1.5 py-0.5 rounded tracking-tighter">NIS: {student.nis.replace('MDIA', '')}</span>
-                                <span className="text-[8px] font-bold bg-white/20 px-1.5 py-0.5 rounded tracking-tighter">KLAS: {student.kelas}</span>
+                                <span className="text-[8px] font-bold bg-white/20 px-1.5 py-0.5 rounded tracking-tighter">NIS: {student?.nis?.replace('MDIA', '')}</span>
+                                <span className="text-[8px] font-bold bg-white/20 px-1.5 py-0.5 rounded tracking-tighter">KLAS: {student?.kelas}</span>
                             </div>
                         </div>
                         <Button 
@@ -251,7 +260,7 @@ export default function ParentDashboardPage() {
                     <div className="text-sm font-bold truncate">Rp {sppStats.totalPaid.toLocaleString()}</div>
                     <p className="text-[7px] font-bold mt-0.5 truncate uppercase">Tunggakan: Rp {sppStats.totalArrears.toLocaleString()}</p>
                 </CardContent>
-            </Card>
+            </div >
         </div>
 
         {/* Today's Attendance (Compact) */}
@@ -309,20 +318,20 @@ export default function ParentDashboardPage() {
             <DialogContent className="sm:max-w-xs p-0 overflow-hidden rounded-[24px]">
                 <div className="bg-primary/5 p-4 flex flex-col items-center text-center">
                     <Avatar className="h-16 w-16 border-2 border-white mb-2">
-                        <AvatarImage src={student.avatarUrl} className="object-cover" />
-                        <AvatarFallback>{student.name?.charAt(0) || "?"}</AvatarFallback>
+                        <AvatarImage src={student?.avatarUrl} className="object-cover" />
+                        <AvatarFallback>{student?.name?.charAt(0) || "?"}</AvatarFallback>
                     </Avatar>
-                    <h3 className="text-sm font-bold uppercase text-primary leading-tight">{student.name}</h3>
-                    <p className="text-[10px] opacity-60">NIS: {student.nis}</p>
+                    <h3 className="text-sm font-bold uppercase text-primary leading-tight">{student?.name}</h3>
+                    <p className="text-[10px] opacity-60">NIS: {student?.nis}</p>
                 </div>
                 <ScrollArea className="h-[250px] px-4">
                     <div className="py-2">
-                        <InfoField label="NIK" value={student.nik || ""} icon={Fingerprint} />
-                        <InfoField label="Jenis Kelamin" value={student.gender} icon={Baby} />
-                        <InfoField label="TTL" value={`${student.tempatLahir || '-'}, ${student.dateOfBirth}`} icon={Calendar} />
-                        <InfoField label="Ayah" value={student.namaAyah || ""} icon={HeartHandshake} />
-                        <InfoField label="Ibu" value={student.namaIbu || ""} icon={HeartHandshake} />
-                        <InfoField label="WhatsApp Wali" value={student.noWa || ""} icon={Phone} />
+                        <InfoField label="NIK" value={student?.nik || ""} icon={Fingerprint} />
+                        <InfoField label="Jenis Kelamin" value={student?.gender} icon={Baby} />
+                        <InfoField label="TTL" value={`${student?.tempatLahir || '-'}, ${student?.dateOfBirth}`} icon={Calendar} />
+                        <InfoField label="Ayah" value={student?.namaAyah || ""} icon={HeartHandshake} />
+                        <InfoField label="Ibu" value={student?.namaIbu || ""} icon={HeartHandshake} />
+                        <InfoField label="WhatsApp Wali" value={student?.noWa || ""} icon={Phone} />
                     </div>
                 </ScrollArea>
                 <div className="p-3 border-t bg-muted/30">

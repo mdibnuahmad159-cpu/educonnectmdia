@@ -26,7 +26,8 @@ import {
     Phone,
     MapPin,
     GraduationCap,
-    ArrowRightCircle
+    ArrowRightCircle,
+    WifiOff
 } from "lucide-react";
 import {
   Dialog,
@@ -252,15 +253,23 @@ export default function TeacherDashboardPage() {
     return <div className="flex h-[60vh] w-full items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
   }
 
+  const isOffline = teacherError?.message?.toLowerCase().includes('offline');
+
   if (teacherError || !teacher) {
       return (
           <div className="p-8 flex flex-col items-center justify-center text-center gap-4 bg-destructive/5 rounded-[32px] border border-destructive/20 mt-10">
              <div className="p-4 bg-destructive/10 rounded-full">
-                <AlertTriangle className="h-8 w-8 text-destructive" />
+                {isOffline ? <WifiOff className="h-8 w-8 text-destructive" /> : <AlertTriangle className="h-8 w-8 text-destructive" />}
              </div>
              <div className="space-y-1">
-                <p className="font-bold text-destructive">Data Guru Tidak Ditemukan</p>
-                <p className="text-xs text-muted-foreground">Profil Anda tidak terdaftar di sistem atau terjadi kendala saat memuat data. Silakan hubungi Admin Madrasah.</p>
+                <p className="font-bold text-destructive">
+                    {isOffline ? "Koneksi Terputus" : "Data Guru Tidak Ditemukan"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                    {isOffline 
+                        ? "Gagal menghubungi server karena Anda sedang offline. Periksa koneksi internet Anda." 
+                        : "Profil Anda tidak terdaftar di sistem atau terjadi kendala saat memuat data. Silakan hubungi Admin Madrasah."}
+                </p>
              </div>
              <Button variant="outline" className="rounded-full h-10 px-6 mt-2" onClick={() => window.location.reload()}>
                 Muat Ulang Halaman
@@ -275,14 +284,14 @@ export default function TeacherDashboardPage() {
         <Card className="border-none shadow-sm bg-primary text-primary-foreground">
             <CardContent className="p-3 flex items-center gap-3">
                 <Avatar className="h-12 w-12 border border-white/20">
-                    <AvatarImage src={teacher.avatarUrl} className="object-cover" />
-                    <AvatarFallback className="bg-white/10 text-lg">{teacher.name?.charAt(0) || "?"}</AvatarFallback>
+                    <AvatarImage src={teacher?.avatarUrl} className="object-cover" />
+                    <AvatarFallback className="bg-white/10 text-lg">{teacher?.name?.charAt(0) || "?"}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-center">
                         <div className="min-w-0 pr-1">
-                            <h2 className="text-sm font-bold truncate leading-tight uppercase">{teacher.name}</h2>
-                            <p className="text-[10px] opacity-70 truncate">{teacher.jabatan || 'Guru'}</p>
+                            <h2 className="text-sm font-bold truncate leading-tight uppercase">{teacher?.name}</h2>
+                            <p className="text-[10px] opacity-70 truncate">{teacher?.jabatan || 'Guru'}</p>
                         </div>
                         <Button 
                             variant="ghost" 
@@ -404,21 +413,21 @@ export default function TeacherDashboardPage() {
             <DialogContent className="sm:max-w-xs p-0 overflow-hidden rounded-[24px]">
                 <div className="bg-primary/5 p-4 flex flex-col items-center text-center">
                     <Avatar className="h-16 w-16 border-2 border-white mb-2">
-                        <AvatarImage src={teacher.avatarUrl} className="object-cover" />
-                        <AvatarFallback>{teacher.name?.charAt(0) || "?"}</AvatarFallback>
+                        <AvatarImage src={teacher?.avatarUrl} className="object-cover" />
+                        <AvatarFallback>{teacher?.name?.charAt(0) || "?"}</AvatarFallback>
                     </Avatar>
-                    <h3 className="text-sm font-bold uppercase text-primary leading-tight">{teacher.name}</h3>
-                    <p className="text-[10px] opacity-60">NIG: {teacher.nig}</p>
+                    <h3 className="text-sm font-bold uppercase text-primary leading-tight">{teacher?.name}</h3>
+                    <p className="text-[10px] opacity-60">NIG: {teacher?.nig}</p>
                 </div>
                 <ScrollArea className="h-[250px] px-4">
                     <div className="py-2">
-                        <InfoField label="NIK" value={teacher.nik || ""} icon={Fingerprint} />
-                        <InfoField label="WhatsApp" value={teacher.noWa || ""} icon={Phone} />
-                        <InfoField label="Alamat" value={teacher.alamat || ""} icon={MapPin} />
+                        <InfoField label="NIK" value={teacher?.nik || ""} icon={Fingerprint} />
+                        <InfoField label="WhatsApp" value={teacher?.noWa || ""} icon={Phone} />
+                        <InfoField label="Alamat" value={teacher?.alamat || ""} icon={MapPin} />
                     </div>
                     {qrDataUrl && <div className="p-3 bg-muted/20 rounded-xl flex flex-col items-center gap-1 my-3">
                         <img src={qrDataUrl} alt="QR" className="w-24 h-24" />
-                        <span className="text-[8px] font-mono opacity-40">{teacher.nig}</span>
+                        <span className="text-[8px] font-mono opacity-40">{teacher?.nig}</span>
                     </div>}
                 </ScrollArea>
                 <div className="p-3 border-t bg-muted/30">

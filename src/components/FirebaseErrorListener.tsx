@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -15,10 +14,15 @@ export function FirebaseErrorListener() {
 
   useEffect(() => {
     const handleError = (error: FirestorePermissionError) => {
-      // If it's an index error, we don't throw it globally so the component can show the link
-      if (error.message.toLowerCase().includes('requires an index') || 
-          error.message.toLowerCase().includes('index')) {
-        console.warn('Firestore Index Required:', error.message);
+      const msg = error.message.toLowerCase();
+      
+      // If it's an index error or offline error, we don't throw it globally 
+      // so the local component can show a specific UI or link
+      if (msg.includes('requires an index') || 
+          msg.includes('index') || 
+          msg.includes('offline') ||
+          msg.includes('network')) {
+        console.warn('Firestore controlled error:', error.message);
         return;
       }
       
