@@ -120,7 +120,7 @@ export default function TeacherLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-background overflow-x-hidden">
+    <div className="flex flex-col min-h-screen bg-background">
       <header className="sticky top-0 z-50 w-full bg-primary text-primary-foreground shadow-md">
         <div className="flex flex-col w-full">
           <div className="flex h-12 items-center justify-between gap-4 px-4 border-b border-white/5">
@@ -191,7 +191,7 @@ export default function TeacherLayout({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <main className="flex-1 p-2 pb-20 sm:px-4 relative z-10">
+      <main className="flex-1 p-2 pb-24 sm:px-4 relative z-10">
           {children}
       </main>
       

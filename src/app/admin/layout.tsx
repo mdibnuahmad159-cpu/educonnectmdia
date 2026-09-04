@@ -98,10 +98,10 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-background overflow-x-hidden">
+    <div className="flex flex-col min-h-screen bg-background">
       <header className="sticky top-0 z-50 w-full bg-primary text-primary-foreground shadow-md">
         <div className="flex flex-col w-full">
-          {/* Top Row: Identity & Year (Slightly smaller) */}
+          {/* Top Row: Identity & Year */}
           <div className="flex h-12 items-center justify-between gap-4 px-4 border-b border-white/5">
             <div className="flex-1 flex justify-start">
               <div className="flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 bg-white/10 rounded-full border border-white/10 text-white">
@@ -135,7 +135,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             </div>
           </div>
 
-          {/* Bottom Row: Title (Centered) & Actions (Tighter) */}
+          {/* Bottom Row: Title (Centered) & Actions */}
           <div className="px-3 py-1 flex items-center justify-between min-h-[40px]">
               <div className="w-10 flex justify-start">
                   {!isDashboard && (
@@ -175,7 +175,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <main className="flex-1 p-2 pb-20 sm:px-4 relative z-10">
+      <main className="flex-1 p-2 pb-24 sm:px-4 relative z-10">
           {children}
       </main>
       
