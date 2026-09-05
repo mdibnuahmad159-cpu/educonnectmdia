@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -48,7 +48,8 @@ import {
   X,
   Camera,
   FileDown,
-  Contact
+  Contact,
+  ImageDown
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -147,6 +148,8 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isExportingImage, setIsExportingImage] = useState(false);
+  const idCardRef = useRef<HTMLDivElement>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -391,6 +394,32 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
       safePrint(idCardHtml);
   };
 
+  const handleDownloadIDCardImage = async () => {
+    if (!idCardRef.current || !teacher) return;
+    setIsExportingImage(true);
+    try {
+        const html2canvas = (await import('html2canvas')).default;
+        const canvas = await html2canvas(idCardRef.current, {
+            scale: 4, // Ultra high resolution
+            useCORS: true,
+            backgroundColor: null,
+            logging: false,
+        });
+        
+        const link = document.createElement('a');
+        link.download = `ID_Card_${teacher.name.replace(/\s+/g, '_')}.png`;
+        link.href = canvas.toDataURL('image/png', 1.0);
+        link.click();
+        
+        toast({ title: "Berhasil Mengunduh", description: "ID Card telah disimpan sebagai gambar." });
+    } catch (e) {
+        console.error("Image export failed", e);
+        toast({ variant: "destructive", title: "Gagal Mengunduh Gambar" });
+    } finally {
+        setIsExportingImage(false);
+    }
+  };
+
   const handleExportPdf = () => {
     if (!teacher) return;
     const doc = new jsPDF();
@@ -599,6 +628,17 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
                   <Button type="button" variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-primary/5 text-primary" title="Cetak ID Card" onClick={handlePrintIDCard}>
                       <Contact className="h-4 w-4" />
                   </Button>
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-10 w-10 rounded-full hover:bg-primary/5 text-primary" 
+                    title="Unduh Gambar ID Card" 
+                    onClick={handleDownloadIDCardImage}
+                    disabled={isExportingImage}
+                  >
+                      {isExportingImage ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageDown className="h-4 w-4" />}
+                  </Button>
                   <Button type="button" variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-primary/5 text-primary" title="Export PDF" onClick={handleExportPdf}>
                       <FileDown className="h-4 w-4" />
                   </Button>
@@ -614,6 +654,47 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
             </DialogFooter>
           </div>
         )}
+        
+        {/* Hidden Template for Image Export */}
+        <div className="fixed -left-[2000px] top-0 pointer-events-none">
+            <div 
+                ref={idCardRef}
+                className="w-[54mm] h-[86mm] bg-white flex flex-col relative overflow-hidden"
+                style={{ width: '54mm', height: '86mm' }}
+            >
+                <div className="bg-[#004D40] text-white flex flex-col items-center pt-[5mm] h-[60mm] relative">
+                    <div className="w-[12mm] h-[3mm] bg-[#002D20]/30 rounded-[2mm] mb-[3mm]"></div>
+                    <div className="text-[7.5pt] font-bold uppercase tracking-[0.5pt] text-center w-[90%] mb-[1mm] leading-[1.1]">
+                        {profile?.namaMadrasah || 'MADRASAH DINIYAH IBNU AHMAD'}
+                    </div>
+                    <div className="text-[6.5pt] opacity-80 uppercase mb-[4mm]">Kartu Identitas Guru</div>
+                    
+                    <div className="w-[32mm] h-[32mm] bg-[#f0f0f0] border-[1.5mm] border-white shadow-md overflow-hidden flex items-center justify-center mb-[4mm]">
+                        <img 
+                          src={teacher.avatarUrl || 'https://placehold.co/400x400?text=FOTO'} 
+                          className="w-full h-full object-cover" 
+                          crossOrigin="anonymous" 
+                          alt=""
+                        />
+                    </div>
+                    
+                    <div className="text-[11.5pt] font-bold uppercase text-center w-[90%] leading-[1.2] mb-[1mm]">
+                        {teacher.name}
+                    </div>
+                    <div className="text-[8pt] opacity-90 uppercase tracking-[0.5pt]">
+                        {teacher.jabatan || 'Guru Madrasah'}
+                    </div>
+                </div>
+                <div className="flex-1 bg-white flex flex-col items-center justify-center p-[2mm]">
+                    <div className="w-[18mm] h-[18mm] mb-[1mm]">
+                        <img src={qrDataUrl} className="w-full h-full" alt="" />
+                    </div>
+                    <div className="text-[7.5pt] font-bold text-[#004D40] font-mono uppercase tracking-tight">
+                        {teacher.nig}
+                    </div>
+                </div>
+            </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
