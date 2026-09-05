@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -48,8 +48,7 @@ import {
   X,
   Camera,
   FileDown,
-  Contact,
-  ImageDown
+  Contact
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -148,8 +147,6 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isExportingImage, setIsExportingImage] = useState(false);
-  const idCardRef = useRef<HTMLDivElement>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -256,14 +253,16 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
             <head>
                 <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&display=swap" rel="stylesheet">
                 <style>
-                    @page { size: 54mm 86mm; margin: 0; }
+                    @page { size: portrait; margin: 0; }
                     body { 
                         margin: 0; 
                         padding: 0; 
                         font-family: 'PT Sans', sans-serif; 
-                        width: 54mm; 
-                        height: 86mm; 
-                        overflow: hidden;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        height: 100vh;
+                        background: #f8f9fa;
                         -webkit-print-color-adjust: exact;
                     }
                     .card {
@@ -273,28 +272,22 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
                         background: #ffffff;
                         display: flex;
                         flex-direction: column;
+                        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+                        border-radius: 2mm;
+                        overflow: hidden;
                     }
                     .top-section {
-                        height: 60mm;
-                        background: #004D40; /* Primary color based on app theme */
+                        height: 58mm;
+                        background: #004D40; 
                         color: #ffffff;
                         display: flex;
                         flex-direction: column;
                         align-items: center;
-                        padding-top: 5mm;
-                        border-bottom-right-radius: 0;
+                        padding-top: 8mm;
                         position: relative;
                     }
-                    .lanyard-hole {
-                        width: 12mm;
-                        height: 3mm;
-                        background: #002D20;
-                        border-radius: 2mm;
-                        margin-bottom: 3mm;
-                        opacity: 0.3;
-                    }
                     .school-name {
-                        font-size: 7pt;
+                        font-size: 7.5pt;
                         font-weight: 700;
                         text-transform: uppercase;
                         letter-spacing: 0.5pt;
@@ -304,22 +297,24 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
                         line-height: 1.1;
                     }
                     .card-title {
-                        font-size: 6pt;
+                        font-size: 6.5pt;
                         opacity: 0.8;
                         text-transform: uppercase;
-                        margin-bottom: 4mm;
+                        margin-bottom: 5mm;
+                        letter-spacing: 1pt;
                     }
                     .photo-container {
-                        width: 32mm;
-                        height: 32mm;
-                        background: #f0f0f0;
-                        border: 1.5mm solid #ffffff;
-                        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                        width: 30mm;
+                        height: 30mm;
+                        background: #fff;
+                        border: 1mm solid #ffffff;
+                        border-radius: 50%;
                         overflow: hidden;
                         display: flex;
                         align-items: center;
                         justify-content: center;
                         margin-bottom: 4mm;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
                     }
                     .photo-container img {
                         width: 100%;
@@ -327,7 +322,7 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
                         object-fit: cover;
                     }
                     .name {
-                        font-size: 11pt;
+                        font-size: 10pt;
                         font-weight: 700;
                         text-transform: uppercase;
                         text-align: center;
@@ -336,7 +331,7 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
                         margin-bottom: 1mm;
                     }
                     .jabatan {
-                        font-size: 7.5pt;
+                        font-size: 7pt;
                         opacity: 0.9;
                         text-transform: uppercase;
                         letter-spacing: 0.5pt;
@@ -348,12 +343,12 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
                         flex-direction: column;
                         align-items: center;
                         justify-content: center;
-                        padding: 2mm;
+                        padding: 3mm;
                     }
                     .qr-container {
                         width: 18mm;
                         height: 18mm;
-                        margin-bottom: 1mm;
+                        margin-bottom: 1.5mm;
                     }
                     .qr-container img {
                         width: 100%;
@@ -364,26 +359,26 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
                         font-weight: 700;
                         color: #004D40;
                         font-family: monospace;
+                        letter-spacing: 0.5pt;
                     }
                 </style>
             </head>
             <body>
                 <div class="card">
                     <div class="top-section">
-                        <div class="lanyard-hole"></div>
                         <div class="school-name">${schoolName}</div>
-                        <div class="card-title">Kartu Identitas Guru</div>
+                        <div class="card-title">KARTU IDENTITAS GURU</div>
                         
                         <div class="photo-container">
-                            <img src="${teacher.avatarUrl || 'https://placehold.co/400x400?text=PHOTO'}" />
+                            <img src="${teacher.avatarUrl || 'https://placehold.co/400x400?text=FOTO'}" />
                         </div>
                         
                         <div class="name">${teacher.name}</div>
-                        <div class="jabatan">${teacher.jabatan || 'Guru Madrasah'}</div>
+                        <div class="jabatan">${teacher.jabatan || 'Pendidik'}</div>
                     </div>
                     <div class="bottom-section">
                         <div class="qr-container">
-                            <img src="${qrDataUrl}" />
+                            ${qrDataUrl ? `<img src="${qrDataUrl}" />` : ''}
                         </div>
                         <div class="nig-text">${teacher.nig}</div>
                     </div>
@@ -392,32 +387,6 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
           </html>
       `;
       safePrint(idCardHtml);
-  };
-
-  const handleDownloadIDCardImage = async () => {
-    if (!idCardRef.current || !teacher) return;
-    setIsExportingImage(true);
-    try {
-        const html2canvas = (await import('html2canvas')).default;
-        const canvas = await html2canvas(idCardRef.current, {
-            scale: 4, // Ultra high resolution
-            useCORS: true,
-            backgroundColor: null,
-            logging: false,
-        });
-        
-        const link = document.createElement('a');
-        link.download = `ID_Card_${teacher.name.replace(/\s+/g, '_')}.png`;
-        link.href = canvas.toDataURL('image/png', 1.0);
-        link.click();
-        
-        toast({ title: "Berhasil Mengunduh", description: "ID Card telah disimpan sebagai gambar." });
-    } catch (e) {
-        console.error("Image export failed", e);
-        toast({ variant: "destructive", title: "Gagal Mengunduh Gambar" });
-    } finally {
-        setIsExportingImage(false);
-    }
   };
 
   const handleExportPdf = () => {
@@ -628,17 +597,6 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
                   <Button type="button" variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-primary/5 text-primary" title="Cetak ID Card" onClick={handlePrintIDCard}>
                       <Contact className="h-4 w-4" />
                   </Button>
-                  <Button 
-                    type="button" 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-10 w-10 rounded-full hover:bg-primary/5 text-primary" 
-                    title="Unduh Gambar ID Card" 
-                    onClick={handleDownloadIDCardImage}
-                    disabled={isExportingImage}
-                  >
-                      {isExportingImage ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageDown className="h-4 w-4" />}
-                  </Button>
                   <Button type="button" variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-primary/5 text-primary" title="Export PDF" onClick={handleExportPdf}>
                       <FileDown className="h-4 w-4" />
                   </Button>
@@ -654,47 +612,6 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
             </DialogFooter>
           </div>
         )}
-        
-        {/* Hidden Template for Image Export */}
-        <div className="fixed -left-[2000px] top-0 pointer-events-none">
-            <div 
-                ref={idCardRef}
-                className="w-[54mm] h-[86mm] bg-white flex flex-col relative overflow-hidden"
-                style={{ width: '54mm', height: '86mm' }}
-            >
-                <div className="bg-[#004D40] text-white flex flex-col items-center pt-[5mm] h-[60mm] relative">
-                    <div className="w-[12mm] h-[3mm] bg-[#002D20]/30 rounded-[2mm] mb-[3mm]"></div>
-                    <div className="text-[7.5pt] font-bold uppercase tracking-[0.5pt] text-center w-[90%] mb-[1mm] leading-[1.1]">
-                        {profile?.namaMadrasah || 'MADRASAH DINIYAH IBNU AHMAD'}
-                    </div>
-                    <div className="text-[6.5pt] opacity-80 uppercase mb-[4mm]">Kartu Identitas Guru</div>
-                    
-                    <div className="w-[32mm] h-[32mm] bg-[#f0f0f0] border-[1.5mm] border-white shadow-md overflow-hidden flex items-center justify-center mb-[4mm]">
-                        <img 
-                          src={teacher.avatarUrl || 'https://placehold.co/400x400?text=FOTO'} 
-                          className="w-full h-full object-cover" 
-                          crossOrigin="anonymous" 
-                          alt=""
-                        />
-                    </div>
-                    
-                    <div className="text-[11.5pt] font-bold uppercase text-center w-[90%] leading-[1.2] mb-[1mm]">
-                        {teacher.name}
-                    </div>
-                    <div className="text-[8pt] opacity-90 uppercase tracking-[0.5pt]">
-                        {teacher.jabatan || 'Guru Madrasah'}
-                    </div>
-                </div>
-                <div className="flex-1 bg-white flex flex-col items-center justify-center p-[2mm]">
-                    <div className="w-[18mm] h-[18mm] mb-[1mm]">
-                        {qrDataUrl ? <img src={qrDataUrl} className="w-full h-full" alt="" /> : null}
-                    </div>
-                    <div className="text-[7.5pt] font-bold text-[#004D40] font-mono uppercase tracking-tight">
-                        {teacher.nig}
-                    </div>
-                </div>
-            </div>
-        </div>
       </DialogContent>
     </Dialog>
   );
