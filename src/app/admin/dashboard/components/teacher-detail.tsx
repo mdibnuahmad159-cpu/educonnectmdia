@@ -36,6 +36,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuPortal,
 } from "@/components/ui/dropdown-menu";
 import type { Teacher } from "@/types";
 import { 
@@ -713,14 +714,16 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
                               <Contact className="h-4 w-4" />
                           </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" className="rounded-xl p-1 shadow-xl">
-                          <DropdownMenuItem onClick={handlePrintIDCard} className="text-xs font-bold uppercase gap-2 cursor-pointer p-2.5 rounded-lg">
-                              <Printer className="h-3.5 w-3.5" /> Cetak Kartu (A7)
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={handleDownloadIDCardPDF} className="text-xs font-bold uppercase gap-2 cursor-pointer p-2.5 rounded-lg">
-                              <FileText className="h-3.5 w-3.5" /> Unduh PDF
-                          </DropdownMenuItem>
-                      </DropdownMenuContent>
+                      <DropdownMenuPortal>
+                        <DropdownMenuContent align="start" className="rounded-xl p-1 shadow-xl z-[100]">
+                            <DropdownMenuItem onClick={handlePrintIDCard} className="text-xs font-bold uppercase gap-2 cursor-pointer p-2.5 rounded-lg">
+                                <Printer className="h-3.5 w-3.5" /> Cetak Kartu (A7)
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={handleDownloadIDCardPDF} className="text-xs font-bold uppercase gap-2 cursor-pointer p-2.5 rounded-lg">
+                                <FileText className="h-3.5 w-3.5" /> Unduh PDF
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenuPortal>
                   </DropdownMenu>
 
                   <Button type="button" variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-primary/5 text-primary" title="Export PDF Bio" onClick={handleExportPdf}>
