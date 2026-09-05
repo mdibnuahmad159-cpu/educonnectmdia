@@ -258,7 +258,7 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
                 <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&display=swap" rel="stylesheet">
                 <style>
                     @page { 
-                        size: A4 portrait; 
+                        size: 74mm 105mm; 
                         margin: 0; 
                     }
                     html, body {
@@ -390,7 +390,7 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
                         letter-spacing: 0.5pt;
                     }
                     @media print {
-                        body { height: 100vh; width: 100vw; }
+                        body { height: 105mm; width: 74mm; }
                         .card { border: 0.2mm solid #004D40; }
                     }
                 </style>
