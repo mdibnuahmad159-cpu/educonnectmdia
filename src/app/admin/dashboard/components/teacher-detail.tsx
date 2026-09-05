@@ -56,8 +56,7 @@ import {
   Camera,
   FileDown,
   Contact,
-  FileText,
-  ChevronDown
+  FileText
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
