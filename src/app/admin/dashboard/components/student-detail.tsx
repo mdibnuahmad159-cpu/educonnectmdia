@@ -48,7 +48,8 @@ import {
     Save,
     X,
     Loader2,
-    FileDown
+    FileDown,
+    Contact
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -59,6 +60,7 @@ import { id as dfnsId } from "date-fns/locale";
 import { useFirestore } from "@/firebase";
 import { updateStudent } from "@/lib/firebase-helpers";
 import { useToast } from "@/hooks/use-toast";
+import { useSchoolProfile } from "@/context/school-profile-provider";
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
@@ -131,6 +133,7 @@ function InfoField({ label, value, icon: Icon, isWA = false }: { label: string; 
 
 export function StudentDetail({ isOpen, setIsOpen, student, onEdit, onDelete }: StudentDetailProps) {
   const firestore = useFirestore();
+  const { profile } = useSchoolProfile();
   const { toast } = useToast();
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
   const [isEditing, setIsEditing] = useState(false);
@@ -230,6 +233,181 @@ export function StudentDetail({ isOpen, setIsOpen, student, onEdit, onDelete }: 
       </html>
     `;
     safePrint(content);
+  };
+
+  const handlePrintIDCard = () => {
+    if (!student) return;
+    const schoolName = profile?.namaMadrasah || "MADRASAH DINIYAH IBNU AHMAD";
+    
+    const idCardHtml = `
+        <html>
+          <head>
+              <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&display=swap" rel="stylesheet">
+              <style>
+                  @page { 
+                      size: 74mm 105mm; 
+                      margin: 0; 
+                  }
+                  html, body {
+                      height: 100%;
+                      width: 100%;
+                      margin: 0;
+                      padding: 0;
+                      overflow: hidden;
+                  }
+                  body { 
+                      font-family: 'PT Sans', sans-serif; 
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                      background: white;
+                      -webkit-print-color-adjust: exact;
+                  }
+                  .card {
+                      width: 54mm;
+                      height: 86mm;
+                      position: relative;
+                      background: #ffffff;
+                      display: flex;
+                      flex-direction: column;
+                      border-radius: 2mm;
+                      overflow: hidden;
+                      box-sizing: border-box;
+                  }
+                  .top-section {
+                      height: 62mm;
+                      background: #004D40; 
+                      color: #ffffff;
+                      display: flex;
+                      flex-direction: column;
+                      align-items: center;
+                      padding-top: 6mm;
+                      position: relative;
+                  }
+                  .school-name {
+                      font-size: 7.5pt;
+                      font-weight: 700;
+                      text-transform: uppercase;
+                      letter-spacing: 0.5pt;
+                      text-align: center;
+                      margin-bottom: 1mm;
+                      width: 90%;
+                      line-height: 1.1;
+                  }
+                  .card-title {
+                      font-size: 6pt;
+                      opacity: 0.7;
+                      text-transform: uppercase;
+                      margin-bottom: 5mm;
+                      letter-spacing: 1pt;
+                  }
+                  .photo-container {
+                      width: 18mm;
+                      height: 18mm;
+                      background: #fff;
+                      border: 0.5mm solid #ffffff;
+                      border-radius: 50%;
+                      overflow: hidden;
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                      margin-bottom: 4mm;
+                  }
+                  .photo-container img {
+                      width: 100%;
+                      height: 100%;
+                      object-fit: cover;
+                  }
+                  .info-area {
+                      display: flex;
+                      flex-direction: column;
+                      align-items: center;
+                      text-align: center;
+                      width: 90%;
+                      margin-top: 1mm;
+                  }
+                  .name {
+                      font-size: 9pt;
+                      font-weight: 700;
+                      text-transform: uppercase;
+                      line-height: 1.1;
+                      margin-bottom: 1mm;
+                  }
+                  .nis-main {
+                      font-size: 7.5pt;
+                      font-family: monospace;
+                      opacity: 0.9;
+                      margin-bottom: 2mm;
+                      font-weight: normal;
+                  }
+                  .kelas-info {
+                      font-size: 7pt;
+                      opacity: 0.8;
+                      text-transform: uppercase;
+                      letter-spacing: 0.5pt;
+                      background: rgba(255,255,255,0.1);
+                      padding: 0.6mm 3mm;
+                      border-radius: 1mm;
+                  }
+                  .bottom-section {
+                      flex: 1;
+                      background: #ffffff;
+                      display: flex;
+                      flex-direction: column;
+                      align-items: center;
+                      justify-content: center;
+                      padding: 2mm;
+                  }
+                  .qr-container {
+                      width: 18mm;
+                      height: 18mm;
+                      margin-bottom: 1mm;
+                  }
+                  .qr-container img {
+                      width: 100%;
+                      height: 100%;
+                  }
+                  .barcode-label {
+                      font-size: 6pt;
+                      font-weight: 700;
+                      color: #004D40;
+                      opacity: 0.4;
+                      text-transform: uppercase;
+                      letter-spacing: 0.5pt;
+                  }
+                  @media print {
+                      body { height: 105mm; width: 74mm; }
+                      .card { border: none; }
+                  }
+              </style>
+          </head>
+          <body>
+              <div class="card">
+                  <div class="top-section">
+                      <div class="school-name">${schoolName}</div>
+                      <div class="card-title">Kartu Identitas Santri</div>
+                      
+                      <div class="photo-container">
+                          <img src="${student.avatarUrl || 'https://placehold.co/400x400?text=FOTO'}" />
+                      </div>
+                      
+                      <div class="info-area">
+                          <div class="name">${student.name}</div>
+                          <div class="nis-main">${student.nis.replace('MDIA', '')}</div>
+                          <div class="kelas-info">Kelas ${student.kelas !== undefined ? student.kelas : '-'}</div>
+                      </div>
+                  </div>
+                  <div class="bottom-section">
+                      <div class="qr-container">
+                          ${qrDataUrl ? `<img src="${qrDataUrl}" />` : ''}
+                      </div>
+                      <div class="barcode-label">Barcode Absensi</div>
+                  </div>
+              </div>
+          </body>
+        </html>
+    `;
+    safePrint(idCardHtml);
   };
 
   const handleExportPdf = () => {
@@ -449,14 +627,17 @@ export function StudentDetail({ isOpen, setIsOpen, student, onEdit, onDelete }: 
             </div>
 
             <DialogFooter className="bg-muted/30 p-4 px-6 border-t flex flex-row items-center justify-between sm:justify-between gap-3">
-                <div className="flex gap-1">
-                  <Button type="button" variant="ghost" size="icon" className="text-destructive h-10 w-10 rounded-full hover:bg-destructive/10" onClick={() => onDelete(student.id)}>
+                <div className="flex flex-wrap gap-1">
+                  <Button type="button" variant="ghost" size="icon" className="text-destructive h-10 w-10 rounded-full hover:bg-destructive/10" title="Hapus Siswa" onClick={() => onDelete(student.id)}>
                       <Trash2 className="h-4 w-4" />
                   </Button>
-                  <Button type="button" variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-primary/5 text-primary" onClick={handlePrint}>
+                  <Button type="button" variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-primary/5 text-primary" title="Cetak Bio" onClick={handlePrint}>
                       <Printer className="h-4 w-4" />
                   </Button>
-                  <Button type="button" variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-primary/5 text-primary" onClick={handleExportPdf}>
+                  <Button type="button" variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-primary/5 text-primary" title="Cetak ID Card" onClick={handlePrintIDCard}>
+                      <Contact className="h-4 w-4" />
+                  </Button>
+                  <Button type="button" variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-primary/5 text-primary" title="Export PDF" onClick={handleExportPdf}>
                       <FileDown className="h-4 w-4" />
                   </Button>
                 </div>
