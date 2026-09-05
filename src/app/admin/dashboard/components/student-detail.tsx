@@ -270,6 +270,7 @@ export function StudentDetail({ isOpen, setIsOpen, student, onEdit, onDelete }: 
                       background: #ffffff;
                       display: flex;
                       flex-direction: column;
+                      border: 0.2mm solid #ddd;
                       border-radius: 2mm;
                       overflow: hidden;
                       box-sizing: border-box;
@@ -377,7 +378,7 @@ export function StudentDetail({ isOpen, setIsOpen, student, onEdit, onDelete }: 
                   }
                   @media print {
                       body { height: 105mm; width: 74mm; }
-                      .card { border: none; }
+                      .card { border: 0.2mm solid #004D40; }
                   }
               </style>
           </head>
