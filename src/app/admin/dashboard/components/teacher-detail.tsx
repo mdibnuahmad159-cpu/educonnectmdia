@@ -253,7 +253,7 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
             <head>
                 <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&display=swap" rel="stylesheet">
                 <style>
-                    @page { size: portrait; margin: 0; }
+                    @page { size: A4 portrait; margin: 0; }
                     body { 
                         margin: 0; 
                         padding: 0; 
@@ -262,7 +262,7 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
                         align-items: center;
                         justify-content: center;
                         height: 100vh;
-                        background: #f8f9fa;
+                        background: white;
                         -webkit-print-color-adjust: exact;
                     }
                     .card {
@@ -272,18 +272,19 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
                         background: #ffffff;
                         display: flex;
                         flex-direction: column;
-                        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+                        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+                        border: 0.1mm solid #eee;
                         border-radius: 2mm;
                         overflow: hidden;
                     }
                     .top-section {
-                        height: 58mm;
+                        height: 62mm;
                         background: #004D40; 
                         color: #ffffff;
                         display: flex;
                         flex-direction: column;
                         align-items: center;
-                        padding-top: 8mm;
+                        padding-top: 6mm;
                         position: relative;
                     }
                     .school-name {
@@ -292,49 +293,65 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
                         text-transform: uppercase;
                         letter-spacing: 0.5pt;
                         text-align: center;
-                        margin-bottom: 1mm;
+                        margin-bottom: 0.5mm;
                         width: 90%;
                         line-height: 1.1;
                     }
                     .card-title {
-                        font-size: 6.5pt;
-                        opacity: 0.8;
+                        font-size: 6pt;
+                        opacity: 0.7;
                         text-transform: uppercase;
-                        margin-bottom: 5mm;
+                        margin-bottom: 4mm;
                         letter-spacing: 1pt;
                     }
                     .photo-container {
-                        width: 30mm;
-                        height: 30mm;
+                        width: 20mm;
+                        height: 20mm;
                         background: #fff;
-                        border: 1mm solid #ffffff;
+                        border: 0.8mm solid #ffffff;
                         border-radius: 50%;
                         overflow: hidden;
                         display: flex;
                         align-items: center;
                         justify-content: center;
-                        margin-bottom: 4mm;
-                        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                        margin-bottom: 3mm;
+                        box-shadow: 0 1px 5px rgba(0,0,0,0.2);
                     }
                     .photo-container img {
                         width: 100%;
                         height: 100%;
                         object-fit: cover;
                     }
-                    .name {
-                        font-size: 10pt;
-                        font-weight: 700;
-                        text-transform: uppercase;
+                    .info-area {
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
                         text-align: center;
                         width: 90%;
-                        line-height: 1.2;
+                        margin-top: 1mm;
+                    }
+                    .name {
+                        font-size: 9.5pt;
+                        font-weight: 700;
+                        text-transform: uppercase;
+                        line-height: 1.1;
+                        margin-bottom: 0.5mm;
+                    }
+                    .nig-main {
+                        font-size: 7.5pt;
+                        font-family: monospace;
+                        opacity: 0.9;
                         margin-bottom: 1mm;
+                        font-weight: bold;
                     }
                     .jabatan {
                         font-size: 7pt;
-                        opacity: 0.9;
+                        opacity: 0.8;
                         text-transform: uppercase;
                         letter-spacing: 0.5pt;
+                        background: rgba(255,255,255,0.1);
+                        padding: 0.5mm 3mm;
+                        border-radius: 1mm;
                     }
                     .bottom-section {
                         flex: 1;
@@ -343,22 +360,23 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
                         flex-direction: column;
                         align-items: center;
                         justify-content: center;
-                        padding: 3mm;
+                        padding: 2mm;
                     }
                     .qr-container {
                         width: 18mm;
                         height: 18mm;
-                        margin-bottom: 1.5mm;
+                        margin-bottom: 1mm;
                     }
                     .qr-container img {
                         width: 100%;
                         height: 100%;
                     }
-                    .nig-text {
-                        font-size: 7pt;
+                    .barcode-label {
+                        font-size: 6pt;
                         font-weight: 700;
                         color: #004D40;
-                        font-family: monospace;
+                        opacity: 0.5;
+                        text-transform: uppercase;
                         letter-spacing: 0.5pt;
                     }
                 </style>
@@ -367,20 +385,23 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
                 <div class="card">
                     <div class="top-section">
                         <div class="school-name">${schoolName}</div>
-                        <div class="card-title">KARTU IDENTITAS GURU</div>
+                        <div class="card-title">Kartu Identitas Guru</div>
                         
                         <div class="photo-container">
                             <img src="${teacher.avatarUrl || 'https://placehold.co/400x400?text=FOTO'}" />
                         </div>
                         
-                        <div class="name">${teacher.name}</div>
-                        <div class="jabatan">${teacher.jabatan || 'Pendidik'}</div>
+                        <div class="info-area">
+                            <div class="name">${teacher.name}</div>
+                            <div class="nig-main">NIG: ${teacher.nig}</div>
+                            <div class="jabatan">${teacher.jabatan || 'Pendidik'}</div>
+                        </div>
                     </div>
                     <div class="bottom-section">
                         <div class="qr-container">
                             ${qrDataUrl ? `<img src="${qrDataUrl}" />` : ''}
                         </div>
-                        <div class="nig-text">${teacher.nig}</div>
+                        <div class="barcode-label">Barcode Absensi</div>
                     </div>
                 </div>
             </body>
