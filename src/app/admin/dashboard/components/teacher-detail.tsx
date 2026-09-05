@@ -248,20 +248,31 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
   const handlePrintIDCard = () => {
       if (!teacher) return;
       const schoolName = profile?.namaMadrasah || "MADRASAH DINIYAH IBNU AHMAD";
+      
+      // Pembersihan gelar Ust. atau Ustzh. dari tampilan cetak
+      const cleanedName = teacher.name.replace(/Ust\.\s*/i, '').replace(/Ustzh\.\s*/i, '').trim();
+
       const idCardHtml = `
           <html>
             <head>
                 <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&display=swap" rel="stylesheet">
                 <style>
-                    @page { size: A4 portrait; margin: 0; }
-                    body { 
+                    @page { 
+                        size: A4 portrait; 
                         margin: 0; 
-                        padding: 0; 
+                    }
+                    html, body {
+                        height: 100%;
+                        width: 100%;
+                        margin: 0;
+                        padding: 0;
+                        overflow: hidden;
+                    }
+                    body { 
                         font-family: 'PT Sans', sans-serif; 
                         display: flex;
                         align-items: center;
                         justify-content: center;
-                        height: 100vh;
                         background: white;
                         -webkit-print-color-adjust: exact;
                     }
@@ -272,10 +283,10 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
                         background: #ffffff;
                         display: flex;
                         flex-direction: column;
-                        box-shadow: 0 0 10px rgba(0,0,0,0.1);
-                        border: 0.1mm solid #eee;
+                        border: 0.2mm solid #ddd;
                         border-radius: 2mm;
                         overflow: hidden;
+                        box-sizing: border-box;
                     }
                     .top-section {
                         height: 62mm;
@@ -293,7 +304,7 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
                         text-transform: uppercase;
                         letter-spacing: 0.5pt;
                         text-align: center;
-                        margin-bottom: 0.5mm;
+                        margin-bottom: 1mm;
                         width: 90%;
                         line-height: 1.1;
                     }
@@ -301,12 +312,12 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
                         font-size: 6pt;
                         opacity: 0.7;
                         text-transform: uppercase;
-                        margin-bottom: 4mm;
+                        margin-bottom: 5mm;
                         letter-spacing: 1pt;
                     }
                     .photo-container {
-                        width: 20mm;
-                        height: 20mm;
+                        width: 18mm;
+                        height: 18mm;
                         background: #fff;
                         border: 0.8mm solid #ffffff;
                         border-radius: 50%;
@@ -314,8 +325,7 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
                         display: flex;
                         align-items: center;
                         justify-content: center;
-                        margin-bottom: 3mm;
-                        box-shadow: 0 1px 5px rgba(0,0,0,0.2);
+                        margin-bottom: 4mm;
                     }
                     .photo-container img {
                         width: 100%;
@@ -334,15 +344,15 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
                         font-size: 9.5pt;
                         font-weight: 700;
                         text-transform: uppercase;
-                        line-height: 1.1;
-                        margin-bottom: 0.5mm;
+                        line-height: 1.2;
+                        margin-bottom: 1mm;
                     }
                     .nig-main {
-                        font-size: 7.5pt;
+                        font-size: 8pt;
                         font-family: monospace;
                         opacity: 0.9;
-                        margin-bottom: 1mm;
-                        font-weight: bold;
+                        margin-bottom: 2mm;
+                        font-weight: normal;
                     }
                     .jabatan {
                         font-size: 7pt;
@@ -350,7 +360,7 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
                         text-transform: uppercase;
                         letter-spacing: 0.5pt;
                         background: rgba(255,255,255,0.1);
-                        padding: 0.5mm 3mm;
+                        padding: 0.6mm 3mm;
                         border-radius: 1mm;
                     }
                     .bottom-section {
@@ -375,9 +385,13 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
                         font-size: 6pt;
                         font-weight: 700;
                         color: #004D40;
-                        opacity: 0.5;
+                        opacity: 0.4;
                         text-transform: uppercase;
                         letter-spacing: 0.5pt;
+                    }
+                    @media print {
+                        body { height: 100vh; width: 100vw; }
+                        .card { border: 0.2mm solid #004D40; }
                     }
                 </style>
             </head>
@@ -392,8 +406,8 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
                         </div>
                         
                         <div class="info-area">
-                            <div class="name">${teacher.name}</div>
-                            <div class="nig-main">NIG: ${teacher.nig}</div>
+                            <div class="name">${cleanedName}</div>
+                            <div class="nig-main">${teacher.nig}</div>
                             <div class="jabatan">${teacher.jabatan || 'Pendidik'}</div>
                         </div>
                     </div>
