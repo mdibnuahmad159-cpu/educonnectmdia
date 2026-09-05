@@ -687,7 +687,7 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
                 </div>
                 <div className="flex-1 bg-white flex flex-col items-center justify-center p-[2mm]">
                     <div className="w-[18mm] h-[18mm] mb-[1mm]">
-                        <img src={qrDataUrl} className="w-full h-full" alt="" />
+                        {qrDataUrl ? <img src={qrDataUrl} className="w-full h-full" alt="" /> : null}
                     </div>
                     <div className="text-[7.5pt] font-bold text-[#004D40] font-mono uppercase tracking-tight">
                         {teacher.nig}
