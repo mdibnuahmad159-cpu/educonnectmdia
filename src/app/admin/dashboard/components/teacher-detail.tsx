@@ -31,6 +31,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { Teacher } from "@/types";
 import { 
   Trash2, 
@@ -48,7 +54,9 @@ import {
   X,
   Camera,
   FileDown,
-  Contact
+  Contact,
+  FileText,
+  ChevronDown
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -248,8 +256,6 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
   const handlePrintIDCard = () => {
       if (!teacher) return;
       const schoolName = profile?.namaMadrasah || "MADRASAH DINIYAH IBNU AHMAD";
-      
-      // Pembersihan gelar Ust. atau Ustzh. dari tampilan cetak
       const cleanedName = teacher.name.replace(/Ust\.\s*/i, '').replace(/Ustzh\.\s*/i, '').trim();
 
       const idCardHtml = `
@@ -422,6 +428,77 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
           </html>
       `;
       safePrint(idCardHtml);
+  };
+
+  const handleDownloadIDCardPDF = async () => {
+    if (!teacher) return;
+    const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: [74, 105] // A7
+    });
+
+    const schoolName = profile?.namaMadrasah || "MADRASAH DINIYAH IBNU AHMAD";
+    const cleanedName = teacher.name.replace(/Ust\.\s*/i, '').replace(/Ustzh\.\s*/i, '').trim();
+
+    // Fill Top Part (Green #004D40)
+    doc.setFillColor(0, 77, 64);
+    doc.rect(10, 9.5, 54, 62, 'F'); 
+
+    // Fill Bottom Part (White)
+    doc.setFillColor(255, 255, 255);
+    doc.rect(10, 71.5, 54, 24, 'F');
+
+    // School Name
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "bold");
+    doc.text(schoolName.toUpperCase(), 37, 16, { align: 'center', maxWidth: 45 });
+
+    // Card Title
+    doc.setFontSize(6);
+    doc.setFont("helvetica", "normal");
+    doc.text("KARTU IDENTITAS GURU", 37, 21, { align: 'center' });
+
+    // Photo
+    if (teacher.avatarUrl) {
+        try {
+            doc.setFillColor(255, 255, 255);
+            doc.circle(37, 35, 10, 'F'); // Photo container circle
+            doc.addImage(teacher.avatarUrl, 'JPEG', 28, 26, 18, 18);
+        } catch (e) {}
+    }
+
+    // Name & NIG
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "bold");
+    doc.text(cleanedName.toUpperCase(), 37, 50, { align: 'center', maxWidth: 50 });
+
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
+    doc.text(teacher.nig, 37, 55, { align: 'center' });
+
+    // Jabatan
+    doc.setFontSize(6.5);
+    doc.text(teacher.jabatan?.toUpperCase() || 'PENDIDIK', 37, 61, { align: 'center' });
+
+    // QR Code
+    if (qrDataUrl) {
+        doc.addImage(qrDataUrl, 'PNG', 28, 73, 18, 18);
+    }
+    
+    doc.setTextColor(0, 77, 64);
+    doc.setFontSize(6);
+    doc.setFont("helvetica", "bold");
+    doc.text("BARCODE ABSENSI", 37, 93, { align: 'center' });
+
+    // Border for cutting
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.2);
+    doc.rect(10, 9.5, 54, 86, 'S');
+
+    doc.save(`ID_Card_Guru_${cleanedName.replace(/\s+/g, '_')}.pdf`);
   };
 
   const handleExportPdf = () => {
@@ -629,10 +706,24 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
                   <Button type="button" variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-primary/5 text-primary" title="Cetak Bio" onClick={handlePrint}>
                       <Printer className="h-4 w-4" />
                   </Button>
-                  <Button type="button" variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-primary/5 text-primary" title="Cetak ID Card" onClick={handlePrintIDCard}>
-                      <Contact className="h-4 w-4" />
-                  </Button>
-                  <Button type="button" variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-primary/5 text-primary" title="Export PDF" onClick={handleExportPdf}>
+
+                  <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-primary/5 text-primary" title="ID Card Menu">
+                              <Contact className="h-4 w-4" />
+                          </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="rounded-xl p-1 shadow-xl">
+                          <DropdownMenuItem onClick={handlePrintIDCard} className="text-xs font-bold uppercase gap-2 cursor-pointer p-2.5 rounded-lg">
+                              <Printer className="h-3.5 w-3.5" /> Cetak Kartu (A7)
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={handleDownloadIDCardPDF} className="text-xs font-bold uppercase gap-2 cursor-pointer p-2.5 rounded-lg">
+                              <FileText className="h-3.5 w-3.5" /> Unduh PDF
+                          </DropdownMenuItem>
+                      </DropdownMenuContent>
+                  </DropdownMenu>
+
+                  <Button type="button" variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-primary/5 text-primary" title="Export PDF Bio" onClick={handleExportPdf}>
                       <FileDown className="h-4 w-4" />
                   </Button>
                 </div>
