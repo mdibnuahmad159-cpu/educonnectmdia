@@ -47,7 +47,8 @@ import {
   Save,
   X,
   Camera,
-  FileDown
+  FileDown,
+  Contact
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -58,6 +59,7 @@ import { id as dfnsId } from "date-fns/locale";
 import { useFirestore } from "@/firebase";
 import { updateTeacher } from "@/lib/firebase-helpers";
 import { useToast } from "@/hooks/use-toast";
+import { useSchoolProfile } from "@/context/school-profile-provider";
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
@@ -140,6 +142,7 @@ function InfoField({ label, value, icon: Icon, isWA = false }: { label: string; 
 
 export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: TeacherDetailProps) {
   const firestore = useFirestore();
+  const { profile } = useSchoolProfile();
   const { toast } = useToast();
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
   const [isEditing, setIsEditing] = useState(false);
@@ -199,7 +202,7 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
       toast({ title: "Profil Diperbarui", description: "Data guru berhasil disimpan." });
       setIsEditing(false);
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Gagal", description: error.message });
+      toast({ variant: "destructive", title: "Gagal Memperbarui", description: error.message });
     } finally {
       setIsSaving(false);
     }
@@ -240,6 +243,152 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
       </html>
     `;
     safePrint(content);
+  };
+
+  const handlePrintIDCard = () => {
+      if (!teacher) return;
+      const schoolName = profile?.namaMadrasah || "MADRASAH DINIYAH IBNU AHMAD";
+      const idCardHtml = `
+          <html>
+            <head>
+                <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&display=swap" rel="stylesheet">
+                <style>
+                    @page { size: 54mm 86mm; margin: 0; }
+                    body { 
+                        margin: 0; 
+                        padding: 0; 
+                        font-family: 'PT Sans', sans-serif; 
+                        width: 54mm; 
+                        height: 86mm; 
+                        overflow: hidden;
+                        -webkit-print-color-adjust: exact;
+                    }
+                    .card {
+                        width: 54mm;
+                        height: 86mm;
+                        position: relative;
+                        background: #ffffff;
+                        display: flex;
+                        flex-direction: column;
+                    }
+                    .top-section {
+                        height: 60mm;
+                        background: #004D40; /* Primary color based on app theme */
+                        color: #ffffff;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        padding-top: 5mm;
+                        border-bottom-right-radius: 0;
+                        position: relative;
+                    }
+                    .lanyard-hole {
+                        width: 12mm;
+                        height: 3mm;
+                        background: #002D20;
+                        border-radius: 2mm;
+                        margin-bottom: 3mm;
+                        opacity: 0.3;
+                    }
+                    .school-name {
+                        font-size: 7pt;
+                        font-weight: 700;
+                        text-transform: uppercase;
+                        letter-spacing: 0.5pt;
+                        text-align: center;
+                        margin-bottom: 1mm;
+                        width: 90%;
+                        line-height: 1.1;
+                    }
+                    .card-title {
+                        font-size: 6pt;
+                        opacity: 0.8;
+                        text-transform: uppercase;
+                        margin-bottom: 4mm;
+                    }
+                    .photo-container {
+                        width: 32mm;
+                        height: 32mm;
+                        background: #f0f0f0;
+                        border: 1.5mm solid #ffffff;
+                        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                        overflow: hidden;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        margin-bottom: 4mm;
+                    }
+                    .photo-container img {
+                        width: 100%;
+                        height: 100%;
+                        object-fit: cover;
+                    }
+                    .name {
+                        font-size: 11pt;
+                        font-weight: 700;
+                        text-transform: uppercase;
+                        text-align: center;
+                        width: 90%;
+                        line-height: 1.2;
+                        margin-bottom: 1mm;
+                    }
+                    .jabatan {
+                        font-size: 7.5pt;
+                        opacity: 0.9;
+                        text-transform: uppercase;
+                        letter-spacing: 0.5pt;
+                    }
+                    .bottom-section {
+                        flex: 1;
+                        background: #ffffff;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        padding: 2mm;
+                    }
+                    .qr-container {
+                        width: 18mm;
+                        height: 18mm;
+                        margin-bottom: 1mm;
+                    }
+                    .qr-container img {
+                        width: 100%;
+                        height: 100%;
+                    }
+                    .nig-text {
+                        font-size: 7pt;
+                        font-weight: 700;
+                        color: #004D40;
+                        font-family: monospace;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="card">
+                    <div class="top-section">
+                        <div class="lanyard-hole"></div>
+                        <div class="school-name">${schoolName}</div>
+                        <div class="card-title">Kartu Identitas Guru</div>
+                        
+                        <div class="photo-container">
+                            <img src="${teacher.avatarUrl || 'https://placehold.co/400x400?text=PHOTO'}" />
+                        </div>
+                        
+                        <div class="name">${teacher.name}</div>
+                        <div class="jabatan">${teacher.jabatan || 'Guru Madrasah'}</div>
+                    </div>
+                    <div class="bottom-section">
+                        <div class="qr-container">
+                            <img src="${qrDataUrl}" />
+                        </div>
+                        <div class="nig-text">${teacher.nig}</div>
+                    </div>
+                </div>
+            </body>
+          </html>
+      `;
+      safePrint(idCardHtml);
   };
 
   const handleExportPdf = () => {
@@ -440,14 +589,17 @@ export function TeacherDetail({ isOpen, setIsOpen, teacher, onEdit, onDelete }: 
             </div>
 
             <DialogFooter className="bg-muted/30 p-4 px-6 border-t flex flex-row items-center justify-between sm:justify-between gap-3">
-                <div className="flex gap-1">
-                  <Button type="button" variant="ghost" size="icon" className="text-destructive h-10 w-10 rounded-full hover:bg-destructive/10" onClick={() => onDelete(teacher.id)}>
+                <div className="flex flex-wrap gap-1">
+                  <Button type="button" variant="ghost" size="icon" className="text-destructive h-10 w-10 rounded-full hover:bg-destructive/10" title="Hapus Guru" onClick={() => onDelete(teacher.id)}>
                       <Trash2 className="h-4 w-4" />
                   </Button>
-                  <Button type="button" variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-primary/5 text-primary" onClick={handlePrint}>
+                  <Button type="button" variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-primary/5 text-primary" title="Cetak Bio" onClick={handlePrint}>
                       <Printer className="h-4 w-4" />
                   </Button>
-                  <Button type="button" variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-primary/5 text-primary" onClick={handleExportPdf}>
+                  <Button type="button" variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-primary/5 text-primary" title="Cetak ID Card" onClick={handlePrintIDCard}>
+                      <Contact className="h-4 w-4" />
+                  </Button>
+                  <Button type="button" variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-primary/5 text-primary" title="Export PDF" onClick={handleExportPdf}>
                       <FileDown className="h-4 w-4" />
                   </Button>
                 </div>
